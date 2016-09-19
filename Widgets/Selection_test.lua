@@ -44,7 +44,7 @@ end
 
 local oldUnits = {}
 
-function widget:Update (dt)
+function widget:GameFrame (dt)
 	newUnits = Spring.GetSelectedUnits()
 	if not equal (oldUnits, newUnits) then 
 		oldUnits = newUnits
