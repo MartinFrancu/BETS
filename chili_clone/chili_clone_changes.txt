@@ -1,0 +1,5 @@
+CHILI_DIRNAME -> CHILI_CLONE_DIRNAME
+chili folder -> chili_clone
+WG.Chili -> WG.ChiliClone
+files *.lua -> *_clone.lua pomoci rename.sh v chili_clone slozce
+nacitani bez lua directory - Chunk Chilis directory nepouzit, pouzit Initializaci ze starsi luy-0.3
