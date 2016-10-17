@@ -278,7 +278,7 @@ function DrawWindow(obj)
 
   local skLeft,skTop,skRight,skBottom = unpack4(obj.tiles)
 
-  local c = obj.color
+  local c = obj.backgroundColor
   if (c) then
     gl.Color(c)
   else
