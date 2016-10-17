@@ -20,6 +20,7 @@ TreeNode = Control:Inherit{
 	skinName = 'DarkGlass',
 	tooltip = "BT NODE TOOLTIP. ",
 	
+	id = "",
 	nodeType = "",
 	connectable = nil,
 	nodeWindow = nil,
@@ -77,12 +78,38 @@ function copyTable(obj, seen)
   return res
 end
 
+--//=============================================================================
+-- ID generation functions
+--//=============================================================================
+
+local alphanum = {
+	"a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z",
+	"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z",
+	"0","1","2","3","4","5","6","7","8","9"
+	}
+
+local usedIDs = {}
+	
+local function GenerateID()
+	local length = 32
+	local str = ""
+	for i = 1, length do
+		str = str..alphanum[math.random(#alphanum)]
+	end
+	if(usedIDs[str] ~= nil) then
+		return GenerateID()
+	end
+	usedIDs[str] = true
+	return str	
+end
+
 -- ////////////////////////////////////////////////////////////////////////////
 -- Member functions
 -- ////////////////////////////////////////////////////////////////////////////
 
 function TreeNode:New(obj)
   obj = inherited.New(self,obj)
+	obj.id = GenerateID()
 	local nodeWindowOptions = {
 		parent = obj.parent,
 		classname = 'TreeNodeWindow',
@@ -99,6 +126,7 @@ function TreeNode:New(obj)
 		dragGripSize = obj.dragGripSize,
 		padding = obj.padding,
 		borderThickness = obj.borderThickness,
+		backgroundColor = {1,1,1,0.7},
 		skinName = 'DarkGlass',
 		OnResize = { listenerNodeResize },
 		treeNode = obj,
@@ -295,8 +323,8 @@ function AddConnectionLine(connectionOut, connectionIn)
 		parent = connectionOut.parent.parent,
 		x = lineInx + halfDistance - 8,
 		y = lineIny + 1,
-		file = LUAUI_DIRNAME .. "Widgets/arrow_white.png",
-		--file2 = LUAUI_DIRNAME .. "Widgets/arrow_orange.png",
+		file = LUAUI_DIRNAME .. "Widgets/BtCreator/arrow_white.png",
+		--file2 = LUAUI_DIRNAME .. "Widgets/BtCreator/arrow_orange.png",
 		width = 5,
 		height = 8,
 		lineIndex = lineIndex,
@@ -557,7 +585,7 @@ function listenerOverConnectionLine(self)
 		parent = oldArrow.parent,
 		x = oldArrow.x,
 		y = oldArrow.y,
-		file = LUAUI_DIRNAME .. "Widgets/arrow_orange.png",
+		file = LUAUI_DIRNAME .. "Widgets/BtCreator/arrow_orange.png",
 		width = oldArrow.width,
 		height = oldArrow.height,
 		lineIndex = oldArrow.lineIndex,
@@ -582,7 +610,7 @@ function listenerOutOfConnectionLine(self)
 		parent = oldArrow.parent,
 		x = oldArrow.x,
 		y = oldArrow.y,
-		file = LUAUI_DIRNAME .. "Widgets/arrow_white.png",
+		file = LUAUI_DIRNAME .. "Widgets/BtCreator/arrow_white.png",
 		width = oldArrow.width,
 		height = oldArrow.height,
 		lineIndex = oldArrow.lineIndex,

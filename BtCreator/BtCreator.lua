@@ -45,10 +45,13 @@ local saveTreeButton
 --- Contains all the TreeNodes on the editable area - windowBtCreator aka canvas. 
 local nodeList = {}
 local nodePoolList = {}
+local nodeIndexFromID = {}
 --- Index into the nodeList, root should always be 1. 
 local root
 
-
+local function GetNodeFromID(id)
+	return nodeList[nodeIndexFromID[id]]
+end
 
 -- //////////////////////////////////////////////////////////////////////
 -- Listeners
@@ -69,6 +72,7 @@ function listenerEndSelectingNodes(self, x , y)
 	return true
 end
 
+--[[
 function widget:MousePress()
 	Spring.Echo("listener start selecting nodes. ")
 	selectionStart.x = x
@@ -79,7 +83,8 @@ end
 function widget:MouseRelease()
 	Spring.Echo("listener end selecting nodes. ")
 	return true
-end
+end 
+]]--
 
 local copyTreeNode = nil
 --- In coordinates of nodePool(origin in top left corner of nodePool)
@@ -108,7 +113,7 @@ function listenerEndCopyingNode(self, x , y)
 				hasConnectionOut = copyTreeNode.hasConnectionOut,
 				-- OnMouseUp = { listenerEndSelectingNodes },
 			})
-		
+		nodeIndexFromID[nodeList[#nodeList].id] = #nodeList
 		copyTreeNode = nil
 	end
 end
@@ -128,6 +133,50 @@ end
 
 -- //////////////////////////////////////////////////////////////////////
 
+function widget:RecvSkirmishAIMessage(aiTeam, message)
+	-- Dont respond to other players AI
+	if(aiTeam ~= Spring.GetLocalPlayerID()) then
+		Spring.Echo("Message from AI received: aiTeam ~= Spring.GetLocalPlayerID()")
+		return
+	end
+	-- Check if it starts with "BETS"
+	if(message:len() <= 4 and message:sub(1,4):upper() ~= "BETS") then
+		Spring.Echo("Message from AI received: beginnigng of message is not equal 'BETS', got: "..message:sub(1,4):upper())
+		return
+	end
+	messageShorter = message:sub(5)
+	indexOfFirstSpace = messageShorter:pattern("")
+	messageType = messageShorter:sub(1, indexOfFirstSpace-1):upper()	
+	messageBody = messageShorter:sub(indexOfFirstSpace)
+	Spring.Echo("Message from AI received: message body: "..messageBody)
+	if(messageType == "UPDATE_STATES") then 
+		Spring.Echo("Message from AI received: message type UPDATE_STATES")
+		states = JSON:decode(messageBody)
+		for i=1,#nodeList do
+			local id = nodeList[i].id
+			local color = {1,1,1,0.7}
+			if(states[id] ~= nil) then
+				if(states[id]:upper() == "RUNNING") then
+					color = {1,0.5,0,0.7}
+				elseif(states[id]:upper() == "SUCCES") then
+					color = {0.5,1,0.5,0.7}
+				elseif(states[id]:upper() == "FAILURE") then
+					color = {1,0,0,0.7}
+				else
+					Spring.Echo("Uknown state received from AI, for node id: "..id)
+				end
+			end
+			nodeList[i].nodeWindow.backgroundColor = color
+		end
+	elseif (messageType == "CREATE_TREE") then 
+		Spring.Echo("Message from AI received: message type CREATE_TREE")
+		
+	elseif (messageType == "NODE_DEFINITIONS") then 
+		Spring.Echo("Message from AI received: message type NODE_DEFINITIONS")
+		
+	end
+end
+
 function widget:Initialize()	
   if (not WG.ChiliClone) then
     -- don't run if we can't find Chili
@@ -137,8 +186,8 @@ function widget:Initialize()
  
   -- Get ready to use Chili
   Chili = WG.ChiliClone
-  Screen0 = Chili.Screen0
- 
+  Screen0 = Chili.Screen0	
+	
   -- Create the window
   windowBtCreator = Chili.Window:New{
     parent = Screen0,
@@ -150,6 +199,7 @@ function widget:Initialize()
 		draggable=false,
 		resizable=true,
 		skinName='DarkGlass',
+		backgroundColor = {1,1,1,1},
 		-- OnMouseDown = { listenerStartSelectingNodes },
 		-- OnMouseUp = { listenerEndSelectingNodes },
   }	
@@ -162,7 +212,6 @@ function widget:Initialize()
 		minWidth = 115,
 		height = '41.5%',
 		skinName='DarkGlass',
-		backgroundColor = {1,1,0,1},
 	}
 	nodePoolLabel = Chili.Label:New{
     parent = nodePoolPanel,
@@ -173,6 +222,8 @@ function widget:Initialize()
     caption = "Node Pool",
 		skinName='DarkGlass',
   } 
+	
+	Spring.SendSkirmishAIMessage (Spring.GetLocalPlayerID (), "BETS REQUEST_NODE_DEFINITIONS")
 	
 	table.insert(nodePoolList, Chili.TreeNode:New{
 		parent = nodePoolPanel,
@@ -260,6 +311,8 @@ function widget:Initialize()
 		focusColor = {0.5,0.5,0.5,0.5},
 		OnClick = { listenerClickOnLoadTree },
 	}
+	
+	
 end
 
 function SerializeForest()
@@ -284,7 +337,7 @@ end
 
 function SerializeTree(root, spaces, outputFile)
 	local fieldsToSerialize = {
-		'name',
+		'id',
 		'nodeType',
 		'text',
 		'x',
@@ -305,6 +358,7 @@ function SerializeTree(root, spaces, outputFile)
 	outputFile:write(spaces.."},\n" )
 end
 
+--- Removes white spaces from the beginnign and from the end the string s.
 local function trim(s)
 	return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
