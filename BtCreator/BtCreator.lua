@@ -131,6 +131,13 @@ function listenerClickOnLoadTree(self)
 	DeserializeForest()
 end
 
+function listenerClickOnTest(self)
+	Spring.Echo("TEST")
+	local stringTree = TreeToStringJSON(nodeList[root])
+	Spring.Echo(stringTree)
+	SendStringToBtEvaluator(stringTree)
+end
+
 -- //////////////////////////////////////////////////////////////////////
 
 function widget:RecvSkirmishAIMessage(aiTeam, message)
@@ -175,6 +182,12 @@ function widget:RecvSkirmishAIMessage(aiTeam, message)
 		Spring.Echo("Message from AI received: message type NODE_DEFINITIONS")
 		
 	end
+end
+
+-- ///////////////////////////////////////////////////////////////////
+-- it adds the prefix BETS
+function SendStringToBtEvaluator(message)
+	Spring.SendSkirmishAIMessage(Spring.GetLocalPlayerID(), "BETS" .. message)
 end
 
 function widget:Initialize()	
@@ -312,6 +325,18 @@ function widget:Initialize()
 		OnClick = { listenerClickOnLoadTree },
 	}
 	
+	serializeTestButton = Chili.Button:New{
+		parent = Screen0,
+		x = loadTreeButton.x + loadTreeButton.width,
+		y = loadTreeButton.y,
+		width = 90,
+		height = 30,
+		caption = "TEST",
+		skinName = "DarkGlass",
+		focusColor = {0.5,0.5,0.5,0.5},
+		OnClick = {listenerClickOnTest},
+	}
+	
 	
 end
 
@@ -334,6 +359,7 @@ function SerializeForest()
 	end
 	outputFile:close()
 end
+
 
 function SerializeTree(root, spaces, outputFile)
 	local fieldsToSerialize = {
@@ -358,10 +384,34 @@ function SerializeTree(root, spaces, outputFile)
 	outputFile:write(spaces.."},\n" )
 end
 
+-- This should create a table with structure of given tree.
+function LoadTreeInTableRecursive(root)
+	local tree = {}
+	--[[Spring.Echo(root.type)
+	Spring.Echo(root.id)
+	Spring.Echo(root.parameters)]]--
+	tree.type = root.type
+	tree.id = root.id
+	tree.parameters = root.parameters
+	tree.children = {}
+	local children = root:GetChildren()
+	for i=1,#children do 
+		tree.children[i] = LoadTreeInTableRecursive(children[i])
+	end
+	return tree
+end
+
+function TreeToStringJSON(root)
+	local treeTable = LoadTreeInTableRecursive(root)
+	local treeString = WG.JSON:encode(treeTable)
+	return treeString
+end
+
 --- Removes white spaces from the beginnign and from the end the string s.
 local function trim(s)
 	return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
+
 
 function ReadTreeNode(inputFile)
 	local input = inputFile:read()
