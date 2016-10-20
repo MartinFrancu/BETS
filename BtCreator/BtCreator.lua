@@ -185,7 +185,7 @@ function widget:RecvSkirmishAIMessage(aiTeam, message)
 end
 
 -- ///////////////////////////////////////////////////////////////////
--- it adds the prefix BETS
+-- it adds the prefix BETS and sends the string throught Spring
 function SendStringToBtEvaluator(message)
 	Spring.SendSkirmishAIMessage(Spring.GetLocalPlayerID(), "BETS" .. message)
 end
@@ -384,10 +384,10 @@ function SerializeTree(root, spaces, outputFile)
 	outputFile:write(spaces.."},\n" )
 end
 
--- This should create a table with structure of given tree.
+-- Create a table with structure of given tree.
 function LoadTreeInTableRecursive(root)
 	local tree = {}
-	--[[Spring.Echo(root.type)
+	--[[Spring.Echo(root.type) 
 	Spring.Echo(root.id)
 	Spring.Echo(root.parameters)]]--
 	tree.type = root.type
@@ -401,10 +401,18 @@ function LoadTreeInTableRecursive(root)
 	return tree
 end
 
+-- ignores the initial root:
 function TreeToStringJSON(root)
-	local treeTable = LoadTreeInTableRecursive(root)
-	local treeString = WG.JSON:encode(treeTable)
-	return treeString
+	local rootChildren = root:GetChildren()
+	Spring.Echo("children size: " .. table.getn(rootChildren))
+	if table.getn(rootChildren) > 0 then
+		local firstChild = rootChildren[1]
+		local treeTable = LoadTreeInTableRecursive(firstChild)
+		local treeString = WG.JSON:encode(treeTable)
+		return treeString
+	else
+		return "EMPTY TREE"
+	end
 end
 
 --- Removes white spaces from the beginnign and from the end the string s.
