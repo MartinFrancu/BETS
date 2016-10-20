@@ -133,7 +133,13 @@ end
 
 function listenerClickOnTest(self)
 	Spring.Echo("TEST")
-	local stringTree = TreeToStringJSON(nodeList[root])
+	local fieldsToSerialize = {
+		'id',
+		'nodeType',
+		'text',
+		'parameters'
+	}
+	local stringTree = TreeToStringJSON(nodeList[root], fieldsToSerialize )
 	Spring.Echo(stringTree)
 	SendStringToBtEvaluator(stringTree)
 end
@@ -385,33 +391,33 @@ function SerializeTree(root, spaces, outputFile)
 end
 
 -- Create a table with structure of given tree.
-function LoadTreeInTableRecursive(root)
+function LoadTreeInTableRecursive(root, fieldsToSerialize)
+
 	local tree = {}
-	--[[Spring.Echo(root.type) 
-	Spring.Echo(root.id)
-	Spring.Echo(root.parameters)]]--
-	tree.type = root.type
-	tree.id = root.id
-	tree.parameters = root.parameters
+	
+	for nameInd=1,#fieldsToSerialize do
+		tree[fieldsToSerialize[nameInd]] = root[fieldsToSerialize[nameInd]]
+	end
+	
+	
 	tree.children = {}
 	local children = root:GetChildren()
 	for i=1,#children do 
-		tree.children[i] = LoadTreeInTableRecursive(children[i])
+		tree.children[i] = LoadTreeInTableRecursive(children[i], fieldsToSerialize)
 	end
 	return tree
 end
 
 -- ignores the initial root:
-function TreeToStringJSON(root)
+function TreeToStringJSON(root, fieldsToSerialize)
 	local rootChildren = root:GetChildren()
-	Spring.Echo("children size: " .. table.getn(rootChildren))
 	if table.getn(rootChildren) > 0 then
 		local firstChild = rootChildren[1]
-		local treeTable = LoadTreeInTableRecursive(firstChild)
+		local treeTable = LoadTreeInTableRecursive(firstChild, fieldsToSerialize)
 		local treeString = WG.JSON:encode(treeTable)
 		return treeString
 	else
-		return "EMPTY TREE"
+		return "{}"
 	end
 end
 
