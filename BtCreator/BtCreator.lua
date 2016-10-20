@@ -140,8 +140,8 @@ function listenerClickOnTest(self)
 		'parameters'
 	}
 	local stringTree = TreeToStringJSON(nodeList[root], fieldsToSerialize )
-	Spring.Echo(stringTree)
-	SendStringToBtEvaluator(stringTree)
+	Spring.Echo("BETS CREATE_TREE "..stringTree)
+	SendStringToBtEvaluator("CREATE_TREE "..stringTree)
 end
 
 -- //////////////////////////////////////////////////////////////////////
@@ -193,7 +193,7 @@ end
 -- ///////////////////////////////////////////////////////////////////
 -- it adds the prefix BETS and sends the string throught Spring
 function SendStringToBtEvaluator(message)
-	Spring.SendSkirmishAIMessage(Spring.GetLocalPlayerID(), "BETS" .. message)
+	Spring.SendSkirmishAIMessage(Spring.GetLocalPlayerID(), "BETS " .. message)
 end
 
 function widget:Initialize()	
