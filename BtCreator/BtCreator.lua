@@ -153,51 +153,34 @@ local RUNNING_COLOR = {1,0.5,0,0.7}
 local SUCCESS_COLOR = {0.5,1,0.5,0.7}
 local FAILURE_COLOR = {1,0,0,0.7}
 
-function widget:RecvSkirmishAIMessage(aiTeam, message)
-	-- Dont respond to other players AI
-	if(aiTeam ~= Spring.GetLocalPlayerID()) then
-		Spring.Echo("Message from AI received: aiTeam ~= Spring.GetLocalPlayerID()")
-		return
-	end
-	-- Check if it starts with "BETS"
-	if(message:len() <= 4 and message:sub(1,4):upper() ~= "BETS") then
-		Spring.Echo("Message from AI received: beginnigng of message is not equal 'BETS', got: "..message:sub(1,4):upper())
-		return
-	end
-	messageShorter = message:sub(6)
-	indexOfFirstSpace = string.find(messageShorter, " ")
-	messageType = messageShorter:sub(1, indexOfFirstSpace - 1):upper()	
-	messageBody = messageShorter:sub(indexOfFirstSpace + 1)
-	Spring.Echo("Message from AI received: message body: "..messageBody)
-	if(messageType == "UPDATE_STATES") then 
-		Spring.Echo("Message from AI received: message type UPDATE_STATES")
-		states = JSON:decode(messageBody)
-		for i=1,#nodeList do
-			local id = nodeList[i].id
-			local color = DEFAULT_COLOR;
-			if(states[id] ~= nil) then
-				if(states[id]:upper() == "RUNNING") then
-					color = RUNNING_COLOR
-				elseif(states[id]:upper() == "SUCCESS") then
-					color = SUCCESS_COLOR
-				elseif(states[id]:upper() == "FAILURE") then
-					color = FAILURE_COLOR
-				else
-					Spring.Echo("Uknown state received from AI, for node id: "..id)
-				end
+local function updateStatesMessage(messageBody)
+	Spring.Echo("Message from AI received: message type UPDATE_STATES")
+	states = JSON:decode(messageBody)
+	for i=1,#nodeList do
+		local id = nodeList[i].id
+		local color = DEFAULT_COLOR;
+		if(states[id] ~= nil) then
+			if(states[id]:upper() == "RUNNING") then
+				color = RUNNING_COLOR
+			elseif(states[id]:upper() == "SUCCESS") then
+				color = SUCCESS_COLOR
+			elseif(states[id]:upper() == "FAILURE") then
+				color = FAILURE_COLOR
+			else
+				Spring.Echo("Uknown state received from AI, for node id: "..id)
 			end
-      if(nodeList[i].nodeWindow.backgroundColor ~= color)then
-        nodeList[i].nodeWindow.backgroundColor = color
-        nodeList[i].nodeWindow:Invalidate()
-      end
 		end
+		if(nodeList[i].nodeWindow.backgroundColor ~= color)then
+			nodeList[i].nodeWindow.backgroundColor = color
+			nodeList[i].nodeWindow:Invalidate()
+		end
+	end
 end
 
 local function generateNodePoolNodes(messageBody)
 	-- messageBody = '[{ "name": "name 1", "children": null, "defaultWidth": 70, "defaultHeight": 100 }, {"name":"Sequence","children":[]}]'
-	nodes = WG.JSON:decode(messageBody)
-	Spring.Echo(dump(nodes))
-	-- TODO right now all the parameters of node must be there -> make them optional
+	nodes = JSON:decode(messageBody)
+	-- Spring.Echo(dump(nodes))
 	local heightSum = 30 -- skip NodePoolLabel
 	for i=1,#nodes do
 		local nodeParams = {
@@ -231,22 +214,19 @@ function widget:RecvSkirmishAIMessage(aiTeam, message)
 		Spring.Echo("Message from AI received: aiTeam ~= Spring.GetLocalPlayerID()")
 		return
 	end
-	-- Check if the message starts with "BETS"
+	-- Check if it starts with "BETS"
 	if(message:len() <= 4 and message:sub(1,4):upper() ~= "BETS") then
 		Spring.Echo("Message from AI received: beginnigng of message is not equal 'BETS', got: "..message:sub(1,4):upper())
 		return
 	end
-	messageShorter = message:sub(5)
-	indexOfFirstSpace = messageShorter:pattern("")
-	messageType = messageShorter:sub(1, indexOfFirstSpace-1):upper()	
-	messageBody = messageShorter:sub(indexOfFirstSpace)
+	messageShorter = message:sub(6)
+	indexOfFirstSpace = string.find(messageShorter, " ")
+	messageType = messageShorter:sub(1, indexOfFirstSpace - 1):upper()	
+	messageBody = messageShorter:sub(indexOfFirstSpace + 1)
 	Spring.Echo("Message from AI received: message body: "..messageBody)
 	if(messageType == "UPDATE_STATES") then 
 		Spring.Echo("Message from AI received: message type UPDATE_STATES")
 		updateStatesMessage(messageBody)		
-	elseif (messageType == "CREATE_TREE") then 
-		Spring.Echo("Message from AI received: message type CREATE_TREE")
-		
 	elseif (messageType == "NODE_DEFINITIONS") then 
 		Spring.Echo("Message from AI received: message type NODE_DEFINITIONS")
 		generateNodePoolNodes(messageBody)
