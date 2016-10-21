@@ -34,7 +34,7 @@ function dump(o, maxDepth)
 end
 --//=============================================================================
  
-local Chili, Screen0
+local Chili, Screen0, JSON
  
 local windowBtCreator
 local nodePoolLabel
@@ -131,27 +131,65 @@ function listenerClickOnLoadTree(self)
 	DeserializeForest()
 end
 
+function listenerClickOnTest(self)
+	Spring.Echo("TEST")
+	local fieldsToSerialize = {
+		'id',
+		'nodeType',
+		'text',
+		'parameters'
+	}
+	local stringTree = TreeToStringJSON(nodeList[root], fieldsToSerialize )
+	Spring.Echo("BETS CREATE_TREE "..stringTree)
+	SendStringToBtEvaluator("CREATE_TREE "..stringTree)
+end
+
 -- //////////////////////////////////////////////////////////////////////
 -- Messages from BtEvaluator
 -- //////////////////////////////////////////////////////////////////////
 
-local function updateStatesMessage(messageBody)
-	states = WG.JSON:decode(messageBody)
+local DEFAULT_COLOR = {1,1,1,0.7}
+local RUNNING_COLOR = {1,0.5,0,0.7}
+local SUCCESS_COLOR = {0.5,1,0.5,0.7}
+local FAILURE_COLOR = {1,0,0,0.7}
+
+function widget:RecvSkirmishAIMessage(aiTeam, message)
+	-- Dont respond to other players AI
+	if(aiTeam ~= Spring.GetLocalPlayerID()) then
+		Spring.Echo("Message from AI received: aiTeam ~= Spring.GetLocalPlayerID()")
+		return
+	end
+	-- Check if it starts with "BETS"
+	if(message:len() <= 4 and message:sub(1,4):upper() ~= "BETS") then
+		Spring.Echo("Message from AI received: beginnigng of message is not equal 'BETS', got: "..message:sub(1,4):upper())
+		return
+	end
+	messageShorter = message:sub(6)
+	indexOfFirstSpace = string.find(messageShorter, " ")
+	messageType = messageShorter:sub(1, indexOfFirstSpace - 1):upper()	
+	messageBody = messageShorter:sub(indexOfFirstSpace + 1)
+	Spring.Echo("Message from AI received: message body: "..messageBody)
+	if(messageType == "UPDATE_STATES") then 
+		Spring.Echo("Message from AI received: message type UPDATE_STATES")
+		states = JSON:decode(messageBody)
 		for i=1,#nodeList do
 			local id = nodeList[i].id
-			local color = {1,1,1,0.7}
+			local color = DEFAULT_COLOR;
 			if(states[id] ~= nil) then
 				if(states[id]:upper() == "RUNNING") then
-					color = {1,0.5,0,0.7}
-				elseif(states[id]:upper() == "SUCCES") then
-					color = {0.5,1,0.5,0.7}
+					color = RUNNING_COLOR
+				elseif(states[id]:upper() == "SUCCESS") then
+					color = SUCCESS_COLOR
 				elseif(states[id]:upper() == "FAILURE") then
-					color = {1,0,0,0.7}
+					color = FAILURE_COLOR
 				else
 					Spring.Echo("Uknown state received from AI, for node id: "..id)
 				end
 			end
-			nodeList[i].nodeWindow.backgroundColor = color
+      if(nodeList[i].nodeWindow.backgroundColor ~= color)then
+        nodeList[i].nodeWindow.backgroundColor = color
+        nodeList[i].nodeWindow:Invalidate()
+      end
 		end
 end
 
@@ -206,14 +244,23 @@ function widget:RecvSkirmishAIMessage(aiTeam, message)
 	if(messageType == "UPDATE_STATES") then 
 		Spring.Echo("Message from AI received: message type UPDATE_STATES")
 		updateStatesMessage(messageBody)		
+	elseif (messageType == "CREATE_TREE") then 
+		Spring.Echo("Message from AI received: message type CREATE_TREE")
+		
 	elseif (messageType == "NODE_DEFINITIONS") then 
 		Spring.Echo("Message from AI received: message type NODE_DEFINITIONS")
 		generateNodePoolNodes(messageBody)
 	end
 end
 
+-- ///////////////////////////////////////////////////////////////////
+-- it adds the prefix BETS and sends the string throught Spring
+function SendStringToBtEvaluator(message)
+	Spring.SendSkirmishAIMessage(Spring.GetLocalPlayerID(), "BETS " .. message)
+end
+
 function widget:Initialize()	
-  if (not WG.ChiliClone) then
+  if (not WG.ChiliClone) and (not WG.JSON) then
     -- don't run if we can't find Chili
     widgetHandler:RemoveWidget()
     return
@@ -222,6 +269,7 @@ function widget:Initialize()
   -- Get ready to use Chili
   Chili = WG.ChiliClone
   Screen0 = Chili.Screen0	
+  JSON = WG.JSON
 	
   -- Create the window
   windowBtCreator = Chili.Window:New{
@@ -259,7 +307,6 @@ function widget:Initialize()
   } 
 	
 	Spring.SendSkirmishAIMessage (Spring.GetLocalPlayerID (), "BETS REQUEST_NODE_DEFINITIONS")
-	generateNodePoolNodes()
 	
 	root = 1
 	table.insert(nodeList, Chili.TreeNode:New{
@@ -297,6 +344,18 @@ function widget:Initialize()
 		OnClick = { listenerClickOnLoadTree },
 	}
 	
+	serializeTestButton = Chili.Button:New{
+		parent = Screen0,
+		x = loadTreeButton.x + loadTreeButton.width,
+		y = loadTreeButton.y,
+		width = 90,
+		height = 30,
+		caption = "TEST",
+		skinName = "DarkGlass",
+		focusColor = {0.5,0.5,0.5,0.5},
+		OnClick = {listenerClickOnTest},
+	}
+	
 	
 end
 
@@ -319,6 +378,7 @@ function SerializeForest()
 	end
 	outputFile:close()
 end
+
 
 function SerializeTree(root, spaces, outputFile)
 	local fieldsToSerialize = {
@@ -343,10 +403,42 @@ function SerializeTree(root, spaces, outputFile)
 	outputFile:write(spaces.."},\n" )
 end
 
+-- Create a table with structure of given tree.
+function LoadTreeInTableRecursive(root, fieldsToSerialize)
+
+	local tree = {}
+	
+	for nameInd=1,#fieldsToSerialize do
+		tree[fieldsToSerialize[nameInd]] = root[fieldsToSerialize[nameInd]]
+	end
+	
+	
+	tree.children = {}
+	local children = root:GetChildren()
+	for i=1,#children do 
+		tree.children[i] = LoadTreeInTableRecursive(children[i], fieldsToSerialize)
+	end
+	return tree
+end
+
+-- ignores the initial root:
+function TreeToStringJSON(root, fieldsToSerialize)
+	local rootChildren = root:GetChildren()
+	if table.getn(rootChildren) > 0 then
+		local firstChild = rootChildren[1]
+		local treeTable = LoadTreeInTableRecursive(firstChild, fieldsToSerialize)
+		local treeString = WG.JSON:encode(treeTable)
+		return treeString
+	else
+		return "{}"
+	end
+end
+
 --- Removes white spaces from the beginnign and from the end the string s.
 local function trim(s)
 	return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
+
 
 function ReadTreeNode(inputFile)
 	local input = inputFile:read()
