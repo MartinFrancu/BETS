@@ -28,7 +28,6 @@ TreeNode = Control:Inherit{
 	connectionIn = nil,
 	hasConnectionOut = true,
 	connectionOut = nil,
-	--nodeName = "My BT Node",
 	nodeNameEditBox = nil,
 	
 	--- List of all connected connectionLines. 

@@ -101,7 +101,7 @@ end
 function listenerEndCopyingNode(self, x , y)
 	--y = y + startCopyingLocation.y
 	if(copyTreeNode and x - nodePoolPanel.width - startCopyingLocation.x > -20) then
-		Spring.Echo("listener end Copy Object. x:"..x..", y="..y)
+		-- Spring.Echo("listener end Copy Object. x:"..x..", y="..y)
 		table.insert(nodeList, Chili.TreeNode:New{
 				parent = windowBtCreator,
 				nodeType = copyTreeNode.nodeType,
@@ -132,26 +132,11 @@ function listenerClickOnLoadTree(self)
 end
 
 -- //////////////////////////////////////////////////////////////////////
+-- Messages from BtEvaluator
+-- //////////////////////////////////////////////////////////////////////
 
-function widget:RecvSkirmishAIMessage(aiTeam, message)
-	-- Dont respond to other players AI
-	if(aiTeam ~= Spring.GetLocalPlayerID()) then
-		Spring.Echo("Message from AI received: aiTeam ~= Spring.GetLocalPlayerID()")
-		return
-	end
-	-- Check if it starts with "BETS"
-	if(message:len() <= 4 and message:sub(1,4):upper() ~= "BETS") then
-		Spring.Echo("Message from AI received: beginnigng of message is not equal 'BETS', got: "..message:sub(1,4):upper())
-		return
-	end
-	messageShorter = message:sub(5)
-	indexOfFirstSpace = messageShorter:pattern("")
-	messageType = messageShorter:sub(1, indexOfFirstSpace-1):upper()	
-	messageBody = messageShorter:sub(indexOfFirstSpace)
-	Spring.Echo("Message from AI received: message body: "..messageBody)
-	if(messageType == "UPDATE_STATES") then 
-		Spring.Echo("Message from AI received: message type UPDATE_STATES")
-		states = JSON:decode(messageBody)
+local function updateStatesMessage(messageBody)
+	states = WG.JSON:decode(messageBody)
 		for i=1,#nodeList do
 			local id = nodeList[i].id
 			local color = {1,1,1,0.7}
@@ -168,12 +153,62 @@ function widget:RecvSkirmishAIMessage(aiTeam, message)
 			end
 			nodeList[i].nodeWindow.backgroundColor = color
 		end
-	elseif (messageType == "CREATE_TREE") then 
-		Spring.Echo("Message from AI received: message type CREATE_TREE")
-		
+end
+
+local function generateNodePoolNodes(messageBody)
+	-- messageBody = '[{ "name": "name 1", "children": null, "defaultWidth": 70, "defaultHeight": 100 }, {"name":"Sequence","children":[]}]'
+	nodes = WG.JSON:decode(messageBody)
+	Spring.Echo(dump(nodes))
+	-- TODO right now all the parameters of node must be there -> make them optional
+	local heightSum = 30 -- skip NodePoolLabel
+	for i=1,#nodes do
+		local nodeParams = {
+			name = nodes[i].name,
+			hasConnectionOut = (nodes[i].children == null),
+			nodeType = nodes[i].name, -- TODO use name parameter instead of nodeType
+			parent = nodePoolPanel,
+			y = heightSum,
+			tooltip = nodes[i].tooltip or "",
+			draggable = false,
+			resizable = false,
+			connectable = false,
+			onMouseDown = { listenerStartCopyingNode },
+			onMouseUp = { listenerEndCopyingNode },
+		}
+		if(nodes[i].defaultWidth) then
+			nodeParams.width = nodes[i].defaultWidth
+		end
+		if(nodes[i].defaultHeight) then
+			nodeParams.height = nodes[i].defaultHeight
+		end
+		heightSum = heightSum + (nodeParams.height or 60)
+		table.insert(nodePoolList, Chili.TreeNode:New(nodeParams))
+	end
+	nodePoolPanel:RequestUpdate()
+end
+
+function widget:RecvSkirmishAIMessage(aiTeam, message)
+	-- Dont respond to other players AI
+	if(aiTeam ~= Spring.GetLocalPlayerID()) then
+		Spring.Echo("Message from AI received: aiTeam ~= Spring.GetLocalPlayerID()")
+		return
+	end
+	-- Check if the message starts with "BETS"
+	if(message:len() <= 4 and message:sub(1,4):upper() ~= "BETS") then
+		Spring.Echo("Message from AI received: beginnigng of message is not equal 'BETS', got: "..message:sub(1,4):upper())
+		return
+	end
+	messageShorter = message:sub(5)
+	indexOfFirstSpace = messageShorter:pattern("")
+	messageType = messageShorter:sub(1, indexOfFirstSpace-1):upper()	
+	messageBody = messageShorter:sub(indexOfFirstSpace)
+	Spring.Echo("Message from AI received: message body: "..messageBody)
+	if(messageType == "UPDATE_STATES") then 
+		Spring.Echo("Message from AI received: message type UPDATE_STATES")
+		updateStatesMessage(messageBody)		
 	elseif (messageType == "NODE_DEFINITIONS") then 
 		Spring.Echo("Message from AI received: message type NODE_DEFINITIONS")
-		
+		generateNodePoolNodes(messageBody)
 	end
 end
 
@@ -224,58 +259,8 @@ function widget:Initialize()
   } 
 	
 	Spring.SendSkirmishAIMessage (Spring.GetLocalPlayerID (), "BETS REQUEST_NODE_DEFINITIONS")
+	generateNodePoolNodes()
 	
-	table.insert(nodePoolList, Chili.TreeNode:New{
-		parent = nodePoolPanel,
-		nodeType = "Condition",
-		y = 30,
-		draggable = false,
-		resizable = false,
-		connectable = false,
-		onMouseDown = { listenerStartCopyingNode },
-		onMouseUp = { listenerEndCopyingNode },
-	})
-	table.insert(nodePoolList, Chili.TreeNode:New{
-		parent = nodePoolPanel,
-		nodeType = "Sequence",
-		y = 30+#nodePoolList*60,
-		draggable = false,
-		resizable = false,
-		connectable = false,
-		onMouseDown = { listenerStartCopyingNode },
-		onMouseUp = { listenerEndCopyingNode },
-	})	
-	table.insert(nodePoolList, Chili.TreeNode:New{
-		parent = nodePoolPanel,
-		nodeType = "MemSequence",
-		y = 30+#nodePoolList*60,
-		draggable = false,
-		resizable = false,
-		connectable = false,
-		onMouseDown = { listenerStartCopyingNode },
-		onMouseUp = { listenerEndCopyingNode },
-	})	
-	table.insert(nodePoolList, Chili.TreeNode:New{
-		parent = nodePoolPanel,
-		nodeType = "Wait",
-		y = 30+#nodePoolList*60,
-		draggable = false,
-		resizable = false,
-		connectable = false,
-		onMouseDown = { listenerStartCopyingNode },
-		onMouseUp = { listenerEndCopyingNode },
-		hasConnectionOut = false,
-	})
-	table.insert(nodePoolList, Chili.TreeNode:New{
-		parent = nodePoolPanel,
-		nodeType = "Invertor",
-		y = 30+#nodePoolList*60,
-		draggable = false,
-		resizable = false,
-		connectable = false,
-		onMouseDown = { listenerStartCopyingNode },
-		onMouseUp = { listenerEndCopyingNode },
-	})
 	root = 1
 	table.insert(nodeList, Chili.TreeNode:New{
 		parent = windowBtCreator,
