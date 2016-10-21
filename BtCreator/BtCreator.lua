@@ -132,7 +132,7 @@ function listenerClickOnLoadTree(self)
 end
 
 function listenerClickOnTest(self)
-	Spring.Echo("TEST")
+	Spring.Echo("Assign Tree")
 	local fieldsToSerialize = {
 		'id',
 		'nodeType',
@@ -180,12 +180,13 @@ end
 local function generateNodePoolNodes(messageBody)
 	-- messageBody = '[{ "name": "name 1", "children": null, "defaultWidth": 70, "defaultHeight": 100 }, {"name":"Sequence","children":[]}]'
 	nodes = JSON:decode(messageBody)
-	-- Spring.Echo(dump(nodes))
+	Spring.Echo("NODES DECODED:  "..dump(nodes))
 	local heightSum = 30 -- skip NodePoolLabel
 	for i=1,#nodes do
+		Spring.Echo("NODES DECODED i-th node:  "..dump(nodes[i]))
 		local nodeParams = {
 			name = nodes[i].name,
-			hasConnectionOut = (nodes[i].children == null),
+			hasConnectionOut = (nodes[i].children == null) or (type(nodes[i].children) == "table" and #nodes[i].children ~= 0),
 			nodeType = nodes[i].name, -- TODO use name parameter instead of nodeType
 			parent = nodePoolPanel,
 			y = heightSum,
@@ -197,10 +198,10 @@ local function generateNodePoolNodes(messageBody)
 			onMouseUp = { listenerEndCopyingNode },
 		}
 		if(nodes[i].defaultWidth) then
-			nodeParams.width = nodes[i].defaultWidth
+			nodeParams.width = math.max(110, nodes[i].defaultWidth)
 		end
 		if(nodes[i].defaultHeight) then
-			nodeParams.height = nodes[i].defaultHeight
+			nodeParams.height = math.max(50, nodes[i].defaultHeight)
 		end
 		heightSum = heightSum + (nodeParams.height or 60)
 		table.insert(nodePoolList, Chili.TreeNode:New(nodeParams))
@@ -216,7 +217,7 @@ function widget:RecvSkirmishAIMessage(aiTeam, message)
 	end
 	-- Check if it starts with "BETS"
 	if(message:len() <= 4 and message:sub(1,4):upper() ~= "BETS") then
-		Spring.Echo("Message from AI received: beginnigng of message is not equal 'BETS', got: "..message:sub(1,4):upper())
+		Spring.Echo("Message from AI received: beginning of message is not equal 'BETS', got: "..message:sub(1,4):upper())
 		return
 	end
 	messageShorter = message:sub(6)

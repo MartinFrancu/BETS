@@ -211,6 +211,7 @@ function TreeNode:Serialize(spaces ,file, fieldToSerialize)
 	file:write(spaces..'hasConnectionOut = '..tostring(self.hasConnectionOut)..",\n")]]--
 end
 
+--- Returns a table of children in order of y-coordinate(first is the one with the smallest one)
 function TreeNode:GetChildren()
 	if( not self.hasConnectionOut ) then 
 		return {}
@@ -222,6 +223,7 @@ function TreeNode:GetChildren()
 			table.insert(children, connectionLines[i][#connectionLines[i]].treeNode)
 		end
 	end
+	table.sort(children, function(lhs, rhs) return lhs.y < rhs.y end)
 	return children
 end
 
