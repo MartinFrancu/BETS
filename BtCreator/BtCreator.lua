@@ -47,7 +47,7 @@ local nodeList = {}
 local nodePoolList = {}
 local nodeIndexFromID = {}
 --- Index into the nodeList, root should always be 1. 
-local root
+local rootIndex = 1
 
 local function GetNodeFromID(id)
 	return nodeList[nodeIndexFromID[id]]
@@ -139,7 +139,8 @@ function listenerClickOnTest(self)
 		'text',
 		'parameters'
 	}
-	local stringTree = TreeToStringJSON(nodeList[root], fieldsToSerialize )
+	-- Spring.Echo("ROOT: "..dump(root))
+	local stringTree = TreeToStringJSON(nodeList[rootIndex], fieldsToSerialize )
 	Spring.Echo("BETS CREATE_TREE "..stringTree)
 	SendStringToBtEvaluator("CREATE_TREE "..stringTree)
 end
@@ -156,7 +157,7 @@ local FAILURE_COLOR = {1,0,0,0.7}
 local function updateStatesMessage(messageBody)
 	Spring.Echo("Message from AI received: message type UPDATE_STATES")
 	states = JSON:decode(messageBody)
-	for i=1,#nodeList do
+	for i=2,#nodeList do
 		local id = nodeList[i].id
 		local color = DEFAULT_COLOR;
 		if(states[id] ~= nil) then
@@ -174,6 +175,11 @@ local function updateStatesMessage(messageBody)
 			nodeList[i].nodeWindow.backgroundColor = color
 			nodeList[i].nodeWindow:Invalidate()
 		end
+	end
+	local children = nodeList[1]:GetChildren()
+	if(#children > 0) then
+		nodeList[1].nodeWindow.backgroundColor = children[1].nodeWindow.backgroundColor
+		nodeList[1].nodeWindow:Invalidate()
 	end
 end
 
@@ -241,8 +247,8 @@ function SendStringToBtEvaluator(message)
 end
 
 function widget:Initialize()	
-  if (not WG.ChiliClone) and (not WG.JSON) then
-    -- don't run if we can't find Chili
+  if (not WG.ChiliClone) and (not WG.JSON) and (not WG.BtEvaluatorIsLoaded) then
+    -- don't run if we can't find Chili, or JSON, or BtEvaluatorLoader
     widgetHandler:RemoveWidget()
     return
   end
@@ -252,27 +258,11 @@ function widget:Initialize()
   Screen0 = Chili.Screen0	
   JSON = WG.JSON
 	
-  -- Create the window
-  windowBtCreator = Chili.Window:New{
-    parent = Screen0,
-    x = 135,
-    y = '56%',
-    width  = Screen0.width - 135 - 25,
-    height = '42%',	
-		padding = {10,10,10,10},
-		draggable=false,
-		resizable=true,
-		skinName='DarkGlass',
-		backgroundColor = {1,1,1,1},
-		-- OnMouseDown = { listenerStartSelectingNodes },
-		-- OnMouseUp = { listenerEndSelectingNodes },
-  }	
-	
 	nodePoolPanel = Chili.ScrollPanel:New{
 		parent = Screen0,
 		y = '56%',
 		x = 25,
-		width  = 115,
+		width  = 125,
 		minWidth = 115,
 		height = '41.5%',
 		skinName='DarkGlass',
@@ -286,10 +276,26 @@ function widget:Initialize()
     caption = "Node Pool",
 		skinName='DarkGlass',
   } 
+	 -- Create the window
+  windowBtCreator = Chili.Window:New{
+    parent = Screen0,
+    x = nodePoolPanel.width + 15,
+    y = '56%',
+    width  = Screen0.width - nodePoolPanel.width - 25,
+    height = '42%',	
+		padding = {10,10,10,10},
+		draggable=false,
+		resizable=true,
+		skinName='DarkGlass',
+		backgroundColor = {1,1,1,1},
+		-- OnMouseDown = { listenerStartSelectingNodes },
+		-- OnMouseUp = { listenerEndSelectingNodes },
+  }	
 	
+	Spring.Echo("BETS REQUEST_NODE_DEFINITIONS")
 	Spring.SendSkirmishAIMessage (Spring.GetLocalPlayerID (), "BETS REQUEST_NODE_DEFINITIONS")
 	
-	root = 1
+	rootIndex = 1
 	table.insert(nodeList, Chili.TreeNode:New{
 		parent = windowBtCreator,
 		nodeType = "Root",
@@ -336,8 +342,6 @@ function widget:Initialize()
 		focusColor = {0.5,0.5,0.5,0.5},
 		OnClick = {listenerClickOnTest},
 	}
-	
-	
 end
 
 function SerializeForest()
@@ -347,7 +351,7 @@ function SerializeForest()
 	end
 	-- find all the nodes with incoming connection lines; store them using their names as indexes
 	local nodesWithIncomingConnections = {}
-	SerializeTree(nodeList[root], "", outputFile)
+	SerializeTree(nodeList[rootIndex], "", outputFile)
 	for i=1,#WG.connectionLines do
 		nodesWithIncomingConnections[WG.connectionLines[i][6].treeNode.name] = true
 	end
@@ -477,7 +481,6 @@ function ReadTreeNode(inputFile)
 		Spring.Echo("Uknown format of saved behaviour tree. ")
 		Spring.Echo("Found: '"..line.."', expected {")
 	end
-	
 	return root
 end
 
@@ -495,15 +498,12 @@ function DeserializeForest()
 		nodeList[i]:Dispose()
 	end
 	nodeList = {}
-	--root:Dispose()
-	root = 1
-	
+	rootIndex = 1
 	if(not VFS.FileExists("LuaUI/Widgets/behaviour_trees/01-test.txt", "r")) then
 		Spring.Echo("BtCrator.lua: DeserializeForest(): File to deserialize not found in LuaUI/Widgets/behaviour_trees/01-test.txt ")
 		return
 	end	
 	local inputFile = io.open("LuaUI/Widgets/behaviour_trees/01-test.txt", "r")
-	root = ReadTreeNode(inputFile)
-	--table.remove(nodeList, 1)	
+	ReadTreeNode(inputFile)	
 	inputFile:close()
 end
