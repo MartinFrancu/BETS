@@ -108,7 +108,9 @@ end
 
 function TreeNode:New(obj)
   obj = inherited.New(self,obj)
-	obj.id = GenerateID()
+	if(not obj.id) then
+		obj.id = GenerateID()
+	end
 	local nodeWindowOptions = {
 		parent = obj.parent,
 		classname = 'TreeNodeWindow',
@@ -543,8 +545,8 @@ function listenerClickOnConnectionPanel(self)
 end
 
 function listenerNodeResize(self, x, y)
-	Spring.Echo("Resizing treenode window.. ")
-	Spring.Echo("x="..self.treeNode.x..", y="..self.treeNode.y)
+	-- Spring.Echo("Resizing treenode window.. ")
+	-- Spring.Echo("x="..self.treeNode.x..", y="..self.treeNode.y)
 	-- Update position of connectionOut
 	if (self.resizable) then 
 		if (self.treeNode.connectionOut and self.treeNode.nodeWindow) then
@@ -562,6 +564,7 @@ function listenerNodeResize(self, x, y)
 end
 
 function listenerOnMouseDownMoveNode(self, x ,y)
+	Spring.Echo("listenerOnMouseDownMoveNode")
 end
 
 function listenerOnMouseUpMoveNode(self, x ,y)
