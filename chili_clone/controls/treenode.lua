@@ -657,8 +657,10 @@ function listenerOnClickNode(self, x, y, button)
 	else
 		for id,_ in pairs(selectedNodes) do
 			-- Spring.Echo("nodeWindow.name="..WG.GetNodeFromID(id).nodeWindow.name)
-			WG.GetNodeFromID(id).nodeWindow.backgroundColor[4] = ALPHA_OF_NOT_SELECTED_NODES
-			WG.GetNodeFromID(id).nodeWindow:Invalidate()
+			if(WG.GetNodeFromID(id)) then
+				WG.GetNodeFromID(id).nodeWindow.backgroundColor[4] = ALPHA_OF_NOT_SELECTED_NODES
+				WG.GetNodeFromID(id).nodeWindow:Invalidate()
+			end
 		end
 		selectedNodes = {}
 		addToSelectedNodes(self, selectChildren)
