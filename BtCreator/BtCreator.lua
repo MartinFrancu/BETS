@@ -295,7 +295,8 @@ function widget:Initialize()
 		hasConnectionOut = true,
 		id = false,
 	})
-		
+	nodeIndexFromID[nodeList[#nodeList].id] = #nodeList
+	
 	saveTreeButton = Chili.Button:New{
 		parent = Screen0,
 		x = windowBtCreator.x,

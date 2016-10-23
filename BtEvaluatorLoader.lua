@@ -11,7 +11,7 @@ function widget:GetInfo()
   }
 end
 
-local Chili
+--[[local Chili
 local Screen0
 
 local testbutton
@@ -43,7 +43,7 @@ function listenerOnMoveButtonClick (self)
 	return true
 end
 
-
+]]--
 
 function widget:Initialize()	
   if (not WG.Chili) then
@@ -51,7 +51,7 @@ function widget:Initialize()
     widgetHandler:RemoveWidget()
     return
   end
- 
+ --[[
   -- Get ready to use Chili
   Chili = WG.Chili
   Screen0 = Chili.Screen0
@@ -85,7 +85,7 @@ function widget:Initialize()
 		width = 150,
 		height = 60,
 	}
-
+]]--
 	-- Add control of my units also to our BtEvaluator -> Cpp AI
 	Spring.SendCommands("AIControl "..Spring.GetLocalPlayerID().." BtEvaluator")
 	-- Spring.Echo("GetLocalPlayerID(): "..Spring.GetLocalPlayerID())
