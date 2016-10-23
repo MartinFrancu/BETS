@@ -127,7 +127,7 @@ function TreeNode:New(obj)
 		dragGripSize = obj.dragGripSize,
 		padding = obj.padding,
 		borderThickness = obj.borderThickness,
-		backgroundColor = {1,1,1,0.7},
+		backgroundColor = {1,1,1,0.6},
 		skinName = 'DarkGlass',
 		OnResize = { listenerNodeResize },
 		treeNode = obj,
@@ -135,7 +135,8 @@ function TreeNode:New(obj)
 	}
 	if ( obj.connectable ) then
 		nodeWindowOptions.OnMouseDown = { listenerOnMouseDownMoveNode }
-		nodeWindowOptions.OnMouseup = { listenerOnMouseUpMoveNode }
+		nodeWindowOptions.OnMouseUp = { listenerOnMouseUpMoveNode }
+		nodeWindowOptions.OnClick = { listenerOnClickNode }
 	end
 	
 	obj.nodeWindow = Window:New(copyTable(nodeWindowOptions))
@@ -563,17 +564,106 @@ function listenerNodeResize(self, x, y)
 	--return true
 end
 
-function listenerOnMouseDownMoveNode(self, x ,y)
+local movingNodes = false
+local previousPosition = {}
+
+WG.selectedNodes = {}
+local selectedNodes = WG.selectedNodes
+
+function listenerOnMouseDownMoveNode(self, x ,y, button)
+	local _, ctrl = Spring.GetModKeyState()
+	if(selectedNodes[self.treeNode.id] and not ctrl and button ~= 3) then
+		movingNodes = true
+		previousPosition.x = self.x
+		previousPosition.y = self.y
+	end
 	Spring.Echo("listenerOnMouseDownMoveNode")
 end
 
-function listenerOnMouseUpMoveNode(self, x ,y)
+function listenerOnMouseUpMoveNode(self, x ,y)	
 	self.treeNode.width = self.width
 	self.treeNode.height = self.height
 	self.treeNode.x = self.x 
 	self.treeNode.y = self.y 
 	self:Invalidate()
-	Spring.Echo("x = "..self.x..", y = "..self.y)
+	if(movingNodes) then 
+		local diffx = self.x - previousPosition.x
+		local diffy = self.y - previousPosition.y
+		Spring.Echo("diffx="..diffx..", diffy="..diffy)
+		for id,_ in pairs(selectedNodes) do 
+			if(id ~= self.treeNode.id) then
+				local node = WG.GetNodeFromID(id)
+				node.nodeWindow.x = node.nodeWindow.x + diffx
+				node.nodeWindow.y = node.nodeWindow.y + diffy
+				node.x = node.x + diffx
+				node.y = node.y + diffy
+				node.nodeWindow:Invalidate()
+				for i=1,#node.attachedLines do
+					UpdateConnectionLine(node.attachedLines[i])
+				end
+			end
+		end
+		movingNodes = false
+	end
+	Spring.Echo("listenerOnMouseUpMoveNode")
+end
+
+ALPHA_OF_SELECTED_NODES = 1
+ALPHA_OF_NOT_SELECTED_NODES = 0.6
+
+local function addToSelectedNodes(nodeWindow, recursive)
+	if(recursive) then
+		local children = nodeWindow.treeNode:GetChildren()
+		for i=1,#children do
+			addToSelectedNodes(children[i].nodeWindow, true)
+		end
+	end
+	nodeWindow.backgroundColor[4] = ALPHA_OF_SELECTED_NODES
+	selectedNodes[nodeWindow.treeNode.id] = true
+	nodeWindow:Invalidate()
+end
+
+local function invertNodeSelection(nodeWindow, recursive)
+	if(recursive) then
+		local children = nodeWindow.treeNode:GetChildren()
+		for i=1,#children do
+			invertNodeSelection(children[i].nodeWindow, true)
+		end
+	end
+	if(selectedNodes[nodeWindow.treeNode.id]) then
+			selectedNodes[nodeWindow.treeNode.id] = nil
+			nodeWindow.backgroundColor[4] = ALPHA_OF_NOT_SELECTED_NODES
+		else
+			selectedNodes[nodeWindow.treeNode.id] = true
+			nodeWindow.backgroundColor[4] = ALPHA_OF_SELECTED_NODES
+		end
+		nodeWindow:Invalidate()
+end
+
+function listenerOnClickNode(self, x, y, button)
+	Spring.Echo("listenerOnClickNode button="..button)
+	if(movingNodes) then
+		return
+	end
+	local _, ctrl, _, shift = Spring.GetModKeyState()
+	local selectChildren = false
+	if(button == 3) then
+			selectChildren = true
+		end
+	if (shift) then
+		addToSelectedNodes(self, selectChildren)
+	elseif (ctrl) then
+		invertNodeSelection(self, selectChildren)
+	else
+		for id,_ in pairs(selectedNodes) do
+			-- Spring.Echo("nodeWindow.name="..WG.GetNodeFromID(id).nodeWindow.name)
+			WG.GetNodeFromID(id).nodeWindow.backgroundColor[4] = ALPHA_OF_NOT_SELECTED_NODES
+			WG.GetNodeFromID(id).nodeWindow:Invalidate()
+		end
+		selectedNodes = {}
+		addToSelectedNodes(self, selectChildren)
+	end
+	Spring.Echo(dump(selectedNodes))
 end
 
 function listenerOverConnectionLine(self)	

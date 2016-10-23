@@ -32,6 +32,16 @@ function dump(o, maxDepth)
 		return tostring(o)
  end
 end
+
+function copyTable(obj, seen)
+  if type(obj) ~= 'table' then return obj end
+  if seen and seen[obj] then return seen[obj] end
+  local s = seen or {}
+  local res = setmetatable({}, getmetatable(obj))
+  s[obj] = res
+  for k, v in pairs(obj) do res[copyTable(k, s)] = copyTable(v, s) end
+  return res
+end
 --//=============================================================================
  
 local Chili, Screen0, JSON
@@ -49,42 +59,16 @@ local nodeIndexFromID = {}
 --- Index into the nodeList, root should always be 1. 
 local rootIndex = 1
 
-local function GetNodeFromID(id)
+
+function GetNodeFromID(id)
 	return nodeList[nodeIndexFromID[id]]
 end
+
+WG.GetNodeFromID = GetNodeFromID
 
 -- //////////////////////////////////////////////////////////////////////
 -- Listeners
 -- //////////////////////////////////////////////////////////////////////
-
-local selectionStart = {}
-
---- Either start moving or selecting nodes -  
-function listenerStartSelectingNodes(self, x , y)
-	Spring.Echo("listener start selecting nodes. ")
-	selectionStart.x = x
-	selectionStart.y = y
-	return true
-end
-
-function listenerEndSelectingNodes(self, x , y)
-	Spring.Echo("listener end selecting nodes. ")
-	return true
-end
-
---[[
-function widget:MousePress()
-	Spring.Echo("listener start selecting nodes. ")
-	selectionStart.x = x
-	selectionStart.y = y
-	return true
-end
-
-function widget:MouseRelease()
-	Spring.Echo("listener end selecting nodes. ")
-	return true
-end 
-]]--
 
 local copyTreeNode = nil
 --- In coordinates of nodePool(origin in top left corner of nodePool)
@@ -149,36 +133,39 @@ end
 -- Messages from BtEvaluator
 -- //////////////////////////////////////////////////////////////////////
 
-local DEFAULT_COLOR = {1,1,1,0.7}
-local RUNNING_COLOR = {1,0.5,0,0.7}
-local SUCCESS_COLOR = {0.5,1,0.5,0.7}
-local FAILURE_COLOR = {1,0,0,0.7}
+local DEFAULT_COLOR = {1,1,1,0.6}
+local RUNNING_COLOR = {1,0.5,0,0.6}
+local SUCCESS_COLOR = {0.5,1,0.5,0.6}
+local FAILURE_COLOR = {1,0.25,0.25,0.6}
 
 local function updateStatesMessage(messageBody)
 	Spring.Echo("Message from AI received: message type UPDATE_STATES")
 	states = JSON:decode(messageBody)
 	for i=2,#nodeList do
 		local id = nodeList[i].id
-		local color = DEFAULT_COLOR;
+		local color = copyTable(DEFAULT_COLOR);
 		if(states[id] ~= nil) then
 			if(states[id]:upper() == "RUNNING") then
-				color = RUNNING_COLOR
+				color = copyTable(RUNNING_COLOR)
 			elseif(states[id]:upper() == "SUCCESS") then
-				color = SUCCESS_COLOR
+				color = copyTable(SUCCESS_COLOR)
 			elseif(states[id]:upper() == "FAILURE") then
-				color = FAILURE_COLOR
+				color = copyTable(FAILURE_COLOR)
 			else
 				Spring.Echo("Uknown state received from AI, for node id: "..id)
 			end
 		end
-		if(nodeList[i].nodeWindow.backgroundColor ~= color)then
-			nodeList[i].nodeWindow.backgroundColor = color
-			nodeList[i].nodeWindow:Invalidate()
-		end
+		-- Do not change color alpha
+		local alpha = nodeList[i].nodeWindow.backgroundColor[4]
+		nodeList[i].nodeWindow.backgroundColor = color
+		nodeList[i].nodeWindow.backgroundColor[4] = alpha
+		nodeList[i].nodeWindow:Invalidate()
 	end
 	local children = nodeList[1]:GetChildren()
 	if(#children > 0) then
-		nodeList[1].nodeWindow.backgroundColor = children[1].nodeWindow.backgroundColor
+		local alpha = nodeList[1].nodeWindow.backgroundColor[4]
+		nodeList[1].nodeWindow.backgroundColor = copyTable(children[1].nodeWindow.backgroundColor)
+		nodeList[1].nodeWindow.backgroundColor[4] = alpha
 		nodeList[1].nodeWindow:Invalidate()
 	end
 end
@@ -306,6 +293,7 @@ function widget:Initialize()
 		connectable = true,
 		hasConnectionIn = false,
 		hasConnectionOut = true,
+		id = false,
 	})
 		
 	saveTreeButton = Chili.Button:New{
@@ -467,6 +455,7 @@ function ReadTreeNode(inputFile)
 	params.draggable = true
 	local root = Chili.TreeNode:New(params)
 	table.insert(nodeList, root)
+	nodeIndexFromID[nodeList[#nodeList].id] = #nodeList
 	while true do
 		local child = ReadTreeNode(inputFile)
 		if (child == nil) then
