@@ -48,59 +48,7 @@ local listenerMouseOut
 WG.connectionLines = {}
 local connectionLines = WG.connectionLines
 
---//=============================================================================
--- DEBUG functions
---//=============================================================================
-function dump(o)
-   if type(o) == 'table' then
-			if (o.name ~= nil) then -- For outputing chili objects
-				return o.name
-			end
-      local s = '{ '
-      for k,v in pairs(o) do
-         if type(k) ~= 'number' then k = '"'..k..'"' end
-         s = s .. '['..k..'] = ' .. dump(v) .. ','
-      end
-      return s .. '} '
-   else
-      return tostring(o)
-   end
-end
-
-function copyTable(obj, seen)
-  if type(obj) ~= 'table' then return obj end
-  if seen and seen[obj] then return seen[obj] end
-  local s = seen or {}
-  local res = setmetatable({}, getmetatable(obj))
-  s[obj] = res
-  for k, v in pairs(obj) do res[copyTable(k, s)] = copyTable(v, s) end
-  return res
-end
-
---//=============================================================================
--- ID generation functions
---//=============================================================================
-
-local alphanum = {
-	"a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z",
-	"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z",
-	"0","1","2","3","4","5","6","7","8","9"
-	}
-
-local usedIDs = {}
-	
-local function GenerateID()
-	local length = 32
-	local str = ""
-	for i = 1, length do
-		str = str..alphanum[math.random(#alphanum)]
-	end
-	if(usedIDs[str] ~= nil) then
-		return GenerateID()
-	end
-	usedIDs[str] = true
-	return str	
-end
+local GenerateID
 
 -- ////////////////////////////////////////////////////////////////////////////
 -- Member functions
@@ -238,8 +186,14 @@ function TreeNode:Dispose()
 	if(self.connectionOut) then
 		self.connectionOut:Dispose()
 	end
-	self.nodeWindow:Dispose()
+	if(self.nodeWindow) then
+		self.nodeWindow:Dispose()
+	end
 end
+
+--//=============================================================================
+--// Connection lines
+--//=============================================================================
 
 function ComputeConnectionLineCoordinates(connectionOut, connectionIn)
 	local transparentBorderWidth = 5
@@ -447,14 +401,7 @@ function RemoveConnectionLine(index)
 	return true
 end
 
---//=============================================================================
---// Listeners
---//=============================================================================
-
-local clickedConnection
-local connectionPanelBackgroundColor = {0.1,0.1,0.1,0.7}
-
---- Returns whether creation of connectionLine between clickedConnection and obj is valid, both objects mentioned are connection panels. 
+--- Returns whether creation of connectionLine between clickedConnection and obj is valid, both objects are connection panels. 
 function connectionLineCanBeCreated(obj)
 	-- the same object cant be connected. 
 	if (clickedConnection.treeNode.name == obj.treeNode.name) then 
@@ -511,6 +458,14 @@ function connectionLineCanBeCreated(obj)
 	return true
 end
 
+--//=============================================================================
+--// Listeners
+--//=============================================================================
+
+local clickedConnection
+local connectionPanelBackgroundColor = {0.1,0.1,0.1,0.7}
+
+
 function listenerOverConnectionPanel(self)
 	if (clickedConnection ~= nil and connectionLineCanBeCreated(self)) then
 		self.backgroundColor = {1, 0.5, 0.0, 1}
@@ -545,6 +500,7 @@ function listenerClickOnConnectionPanel(self)
 	return false
 end
 
+-- called also after move!
 function listenerNodeResize(self, x, y)
 	-- Spring.Echo("Resizing treenode window.. ")
 	-- Spring.Echo("x="..self.treeNode.x..", y="..self.treeNode.y)
@@ -563,6 +519,11 @@ function listenerNodeResize(self, x, y)
 	end
 	--return true
 end
+
+
+--//=============================================================================
+--// Listeners for node selections and their helper functions
+--//=============================================================================
 
 local movingNodes = false
 local previousPosition = {}
@@ -668,6 +629,11 @@ function listenerOnClickNode(self, x, y, button)
 	Spring.Echo(dump(selectedNodes))
 end
 
+--//=============================================================================
+--// Listeners on Connection lines
+--//=============================================================================
+
+
 function listenerOverConnectionLine(self)	
 	lineIndex = self.lineIndex
 	for i=2,4 do
@@ -724,4 +690,31 @@ end
 
 
 
+-- Include debug functions, copyTable() and dump()
+VFS.Include(LUAUI_DIRNAME .. "Widgets/chili_clone/controls/debug_utils.lua", nil, VFS.RAW_FIRST)
+
+--//=============================================================================
+-- ID generation functions
+--//=============================================================================
+
+local alphanum = {
+	"a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z",
+	"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z",
+	"0","1","2","3","4","5","6","7","8","9"
+	}
+
+local usedIDs = {}
+	
+function GenerateID()
+	local length = 32
+	local str = ""
+	for i = 1, length do
+		str = str..alphanum[math.random(#alphanum)]
+	end
+	if(usedIDs[str] ~= nil) then
+		return GenerateID()
+	end
+	usedIDs[str] = true
+	return str	
+end
 

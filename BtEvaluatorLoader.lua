@@ -11,7 +11,7 @@ function widget:GetInfo()
   }
 end
 
---[[local Chili
+local Chili
 local Screen0
 
 local testbutton
@@ -43,7 +43,7 @@ function listenerOnMoveButtonClick (self)
 	return true
 end
 
-]]--
+
 
 function widget:Initialize()	
   if (not WG.Chili) then
@@ -51,11 +51,11 @@ function widget:Initialize()
     widgetHandler:RemoveWidget()
     return
   end
- --[[
+ 
   -- Get ready to use Chili
   Chili = WG.Chili
   Screen0 = Chili.Screen0
-	
+	--[[
 	testbutton = Chili.Button:New{
 		parent = Screen0,
 		caption = "Send Message to AI",

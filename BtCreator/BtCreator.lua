@@ -9,40 +9,6 @@ function widget:GetInfo()
     enabled = true
   }
 end
-
---//=============================================================================
--- DEBUG functions
---//=============================================================================
-function dump(o, maxDepth)
-	maxDepth = maxDepth or 1
-  if type(o) == 'table' then
-		if (maxDepth == 0) then 
-			return "..." 
-		end
-		if (o.name ~= nil) then -- For outputing chili objects
-			return o.name
-		end
-		local s = '{ '
-		for k,v in pairs(o) do
-			 if type(k) ~= 'number' then k = '"'..k..'"' end
-			 s = s .. '['..k..'] = ' .. dump(v, maxDepth-1) .. ','
-		end
-		return s .. '} '
- else
-		return tostring(o)
- end
-end
-
-function copyTable(obj, seen)
-  if type(obj) ~= 'table' then return obj end
-  if seen and seen[obj] then return seen[obj] end
-  local s = seen or {}
-  local res = setmetatable({}, getmetatable(obj))
-  s[obj] = res
-  for k, v in pairs(obj) do res[copyTable(k, s)] = copyTable(v, s) end
-  return res
-end
---//=============================================================================
  
 local Chili, Screen0, JSON
  
@@ -59,12 +25,19 @@ local nodeIndexFromID = {}
 --- Index into the nodeList, root should always be 1. 
 local rootIndex = 1
 
+-- Include debug functions, copyTable() and dump()
+VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/debug_utils.lua", nil, VFS.RAW_FIRST)
 
 function GetNodeFromID(id)
 	return nodeList[nodeIndexFromID[id]]
 end
 
 WG.GetNodeFromID = GetNodeFromID
+
+local function addNodeToCanvas(node)
+	table.insert(nodeList, node)
+	nodeIndexFromID[nodeList[#nodeList].id] = #nodeList
+end
 
 -- //////////////////////////////////////////////////////////////////////
 -- Listeners
@@ -86,7 +59,7 @@ function listenerEndCopyingNode(self, x , y)
 	--y = y + startCopyingLocation.y
 	if(copyTreeNode and x - nodePoolPanel.width - startCopyingLocation.x > -20) then
 		-- Spring.Echo("listener end Copy Object. x:"..x..", y="..y)
-		table.insert(nodeList, Chili.TreeNode:New{
+		addNodeToCanvas(Chili.TreeNode:New{
 				parent = windowBtCreator,
 				nodeType = copyTreeNode.nodeType,
 				x = x - nodePoolPanel.width - startCopyingLocation.x,
@@ -97,7 +70,6 @@ function listenerEndCopyingNode(self, x , y)
 				hasConnectionOut = copyTreeNode.hasConnectionOut,
 				-- OnMouseUp = { listenerEndSelectingNodes },
 			})
-		nodeIndexFromID[nodeList[#nodeList].id] = #nodeList
 		copyTreeNode = nil
 	end
 end
@@ -283,7 +255,7 @@ function widget:Initialize()
 	Spring.SendSkirmishAIMessage (Spring.GetLocalPlayerID (), "BETS REQUEST_NODE_DEFINITIONS")
 	
 	rootIndex = 1
-	table.insert(nodeList, Chili.TreeNode:New{
+	addNodeToCanvas(Chili.TreeNode:New{
 		parent = windowBtCreator,
 		nodeType = "Root",
 		y = '35%',
@@ -295,7 +267,6 @@ function widget:Initialize()
 		hasConnectionOut = true,
 		id = false,
 	})
-	nodeIndexFromID[nodeList[#nodeList].id] = #nodeList
 	
 	saveTreeButton = Chili.Button:New{
 		parent = Screen0,
@@ -455,8 +426,7 @@ function ReadTreeNode(inputFile)
 	params.connectable = true
 	params.draggable = true
 	local root = Chili.TreeNode:New(params)
-	table.insert(nodeList, root)
-	nodeIndexFromID[nodeList[#nodeList].id] = #nodeList
+	addNodeToCanvas(root)
 	while true do
 		local child = ReadTreeNode(inputFile)
 		if (child == nil) then
@@ -494,6 +464,7 @@ function DeserializeForest()
 		return
 	end	
 	local inputFile = io.open("LuaUI/Widgets/behaviour_trees/01-test.txt", "r")
-	ReadTreeNode(inputFile)	
+	while(ReadTreeNode(inputFile)) do
+	end
 	inputFile:close()
 end
