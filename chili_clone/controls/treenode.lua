@@ -401,6 +401,8 @@ function RemoveConnectionLine(index)
 	return true
 end
 
+local clickedConnection
+
 --- Returns whether creation of connectionLine between clickedConnection and obj is valid, both objects are connection panels. 
 function connectionLineCanBeCreated(obj)
 	-- the same object cant be connected. 
@@ -462,7 +464,7 @@ end
 --// Listeners
 --//=============================================================================
 
-local clickedConnection
+
 local connectionPanelBackgroundColor = {0.1,0.1,0.1,0.7}
 
 
