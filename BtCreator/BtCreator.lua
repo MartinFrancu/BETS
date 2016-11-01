@@ -174,6 +174,17 @@ local function generateNodePoolNodes(messageBody)
 	nodePoolPanel:RequestUpdate()
 end
 
+local function executeScript(messageBody)
+	params = JSON:decode(messageBody)
+	
+	VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/commandScripts/"..params.name, nil, VFS.RAW_FIRST)
+	if (params.func == "RUN") then
+		runCommand(params.units)
+	elseif (params.func == "RESET") then
+		resetCommand()
+	end
+end
+
 function widget:RecvSkirmishAIMessage(aiTeam, message)
 	-- Dont respond to other players AI
 	if(aiTeam ~= Spring.GetLocalPlayerID()) then
@@ -196,11 +207,13 @@ function widget:RecvSkirmishAIMessage(aiTeam, message)
 	elseif (messageType == "NODE_DEFINITIONS") then 
 		Spring.Echo("Message from AI received: message type NODE_DEFINITIONS")
 		generateNodePoolNodes(messageBody)
+	elseif (messageType == "COMMAND") then
+		executeScript(messageBody)
 	end
 end
 
 -- ///////////////////////////////////////////////////////////////////
--- it adds the prefix BETS and sends the string throught Spring
+-- it adds the prefix BETS and sends the string through Spring
 function SendStringToBtEvaluator(message)
 	Spring.SendSkirmishAIMessage(Spring.GetLocalPlayerID(), "BETS " .. message)
 end
