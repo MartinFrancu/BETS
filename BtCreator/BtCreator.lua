@@ -327,10 +327,10 @@ end
 function widget:KeyPress(key)
 	if(key == 127) then -- Delete was pressed
 		for id,_ in pairs(WG.selectedNodes) do
-			Spring.Echo("DELETE was pressed. ".. id)
-			removeNodeFromCanvas(id)
+			if(id ~= rootID) then
+				removeNodeFromCanvas(id)
+			end
 		end
-		Spring.Echo(dump(WG.selectedNodes))
 		return true;
 	end
 	
