@@ -331,6 +331,7 @@ function widget:KeyPress(key)
 			removeNodeFromCanvas(id)
 		end
 		Spring.Echo(dump(WG.selectedNodes))
+		return true;
 	end
 	
 end
