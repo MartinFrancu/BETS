@@ -20,7 +20,7 @@ TreeNode = Control:Inherit{
 	skinName = 'DarkGlass',
 	tooltip = "BT NODE TOOLTIP. ",
 	
-	id = false,
+	id,
 	nodeType = "",
 	connectable = nil,
 	nodeWindow = nil,
@@ -357,7 +357,7 @@ function RemoveConnectionLine(index)
 		table.remove(connectionLines[index][1].treeNode.attachedLines, foundIndex)
 		--Spring.Echo("attachedLines after delete: "..dump(connectionLines[index][1].treeNode.attachedLines))
 	else	
-		Spring.Echo("Line index not found in connectionOut panel, in RemoveConnectionLine(). ")
+		Spring.Echo("ERROR: Line index not found in connectionOut panel, in RemoveConnectionLine(). ")
 	end
 	
 	found = false
@@ -372,7 +372,7 @@ function RemoveConnectionLine(index)
 	if (found) then  
 		table.remove(connectionLines[index][6].treeNode.attachedLines, foundIndex)
 	else
-		Spring.Echo("Line index not found in connectionIn panel, in RemoveConnectionLine(). ")
+		Spring.Echo("ERROR: Line index not found in connectionIn panel, in RemoveConnectionLine(). ")
 	end
 	table.remove(connectionLines, index)
 	-- We deleted an entry from connectionLines. So all the indices which are after the lineIndex
@@ -390,16 +390,18 @@ function RemoveConnectionLine(index)
 				attachedLines2[k] = i
 			end
 		end
-		Spring.Echo("connectionIn attachedLines: "..dump(attachedLines1))
-		Spring.Echo("connectionOut attachedLines: "..dump(attachedLines2))
+		-- Spring.Echo("connectionIn attachedLines: "..dump(attachedLines1))
+		-- Spring.Echo("connectionOut attachedLines: "..dump(attachedLines2))
 		for k=2,4 do
 			connectionLines[i][k].lineIndex = i
 		end
 	end
-	Spring.Echo("State after the connectionLine index"..index.." was deleted: "..dump(connectionLines))
+	-- Spring.Echo("State after the connectionLine index"..index.." was deleted: "..dump(connectionLines))
 	
 	return true
 end
+
+WG.RemoveConnectionLine = RemoveConnectionLine
 
 local clickedConnection
 
@@ -530,12 +532,13 @@ end
 local movingNodes = false
 local previousPosition = {}
 
+--- Key is node id, value is true
 WG.selectedNodes = {}
-local selectedNodes = WG.selectedNodes
+---local selectedNodes = WG.selectedNodes
 
 function listenerOnMouseDownMoveNode(self, x ,y, button)
 	local _, ctrl = Spring.GetModKeyState()
-	if(selectedNodes[self.treeNode.id] and not ctrl and button ~= 3) then
+	if(WG.selectedNodes[self.treeNode.id] and not ctrl and button ~= 3) then
 		movingNodes = true
 		previousPosition.x = self.x
 		previousPosition.y = self.y
@@ -552,10 +555,10 @@ function listenerOnMouseUpMoveNode(self, x ,y)
 	if(movingNodes) then 
 		local diffx = self.x - previousPosition.x
 		local diffy = self.y - previousPosition.y
-		Spring.Echo("diffx="..diffx..", diffy="..diffy)
-		for id,_ in pairs(selectedNodes) do 
+		-- Spring.Echo("diffx="..diffx..", diffy="..diffy)
+		for id,_ in pairs(WG.selectedNodes) do 
 			if(id ~= self.treeNode.id) then
-				local node = WG.GetNodeFromID(id)
+				local node = WG.nodeList[id]
 				node.nodeWindow.x = node.nodeWindow.x + diffx
 				node.nodeWindow.y = node.nodeWindow.y + diffy
 				node.x = node.x + diffx
@@ -582,7 +585,7 @@ local function addToSelectedNodes(nodeWindow, recursive)
 		end
 	end
 	nodeWindow.backgroundColor[4] = ALPHA_OF_SELECTED_NODES
-	selectedNodes[nodeWindow.treeNode.id] = true
+	WG.selectedNodes[nodeWindow.treeNode.id] = true
 	nodeWindow:Invalidate()
 end
 
@@ -593,11 +596,11 @@ local function invertNodeSelection(nodeWindow, recursive)
 			invertNodeSelection(children[i].nodeWindow, true)
 		end
 	end
-	if(selectedNodes[nodeWindow.treeNode.id]) then
-			selectedNodes[nodeWindow.treeNode.id] = nil
+	if(WG.selectedNodes[nodeWindow.treeNode.id]) then
+			WG.selectedNodes[nodeWindow.treeNode.id] = nil
 			nodeWindow.backgroundColor[4] = ALPHA_OF_NOT_SELECTED_NODES
 		else
-			selectedNodes[nodeWindow.treeNode.id] = true
+			WG.selectedNodes[nodeWindow.treeNode.id] = true
 			nodeWindow.backgroundColor[4] = ALPHA_OF_SELECTED_NODES
 		end
 		nodeWindow:Invalidate()
@@ -618,17 +621,14 @@ function listenerOnClickNode(self, x, y, button)
 	elseif (ctrl) then
 		invertNodeSelection(self, selectChildren)
 	else
-		for id,_ in pairs(selectedNodes) do
-			-- Spring.Echo("nodeWindow.name="..WG.GetNodeFromID(id).nodeWindow.name)
-			--if(WG.GetNodeFromID(id)) then
-				WG.GetNodeFromID(id).nodeWindow.backgroundColor[4] = ALPHA_OF_NOT_SELECTED_NODES
-				WG.GetNodeFromID(id).nodeWindow:Invalidate()
-			--end
+		for id,_ in pairs(WG.selectedNodes) do
+			WG.nodeList[id].nodeWindow.backgroundColor[4] = ALPHA_OF_NOT_SELECTED_NODES
+			WG.nodeList[id].nodeWindow:Invalidate()
 		end
-		selectedNodes = {}
+		WG.selectedNodes = {}
 		addToSelectedNodes(self, selectChildren)
 	end
-	Spring.Echo(dump(selectedNodes))
+	-- Spring.Echo(dump(WG.selectedNodes))
 end
 
 --//=============================================================================
