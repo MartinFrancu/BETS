@@ -19,24 +19,33 @@ local loadTreeButton
 local saveTreeButton
 
 --- Contains all the TreeNodes on the editable area - windowBtCreator aka canvas. 
-local nodeList = {}
+WG.nodeList = {}
 local nodePoolList = {}
-local nodeIndexFromID = {}
---- Index into the nodeList, root should always be 1. 
-local rootIndex = 1
+--- Key into the nodeList. 
+local rootID = nil
 
 -- Include debug functions, copyTable() and dump()
 VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/debug_utils.lua", nil, VFS.RAW_FIRST)
 
-function GetNodeFromID(id)
-	return nodeList[nodeIndexFromID[id]]
+local function addNodeToCanvas(node)
+	if next(WG.nodeList) == nil then
+		rootID = node.id
+		Spring.Echo("BtCreator: Setting u of new of rootID: "..rootID)
+	end
+	WG.nodeList[node.id] = node
 end
 
-WG.GetNodeFromID = GetNodeFromID
-
-local function addNodeToCanvas(node)
-	table.insert(nodeList, node)
-	nodeIndexFromID[nodeList[#nodeList].id] = #nodeList
+local function removeNodeFromCanvas(id)
+	local node = WG.nodeList[id]
+	for i=#node.attachedLines,1,-1 do
+		WG.RemoveConnectionLine(node.attachedLines[i])
+	end
+	WG.selectedNodes[id] = nil
+	node:Dispose()
+	node = nil
+	WG.nodeList[id] = nil
+	windowBtCreator:Invalidate()
+	windowBtCreator:RequestUpdate()
 end
 
 -- //////////////////////////////////////////////////////////////////////
@@ -95,8 +104,7 @@ function listenerClickOnTest(self)
 		'text',
 		'parameters'
 	}
-	-- Spring.Echo("ROOT: "..dump(root))
-	local stringTree = TreeToStringJSON(nodeList[rootIndex], fieldsToSerialize )
+	local stringTree = TreeToStringJSON(nodeList[rootID], fieldsToSerialize )
 	Spring.Echo("BETS CREATE_TREE "..stringTree)
 	SendStringToBtEvaluator("CREATE_TREE "..stringTree)
 end
@@ -113,8 +121,7 @@ local FAILURE_COLOR = {1,0.25,0.25,0.6}
 local function updateStatesMessage(messageBody)
 	Spring.Echo("Message from AI received: message type UPDATE_STATES")
 	states = JSON:decode(messageBody)
-	for i=2,#nodeList do
-		local id = nodeList[i].id
+	for id, node in pairs(WG.nodeList) do
 		local color = copyTable(DEFAULT_COLOR);
 		if(states[id] ~= nil) then
 			if(states[id]:upper() == "RUNNING") then
@@ -128,17 +135,17 @@ local function updateStatesMessage(messageBody)
 			end
 		end
 		-- Do not change color alpha
-		local alpha = nodeList[i].nodeWindow.backgroundColor[4]
-		nodeList[i].nodeWindow.backgroundColor = color
-		nodeList[i].nodeWindow.backgroundColor[4] = alpha
-		nodeList[i].nodeWindow:Invalidate()
+		local alpha = node.nodeWindow.backgroundColor[4]
+		node.nodeWindow.backgroundColor = color
+		node.nodeWindow.backgroundColor[4] = alpha
+		node.nodeWindow:Invalidate()
 	end
-	local children = nodeList[1]:GetChildren()
+	local children = WG.nodeList[rootID]:GetChildren()
 	if(#children > 0) then
-		local alpha = nodeList[1].nodeWindow.backgroundColor[4]
-		nodeList[1].nodeWindow.backgroundColor = copyTable(children[1].nodeWindow.backgroundColor)
-		nodeList[1].nodeWindow.backgroundColor[4] = alpha
-		nodeList[1].nodeWindow:Invalidate()
+		local alpha = WG.nodeList[rootID].nodeWindow.backgroundColor[4]
+		WG.nodeList[rootID].nodeWindow.backgroundColor = copyTable(children[1].nodeWindow.backgroundColor)
+		WG.nodeList[rootID].nodeWindow.backgroundColor[4] = alpha
+		WG.nodeList[rootID].nodeWindow:Invalidate()
 	end
 end
 
@@ -267,7 +274,7 @@ function widget:Initialize()
 	Spring.Echo("BETS REQUEST_NODE_DEFINITIONS")
 	Spring.SendSkirmishAIMessage (Spring.GetLocalPlayerID (), "BETS REQUEST_NODE_DEFINITIONS")
 	
-	rootIndex = 1
+	-- rootID = 1
 	addNodeToCanvas(Chili.TreeNode:New{
 		parent = windowBtCreator,
 		nodeType = "Root",
@@ -315,6 +322,18 @@ function widget:Initialize()
 		focusColor = {0.5,0.5,0.5,0.5},
 		OnClick = {listenerClickOnTest},
 	}
+end 
+
+function widget:KeyPress(key)
+	if(key == 127) then -- Delete was pressed
+		for id,_ in pairs(WG.selectedNodes) do
+			Spring.Echo("DELETE was pressed. ".. id)
+			removeNodeFromCanvas(id)
+		end
+		Spring.Echo(dump(WG.selectedNodes))
+		return true;
+	end
+	
 end
 
 function SerializeForest()
@@ -324,14 +343,14 @@ function SerializeForest()
 	end
 	-- find all the nodes with incoming connection lines; store them using their names as indexes
 	local nodesWithIncomingConnections = {}
-	SerializeTree(nodeList[rootIndex], "", outputFile)
+	SerializeTree(WG.nodeList[rootID], "", outputFile)
 	for i=1,#WG.connectionLines do
 		nodesWithIncomingConnections[WG.connectionLines[i][6].treeNode.name] = true
 	end
 	-- serialize all nodes(except root) without connectionIns and the one without incoming connection lines.
-	for i=2,#nodeList do
-		if( nodeList[i].connectionIn == nil or nodesWithIncomingConnections[nodeList[i].name] == nil ) then 
-			SerializeTree(nodeList[i], "", outputFile)
+	for id,node in pairs(WG.nodeList) do
+		if( (node.connectionIn == nil or nodesWithIncomingConnections[node.name] == nil) and id ~= rootID ) then 
+			SerializeTree(node, "", outputFile)
 		end
 	end
 	outputFile:close()
@@ -411,24 +430,6 @@ function ReadTreeNode(inputFile)
 	end
 	local paramsString = ""
 	while line ~= "children = {" do
-		--[[
-		-- Differentiate the types: numbers, boolean, strings
-		if(value:match("^%d+$")) then
-			local val = tonumber(value)
-			if( val == nil ) then
-				Spring.Echo("ReadTreeNode(): value is nil, should be number= "..value)
-			end			
-			params[name] = val
-			Spring.Echo(name.."="..params[name])
-			Spring.Echo(name.."="..val)
-		elseif (value == "true") then
-			params[name] = true
-		elseif (value == "false") then
-			params[name] = false
-		else
-			params[name] = value
-		end
-		]]--
 		paramsString = paramsString..line
 		line = trim(inputFile:read())
 	end
@@ -467,11 +468,12 @@ function DeserializeForest()
 		table.remove(WG.connectionLines, i)
 	end
 	--WG.connectionLines = {}
-	for i=1,#nodeList do
-		nodeList[i]:Dispose()
+	for id,node in pairs(WG.nodeList) do
+		node:Dispose()
 	end
-	nodeList = {}
-	rootIndex = 1
+	WG.nodeList = {}
+	WG.selectedNodes = {}
+	 -- rootIndex = 1
 	if(not VFS.FileExists("LuaUI/Widgets/behaviour_trees/01-test.txt", "r")) then
 		Spring.Echo("BtCrator.lua: DeserializeForest(): File to deserialize not found in LuaUI/Widgets/behaviour_trees/01-test.txt ")
 		return
