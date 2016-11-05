@@ -177,11 +177,11 @@ end
 local function executeScript(messageBody)
 	params = JSON:decode(messageBody)
 	
-	VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/commandScripts/"..params.name, nil, VFS.RAW_FIRST)
+	c = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/commandScripts/"..params.name, nil, VFS.RAW_FIRST)
 	if (params.func == "RUN") then
-		runCommand(params.units)
+		c.runCommand(params.units)
 	elseif (params.func == "RESET") then
-		resetCommand()
+		c.resetCommand()
 	end
 end
 
