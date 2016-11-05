@@ -102,7 +102,7 @@ function widget:Initialize()
 	--focusColor = {0.5,0.5,0.5,0.5},
   }
   
-  Spring.Echo("BtController report for duty!")
+  Spring.Echo("BtController reports for duty!")
   
   
  -------------------------------------------------------------------------------
