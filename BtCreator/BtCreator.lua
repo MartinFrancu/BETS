@@ -17,6 +17,7 @@ local nodePoolLabel
 local nodePoolPanel
 local loadTreeButton
 local saveTreeButton
+local treeName
 
 --- Contains all the TreeNodes on the editable area - windowBtCreator aka canvas. 
 WG.nodeList = {}
@@ -104,7 +105,7 @@ function listenerClickOnTest(self)
 		'text',
 		'parameters'
 	}
-	local stringTree = TreeToStringJSON(nodeList[rootID], fieldsToSerialize )
+	local stringTree = TreeToStringJSON(WG.nodeList[rootID], fieldsToSerialize )
 	Spring.Echo("BETS CREATE_TREE "..stringTree)
 	SendStringToBtEvaluator("CREATE_TREE "..stringTree)
 end
@@ -322,6 +323,20 @@ function widget:Initialize()
 		focusColor = {0.5,0.5,0.5,0.5},
 		OnClick = {listenerClickOnTest},
 	}
+	
+	treeName = Chili.EditBox:New{
+		parent = windowBtCreator,
+		text = "Tree Name",
+		width = '33%',
+		x = '40%',
+		y = 5,
+		align = 'left',
+		skinName = 'DarkGlass',
+		borderThickness = 0,
+		backgroundColor = {0,0,0,0},
+		allowUnicode = true,
+	}
+	-- treeName.font.size = 16
 end 
 
 function widget:KeyPress(key)
@@ -337,7 +352,7 @@ function widget:KeyPress(key)
 end
 
 function SerializeForest()
-	local outputFile = io.open("LuaUI/Widgets/behaviour_trees/01-test.txt", "w")
+	local outputFile = io.open("LuaUI/Widgets/BtBehaviours/"..treeName.text..".txt", "w")
   if outputFile == nil then 
 		return 
 	end
