@@ -181,14 +181,24 @@ local function generateNodePoolNodes(messageBody)
 	nodePoolPanel:RequestUpdate()
 end
 
+local scripts = {}
+
 local function executeScript(messageBody)
 	params = JSON:decode(messageBody)
+	name = params.name
+	c = scripts[name] 
+	if not c then 
+		c = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/commandScripts/" .. name, nil, VFS.RAW_FIRST)
+		scripts[name] = c
+	end
 	
-	c = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/commandScripts/"..params.name, nil, VFS.RAW_FIRST)
 	if (params.func == "RUN") then
-		c.runCommand(params.units)
+		res = c.run(params.units, params.parameter)
+		Spring.Echo("Result: " .. res)
+		return res
 	elseif (params.func == "RESET") then
-		c.resetCommand()
+		c.reset()
+		return nil
 	end
 end
 
@@ -215,7 +225,7 @@ function widget:RecvSkirmishAIMessage(aiTeam, message)
 		Spring.Echo("Message from AI received: message type NODE_DEFINITIONS")
 		generateNodePoolNodes(messageBody)
 	elseif (messageType == "COMMAND") then
-		executeScript(messageBody)
+		return executeScript(messageBody)
 	end
 end
 
@@ -425,7 +435,7 @@ function ReadTreeNode(inputFile)
 	local line = trim(input)
 	if(line ~= "{") then 
 		
-		Spring.Echo("Uknown format of saved behaviour tree. ")
+		Spring.Echo("Unknown format of saved behaviour tree. ")
 		Spring.Echo("Found: '"..line.."', expected {")
 	end
 	local paramsString = ""
@@ -475,7 +485,7 @@ function DeserializeForest()
 	WG.selectedNodes = {}
 	 -- rootIndex = 1
 	if(not VFS.FileExists("LuaUI/Widgets/behaviour_trees/01-test.txt", "r")) then
-		Spring.Echo("BtCrator.lua: DeserializeForest(): File to deserialize not found in LuaUI/Widgets/behaviour_trees/01-test.txt ")
+		Spring.Echo("BtCreator.lua: DeserializeForest(): File to deserialize not found in LuaUI/Widgets/behaviour_trees/01-test.txt ")
 		return
 	end	
 	local inputFile = io.open("LuaUI/Widgets/behaviour_trees/01-test.txt", "r")
