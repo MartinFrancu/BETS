@@ -189,7 +189,7 @@ local function executeScript(messageBody)
 	name = params.name
 	c = scripts[name] 
 	if not c then 
-		c = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/commandScripts/" .. name, nil, VFS.RAW_FIRST)
+		c = VFS.Include(LUAUI_DIRNAME .. "Widgets/btCommandScripts/" .. name, nil, VFS.RAW_FIRST)
 		scripts[name] = c
 	end
 	
