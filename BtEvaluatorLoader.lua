@@ -11,6 +11,8 @@ function widget:GetInfo()
   }
 end
 
+local logger, dump, copyTable, fileTable = VFS.Include(LUAUI_DIRNAME .. "Widgets/debug_utils/root.lua", nil, VFS.RAW_FIRST)
+
 local Chili
 local Screen0
 
@@ -42,7 +44,6 @@ function listenerOnMoveButtonClick (self)
 	Spring.SendSkirmishAIMessage (Spring.GetLocalPlayerID (), "BETS CREATE_TREE " .. tree)
 	return true
 end
-
 
 
 function widget:Initialize()	
@@ -91,6 +92,22 @@ function widget:Initialize()
 	-- Spring.Echo("GetLocalPlayerID(): "..Spring.GetLocalPlayerID())
 end
 
-function widget:RecvSkirmishAIMessage(aiTeam, aiMessage)
-	Spring.Echo("Message from AI received: "..aiMessage)
+function widget:RecvSkirmishAIMessage(aiTeam, message)
+	-- Dont respond to other players AI
+	if(aiTeam ~= Spring.GetLocalPlayerID()) then
+		return
+	end
+	-- Check if it starts with "BETS"
+	if(message:len() <= 4 and message:sub(1,4):upper() ~= "BETS") then
+		return
+	end
+  
+	messageShorter = message:sub(6)
+	indexOfFirstSpace = string.find(messageShorter, " ")
+	messageType = messageShorter:sub(1, indexOfFirstSpace - 1):upper()	
+	messageBody = messageShorter:sub(indexOfFirstSpace + 1)
+  
+	if(messageType == "LOG") then 
+    logger.log("BtEvaluator", messageBody)
+	end
 end

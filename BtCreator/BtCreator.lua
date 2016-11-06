@@ -26,12 +26,13 @@ local nodePoolList = {}
 local rootID = nil
 
 -- Include debug functions, copyTable() and dump()
-VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/debug_utils.lua", nil, VFS.RAW_FIRST)
+--VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/debug_utils.lua", nil, VFS.RAW_FIRST)
+local logger, dump, copyTable, fileTable = VFS.Include(LUAUI_DIRNAME .. "Widgets/debug_utils/root.lua", nil, VFS.RAW_FIRST)
 
 local function addNodeToCanvas(node)
 	if next(WG.nodeList) == nil then
 		rootID = node.id
-		Spring.Echo("BtCreator: Setting u of new of rootID: "..rootID)
+		logger.Log("tree-editing", "BtCreator: Setting u of new of rootID: "..rootID)
 	end
 	WG.nodeList[node.id] = node
 	WG.clearSelection()
@@ -60,7 +61,7 @@ local copyTreeNode = nil
 local startCopyingLocation = {}
 
 function listenerStartCopyingNode(node, x , y)
-	Spring.Echo("listener start Copy Object. x:"..x + node.x..", y="..y + node.y)
+	logger.Log("tree-editing", "listener start Copy Object. x:"..x + node.x..", y="..y + node.y)
 	copyTreeNode = node
 	startCopyingLocation.x = x + node.x
 	startCopyingLocation.y = y + node.y
@@ -90,17 +91,17 @@ local SerializeForest
 local DeserializeForest
 
 function listenerClickOnSaveTree(self)
-	Spring.Echo("Save Tree clicked on. ")
+	logger.Log("save-and-load", "Save Tree clicked on. ")
 	SerializeForest()
 end
 
 function listenerClickOnLoadTree(self)
-	Spring.Echo("Load Tree clicked on. ")
+	logger.Log("save-and-load", "Load Tree clicked on. ")
 	DeserializeForest()
 end
 
 function listenerClickOnTest(self)
-	Spring.Echo("Assign Tree")
+	logger.Log("assign-tree", "Assign Tree")
 	local fieldsToSerialize = {
 		'id',
 		'nodeType',
@@ -108,7 +109,7 @@ function listenerClickOnTest(self)
 		'parameters'
 	}
 	local stringTree = TreeToStringJSON(WG.nodeList[rootID], fieldsToSerialize )
-	Spring.Echo("BETS CREATE_TREE "..stringTree)
+	logger.Log("communication", "BETS CREATE_TREE "..stringTree)
 	SendStringToBtEvaluator("CREATE_TREE "..stringTree)
 end
 
@@ -122,7 +123,7 @@ local SUCCESS_COLOR = {0.5,1,0.5,0.6}
 local FAILURE_COLOR = {1,0.25,0.25,0.6}
 
 local function updateStatesMessage(messageBody)
-	Spring.Echo("Message from AI received: message type UPDATE_STATES")
+	logger.Log("communication", "Message from AI received: message type UPDATE_STATES")
 	states = JSON:decode(messageBody)
 	for id, node in pairs(WG.nodeList) do
 		local color = copyTable(DEFAULT_COLOR);
@@ -134,7 +135,7 @@ local function updateStatesMessage(messageBody)
 			elseif(states[id]:upper() == "FAILURE") then
 				color = copyTable(FAILURE_COLOR)
 			else
-				Spring.Echo("Uknown state received from AI, for node id: "..id)
+				logger.Log("communication", "Uknown state received from AI, for node id: "..id)
 			end
 		end
 		-- Do not change color alpha
@@ -155,10 +156,10 @@ end
 local function generateNodePoolNodes(messageBody)
 	-- messageBody = '[{ "name": "name 1", "children": null, "defaultWidth": 70, "defaultHeight": 100 }, {"name":"Sequence","children":[]}]'
 	nodes = JSON:decode(messageBody)
-	Spring.Echo("NODES DECODED:  "..dump(nodes))
+	logger.Log("communication", "NODES DECODED:  "..dump(nodes))
 	local heightSum = 30 -- skip NodePoolLabel
 	for i=1,#nodes do
-		Spring.Echo("NODES DECODED i-th node:  "..dump(nodes[i]))
+		logger.Log("communication", "NODES DECODED i-th node:  "..dump(nodes[i]))
 		local nodeParams = {
 			name = nodes[i].name,
 			hasConnectionOut = (nodes[i].children == null) or (type(nodes[i].children) == "table" and #nodes[i].children ~= 0),
@@ -197,7 +198,7 @@ local function executeScript(messageBody)
 	
 	if (params.func == "RUN") then
 		res = c.run(params.units, params.parameter)
-		Spring.Echo("Result: " .. res)
+		logger.Log("luacommand", "Result: " .. res)
 		return res
 	elseif (params.func == "RESET") then
 		c.reset()
@@ -208,24 +209,24 @@ end
 function widget:RecvSkirmishAIMessage(aiTeam, message)
 	-- Dont respond to other players AI
 	if(aiTeam ~= Spring.GetLocalPlayerID()) then
-		Spring.Echo("Message from AI received: aiTeam ~= Spring.GetLocalPlayerID()")
+		logger.Log("communication", "Message from AI received: aiTeam ~= Spring.GetLocalPlayerID()")
 		return
 	end
 	-- Check if it starts with "BETS"
 	if(message:len() <= 4 and message:sub(1,4):upper() ~= "BETS") then
-		Spring.Echo("Message from AI received: beginning of message is not equal 'BETS', got: "..message:sub(1,4):upper())
+		logger.Log("communication", "Message from AI received: beginning of message is not equal 'BETS', got: "..message:sub(1,4):upper())
 		return
 	end
 	messageShorter = message:sub(6)
 	indexOfFirstSpace = string.find(messageShorter, " ")
 	messageType = messageShorter:sub(1, indexOfFirstSpace - 1):upper()	
 	messageBody = messageShorter:sub(indexOfFirstSpace + 1)
-	Spring.Echo("Message from AI received: message body: "..messageBody)
+	logger.Log("communication", "Message from AI received: message body: "..messageBody)
 	if(messageType == "UPDATE_STATES") then 
-		Spring.Echo("Message from AI received: message type UPDATE_STATES")
+		logger.Log("communication", "Message from AI received: message type UPDATE_STATES")
 		updateStatesMessage(messageBody)		
 	elseif (messageType == "NODE_DEFINITIONS") then 
-		Spring.Echo("Message from AI received: message type NODE_DEFINITIONS")
+		logger.Log("communication", "Message from AI received: message type NODE_DEFINITIONS")
 		generateNodePoolNodes(messageBody)
 	elseif (messageType == "COMMAND") then
 		return executeScript(messageBody)
@@ -285,7 +286,7 @@ function widget:Initialize()
 		-- OnMouseUp = { listenerEndSelectingNodes },
   }	
 	
-	Spring.Echo("BETS REQUEST_NODE_DEFINITIONS")
+	logger.Log("communication", "BETS REQUEST_NODE_DEFINITIONS")
 	Spring.SendSkirmishAIMessage (Spring.GetLocalPlayerID (), "BETS REQUEST_NODE_DEFINITIONS")
 	
 	-- rootID = 1
@@ -454,8 +455,8 @@ function ReadTreeNode(inputFile)
 	local line = trim(input)
 	if(line ~= "{") then 
 		
-		Spring.Echo("Unknown format of saved behaviour tree. ")
-		Spring.Echo("Found: '"..line.."', expected {")
+		logger.Log("save-and-load", "Unknown format of saved behaviour tree. ")
+		logger.Log("save-and-load", "Found: '"..line.."', expected {")
 	end
 	local paramsString = ""
 	while line ~= "children = {" do
@@ -481,8 +482,8 @@ function ReadTreeNode(inputFile)
 	end
 	line = trim(inputFile:read())
 	if(line ~= "},") then
-		Spring.Echo("Uknown format of saved behaviour tree. ")
-		Spring.Echo("Found: '"..line.."', expected {")
+		logger.Log("save-and-load", "Uknown format of saved behaviour tree. ")
+		logger.Log("save-and-load", "Found: '"..line.."', expected {")
 	end
 	return root
 end
@@ -504,7 +505,7 @@ function DeserializeForest()
 	WG.selectedNodes = {}
 	 -- rootIndex = 1
 	if(not VFS.FileExists("LuaUI/Widgets/behaviour_trees/01-test.txt", "r")) then
-		Spring.Echo("BtCreator.lua: DeserializeForest(): File to deserialize not found in LuaUI/Widgets/behaviour_trees/01-test.txt ")
+		logger.Log("save-and-load", "BtCreator.lua: DeserializeForest(): File to deserialize not found in LuaUI/Widgets/behaviour_trees/01-test.txt ")
 		return
 	end	
 	local inputFile = io.open("LuaUI/Widgets/behaviour_trees/01-test.txt", "r")

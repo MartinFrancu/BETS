@@ -1,4 +1,4 @@
-VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/debug_utils.lua", nil, VFS.RAW_FIRST)
+local logger, dump, copyTable, fileTable = VFS.Include(LUAUI_DIRNAME .. "Widgets/debug_utils/root.lua", nil, VFS.RAW_FIRST)
 
 local cmd = {}
 
@@ -12,7 +12,7 @@ function cmd.run(unitIds, parameter)
 	dx = parameter:sub(1, cmd.indexOfComma - 1)
 	dz = parameter:sub(cmd.indexOfComma + 1)
 	
-	Spring.Echo("Lua MOVE command run, unitIds: " .. dump(unitIds) .. ", parameter: " .. parameter .. ", dx: " .. dx .. ", dz: " .. dz .. ", tick: "..cmd.n)
+	logger.Log("move-command", "Lua MOVE command run, unitIds: " .. dump(unitIds) .. ", parameter: " .. parameter .. ", dx: " .. dx .. ", dz: " .. dz .. ", tick: "..cmd.n)
 	cmd.n = cmd.n + 1
 	done = true
 	
@@ -44,7 +44,7 @@ function cmd.run(unitIds, parameter)
 end
 
 function cmd.reset()
-	Spring.Echo("Lua command reset")
+	logger.Log("move-command", "Lua command reset")
 
 	cmd.targets = {}
 	cmd.n = 0
