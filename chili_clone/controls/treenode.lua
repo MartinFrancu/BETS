@@ -553,6 +553,16 @@ local function addNodeToSelection(nodeWindow)
 	nodeWindow:Invalidate()
 end
 
+local function clearSelection()
+	for id,_ in pairs(WG.selectedNodes) do
+		removeNodeFromSelection(WG.nodeList[id].nodeWindow)
+	end
+end
+
+WG.addNodeToSelection = addNodeToSelection
+WG.removeNodeFromSelection = removeNodeFromSelection
+WG.clearSelection = clearSelection
+
 local function shiftSelectNodes(nodeWindow, recursive)
 	if(recursive) then
 		local children = nodeWindow.treeNode:GetChildren()

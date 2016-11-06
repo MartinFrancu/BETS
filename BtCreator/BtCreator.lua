@@ -34,6 +34,8 @@ local function addNodeToCanvas(node)
 		Spring.Echo("BtCreator: Setting u of new of rootID: "..rootID)
 	end
 	WG.nodeList[node.id] = node
+	WG.clearSelection()
+	WG.addNodeToSelection(WG.nodeList[node.id].nodeWindow)
 end
 
 local function removeNodeFromCanvas(id)
@@ -274,10 +276,11 @@ function widget:Initialize()
     width  = Screen0.width - nodePoolPanel.width - 25,
     height = '42%',	
 		padding = {10,10,10,10},
-		draggable=false,
+		draggable=true,
 		resizable=true,
 		skinName='DarkGlass',
 		backgroundColor = {1,1,1,1},
+		OnClick = { WG.clearSelection },
 		-- OnMouseDown = { listenerStartSelectingNodes },
 		-- OnMouseUp = { listenerEndSelectingNodes },
   }	
@@ -508,4 +511,5 @@ function DeserializeForest()
 	while(ReadTreeNode(inputFile)) do
 	end
 	inputFile:close()
+	WG.clearSelection()
 end
