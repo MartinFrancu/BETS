@@ -28,7 +28,7 @@ function cmd.run(unitIds, parameter)
 			Spring.GiveOrderToUnit(unitIds[i], CMD.MOVE, cmd.targets[unitIds[i]], {})  
 		end
 		
-		Spring.Echo("AtX: " .. x .. ", TargetX: " .. cmd.targets[unitIds[i]][1] .. " AtZ: " .. z .. ", TargetZ: " .. cmd.targets[unitIds[i]][2])
+		logger.Log("move-command", "AtX: " .. x .. ", TargetX: " .. cmd.targets[unitIds[i]][1] .. " AtZ: " .. z .. ", TargetZ: " .. cmd.targets[unitIds[i]][2])
 		if math.abs(x - cmd.targets[unitIds[i]][1]) > 10 or math.abs(z - cmd.targets[unitIds[i]][3]) > 10 then
 			done = false
 		end
