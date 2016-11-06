@@ -28,7 +28,7 @@ TreeNode = Control:Inherit{
 	connectionIn = nil,
 	hasConnectionOut = true,
 	connectionOut = nil,
-	nodeNameEditBox = nil,
+	nameEditBox = nil,
 	
 	--- List of all connected connectionLines. 
 	attachedLines = {}
@@ -84,7 +84,6 @@ function TreeNode:New(obj)
 	if ( obj.connectable ) then
 		nodeWindowOptions.OnMouseDown = { listenerOnMouseDownMoveNode }
 		nodeWindowOptions.OnMouseUp = { listenerOnMouseUpMoveNode }
-		nodeWindowOptions.OnClick = { listenerOnClickNode }
 	end
 	
 	obj.nodeWindow = Window:New(copyTable(nodeWindowOptions))
@@ -113,12 +112,11 @@ function TreeNode:New(obj)
 	if( obj.hasConnectionOut ) then
 		obj.connectionOut = Panel:New(copyTable(connectionOptions))
 	end
-	Spring.Echo(obj.hasConnectionIn)
 	connectionOptions.x = 2
 	if( obj.hasConnectionIn ) then
 		obj.connectionIn = Panel:New(copyTable(connectionOptions))
 	end
-	obj.nodeNameEditBox = EditBox:New{
+	obj.nameEditBox = EditBox:New{
 		parent = obj.nodeWindow,
 		text = obj.nodeType,
 		defaultWidth = '80%',
@@ -128,7 +126,8 @@ function TreeNode:New(obj)
 		skinName = 'DarkGlass',
 		borderThickness = 0,
 		backgroundColor = {0,0,0,0},
-		allowUnicode = true,
+		allowUnicode = false,
+		editingText = false,
 	}
   return obj
 end
@@ -138,7 +137,7 @@ function TreeNode:Serialize(spaces ,file, fieldToSerialize)
 		local name = fieldToSerialize[i]
 		local value = self[fieldToSerialize[i]]
 		if (name=="text") then
-			file:write(spaces.."text".." = "..'"'..self.nodeNameEditBox.text..'"'..",\n")
+			file:write(spaces.."text".." = "..'"'..self.nameEditBox.text..'"'..",\n")
 		elseif (type(value) == "boolean") then
 			file:write(spaces..name.." = "..tostring(value)..",\n")
 		elseif (type(value) == "number") then
@@ -152,7 +151,7 @@ function TreeNode:Serialize(spaces ,file, fieldToSerialize)
 	--file:write(spaces..'TreeNode\n')
 	--[[file:write(spaces..'name = '..self.name..",\n")
 	file:write(spaces..'nodeType = '..self.nodeType..",\n")
-	file:write(spaces..'text = '..self.nodeNameEditBox.text..",\n")
+	file:write(spaces..'text = '..self.nameEditBox.text..",\n")
 	file:write(spaces..'x = '..self.nodeWindow.x..",\n")
 	file:write(spaces..'y = '..self.nodeWindow.y..",\n")
 	file:write(spaces..'width = '..self.nodeWindow.width..",\n")
@@ -536,14 +535,77 @@ local previousPosition = {}
 WG.selectedNodes = {}
 ---local selectedNodes = WG.selectedNodes
 
+
+ALPHA_OF_SELECTED_NODES = 1
+ALPHA_OF_NOT_SELECTED_NODES = 0.6
+
+local function removeNodeFromSelection(nodeWindow)
+	nodeWindow.backgroundColor[4] = ALPHA_OF_NOT_SELECTED_NODES
+	WG.selectedNodes[nodeWindow.treeNode.id] = nil
+	nodeWindow.treeNode.nameEditBox.editingText = false
+	nodeWindow:Invalidate()
+end
+
+local function addNodeToSelection(nodeWindow)
+	nodeWindow.backgroundColor[4] = ALPHA_OF_SELECTED_NODES
+	WG.selectedNodes[nodeWindow.treeNode.id] = true
+	nodeWindow.treeNode.nameEditBox.editingText = true
+	nodeWindow:Invalidate()
+end
+
+local function shiftSelectNodes(nodeWindow, recursive)
+	if(recursive) then
+		local children = nodeWindow.treeNode:GetChildren()
+		for i=1,#children do
+			shiftSelectNodes(children[i].nodeWindow, true)
+		end
+	end
+	addNodeToSelection(nodeWindow)
+end
+
+local function ctrlSelectNodes(nodeWindow, recursive)
+	if(recursive) then
+		local children = nodeWindow.treeNode:GetChildren()
+		for i=1,#children do
+			ctrlSelectNodes(children[i].nodeWindow, true)
+		end
+	end
+	if(WG.selectedNodes[nodeWindow.treeNode.id]) then
+			removeNodeFromSelection(nodeWindow)
+		else
+			addNodeToSelection(nodeWindow)
+		end
+end
+
+
 function listenerOnMouseDownMoveNode(self, x ,y, button)
-	local _, ctrl = Spring.GetModKeyState()
-	if(WG.selectedNodes[self.treeNode.id] and not ctrl and button ~= 3) then
+	Spring.Echo("listenerOnMouseDownMoveNode")
+	local alt, ctrl, _, shift = Spring.GetModKeyState()
+	if(WG.selectedNodes[self.treeNode.id] and (not ctrl) and (not shift) and button ~= 3) then
 		movingNodes = true
 		previousPosition.x = self.x
 		previousPosition.y = self.y
 	end
-	Spring.Echo("listenerOnMouseDownMoveNode")
+	if(movingNodes) then
+		return
+	end
+	
+	local selectSubtree = false
+	if(button == 3) then
+		selectSubtree = true
+	end
+	if (shift) then
+		shiftSelectNodes(self, selectSubtree)
+	elseif (ctrl) then
+		ctrlSelectNodes(self, selectSubtree)
+	else
+		for id,_ in pairs(WG.selectedNodes) do
+			removeNodeFromSelection(WG.nodeList[id].nodeWindow)
+		end
+		WG.selectedNodes = {}
+		shiftSelectNodes(self, selectSubtree)
+	end
+	return self
 end
 
 function listenerOnMouseUpMoveNode(self, x ,y)	
@@ -572,64 +634,9 @@ function listenerOnMouseUpMoveNode(self, x ,y)
 		movingNodes = false
 	end
 	Spring.Echo("listenerOnMouseUpMoveNode")
+	-- return true
 end
 
-ALPHA_OF_SELECTED_NODES = 1
-ALPHA_OF_NOT_SELECTED_NODES = 0.6
-
-local function addToSelectedNodes(nodeWindow, recursive)
-	if(recursive) then
-		local children = nodeWindow.treeNode:GetChildren()
-		for i=1,#children do
-			addToSelectedNodes(children[i].nodeWindow, true)
-		end
-	end
-	nodeWindow.backgroundColor[4] = ALPHA_OF_SELECTED_NODES
-	WG.selectedNodes[nodeWindow.treeNode.id] = true
-	nodeWindow:Invalidate()
-end
-
-local function invertNodeSelection(nodeWindow, recursive)
-	if(recursive) then
-		local children = nodeWindow.treeNode:GetChildren()
-		for i=1,#children do
-			invertNodeSelection(children[i].nodeWindow, true)
-		end
-	end
-	if(WG.selectedNodes[nodeWindow.treeNode.id]) then
-			WG.selectedNodes[nodeWindow.treeNode.id] = nil
-			nodeWindow.backgroundColor[4] = ALPHA_OF_NOT_SELECTED_NODES
-		else
-			WG.selectedNodes[nodeWindow.treeNode.id] = true
-			nodeWindow.backgroundColor[4] = ALPHA_OF_SELECTED_NODES
-		end
-		nodeWindow:Invalidate()
-end
-
-function listenerOnClickNode(self, x, y, button)
-	Spring.Echo("listenerOnClickNode button="..button)
-	if(movingNodes) then
-		return
-	end
-	local _, ctrl, _, shift = Spring.GetModKeyState()
-	local selectChildren = false
-	if(button == 3) then
-			selectChildren = true
-		end
-	if (shift) then
-		addToSelectedNodes(self, selectChildren)
-	elseif (ctrl) then
-		invertNodeSelection(self, selectChildren)
-	else
-		for id,_ in pairs(WG.selectedNodes) do
-			WG.nodeList[id].nodeWindow.backgroundColor[4] = ALPHA_OF_NOT_SELECTED_NODES
-			WG.nodeList[id].nodeWindow:Invalidate()
-		end
-		WG.selectedNodes = {}
-		addToSelectedNodes(self, selectChildren)
-	end
-	-- Spring.Echo(dump(WG.selectedNodes))
-end
 
 --//=============================================================================
 --// Listeners on Connection lines

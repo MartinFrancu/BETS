@@ -39,6 +39,8 @@ EditBox = Control:Inherit{
 
   allowUnicode = true,
   passwordInput = false,
+	
+	editingText = false,
 }
 if Script.IsEngineMinVersion == nil or not Script.IsEngineMinVersion(97) then
     EditBox.allowUnicode = false
@@ -167,6 +169,11 @@ function EditBox:_SetCursorByMousePos(x, y)
 end
 
 function EditBox:MouseDown(x, y, ...)
+	Spring.Echo("EditBox MouseDown.")
+	if(not self.editingText) then
+		return
+	end		
+	
 	local _, _, _, shift = Spring.GetModKeyState()
 	local cp = self.cursor
 	self:_SetCursorByMousePos(x, y)
@@ -218,6 +225,8 @@ function EditBox:Select(startIndex, endIndex)
 end
 
 function EditBox:ClearSelected()
+	Spring.Echo("EditBox Clear Selection.")
+	self.editingText = false
 	local left = self.selStart
 	local right = self.selEnd
 	if left > right then
@@ -314,7 +323,7 @@ function EditBox:KeyPress(key, mods, isRepeat, label, unicode, ...)
 		-- backward compability with Spring <97
 		self:TextInput(unicode)
 	else 
-		self:TextInput(Spring.GetKeySymbol(key))
+		self:TextInput(key)
 	end
 	
 	-- text selection handling
@@ -351,7 +360,7 @@ function EditBox:TextInput(utf8char, ...)
 			unicode = nil
 		end
 	end
-
+	
 	if unicode then
 		local cp  = self.cursor
 		local txt = self.text

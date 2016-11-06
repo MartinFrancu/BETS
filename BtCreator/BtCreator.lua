@@ -344,13 +344,14 @@ function widget:Initialize()
 		skinName = 'DarkGlass',
 		borderThickness = 0,
 		backgroundColor = {0,0,0,0},
-		allowUnicode = true,
+		allowUnicode = false,
+		editingText = true,
 	}
 	-- treeName.font.size = 16
 end 
 
 function widget:KeyPress(key)
-	if(key == 127) then -- Delete was pressed
+	if(Spring.GetKeySymbol(key) == "delete") then -- Delete was pressed
 		for id,_ in pairs(WG.selectedNodes) do
 			if(id ~= rootID) then
 				removeNodeFromCanvas(id)
