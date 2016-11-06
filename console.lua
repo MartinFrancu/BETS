@@ -235,7 +235,7 @@ if (widget and not widget.GetInfo) then
     consolePanel = Chili.Panel:New{
       parent = ChiliRoot,
       x = '20%',
-      y = '5%',
+      y = '12%',
       width = '30%',
       height = '40%',
       padding = {5, 5, 5, 5},
