@@ -210,6 +210,8 @@ function ComputeConnectionLineCoordinates(connectionOut, connectionIn)
 	return lineOutx, lineOuty, halfDistance, lineVx, lineInx, lineIny, transparentBorderWidth
 end
 
+
+
 function AddConnectionLine(connectionOut, connectionIn)
 	if (connectionOut.treeNode.connectionIn and connectionOut.name == connectionOut.treeNode.connectionIn.name) then
 		AddConnectionLine(connectionIn, connectionOut)
@@ -219,7 +221,8 @@ function AddConnectionLine(connectionOut, connectionIn)
 	if (connectionOut.treeNode.nodeType == "Root") then
 		for i=1,#connectionLines do
 			if (connectionLines[i][1].treeNode.nodeType == "Root") then
-				RemoveConnectionLine(i)
+				WG.RemoveConnectionLine(i)
+				break
 			end
 		end
 	end
@@ -467,7 +470,7 @@ end
 
 
 local connectionPanelBackgroundColor = {0.1,0.1,0.1,0.7}
-
+WG.movingNodes = false
 
 function listenerOverConnectionPanel(self)
 	if (clickedConnection ~= nil and connectionLineCanBeCreated(self)) then
@@ -482,15 +485,17 @@ function listenerOutOfConnectionPanel(self)
 end
 
 function listenerClickOnConnectionPanel(self)
+	Spring.Echo("clicked on Connection panel. ")
+	WG.movingNodes = false
 	if (clickedConnection == nil) then
 		clickedConnection = self
 		self.backgroundColor = {1, 0.5, 0.0, 1}
-		return true
+		return self
 	end
 	if (clickedConnection.name == self.name) then 
 		self.backgroundColor = connectionPanelBackgroundColor
 		clickedConnection = nil
-		return true
+		return self
 	end
 	if( connectionLineCanBeCreated(self) ) then
 		clickedConnection.backgroundColor = connectionPanelBackgroundColor
@@ -498,7 +503,7 @@ function listenerClickOnConnectionPanel(self)
 		AddConnectionLine(clickedConnection, self)
 		-- Spring.Echo("Connection line added: "..dump(connectionLines))
 		clickedConnection = nil
-		return true
+		return self
 	end
 	return false
 end
@@ -528,7 +533,7 @@ end
 --// Listeners for node selections and their helper functions
 --//=============================================================================
 
-local movingNodes = false
+
 local previousPosition = {}
 
 --- Key is node id, value is true
@@ -589,14 +594,26 @@ end
 
 
 function listenerOnMouseDownMoveNode(self, x ,y, button)
+	if(clickedConnection) then -- connecting lines
+		return false
+	end
+	local cin = self.treeNode.connectionIn
+	if(cin and x > cin.x and x < cin.x + cin.width and y > cin.y and y < cin.y+cin.height) then
+		return false
+	end
+	local cout = self.treeNode.connectionOut
+	if(cout and x > cout.x and x < cout.x + cout.width and y > cout.y and y < cout.y+cout.height) then
+		return false
+	end
 	Spring.Echo("listenerOnMouseDownMoveNode")
 	local alt, ctrl, _, shift = Spring.GetModKeyState()
 	if(WG.selectedNodes[self.treeNode.id] and (not ctrl) and (not shift) and button ~= 3) then
-		movingNodes = true
+		Spring.Echo("Start moving")
+		WG.movingNodes = true
 		previousPosition.x = self.x
 		previousPosition.y = self.y
 	end
-	if(movingNodes) then
+	if(WG.movingNodes) then
 		return
 	end
 	
@@ -624,7 +641,7 @@ function listenerOnMouseUpMoveNode(self, x ,y)
 	self.treeNode.x = self.x 
 	self.treeNode.y = self.y 
 	self:Invalidate()
-	if(movingNodes) then 
+	if(WG.movingNodes) then 
 		local diffx = self.x - previousPosition.x
 		local diffy = self.y - previousPosition.y
 		-- Spring.Echo("diffx="..diffx..", diffy="..diffy)
@@ -641,7 +658,7 @@ function listenerOnMouseUpMoveNode(self, x ,y)
 				end
 			end
 		end
-		movingNodes = false
+		WG.movingNodes = false
 	end
 	Spring.Echo("listenerOnMouseUpMoveNode")
 	-- return true

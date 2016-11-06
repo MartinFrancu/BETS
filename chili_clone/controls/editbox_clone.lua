@@ -173,7 +173,7 @@ function EditBox:MouseDown(x, y, ...)
 	if(not self.editingText) then
 		return
 	end		
-	
+	WG.movingNodes = false
 	local _, _, _, shift = Spring.GetModKeyState()
 	local cp = self.cursor
 	self:_SetCursorByMousePos(x, y)
