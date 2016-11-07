@@ -367,6 +367,7 @@ function widget:KeyPress(key)
 end
 
 function SerializeForest()
+	Spring.CreateDir("LuaUI/Widgets/BtBehaviours")
 	local outputFile = io.open("LuaUI/Widgets/BtBehaviours/"..treeName.text..".txt", "w")
   if outputFile == nil then 
 		return 
