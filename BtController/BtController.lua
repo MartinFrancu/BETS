@@ -17,17 +17,59 @@ end
 local Chili, Screen0, JSON
 local BtController = widget
 
+
+
+
+ 
 local windowBtController
-local treeTabPanels
-local scrollPanel
+--local treeTabPanels
+--local scrollPanel
 local squadAssignemntButton
 local controllerLabel
 local squadName
+local selectTreeButton
 
+
+local windowTreeSelection
+local treeSelectionLabel
+local selectedTreeEditBox
+local treeSelectionDoneButton
+
+local showTreeSelectionWindow 
+
+
+
+-------------------------------------------------------------------------------
+--[[function widget:DrawScreen()
+    if updateRequired then
+        updateRequired = false
+		loadPanel()
+    end
+end
+
+function resetWindow(container)
+	container:ClearChildren()
+	--container.xstep = 1
+	--container.ystep = 1
+end
+
+function loadPanel()
+	resetWindow(windowTreeSelection)
+	--setUpTreeSelectionWindow()
+end]]--
+-------------------------------------------------------------------------------
 
 function listenerClickOnAssign(self)
 	Spring.Echo("BETS CREATE_TREE SENDING UNITS")
 	SendStringToBtEvaluator("ASSIGN_UNITS")
+end
+
+function showHideTreeSelectionWindow(self)
+	if(windowTreeSelection.visible == false)then
+		windowTreeSelection:Show()
+	else
+		windowTreeSelection:Hide()
+	end
 end
 
 function SendStringToBtEvaluator(message)
@@ -35,6 +77,62 @@ function SendStringToBtEvaluator(message)
 end
 
 
+
+
+  
+
+  function setUpTreeSelectionWindow()
+    treeSelectionLabel = Chili.Label:New{
+		--parent = windowTreeSelection,
+		x = '1%',
+		y = '5%',
+		width  = '40%',
+		height = '10%',
+		caption = "Write in name of tree:",
+		skinName='DarkGlass',
+   }
+  
+    treeName = Chili.EditBox:New{
+		--parent = windowTreeSelection,
+		text = "Patrol tree (not changebla yet)",
+		width = '60%',
+		x = '35%',
+		y = '-1%',
+		align = 'left',
+		skinName = 'DarkGlass',
+		borderThickness = 0,
+		backgroundColor = {0.3,0.3,0.3,0.3},
+		allowUnicode = false,
+		editingText = false,
+	}
+	
+	treeSelectionDoneButton = Chili.Button:New{
+		x = '20%',
+		y = '50%',
+		width  = '40%',
+		height = 30,
+		caption = "Done",
+		skinName='DarkGlass',
+		OnClick = {showHideTreeSelectionWindow},
+    }
+  
+	windowTreeSelection = Chili.Window:New{
+		parent = Screen0,
+		x = '20%',
+		y = '11%',
+		width = '25%',
+		height = '8%',
+		padding = {10,10,10,10},
+		draggable=false,
+		resizable=true,
+		skinName='DarkGlass',
+		backgroundColor = {1,1,1,1},
+		visible =false,
+		children = {treeSelectionLabel, treeName, treeSelectionDoneButton}
+   }
+   
+
+end
 
 function widget:Initialize()	
   --[[if (not WG.ChiliClone) or (not WG.JSON) or (not WG.BtEvaluatorIsLoaded) then
@@ -74,12 +172,24 @@ function widget:Initialize()
 		skinName='DarkGlass',
   }
   
+  selectTreeButton = Chili.Button:New{
+    parent = windowBtController,
+	x = 50,
+	y = 15,
+    width  = '20%',
+    height = 30,
+    caption = "Select tree",
+	OnClick = {showHideTreeSelectionWindow},
+		skinName='DarkGlass',
+  }
+  
+  
 
   
   squadAssignemntButton = Chili.Button:New{
 	parent = windowBtController,
-	x = '10%' ,
-	y = 30,
+	x = 50 ,
+	y = 45,
 	height = 30,
 	width = '20%',
 	minWidth = 150,
@@ -87,13 +197,12 @@ function widget:Initialize()
 	OnClick = {listenerClickOnAssign},
 		skinName = "DarkGlass",
 		focusColor = {0.5,0.5,0.5,0.5},
-	
 	}
 	
   squadName = Chili.TextBox:New{
 	parent = windowBtController, 
 	x = '2%',
-	y = 38,
+	y = 54,
 	height = 30,
 	width =  50, --'50%',
 	minWidth = 50,
@@ -102,8 +211,13 @@ function widget:Initialize()
 	--focusColor = {0.5,0.5,0.5,0.5},
   }
   
+  setUpTreeSelectionWindow()
+  windowTreeSelection:Hide()
+  --windowTreeSelection.visible = false
+  
   Spring.Echo("BtController reports for duty!")
   
+
   
  -------------------------------------------------------------------------------
  ----------------------UNUSED PARTS (stupid thinqs i was messing around):-------
