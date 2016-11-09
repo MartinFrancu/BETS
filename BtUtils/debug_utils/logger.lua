@@ -1,10 +1,7 @@
-local LOCAL_PATH = LUAUI_DIRNAME .. "Widgets/debug_utils/"
-local function include(name)
-  return VFS.Include(LOCAL_PATH .. name .. ".lua", nil, VFS.RAW_FIRST)
-end
+if(not BtUtils)then VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST) end
 
-WG = WG or {}
-WG.Logger = WG.Logger or (function()
+local Debug = BtUtils.Debug
+Debug:Assign("Logger", function()
   local logger = {}
   
   local LOGGER_SETTINGS = LUAUI_DIRNAME .. "Config/debug_utils_logger.lua"
@@ -12,8 +9,8 @@ WG.Logger = WG.Logger or (function()
   
   Spring.CreateDir(LOG_PATH)
   
-  local dump = include("dump")
-  local fileTable = include("fileTable")
+  local dump = Debug.dump
+  local fileTable = Debug.fileTable
   
   logger.settings = fileTable(LOGGER_SETTINGS)
   
@@ -51,7 +48,7 @@ WG.Logger = WG.Logger or (function()
     end,
   }
   
-  function logger.Log(logGroup, ...)
+  function logger.log(logGroup, ...)
     local message = ""
     for i,v in ipairs({ ... }) do
       message = message .. dump(v)
@@ -67,12 +64,11 @@ WG.Logger = WG.Logger or (function()
     end
   end
   
-  function logger.Disable(logGroup)
+  function logger.disable(logGroup)
     logger.settings[logGroup] = IGNORE
   end
   
   return logger
-end)()
+end)
 
-return WG.Logger
-
+return Debug.Logger

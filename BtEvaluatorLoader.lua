@@ -11,14 +11,41 @@ function widget:GetInfo()
   }
 end
 
-local logger, dump, copyTable, fileTable = VFS.Include(LUAUI_DIRNAME .. "Widgets/debug_utils/root.lua", nil, VFS.RAW_FIRST)
+local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
 
-local Chili
-local Screen0
+local Sentry = Utils.Sentry
 
-local testbutton
-local msgCommandButton
-local moveCommandButton
+local Debug = Utils.Debug
+local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyTable, Debug.fileTable
+
+local JSON
+
+
+-- BtEvaluator interface definitions
+local BtEvaluator = Sentry:New()
+function BtEvaluator.SendMessage(messageType, messageData)
+  local payload = "BETS " .. messageType;
+  if(messageData)then
+    payload = payload .. " "
+    if(type(messageData) == "string")then
+      payload = payload .. messageData
+    else
+      payload = payload .. JSON:encode(messageData)
+    end
+  end
+  Spring.SendSkirmishAIMessage(Spring.GetLocalPlayerID(), payload)
+end
+
+function BtEvaluator.RequestNodeDefinitions()
+  BtEvaluator.SendMessage("REQUEST_NODE_DEFINITIONS")
+end
+function BtEvaluator.AssignUnits()
+  BtEvaluator.SendMessage("ASSIGN_UNITS")
+end
+function BtEvaluator.CreateTree(treeDefinition)
+  BtEvaluator.SendMessage("CREATE_TREE", treeDefinition)
+end
+
 
 function listenerOnTestButtonClick(self)
 	Spring.Echo("Test message sent from widget to C++ Skirmish AI. ")
@@ -47,49 +74,17 @@ end
 
 
 function widget:Initialize()	
-  if (not WG.Chili) then
-    -- don't run if we can't find Chili
+  if (not WG.JSON) then
+    -- don't run if we can't find JSON
     widgetHandler:RemoveWidget()
     return
   end
  
-  -- Get ready to use Chili
-  Chili = WG.Chili
-  Screen0 = Chili.Screen0
-	--[[
-	testbutton = Chili.Button:New{
-		parent = Screen0,
-		caption = "Send Message to AI",
-		x = '80%',
-		y = '90%',
-		OnClick = { listenerOnTestButtonClick },
-		width = 150,
-		height = 60,
-	}
-
-	nodeDefinitionRequestButton = Chili.Button:New{
-		parent = Screen0,
-		caption = "Retrieve node definitions",
-		x = '70%',
-		y = '90%',
-		OnClick = { listenerOnNodeDefinitionButtonClick },
-		width = 150,
-		height = 60,
-	}
-
-	createTreeCommandButton = Chili.Button:New {
-		parent = Screen0,
-		caption = "Create tree",
-		x = '60%',
-		y = '90%',
-		OnClick = { listenerOnMoveButtonClick },
-		width = 150,
-		height = 60,
-	}
-]]--
-	-- Add control of my units also to our BtEvaluator -> Cpp AI
+  JSON = WG.JSON
+ 
 	Spring.SendCommands("AIControl "..Spring.GetLocalPlayerID().." BtEvaluator")
-	-- Spring.Echo("GetLocalPlayerID(): "..Spring.GetLocalPlayerID())
+  
+  WG.BtEvaluator = BtEvaluator
 end
 
 function widget:RecvSkirmishAIMessage(aiTeam, message)
@@ -102,12 +97,26 @@ function widget:RecvSkirmishAIMessage(aiTeam, message)
 		return
 	end
   
-	messageShorter = message:sub(6)
-	indexOfFirstSpace = string.find(messageShorter, " ")
-	messageType = messageShorter:sub(1, indexOfFirstSpace - 1):upper()	
-	messageBody = messageShorter:sub(indexOfFirstSpace + 1)
+	local messageShorter = message:sub(6)
+	local indexOfFirstSpace = string.find(messageShorter, " ")
+	local messageType = messageShorter:sub(1, indexOfFirstSpace - 1):upper()	
   
+  -- messages without parameter
 	if(messageType == "LOG") then 
-    logger.log("BtEvaluator", messageBody)
-	end
+    Logger.log("BtEvaluator", messageBody)
+    return true
+  else
+    local handler = ({
+      ["UPDATE_STATES"] = BtEvaluator.OnUpdateStates,
+      ["NODE_DEFINITIONS"] = BtEvaluator.OnNodeDefinitions,
+      ["COMMAND"] = BtEvaluator.OnCommand,
+    })[messageType]
+    
+    if(handler)then
+      local messageBody = messageShorter:sub(indexOfFirstSpace + 1)
+      local data = JSON:decode(messageBody)
+      
+      return handler:Invoke(data)
+    end
+  end
 end

@@ -1,4 +1,4 @@
-local logger, dump, copyTable, fileTable = VFS.Include(LUAUI_DIRNAME .. "Widgets/debug_utils/root.lua", nil, VFS.RAW_FIRST)
+local Logger = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/debug_utils/logger.lua", nil, VFS.RAW_FIRST)
 
 local cmd = {}
 
@@ -12,7 +12,7 @@ function cmd.run(unitIds, parameter)
 	dx = parameter:sub(1, cmd.indexOfComma - 1)
 	dz = parameter:sub(cmd.indexOfComma + 1)
 	
-	logger.Log("move-command", "Lua MOVE command run, unitIds: " .. dump(unitIds) .. ", parameter: " .. parameter .. ", dx: " .. dx .. ", dz: " .. dz .. ", tick: "..cmd.n)
+	Logger.log("move-command", "Lua MOVE command run, unitIds: ", unitIds, ", parameter: " .. parameter .. ", dx: " .. dx .. ", dz: " .. dz .. ", tick: "..cmd.n)
 	cmd.n = cmd.n + 1
 	done = true
 	
@@ -28,7 +28,7 @@ function cmd.run(unitIds, parameter)
 			Spring.GiveOrderToUnit(unitIds[i], CMD.MOVE, cmd.targets[unitIds[i]], {})  
 		end
 		
-		logger.Log("move-command", "AtX: " .. x .. ", TargetX: " .. cmd.targets[unitIds[i]][1] .. " AtZ: " .. z .. ", TargetZ: " .. cmd.targets[unitIds[i]][2])
+		Logger.log("move-command", "AtX: " .. x .. ", TargetX: " .. cmd.targets[unitIds[i]][1] .. " AtZ: " .. z .. ", TargetZ: " .. cmd.targets[unitIds[i]][2])
 		if math.abs(x - cmd.targets[unitIds[i]][1]) > 10 or math.abs(z - cmd.targets[unitIds[i]][3]) > 10 then
 			done = false
 		end
@@ -44,7 +44,7 @@ function cmd.run(unitIds, parameter)
 end
 
 function cmd.reset()
-	logger.Log("move-command", "Lua command reset")
+	Logger.log("move-command", "Lua command reset")
 
 	cmd.targets = {}
 	cmd.n = 0

@@ -44,9 +44,8 @@ if (widget and not widget.GetInfo) then
   local CONSOLE_SETTINGS = LUAUI_DIRNAME .. "Config/console.lua"
    
   -- Include debug functions, copyTable() and dump()
-  VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/debug_utils.lua", nil, VFS.RAW_FIRST)
-
-  local logger = VFS.Include(LUAUI_DIRNAME .. "Widgets/debug_utils/root.lua", nil, VFS.RAW_FIRST)
+  local Debug = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/debug_utils/root.lua", nil, VFS.RAW_FIRST)
+  local Logger, dump = Debug.Logger, Debug.dump
   
   local function loadSettings()
     if(VFS.FileExists(CONSOLE_SETTINGS))then
@@ -153,7 +152,7 @@ if (widget and not widget.GetInfo) then
   local consoleContext = { }
   consoleContext._G = consoleContext
   consoleContext.history = history
-  consoleContext.logger = logger
+  consoleContext.Logger = Logger
   function consoleContext.clear()
     consoleLog:ClearChildren()
     consoleLog.justCleared = true

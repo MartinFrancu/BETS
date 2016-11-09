@@ -1,9 +1,6 @@
-local LOCAL_PATH = LUAUI_DIRNAME .. "Widgets/debug_utils/"
-local function include(name)
-  return VFS.Include(LOCAL_PATH .. name .. ".lua", nil, VFS.RAW_FIRST)
-end
+if(not BtUtils)then VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST) end
 
-local dump = include("dump")
+local dump = BtUtils.Debug.dump
 
 local function fileTable(path)
   local t = VFS.FileExists(path) and VFS.Include(path, {}, VFS.RAW_FIRST) or {}

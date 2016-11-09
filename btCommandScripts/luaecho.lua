@@ -1,4 +1,4 @@
-VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/debug_utils.lua", nil, VFS.RAW_FIRST)
+local dump = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/debug_utils/root.lua", nil, VFS.RAW_FIRST).dump
 
 local cmd = {}
 

@@ -27,12 +27,14 @@ local rootID = nil
 
 -- Include debug functions, copyTable() and dump()
 --VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/debug_utils.lua", nil, VFS.RAW_FIRST)
-local logger, dump, copyTable, fileTable = VFS.Include(LUAUI_DIRNAME .. "Widgets/debug_utils/root.lua", nil, VFS.RAW_FIRST)
+local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
+local Debug = Utils.Debug;
+local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyTable, Debug.fileTable
 
 local function addNodeToCanvas(node)
 	if next(WG.nodeList) == nil then
 		rootID = node.id
-		logger.Log("tree-editing", "BtCreator: Setting u of new of rootID: "..rootID)
+		Logger.log("tree-editing", "BtCreator: Setting u of new of rootID: "..rootID)
 	end
 	WG.nodeList[node.id] = node
 	WG.clearSelection()
@@ -61,7 +63,7 @@ local copyTreeNode = nil
 local startCopyingLocation = {}
 
 function listenerStartCopyingNode(node, x , y)
-	logger.Log("tree-editing", "listener start Copy Object. x:"..x + node.x..", y="..y + node.y)
+	Logger.log("tree-editing", "listener start Copy Object. x:"..x + node.x..", y="..y + node.y)
 	copyTreeNode = node
 	startCopyingLocation.x = x + node.x
 	startCopyingLocation.y = y + node.y
@@ -91,17 +93,17 @@ local SerializeForest
 local DeserializeForest
 
 function listenerClickOnSaveTree(self)
-	logger.Log("save-and-load", "Save Tree clicked on. ")
+	Logger.log("save-and-load", "Save Tree clicked on. ")
 	SerializeForest()
 end
 
 function listenerClickOnLoadTree(self)
-	logger.Log("save-and-load", "Load Tree clicked on. ")
+	Logger.log("save-and-load", "Load Tree clicked on. ")
 	DeserializeForest()
 end
 
 function listenerClickOnTest(self)
-	logger.Log("assign-tree", "Assign Tree")
+	Logger.log("assign-tree", "Assign Tree")
 	local fieldsToSerialize = {
 		'id',
 		'nodeType',
@@ -109,7 +111,7 @@ function listenerClickOnTest(self)
 		'parameters'
 	}
 	local stringTree = TreeToStringJSON(WG.nodeList[rootID], fieldsToSerialize )
-	logger.Log("communication", "BETS CREATE_TREE "..stringTree)
+	Logger.log("communication", "BETS CREATE_TREE "..stringTree)
 	SendStringToBtEvaluator("CREATE_TREE "..stringTree)
 end
 
@@ -123,7 +125,7 @@ local SUCCESS_COLOR = {0.5,1,0.5,0.6}
 local FAILURE_COLOR = {1,0.25,0.25,0.6}
 
 local function updateStatesMessage(messageBody)
-	logger.Log("communication", "Message from AI received: message type UPDATE_STATES")
+	Logger.log("communication", "Message from AI received: message type UPDATE_STATES")
 	states = JSON:decode(messageBody)
 	for id, node in pairs(WG.nodeList) do
 		local color = copyTable(DEFAULT_COLOR);
@@ -135,7 +137,7 @@ local function updateStatesMessage(messageBody)
 			elseif(states[id]:upper() == "FAILURE") then
 				color = copyTable(FAILURE_COLOR)
 			else
-				logger.Log("communication", "Uknown state received from AI, for node id: "..id)
+				Logger.log("communication", "Uknown state received from AI, for node id: "..id)
 			end
 		end
 		-- Do not change color alpha
@@ -156,10 +158,10 @@ end
 local function generateNodePoolNodes(messageBody)
 	-- messageBody = '[{ "name": "name 1", "children": null, "defaultWidth": 70, "defaultHeight": 100 }, {"name":"Sequence","children":[]}]'
 	nodes = JSON:decode(messageBody)
-	logger.Log("communication", "NODES DECODED:  "..dump(nodes))
+	Logger.log("communication", "NODES DECODED:  "..dump(nodes))
 	local heightSum = 30 -- skip NodePoolLabel
 	for i=1,#nodes do
-		logger.Log("communication", "NODES DECODED i-th node:  "..dump(nodes[i]))
+		Logger.log("communication", "NODES DECODED i-th node:  "..dump(nodes[i]))
 		local nodeParams = {
 			name = nodes[i].name,
 			hasConnectionOut = (nodes[i].children == null) or (type(nodes[i].children) == "table" and #nodes[i].children ~= 0),
@@ -198,7 +200,7 @@ local function executeScript(messageBody)
 	
 	if (params.func == "RUN") then
 		res = c.run(params.units, params.parameter)
-		logger.Log("luacommand", "Result: " .. res)
+		Logger.log("luacommand", "Result: " .. res)
 		return res
 	elseif (params.func == "RESET") then
 		c.reset()
@@ -209,24 +211,24 @@ end
 function widget:RecvSkirmishAIMessage(aiTeam, message)
 	-- Dont respond to other players AI
 	if(aiTeam ~= Spring.GetLocalPlayerID()) then
-		logger.Log("communication", "Message from AI received: aiTeam ~= Spring.GetLocalPlayerID()")
+		Logger.log("communication", "Message from AI received: aiTeam ~= Spring.GetLocalPlayerID()")
 		return
 	end
 	-- Check if it starts with "BETS"
 	if(message:len() <= 4 and message:sub(1,4):upper() ~= "BETS") then
-		logger.Log("communication", "Message from AI received: beginning of message is not equal 'BETS', got: "..message:sub(1,4):upper())
+		Logger.log("communication", "Message from AI received: beginning of message is not equal 'BETS', got: "..message:sub(1,4):upper())
 		return
 	end
 	messageShorter = message:sub(6)
 	indexOfFirstSpace = string.find(messageShorter, " ")
 	messageType = messageShorter:sub(1, indexOfFirstSpace - 1):upper()	
 	messageBody = messageShorter:sub(indexOfFirstSpace + 1)
-	logger.Log("communication", "Message from AI received: message body: "..messageBody)
+	Logger.log("communication", "Message from AI received: message body: "..messageBody)
 	if(messageType == "UPDATE_STATES") then 
-		logger.Log("communication", "Message from AI received: message type UPDATE_STATES")
+		Logger.log("communication", "Message from AI received: message type UPDATE_STATES")
 		updateStatesMessage(messageBody)		
 	elseif (messageType == "NODE_DEFINITIONS") then 
-		logger.Log("communication", "Message from AI received: message type NODE_DEFINITIONS")
+		Logger.log("communication", "Message from AI received: message type NODE_DEFINITIONS")
 		generateNodePoolNodes(messageBody)
 	elseif (messageType == "COMMAND") then
 		return executeScript(messageBody)
@@ -286,7 +288,7 @@ function widget:Initialize()
 		-- OnMouseUp = { listenerEndSelectingNodes },
   }	
 	
-	logger.Log("communication", "BETS REQUEST_NODE_DEFINITIONS")
+	Logger.log("communication", "BETS REQUEST_NODE_DEFINITIONS")
 	Spring.SendSkirmishAIMessage (Spring.GetLocalPlayerID (), "BETS REQUEST_NODE_DEFINITIONS")
 	
 	-- rootID = 1
@@ -456,8 +458,8 @@ function ReadTreeNode(inputFile)
 	local line = trim(input)
 	if(line ~= "{") then 
 		
-		logger.Log("save-and-load", "Unknown format of saved behaviour tree. ")
-		logger.Log("save-and-load", "Found: '"..line.."', expected {")
+		Logger.log("save-and-load", "Unknown format of saved behaviour tree. ")
+		Logger.log("save-and-load", "Found: '"..line.."', expected {")
 	end
 	local paramsString = ""
 	while line ~= "children = {" do
@@ -483,8 +485,8 @@ function ReadTreeNode(inputFile)
 	end
 	line = trim(inputFile:read())
 	if(line ~= "},") then
-		logger.Log("save-and-load", "Uknown format of saved behaviour tree. ")
-		logger.Log("save-and-load", "Found: '"..line.."', expected {")
+		Logger.log("save-and-load", "Uknown format of saved behaviour tree. ")
+		Logger.log("save-and-load", "Found: '"..line.."', expected {")
 	end
 	return root
 end
@@ -506,7 +508,7 @@ function DeserializeForest()
 	WG.selectedNodes = {}
 	 -- rootIndex = 1
 	if(not VFS.FileExists("LuaUI/Widgets/behaviour_trees/01-test.txt", "r")) then
-		logger.Log("save-and-load", "BtCreator.lua: DeserializeForest(): File to deserialize not found in LuaUI/Widgets/behaviour_trees/01-test.txt ")
+		Logger.log("save-and-load", "BtCreator.lua: DeserializeForest(): File to deserialize not found in LuaUI/Widgets/behaviour_trees/01-test.txt ")
 		return
 	end	
 	local inputFile = io.open("LuaUI/Widgets/behaviour_trees/01-test.txt", "r")

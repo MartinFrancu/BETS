@@ -8,7 +8,7 @@ local function dump(o, maxDepth)
 			return o.name
 		end
 		local s = '{ '
-		for k,v in pairs(o) do
+		for k,v in (o.pairs or pairs)(o) do
 			 if type(k) ~= 'number' then k = '"'..k..'"' end
 			 s = s .. '['..k..'] = ' .. dump(v, maxDepth-1) .. ','
 		end
