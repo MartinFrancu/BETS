@@ -1,6 +1,6 @@
 local function dump(o, maxDepth)
 	maxDepth = maxDepth or 1
-  if type(o) == 'table' then
+	if type(o) == 'table' then
 		if (maxDepth == 0) then 
 			return "..." 
 		end
@@ -13,11 +13,11 @@ local function dump(o, maxDepth)
 			 s = s .. '['..k..'] = ' .. dump(v, maxDepth-1) .. ','
 		end
 		return s .. '} '
-  elseif type(o) == 'string' then
-    return string.format("%q", o)
-  else
+	elseif type(o) == 'string' then
+		return string.format("%q", o)
+	else
 		return tostring(o)
-  end
+	end
 end
 
 return dump
