@@ -1,14 +1,14 @@
 function widget:GetInfo()
-  return {
-    name      = "BtEvaluator loader",
-    desc      = "BtEvaluator loader and message test to this AI.",
-    author    = "JakubStasta",
-    date      = "Sep 20, 2016",
-    license   = "BY-NC-SA",
-    layer     = 0,
-    enabled   = true, --  loaded by default?
+	return {
+		name      = "BtEvaluator loader",
+		desc      = "BtEvaluator loader and message test to this AI.",
+		author    = "JakubStasta",
+		date      = "Sep 20, 2016",
+		license   = "BY-NC-SA",
+		layer     = 0,
+		enabled   = true, --  loaded by default?
 	version   = version,
-  }
+	}
 end
 
 local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
@@ -24,26 +24,26 @@ local JSON
 -- BtEvaluator interface definitions
 local BtEvaluator = Sentry:New()
 function BtEvaluator.SendMessage(messageType, messageData)
-  local payload = "BETS " .. messageType;
-  if(messageData)then
-    payload = payload .. " "
-    if(type(messageData) == "string")then
-      payload = payload .. messageData
-    else
-      payload = payload .. JSON:encode(messageData)
-    end
-  end
-  Spring.SendSkirmishAIMessage(Spring.GetLocalPlayerID(), payload)
+	local payload = "BETS " .. messageType;
+	if(messageData)then
+		payload = payload .. " "
+		if(type(messageData) == "string")then
+			payload = payload .. messageData
+		else
+			payload = payload .. JSON:encode(messageData)
+		end
+	end
+	Spring.SendSkirmishAIMessage(Spring.GetLocalPlayerID(), payload)
 end
 
 function BtEvaluator.RequestNodeDefinitions()
-  BtEvaluator.SendMessage("REQUEST_NODE_DEFINITIONS")
+	BtEvaluator.SendMessage("REQUEST_NODE_DEFINITIONS")
 end
 function BtEvaluator.AssignUnits()
-  BtEvaluator.SendMessage("ASSIGN_UNITS")
+	BtEvaluator.SendMessage("ASSIGN_UNITS")
 end
 function BtEvaluator.CreateTree(treeDefinition)
-  BtEvaluator.SendMessage("CREATE_TREE", treeDefinition)
+	BtEvaluator.SendMessage("CREATE_TREE", treeDefinition)
 end
 
 
@@ -74,17 +74,17 @@ end
 
 
 function widget:Initialize()	
-  if (not WG.JSON) then
-    -- don't run if we can't find JSON
-    widgetHandler:RemoveWidget()
-    return
-  end
+	if (not WG.JSON) then
+		-- don't run if we can't find JSON
+		widgetHandler:RemoveWidget()
+		return
+	end
  
-  JSON = WG.JSON
+	JSON = WG.JSON
  
 	Spring.SendCommands("AIControl "..Spring.GetLocalPlayerID().." BtEvaluator")
-  
-  WG.BtEvaluator = BtEvaluator
+	
+	WG.BtEvaluator = BtEvaluator
 end
 
 function widget:RecvSkirmishAIMessage(aiTeam, message)
@@ -96,27 +96,27 @@ function widget:RecvSkirmishAIMessage(aiTeam, message)
 	if(message:len() <= 4 and message:sub(1,4):upper() ~= "BETS") then
 		return
 	end
-  
+	
 	local messageShorter = message:sub(6)
 	local indexOfFirstSpace = string.find(messageShorter, " ")
 	local messageType = messageShorter:sub(1, indexOfFirstSpace - 1):upper()	
-  
-  -- messages without parameter
+	
+	-- messages without parameter
 	if(messageType == "LOG") then 
-    Logger.log("BtEvaluator", messageBody)
-    return true
-  else
-    local handler = ({
-      ["UPDATE_STATES"] = BtEvaluator.OnUpdateStates,
-      ["NODE_DEFINITIONS"] = BtEvaluator.OnNodeDefinitions,
-      ["COMMAND"] = BtEvaluator.OnCommand,
-    })[messageType]
-    
-    if(handler)then
-      local messageBody = messageShorter:sub(indexOfFirstSpace + 1)
-      local data = JSON:decode(messageBody)
-      
-      return handler:Invoke(data)
-    end
-  end
+		Logger.log("BtEvaluator", messageBody)
+		return true
+	else
+		local handler = ({
+			["UPDATE_STATES"] = BtEvaluator.OnUpdateStates,
+			["NODE_DEFINITIONS"] = BtEvaluator.OnNodeDefinitions,
+			["COMMAND"] = BtEvaluator.OnCommand,
+		})[messageType]
+		
+		if(handler)then
+			local messageBody = messageShorter:sub(indexOfFirstSpace + 1)
+			local data = JSON:decode(messageBody)
+			
+			return handler:Invoke(data)
+		end
+	end
 end

@@ -1,13 +1,13 @@
 function widget:GetInfo()
-  return {
-    name    = "Behaviour Tree Editor",
-    desc    = "Behaviour Tree Editor for creating complex behaviours of groups of units. ",
-    author  = "Jakub Stasta",
-    date    = "today",
-    license = "GNU GPL v2",
-    layer   = 0,
-    enabled = true
-  }
+	return {
+		name    = "Behaviour Tree Editor",
+		desc    = "Behaviour Tree Editor for creating complex behaviours of groups of units. ",
+		author  = "Jakub Stasta",
+		date    = "today",
+		license = "GNU GPL v2",
+		layer   = 0,
+		enabled = true
+	}
 end
  
 local Chili, Screen0, JSON
@@ -34,7 +34,7 @@ local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyT
 local function addNodeToCanvas(node)
 	if next(WG.nodeList) == nil then
 		rootID = node.id
-		Logger.log("tree-editing", "BtCreator: Setting u of new of rootID: "..rootID)
+		Logger.log("tree-editing", "BtCreator: Setting u of new of rootID: ", rootID)
 	end
 	WG.nodeList[node.id] = node
 	WG.clearSelection()
@@ -63,7 +63,7 @@ local copyTreeNode = nil
 local startCopyingLocation = {}
 
 function listenerStartCopyingNode(node, x , y)
-	Logger.log("tree-editing", "listener start Copy Object. x:"..x + node.x..", y="..y + node.y)
+	Logger.log("tree-editing", "listener start Copy Object. x:", x + node.x, ", y=", y + node.y)
 	copyTreeNode = node
 	startCopyingLocation.x = x + node.x
 	startCopyingLocation.y = y + node.y
@@ -111,8 +111,8 @@ function listenerClickOnTest(self)
 		'parameters'
 	}
 	local stringTree = TreeToStringJSON(WG.nodeList[rootID], fieldsToSerialize )
-	Logger.log("communication", "BETS CREATE_TREE "..stringTree)
-	SendStringToBtEvaluator("CREATE_TREE "..stringTree)
+	Logger.log("communication", "BETS CREATE_TREE ", stringTree)
+	SendStringToBtEvaluator("CREATE_TREE ", stringTree)
 end
 
 -- //////////////////////////////////////////////////////////////////////
@@ -137,7 +137,7 @@ local function updateStatesMessage(messageBody)
 			elseif(states[id]:upper() == "FAILURE") then
 				color = copyTable(FAILURE_COLOR)
 			else
-				Logger.log("communication", "Uknown state received from AI, for node id: "..id)
+				Logger.log("communication", "Uknown state received from AI, for node id: ", id)
 			end
 		end
 		-- Do not change color alpha
@@ -158,10 +158,10 @@ end
 local function generateNodePoolNodes(messageBody)
 	-- messageBody = '[{ "name": "name 1", "children": null, "defaultWidth": 70, "defaultHeight": 100 }, {"name":"Sequence","children":[]}]'
 	nodes = JSON:decode(messageBody)
-	Logger.log("communication", "NODES DECODED:  "..dump(nodes))
+	Logger.log("communication", "NODES DECODED:  ", nodes)
 	local heightSum = 30 -- skip NodePoolLabel
 	for i=1,#nodes do
-		Logger.log("communication", "NODES DECODED i-th node:  "..dump(nodes[i]))
+		Logger.log("communication", "NODES DECODED i-th node:  ", nodes[i])
 		local nodeParams = {
 			name = nodes[i].name,
 			hasConnectionOut = (nodes[i].children == null) or (type(nodes[i].children) == "table" and #nodes[i].children ~= 0),
@@ -200,7 +200,7 @@ local function executeScript(messageBody)
 	
 	if (params.func == "RUN") then
 		res = c.run(params.units, params.parameter)
-		Logger.log("luacommand", "Result: " .. res)
+		Logger.log("luacommand", "Result: ", res)
 		return res
 	elseif (params.func == "RESET") then
 		c.reset()
@@ -216,14 +216,14 @@ function widget:RecvSkirmishAIMessage(aiTeam, message)
 	end
 	-- Check if it starts with "BETS"
 	if(message:len() <= 4 and message:sub(1,4):upper() ~= "BETS") then
-		Logger.log("communication", "Message from AI received: beginning of message is not equal 'BETS', got: "..message:sub(1,4):upper())
+		Logger.log("communication", "Message from AI received: beginning of message is not equal 'BETS', got: ", message:sub(1,4):upper())
 		return
 	end
 	messageShorter = message:sub(6)
 	indexOfFirstSpace = string.find(messageShorter, " ")
 	messageType = messageShorter:sub(1, indexOfFirstSpace - 1):upper()	
 	messageBody = messageShorter:sub(indexOfFirstSpace + 1)
-	Logger.log("communication", "Message from AI received: message body: "..messageBody)
+	Logger.log("communication", "Message from AI received: message body: ", messageBody)
 	if(messageType == "UPDATE_STATES") then 
 		Logger.log("communication", "Message from AI received: message type UPDATE_STATES")
 		updateStatesMessage(messageBody)		
@@ -242,16 +242,16 @@ function SendStringToBtEvaluator(message)
 end
 
 function widget:Initialize()	
-  if (not WG.ChiliClone) and (not WG.JSON) and (not WG.BtEvaluatorIsLoaded) then
-    -- don't run if we can't find Chili, or JSON, or BtEvaluatorLoader
-    widgetHandler:RemoveWidget()
-    return
-  end
+	if (not WG.ChiliClone) and (not WG.JSON) and (not WG.BtEvaluatorIsLoaded) then
+		-- don't run if we can't find Chili, or JSON, or BtEvaluatorLoader
+		widgetHandler:RemoveWidget()
+		return
+	end
  
-  -- Get ready to use Chili
-  Chili = WG.ChiliClone
-  Screen0 = Chili.Screen0	
-  JSON = WG.JSON
+	-- Get ready to use Chili
+	Chili = WG.ChiliClone
+	Screen0 = Chili.Screen0	
+	JSON = WG.JSON
 	
 	nodePoolPanel = Chili.ScrollPanel:New{
 		parent = Screen0,
@@ -263,21 +263,21 @@ function widget:Initialize()
 		skinName='DarkGlass',
 	}
 	nodePoolLabel = Chili.Label:New{
-    parent = nodePoolPanel,
+		parent = nodePoolPanel,
 		x = '20%',
 		y = '3%',
-    width  = '10%',
-    height = '10%',
-    caption = "Node Pool",
+		width  = '10%',
+		height = '10%',
+		caption = "Node Pool",
 		skinName='DarkGlass',
-  } 
+	} 
 	 -- Create the window
-  windowBtCreator = Chili.Window:New{
-    parent = Screen0,
-    x = nodePoolPanel.width + 15,
-    y = '56%',
-    width  = Screen0.width - nodePoolPanel.width - 25,
-    height = '42%',	
+	windowBtCreator = Chili.Window:New{
+		parent = Screen0,
+		x = nodePoolPanel.width + 15,
+		y = '56%',
+		width  = Screen0.width - nodePoolPanel.width - 25,
+		height = '42%',	
 		padding = {10,10,10,10},
 		draggable=true,
 		resizable=true,
@@ -286,7 +286,7 @@ function widget:Initialize()
 		OnClick = { WG.clearSelection },
 		-- OnMouseDown = { listenerStartSelectingNodes },
 		-- OnMouseUp = { listenerEndSelectingNodes },
-  }	
+	}	
 	
 	Logger.log("communication", "BETS REQUEST_NODE_DEFINITIONS")
 	Spring.SendSkirmishAIMessage (Spring.GetLocalPlayerID (), "BETS REQUEST_NODE_DEFINITIONS")
@@ -371,7 +371,7 @@ end
 function SerializeForest()
 	Spring.CreateDir("LuaUI/Widgets/BtBehaviours")
 	local outputFile = io.open("LuaUI/Widgets/BtBehaviours/"..treeName.text..".txt", "w")
-  if outputFile == nil then 
+	if outputFile == nil then 
 		return 
 	end
 	-- find all the nodes with incoming connection lines; store them using their names as indexes
@@ -459,7 +459,7 @@ function ReadTreeNode(inputFile)
 	if(line ~= "{") then 
 		
 		Logger.log("save-and-load", "Unknown format of saved behaviour tree. ")
-		Logger.log("save-and-load", "Found: '"..line.."', expected {")
+		Logger.log("save-and-load", "Found: '", line, "', expected {")
 	end
 	local paramsString = ""
 	while line ~= "children = {" do
@@ -486,7 +486,7 @@ function ReadTreeNode(inputFile)
 	line = trim(inputFile:read())
 	if(line ~= "},") then
 		Logger.log("save-and-load", "Uknown format of saved behaviour tree. ")
-		Logger.log("save-and-load", "Found: '"..line.."', expected {")
+		Logger.log("save-and-load", "Found: '", line, "', expected {")
 	end
 	return root
 end

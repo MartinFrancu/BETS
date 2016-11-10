@@ -51,7 +51,7 @@ Debug:Assign("Logger", function()
   function logger.log(logGroup, ...)
     local message = ""
     for i,v in ipairs({ ... }) do
-      message = message .. dump(v)
+      message = message .. (type(v) == "string" and v or dump(v))
     end
     
     if(not logger.settings[logGroup])then
