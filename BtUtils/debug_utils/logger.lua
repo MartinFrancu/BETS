@@ -20,18 +20,19 @@ Debug:Assign("Logger", function()
 	local IGNORE = "ignore"
 	
 	local funnelFile = io.open(LOG_PATH .. "funnel-log.txt", "w")
-	for k,v in logger.settings:pairs() do
+	for k,v in logger.settings:Pairs() do
 		if(string.sub(k,1,string.len("__"))~="__")then
 			io.open(LOG_PATH .. "log_" .. k .. ".txt", "w"):close() -- clear the files
-		end
+    end
 	end
 	
-	logger.settings.__values = {
-		SPRING_ECHO,
-		FUNNEL,
-		SEPARATE,
-		IGNORE,
-	}
+	logger.settings.__comment = [[
+Each log-group can have one of the following values:
+	"]] .. SPRING_ECHO .. [[" - uses Spring.Echo
+	"]] .. FUNNEL ..      [[" - logs the message into funnel-log.txt
+	"]] .. SEPARATE ..    [[" - logs the message into a sepearate file log_[log-group name].txt
+	"]] .. IGNORE ..      [[" (or any other string) - ignore the message completely
+]]
 	
 	local handlers = {
 		[ SPRING_ECHO ] = function(logGroup, msg)
