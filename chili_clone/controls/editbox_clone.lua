@@ -322,8 +322,6 @@ function EditBox:KeyPress(key, mods, isRepeat, label, unicode, ...)
 	elseif unicode and unicode ~= 0 then
 		-- backward compability with Spring <97
 		self:TextInput(unicode)
-	else 
-		self:TextInput(key)
 	end
 	
 	-- text selection handling
@@ -349,7 +347,7 @@ end
 
 function EditBox:TextInput(utf8char, ...)
 	local unicode = utf8char
-	Spring.Echo(unicode)
+
 	if (not self.allowUnicode) then
 		local success
 		success, unicode = pcall(string.char, utf8char)
