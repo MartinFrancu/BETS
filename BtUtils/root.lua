@@ -3,6 +3,7 @@ WG.BtUtils = WG.BtUtils or (function()
 	local locators = {
 		Sentry = "sentry",
 		JSON = "JSON",
+		Dependency = "dependency",
 		Debug = "debug_utils/",
 	}
 	

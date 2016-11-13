@@ -1,7 +1,7 @@
 if(not BtUtils)then VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST) end
 
 local Debug = BtUtils.Debug
-Debug:Assign("Logger", function()
+return Debug:Assign("Logger", function()
 	local logger = {}
 	
 	local LOGGER_SETTINGS = LUAUI_DIRNAME .. "Config/debug_utils_logger.lua"
@@ -71,5 +71,3 @@ Each log-group can have one of the following values:
 	
 	return logger
 end)
-
-return Debug.Logger

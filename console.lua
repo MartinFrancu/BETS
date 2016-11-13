@@ -93,7 +93,7 @@ if (widget and not widget.GetInfo) then
 				x = 0,
 				y = commandLabel.height,
 				font = { size = 16, color = {1,1,1,1} },
-				caption = ((resultType == "error") and _G.RedStr or "") .. dump(value)
+				caption = ((resultType == "error") and _G.RedStr or "") .. tostring(dump(value))
 			}
 		end
 

@@ -15,6 +15,7 @@ local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.
 
 local JSON = Utils.JSON
 local Sentry = Utils.Sentry
+local Dependency = Utils.Dependency
 
 local Debug = Utils.Debug
 local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyTable, Debug.fileTable
@@ -46,36 +47,12 @@ function BtEvaluator.CreateTree(treeDefinition)
 end
 
 
-function listenerOnTestButtonClick(self)
-	Spring.Echo("Test message sent from widget to C++ Skirmish AI. ")
-	Spring.SendSkirmishAIMessage(Spring.GetLocalPlayerID(), "Test message from widget - what is written here? Heh?. ")
-	return true
-end
-function listenerOnNodeDefinitionButtonClick (self)
-	Spring.Echo ("Requesting node definitions.")
-	Spring.SendSkirmishAIMessage (Spring.GetLocalPlayerID (), "BETS REQUEST_NODE_DEFINITIONS")
-	return true
-end
-function listenerOnMoveButtonClick (self)
-	local tree = [[{
-	"type": "condition",
-	"children": [
-		{ "type": "flipSensor" },
-		{ "type": "echo", "parameters": [ { "name": "message", "value": "Created tree" } ] },
-		{ "type": "wait", "parameters": [ { "name": "time", "value": 5 } ] }
-	]
-}]]
-
-	Spring.Echo ("Creating tree " .. tree)
-	Spring.SendSkirmishAIMessage (Spring.GetLocalPlayerID (), "BETS CREATE_TREE " .. tree)
-	return true
-end
-
-
 function widget:Initialize()	
 	Spring.SendCommands("AIControl "..Spring.GetLocalPlayerID().." BtEvaluator")
 	
 	WG.BtEvaluator = BtEvaluator
+	
+	Dependency.fill(Dependency.BtEvaluator)
 end
 
 function widget:RecvSkirmishAIMessage(aiTeam, message)
