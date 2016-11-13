@@ -10,7 +10,7 @@ function widget:GetInfo()
 	}
 end
  
-local Chili, Screen0, JSON
+local Chili, Screen0
  
 local windowBtCreator
 local nodePoolLabel
@@ -28,8 +28,12 @@ local rootID = nil
 -- Include debug functions, copyTable() and dump()
 --VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/debug_utils.lua", nil, VFS.RAW_FIRST)
 local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
+
+local JSON = Utils.JSON
+
 local Debug = Utils.Debug;
 local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyTable, Debug.fileTable
+
 
 local function addNodeToCanvas(node)
 	if next(WG.nodeList) == nil then
@@ -242,7 +246,7 @@ function SendStringToBtEvaluator(message)
 end
 
 function widget:Initialize()	
-	if (not WG.ChiliClone) and (not WG.JSON) and (not WG.BtEvaluatorIsLoaded) then
+	if (not WG.ChiliClone) and (not WG.BtEvaluatorIsLoaded) then
 		-- don't run if we can't find Chili, or JSON, or BtEvaluatorLoader
 		widgetHandler:RemoveWidget()
 		return
@@ -251,7 +255,6 @@ function widget:Initialize()
 	-- Get ready to use Chili
 	Chili = WG.ChiliClone
 	Screen0 = Chili.Screen0	
-	JSON = WG.JSON
 	
 	nodePoolPanel = Chili.ScrollPanel:New{
 		parent = Screen0,
@@ -437,7 +440,7 @@ function TreeToStringJSON(root, fieldsToSerialize)
 	if table.getn(rootChildren) > 0 then
 		local firstChild = rootChildren[1]
 		local treeTable = LoadTreeInTableRecursive(firstChild, fieldsToSerialize)
-		local treeString = WG.JSON:encode(treeTable)
+		local treeString = JSON:encode(treeTable)
 		return treeString
 	else
 		return "{}"

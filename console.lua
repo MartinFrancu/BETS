@@ -45,6 +45,7 @@ if (widget and not widget.GetInfo) then
 	 
 	-- Include debug functions, copyTable() and dump()
 	local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
+	
 	local Debug = Utils.Debug
 	local Logger, dump = Debug.Logger, Debug.dump
 	

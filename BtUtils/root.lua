@@ -1,5 +1,11 @@
 WG = WG or {}
 WG.BtUtils = WG.BtUtils or (function()
+	local locators = {
+		Sentry = "sentry",
+		JSON = "JSON",
+		Debug = "debug_utils/",
+	}
+	
 	local LOCAL_PATH = LUAUI_DIRNAME .. "Widgets/BtUtils/"
 	local function include(name)
 		if(name:sub(name:len()) == "/")then
@@ -42,11 +48,6 @@ WG.BtUtils = WG.BtUtils or (function()
 		}), locators
 	end
 
-	local locators = {
-		Sentry = "sentry",
-		Debug = "debug_utils/",
-	}
-	
 	return (Locator:New({ Locator = Locator }, locators));
 end)()
 

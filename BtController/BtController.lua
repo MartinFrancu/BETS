@@ -14,10 +14,16 @@ function widget:GetInfo()
   }
 end
 
-local Chili, Screen0, JSON
+local Chili, Screen0
 local BtController = widget
 
 
+local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
+
+local JSON = Utils.JSON
+
+local Debug = Utils.Debug;
+local Logger = Debug.Logger
 
 
  
@@ -144,7 +150,6 @@ function widget:Initialize()
   -- Get ready to use Chili
   Chili = WG.ChiliClone
   Screen0 = Chili.Screen0	
-  JSON = WG.JSON
   
    -- Create the window
   windowBtController = Chili.Window:New{

@@ -13,12 +13,11 @@ end
 
 local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
 
+local JSON = Utils.JSON
 local Sentry = Utils.Sentry
 
 local Debug = Utils.Debug
 local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyTable, Debug.fileTable
-
-local JSON
 
 
 -- BtEvaluator interface definitions
@@ -74,14 +73,6 @@ end
 
 
 function widget:Initialize()	
-	if (not WG.JSON) then
-		-- don't run if we can't find JSON
-		widgetHandler:RemoveWidget()
-		return
-	end
- 
-	JSON = WG.JSON
- 
 	Spring.SendCommands("AIControl "..Spring.GetLocalPlayerID().." BtEvaluator")
 	
 	WG.BtEvaluator = BtEvaluator
