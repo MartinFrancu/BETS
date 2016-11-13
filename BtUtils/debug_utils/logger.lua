@@ -23,7 +23,7 @@ Debug:Assign("Logger", function()
 	for k,v in logger.settings:Pairs() do
 		if(string.sub(k,1,string.len("__"))~="__")then
 			io.open(LOG_PATH .. "log_" .. k .. ".txt", "w"):close() -- clear the files
-    end
+		end
 	end
 	
 	logger.settings.__comment = [[

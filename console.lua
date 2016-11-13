@@ -44,7 +44,8 @@ if (widget and not widget.GetInfo) then
 	local CONSOLE_SETTINGS = LUAUI_DIRNAME .. "Config/console.lua"
 	 
 	-- Include debug functions, copyTable() and dump()
-	local Debug = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/debug_utils/root.lua", nil, VFS.RAW_FIRST)
+	local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
+	local Debug = Utils.Debug
 	local Logger, dump = Debug.Logger, Debug.dump
 	
 	local function loadSettings()
@@ -153,6 +154,7 @@ if (widget and not widget.GetInfo) then
 	consoleContext._G = consoleContext
 	consoleContext.history = history
 	consoleContext.Logger = Logger
+	consoleContext.widget = widget
 	function consoleContext.clear()
 		consoleLog:ClearChildren()
 		consoleLog.justCleared = true
@@ -212,10 +214,10 @@ if (widget and not widget.GetInfo) then
 		end
 	end
 
-	function injectConsole()
+	local function injectConsole()
 	end
 	
-	function restoreConsole()
+	local function restoreConsole()
 	end
 	
 	function widget:Initialize()	
@@ -283,14 +285,15 @@ if (widget and not widget.GetInfo) then
 		}
 		
 		consolePanel:Hide()
+		
+		injectConsole()
 	end
 	
 	function widget:Shutdown()
-		
+		restoreConsole()
 	end
 
 	widget.KeyPress = handleGlobalHotkey
-	
 else
 end
 
