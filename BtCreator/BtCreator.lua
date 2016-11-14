@@ -30,6 +30,7 @@ local rootID = nil
 local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
 
 local JSON = Utils.JSON
+local BehaviourTree = Utils.BehaviourTree
 
 local Debug = Utils.Debug;
 local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyTable, Debug.fileTable
@@ -98,6 +99,7 @@ local DeserializeForest
 
 function listenerClickOnSaveTree(self)
 	Logger.log("save-and-load", "Save Tree clicked on. ")
+	formBehaviourTree():Save(treeName.text)
 	SerializeForest()
 end
 
@@ -371,6 +373,48 @@ function widget:KeyPress(key)
 	
 end
 
+
+local fieldsToSerialize = {
+	'id',
+	'nodeType',
+	'text',
+	'x',
+	'y',
+	'width',
+	'height',
+	'hasConnectionIn',
+	'hasConnectionOut',
+}
+
+function formBehaviourTree()
+	local bt = BehaviourTree:New()
+	local nodeMap = {}
+	for id,node in pairs(WG.nodeList) do
+		if(node.id ~= rootID)then
+			local params = {}
+			for i, key in ipairs(fieldsToSerialize) do
+				params[key] = node[key]
+			end
+			nodeMap[node] = bt:NewNode(params)
+		end
+	end
+	
+	for id,node in pairs(WG.nodeList) do
+		local btNode = nodeMap[node]
+		local children = node:GetChildren()
+		for i, childNode in ipairs(children) do
+			local btChild = nodeMap[childNode]
+			if(btNode)then
+				btNode:Connect(btChild)
+			else
+				bt:SetRoot(btChild)
+			end
+		end
+	end
+	
+	return bt
+end
+
 function SerializeForest()
 	Spring.CreateDir("LuaUI/Widgets/BtBehaviours")
 	local outputFile = io.open("LuaUI/Widgets/BtBehaviours/"..treeName.text..".txt", "w")
@@ -394,17 +438,6 @@ end
 
 
 function SerializeTree(root, spaces, outputFile)
-	local fieldsToSerialize = {
-		'id',
-		'nodeType',
-		'text',
-		'x',
-		'y',
-		'width',
-		'height',
-		'hasConnectionIn',
-		'hasConnectionOut',
-	}
 	local children = root:GetChildren()
 	outputFile:write(spaces.."{\n" )
 	root:Serialize(spaces.."  ", outputFile, fieldsToSerialize)

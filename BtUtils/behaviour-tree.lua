@@ -61,12 +61,13 @@ return Utils:Assign("BehaviourTree", function()
 	end
 	
 	function treePrototype:NewNode(params)
+		local properties = {}
 		local node = setmetatable({
 			id = params.id,
-			type = params.type,
+			nodeType = params.nodeType,
 			parameters = params.parameters or {},
 			children = {},
-		}, makeNodeMetatable(self, params))
+		}, makeNodeMetatable(self, properties))
 		
 		if(params.children)then
 			for _, child in ipairs(params.children) do
@@ -74,10 +75,12 @@ return Utils:Assign("BehaviourTree", function()
 			end
 		end
 
-		for k, _ in pairs(node) do
-			params[k] = nil
+		for k, v in pairs(params) do
+			if(not node[k])then
+				properties[k] = v
+			end
 		end
-		self.properties[node.id] = params
+		self.properties[node.id] = properties
 
 		table.insert(self.additionalNodes, node)
 		
@@ -131,6 +134,7 @@ return Utils:Assign("BehaviourTree", function()
 	
 	-- saving
 	function BehaviourTree.save(bt, name)
+		Spring.CreateDir(BEHAVIOURS_DIRNAME)
 		local file = io.open(BEHAVIOURS_DIRNAME .. name .. ".json", "w")
 		if(not file)then
 			return nil
