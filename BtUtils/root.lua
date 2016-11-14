@@ -4,6 +4,7 @@ WG.BtUtils = WG.BtUtils or (function()
 		Sentry = "sentry",
 		JSON = "JSON",
 		Dependency = "dependency",
+		BehaviourTree = "behaviour-tree",
 		Debug = "debug_utils/",
 	}
 	
