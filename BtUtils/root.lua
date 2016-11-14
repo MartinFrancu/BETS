@@ -35,6 +35,12 @@ WG.BtUtils = WG.BtUtils or (function()
 						end
 						return location
 					end
+				elseif(key == "Reload")then
+					return function(self)
+						for k, _ in pairs(locators) do
+							self[k] = nil
+						end
+					end
 				end
 			
 				local locator = locators[key]
