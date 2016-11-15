@@ -1,10 +1,13 @@
 local Logger = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/debug_utils/logger.lua", nil, VFS.RAW_FIRST)
+--local baseCommand = VFS.Include(LUAUI_DIRNAME .. "Widgets/btCommandScripts/command.lua", nil, VFS.RAW_FIRST)
 
-local cmd = {}
+local cmd = VFS.Include(LUAUI_DIRNAME .. "Widgets/btCommandScripts/command.lua", nil, VFS.RAW_FIRST)
 
 cmd.targets = {}
 
 cmd.n = 0
+
+-- Spring.Echo("---------------------  LOADING ---------------------")
 
 function cmd.run(unitIds, parameter)
 	cmd.indexOfComma = string.find(parameter, ",")

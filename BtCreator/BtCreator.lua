@@ -195,21 +195,25 @@ end
 
 local scripts = {}
 
-local function executeScript(messageBody)
-	params = JSON:decode(messageBody)
-	name = params.name
+local function getCommandClass(name) 
 	c = scripts[name] 
 	if not c then 
 		c = VFS.Include(LUAUI_DIRNAME .. "Widgets/btCommandScripts/" .. name, nil, VFS.RAW_FIRST)
 		scripts[name] = c
 	end
-	
+	return c
+end
+
+local function executeScript(messageBody)
+	params = JSON:decode(messageBody)
+	command = getCommandClass(params.name):New()
+
 	if (params.func == "RUN") then
-		res = c.run(params.units, params.parameter)
+		res = command.run(params.units, params.parameter)
 		Logger.log("luacommand", "Result: ", res)
 		return res
 	elseif (params.func == "RESET") then
-		c.reset()
+		command.reset()
 		return nil
 	end
 end
