@@ -97,6 +97,8 @@ end
 local SerializeForest
 local DeserializeForest
 
+local clearCanvas, loadBehaviourTree, formBehaviourTree
+
 function listenerClickOnSaveTree(self)
 	Logger.log("save-and-load", "Save Tree clicked on. ")
 	formBehaviourTree():Save(treeName.text)
@@ -105,7 +107,13 @@ end
 
 function listenerClickOnLoadTree(self)
 	Logger.log("save-and-load", "Load Tree clicked on. ")
-	DeserializeForest()
+	local bt = BehaviourTree.load(treeName.text)
+	if(bt)then
+		clearCanvas()
+		loadBehaviourTree(bt)
+	else
+		DeserializeForest()
+	end
 end
 
 function listenerClickOnTest(self)
@@ -116,9 +124,9 @@ function listenerClickOnTest(self)
 		'text',
 		'parameters'
 	}
-	local stringTree = TreeToStringJSON(WG.nodeList[rootID], fieldsToSerialize )
-	Logger.log("communication", "BETS CREATE_TREE ", stringTree)
-	SendStringToBtEvaluator("CREATE_TREE ", stringTree)
+	local stringTree = JSON:encode(formBehaviourTree().root) --TreeToStringJSON(WG.nodeList[rootID], fieldsToSerialize )
+	Logger.log("create-tree", "BETS CREATE_TREE ", stringTree)
+	SendStringToBtEvaluator("CREATE_TREE " .. stringTree)
 end
 
 -- //////////////////////////////////////////////////////////////////////
@@ -351,7 +359,7 @@ function widget:Initialize()
 	
 	treeName = Chili.EditBox:New{
 		parent = windowBtCreator,
-		text = "Tree Name",
+		text = "02-flipEcho",
 		width = '33%',
 		x = '40%',
 		y = 5,
@@ -359,7 +367,6 @@ function widget:Initialize()
 		skinName = 'DarkGlass',
 		borderThickness = 0,
 		backgroundColor = {0,0,0,0},
-		allowUnicode = false,
 		editingText = true,
 	}
 	-- treeName.font.size = 16
@@ -417,6 +424,66 @@ function formBehaviourTree()
 	end
 	
 	return bt
+end
+
+function clearCanvas(omitRoot)
+	for i=#WG.connectionLines,1,-1 do
+		for k=2,5 do
+			WG.connectionLines[i][k]:Dispose()
+		end
+		table.remove(WG.connectionLines, i)
+	end
+	--WG.connectionLines = {}
+	for id,node in pairs(WG.nodeList) do
+		node:Dispose()
+	end
+	WG.nodeList = {}
+	WG.selectedNodes = {}
+	
+	if(not omitRoot)then
+		addNodeToCanvas(Chili.TreeNode:New{
+			parent = windowBtCreator,
+			nodeType = "Root",
+			y = '35%',
+			x = 5,
+			draggable = true,
+			resizable = true,
+			connectable = true,
+			hasConnectionIn = false,
+			hasConnectionOut = true,
+			id = false,
+		})
+	end
+end
+
+local function loadBehaviourNode(bt, btNode)
+	local params = {}
+	for k, v in pairs(btNode) do
+		params[k] = v
+	end
+	for k, v in pairs(bt.properties[btNode.id]) do
+		params[k] = v
+	end
+	params.children = nil
+	params.name = nil
+	params.parent = windowBtCreator
+	params.connectable = true
+	params.draggable = true
+	local node = Chili.TreeNode:New(params)
+	addNodeToCanvas(node)
+	for _, btChild in ipairs(btNode.children) do
+		local child = loadBehaviourNode(bt, btChild)
+		WG.AddConnectionLine(node.connectionOut, child.connectionIn)
+	end
+	return node
+end
+
+function loadBehaviourTree(bt)
+	local root = loadBehaviourNode(bt, bt.root)
+	WG.AddConnectionLine(WG.nodeList[rootID].connectionOut, root.connectionIn)
+	for _, node in ipairs(bt.additionalNodes) do
+		loadBehaviourNode(bt, node)
+	end
 end
 
 function SerializeForest()
@@ -534,24 +601,14 @@ end
 --- First removes all TreeNodes and connectionLines from canvas, 
 --  then deserialize all the nodes and connections from a file. 
 function DeserializeForest()
-	for i=#WG.connectionLines,1,-1 do
-		for k=2,5 do
-			WG.connectionLines[i][k]:Dispose()
-		end
-		table.remove(WG.connectionLines, i)
-	end
-	--WG.connectionLines = {}
-	for id,node in pairs(WG.nodeList) do
-		node:Dispose()
-	end
-	WG.nodeList = {}
-	WG.selectedNodes = {}
+	clearCanvas(true)
+
 	 -- rootIndex = 1
-	if(not VFS.FileExists("LuaUI/Widgets/behaviour_trees/01-test.txt", "r")) then
-		Logger.log("save-and-load", "BtCreator.lua: DeserializeForest(): File to deserialize not found in LuaUI/Widgets/behaviour_trees/01-test.txt ")
+	if(not VFS.FileExists("LuaUI/Widgets/BtBehaviours/01-test.txt", "r")) then
+		Logger.log("save-and-load", "BtCreator.lua: DeserializeForest(): File to deserialize not found in LuaUI/Widgets/BtBehaviours/01-test.txt ")
 		return
 	end	
-	local inputFile = io.open("LuaUI/Widgets/behaviour_trees/01-test.txt", "r")
+	local inputFile = io.open("LuaUI/Widgets/BtBehaviours/01-test.txt", "r")
 	while(ReadTreeNode(inputFile)) do
 	end
 	inputFile:close()

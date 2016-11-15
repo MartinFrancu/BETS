@@ -134,13 +134,17 @@ return Utils:Assign("BehaviourTree", function()
 	
 	-- saving
 	function BehaviourTree.save(bt, name)
+		local text = JSON:encode(bt, nil, { pretty = true, indent = "\t" })
+		
 		Spring.CreateDir(BEHAVIOURS_DIRNAME)
 		local file = io.open(BEHAVIOURS_DIRNAME .. name .. ".json", "w")
 		if(not file)then
 			return nil
 		end
-		file:write(JSON:encode(bt, nil, { pretty = true, indent = "\t" }))
+		file:write(text)
 		file:close()
+		
+		return true
 	end
 	treePrototype.Save = BehaviourTree.save
 	
