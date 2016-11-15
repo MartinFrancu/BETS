@@ -1,0 +1,65 @@
+{
+  id = "T8idAeVQ0BSnHpiK8aIKjaMoURgtBpuX",
+  nodeType = "Root",
+  text = "Root",
+  x = 5,
+  y = 159,
+  width = 110,
+  height = 60,
+  hasConnectionIn = false,
+  hasConnectionOut = true,
+  children = {
+    {
+      id = "IAJmvJllm9Z6xrfy9dGScdwV7LvGY9C8",
+      nodeType = "condition",
+      text = "condition",
+      x = 200,
+      y = 116,
+      width = 110,
+      height = 60,
+      hasConnectionIn = true,
+      hasConnectionOut = true,
+      children = {
+        {
+          id = "h3TFuH8QAxvyFKf3tfMeisip6ISCl9T4",
+          nodeType = "flipSensor",
+          text = "flipSensor",
+          x = 318,
+          y = 49,
+          width = 110,
+          height = 60,
+          hasConnectionIn = true,
+          hasConnectionOut = false,
+          children = {
+          }
+        },
+        {
+          id = "yPJ8cNc1qll8vxpYQQEpB9OgmTtB4pGT",
+          nodeType = "echo",
+          text = "echo",
+          x = 319,
+          y = 132,
+          width = 110,
+          height = 60,
+          hasConnectionIn = true,
+          hasConnectionOut = false,
+          children = {
+          }
+        },
+        {
+          id = "bhe4CIIU5yRiWFJBMhRYvBCQrS53CfEu",
+          nodeType = "echo",
+          text = "echo",
+          x = 305,
+          y = 202,
+          width = 110,
+          height = 60,
+          hasConnectionIn = true,
+          hasConnectionOut = false,
+          children = {
+          }
+        },
+      }
+    },
+  }
+},
