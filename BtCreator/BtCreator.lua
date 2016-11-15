@@ -320,7 +320,7 @@ function widget:Initialize()
 	 -- Create the window
 	windowBtCreator = Chili.Window:New{
 		parent = Screen0,
-		x = nodePoolPanel.width + 15,
+		x = nodePoolPanel.width + 22,
 		y = '56%',
 		width  = Screen0.width - nodePoolPanel.width - 25,
 		height = '42%',	

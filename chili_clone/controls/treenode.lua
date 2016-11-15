@@ -126,7 +126,6 @@ function TreeNode:New(obj)
 		skinName = 'DarkGlass',
 		borderThickness = 0,
 		backgroundColor = {0,0,0,0},
-		allowUnicode = false,
 		editingText = false,
 	}
   return obj
