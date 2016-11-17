@@ -1,6 +1,8 @@
 --local BtSquadControlPath = LUAUI_DIRNAME .. "Widgets/BtController/BtSquadControl.lua"
 
-
+--------------------------------------------------------------------------------
+local BehavioursDirectory = "LuaUI/Widgets/BtBehaviours"
+--------------------------------------------------------------------------------
 
 function widget:GetInfo()
   return {
@@ -39,31 +41,11 @@ local selectTreeButton
 local windowTreeSelection
 local treeSelectionLabel
 local selectedTreeEditBox
+local treeSelectionComboBox
 local treeSelectionDoneButton
 
 local showTreeSelectionWindow 
 
-
-
--------------------------------------------------------------------------------
---[[function widget:DrawScreen()
-    if updateRequired then
-        updateRequired = false
-		loadPanel()
-    end
-end
-
-function resetWindow(container)
-	container:ClearChildren()
-	--container.xstep = 1
-	--container.ystep = 1
-end
-
-function loadPanel()
-	resetWindow(windowTreeSelection)
-	--setUpTreeSelectionWindow()
-end]]--
--------------------------------------------------------------------------------
 
 function listenerClickOnAssign(self)
 	Spring.Echo("BETS CREATE_TREE SENDING UNITS")
@@ -84,7 +66,6 @@ end
 
 
 
-
   
 
   function setUpTreeSelectionWindow()
@@ -97,8 +78,16 @@ end
 		caption = "Write in name of tree:",
 		skinName='DarkGlass',
    }
-  
-    treeName = Chili.EditBox:New{
+   local folderContent = VFS.DirList(BehavioursDirectory)
+   -- Remove the directory..
+   for i,v in ipairs(folderContent)do
+	folderContent[i] = string.sub(v, string.len( BehavioursDirectory)+2 )
+   end
+   
+   Logger.log("save-and-load", folderContent)
+   
+    
+  --[[ treeName = Chili.EditBox:New{
 		--parent = windowTreeSelection,
 		text = "Patrol tree (not changebla yet)",
 		width = '60%',
@@ -110,7 +99,21 @@ end
 		backgroundColor = {0.3,0.3,0.3,0.3},
 		allowUnicode = false,
 		editingText = false,
+	} ]]--
+	
+	
+	
+	treeSelectionComboBox = Chili.ComboBox:New{
+		items = folderContent,
+		width = '60%',
+		x = '35%',
+		y = '-1%',
+		align = 'left',
+		skinName = 'DarkGlass',
+		borderThickness = 0,
+		backgroundColor = {0.3,0.3,0.3,0.3},
 	}
+	
 	
 	treeSelectionDoneButton = Chili.Button:New{
 		x = '20%',
@@ -134,19 +137,13 @@ end
 		skinName='DarkGlass',
 		backgroundColor = {1,1,1,1},
 		visible =false,
-		children = {treeSelectionLabel, treeName, treeSelectionDoneButton}
+		children = {treeSelectionLabel, treeSelectionDoneButton, treeSelectionComboBox}
    }
    
 
 end
 
 function widget:Initialize()	
-  --[[if (not WG.ChiliClone) or (not WG.JSON) or (not WG.BtEvaluatorIsLoaded) then
-    -- don't run if we can't find Chili, or JSON, or BtEvaluatorLoader
-    widgetHandler:RemoveWidget()
-    return
-  end]]--
- 
   -- Get ready to use Chili
   Chili = WG.ChiliClone
   Screen0 = Chili.Screen0	
