@@ -33,6 +33,17 @@ local receivedMSGTextBox
 local nomessage
 
 
+local startTestsButton
+local testing 
+local howManyTestsInOneCase = 10
+local howManyCases = 15
+local currentTestInOneCase
+local currentTestCase
+
+local accumulativeTime = 0
+
+
+
 local message
 local lastMessageSendTime
 
@@ -44,8 +55,22 @@ function addToReceivedMSGTextBox(message)
 	else
 		receivedMSGTextBox:SetText(receivedMSGTextBox.text.."\n"..message)
 	end
-	scrollPanel:SetScrollPos(0,receivedMSGTextBox.height)
+	scrollPanel:SetScrollPos(0,receivedMSGTextBox.height + 20)
 end
+
+function setManualButtonsActivity(areActive)
+	if(areActive) then
+		sendMessagesButton:Show()
+		doubleMessageCountButton:Show()
+		doubleMessageLengthButton:Show()
+	else
+	    sendMessagesButton:Hide()
+		doubleMessageCountButton:Hide()
+		doubleMessageLengthButton:Hide()
+		
+	end
+end
+
 
 function listenerClickOnSend(self)
 	local length = tonumber(messageLenghtEditBox.text)
@@ -60,8 +85,12 @@ function listenerClickOnSend(self)
 	end
 	local count = tonumber(messageCountEditBox.text)
 	lastMessageSendTime = os.clock()
-	for i=1, count do
-	Spring.SendSkirmishAIMessage(Spring.GetLocalPlayerID(), "BETS TMSG " .. message)
+	if(count == 1) then
+	  Spring.SendSkirmishAIMessage(Spring.GetLocalPlayerID(), "BETS TMS1 " .. message)
+	else
+	  for i=1, count do
+	    Spring.SendSkirmishAIMessage(Spring.GetLocalPlayerID(), "BETS TMSG " .. message)
+	  end
 	end
 end
 
@@ -82,7 +111,23 @@ function listenerClickOnDoubleCount(self)
 	messageCountEditBox:SetText( tostring(count))
 end
 
-
+function listenerClickOnStartTests(self)
+	if(testing)then -- i ll stop testing
+		-- stop testing
+		testing = false
+		setManualButtonsActivity(true)
+		startTestsButton:SetCaption("Start tests")
+		addToReceivedMSGTextBox("testing stopped by user")
+		
+	else -- i ll start testing
+		testing = true
+		setManualButtonsActivity(false)
+		startTestsButton:SetCaption("Stop tests")
+		addToReceivedMSGTextBox("testing started")
+		currentTestCase = 0
+		currentTestInOneCase = 0
+	end
+end
 
 function widget:RecvSkirmishAIMessage(aiTeam, message)
 	-- Dont respond to other players AI
@@ -102,19 +147,11 @@ function widget:RecvSkirmishAIMessage(aiTeam, message)
 	Logger.log("communication", "Message from AI received: message body: "..messageBody)
 	if(messageType == "TMSGREPORT") then
 		addToReceivedMSGTextBox("message received in: "..tostring(os.clock() - lastMessageSendTime) )
-		Logger.log("communication", "Message from AI received: message type UPDATE_STATES")
+		accumulativeTime = accumulativeTime + os.clock() - lastMessageSendTime
+		Logger.log("tree-editing", "     BtMessageTest: Message Received: " .. messageBody .. " time: " .. tostring(os.clock() - lastMessageSendTime) )
 		addToReceivedMSGTextBox(messageBody)
 		--Spring.Echo("BtMessageTest, got message: "..messageBody )
 	end
-	--[[if(messageType == "UPDATE_STATES") then 
-		Logger.log("communication", "Message from AI received: message type UPDATE_STATES")
-		updateStatesMessage(messageBody)		
-	elseif (messageType == "NODE_DEFINITIONS") then 
-		Logger.log("communication", "Message from AI received: message type NODE_DEFINITIONS")
-		generateNodePoolNodes(messageBody)
-	elseif (messageType == "COMMAND") then
-		return executeScript(messageBody)
-	end]]--
 end
 
 
@@ -162,10 +199,10 @@ function widget:Initialize()
   
   sendMessagesButton = Chili.Button:New{
 	parent = windowMessageTest,
-	x = 10,
+	x = 5,
 	y = 60,
 	height = 40,
-	width = 140,
+	width = 120,
 	caption = "Send",
 	OnClick = {listenerClickOnSend},
 		skinName = "DarkGlass",
@@ -174,7 +211,7 @@ function widget:Initialize()
 	
   doubleMessageLengthButton = Chili.Button:New{
 	parent = windowMessageTest,
-	x = 150 ,
+	x = 120 ,
 	y = 60,
 	height = 40,
 	width = 120,
@@ -186,7 +223,7 @@ function widget:Initialize()
 	
   doubleMessageCountButton = Chili.Button:New{
 	parent = windowMessageTest,
-	x = 270,
+	x = 235,
 	y = 60,
 	height = 40,
 	width = 120,
@@ -240,6 +277,54 @@ function widget:Initialize()
   text = "no message received yet",
   }	
   nomessage = 1
+  
+  testing = false
+  
+  currentTestCase = 0
+  currentTestInOneCase = 0
+  
+  startTestsButton = Chili.Button:New{
+    parent = windowMessageTest,
+	x = 350 ,
+	y = 60,
+	height = 40,
+	width = 120,
+	caption = "Start tests",
+	OnClick = {listenerClickOnStartTests},
+		skinName = "DarkGlass",
+		focusColor = {0.5,0.5,0.5,0.5},
+  }
+  
 end
 
 
+
+function widget:GameFrame(n)
+    if(testing)then
+		-- do the tests
+		if(currentTestCase < howManyCases)then
+		-- this case is valid:
+			if(currentTestInOneCase < howManyTestsInOneCase) then
+				listenerClickOnSend()
+				currentTestInOneCase = currentTestInOneCase + 1
+			-- do the test
+			else
+				Logger.log("tree-editing", "BtMessageTest: Finished tests in case: " .. currentTestCase .. "(" .. messageLenghtEditBox.text .. "length), average time: " .. accumulativeTime/currentTestInOneCase .. "(" .. currentTestInOneCase .." cases)" )
+				accumulativeTime = 0
+				currentTestInOneCase = 0
+				currentTestCase = currentTestCase + 1
+				listenerClickOnDoubleLength()
+			-- move to next case
+			end
+		else
+			currentTestCase = 0
+			currentTestInOneCase = 0
+			testing = false
+			setManualButtonsActivity(true)
+			startTestsButton:SetCaption("Start tests")
+			addToReceivedMSGTextBox("testing stopped")
+		-- end tests and finalize results
+		end
+
+	end
+end
