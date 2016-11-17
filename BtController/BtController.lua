@@ -29,34 +29,64 @@ local Logger = Debug.Logger
 
 
  
-local windowBtController
---local treeTabPanels
---local scrollPanel
-local squadAssignemntButton
+--local windowBtController
 local controllerLabel
-local squadName
+
+-------------------------------------------------------------------------------------
+local treeControlWindow
+local labelAssignemntButton
+local labelName
 local selectTreeButton
-
-
-local windowTreeSelection
+-------------------------------------------------------------------------------------
+local treeSelectionWindow
 local treeSelectionLabel
 local selectedTreeEditBox
 local treeSelectionComboBox
 local treeSelectionDoneButton
 
-local showTreeSelectionWindow 
+
+-------------------------------------------------------------------------------------
+
+--local showTreeSelectionWindow 
+
+-------------------------------------------------------------------------------------
+
+local showBtCreatorButton
 
 
-function listenerClickOnAssign(self)
+local function listenerClickOnAssign(self)
 	Spring.Echo("BETS CREATE_TREE SENDING UNITS")
 	SendStringToBtEvaluator("ASSIGN_UNITS")
 end
 
-function showHideTreeSelectionWindow(self)
-	if(windowTreeSelection.visible == false)then
-		windowTreeSelection:Show()
+local function listenerClickOnShowHideTree(self)
+	WG.ShowBtCreator = not WG.ShowBtCreator
+end
+
+local function listenerClickOnSelectTreeButton(self)
+	treeControlWindow:Hide()
+	treeSelectionWindow:Show()
+end
+
+local function listenerClickOnSelectedTreeDoneButton(self)
+	treeControlWindow:Show()
+	treeSelectionWindow:Hide()
+end
+
+function listenerClickOnShowTreeButton(self)
+  --Spring.SendLuaUIMsg("BETS SHBtC true")
+  if(WG.BtCreatorShowed) then 
+	WG.BtCreatorShowed = false
+  else
+    WG.BtCreatorShowed = true
+  end
+end
+
+local function showHideTreeSelectionWindow()
+	if(treeSelectionWindow.visible == false)then
+		treeSelectionWindow:Show()
 	else
-		windowTreeSelection:Hide()
+		treeSelectionWindow:Hide()
 	end
 end
 
@@ -68,39 +98,21 @@ end
 
   
 
-  function setUpTreeSelectionWindow()
-    treeSelectionLabel = Chili.Label:New{
-		--parent = windowTreeSelection,
+function setUpTreeSelectionWindow()
+   treeSelectionLabel = Chili.Label:New{
+		--parent = treeSelectionWindow,
 		x = '1%',
 		y = '5%',
 		width  = '40%',
 		height = '10%',
-		caption = "Write in name of tree:",
+		caption = "Select tree:",
 		skinName='DarkGlass',
    }
    local folderContent = VFS.DirList(BehavioursDirectory)
-   -- Remove the directory..
+   -- Remove the path prefix
    for i,v in ipairs(folderContent)do
 	folderContent[i] = string.sub(v, string.len( BehavioursDirectory)+2 )
    end
-   
-   Logger.log("save-and-load", folderContent)
-   
-    
-  --[[ treeName = Chili.EditBox:New{
-		--parent = windowTreeSelection,
-		text = "Patrol tree (not changebla yet)",
-		width = '60%',
-		x = '35%',
-		y = '-1%',
-		align = 'left',
-		skinName = 'DarkGlass',
-		borderThickness = 0,
-		backgroundColor = {0.3,0.3,0.3,0.3},
-		allowUnicode = false,
-		editingText = false,
-	} ]]--
-	
 	
 	
 	treeSelectionComboBox = Chili.ComboBox:New{
@@ -122,10 +134,10 @@ end
 		height = 30,
 		caption = "Done",
 		skinName='DarkGlass',
-		OnClick = {showHideTreeSelectionWindow},
+		OnClick = {listenerClickOnSelectedTreeDoneButton},
     }
   
-	windowTreeSelection = Chili.Window:New{
+	treeSelectionWindow = Chili.Window:New{
 		parent = Screen0,
 		x = '20%',
 		y = '11%',
@@ -143,13 +155,8 @@ end
 
 end
 
-function widget:Initialize()	
-  -- Get ready to use Chili
-  Chili = WG.ChiliClone
-  Screen0 = Chili.Screen0	
-  
-   -- Create the window
-  windowBtController = Chili.Window:New{
+function setUpTreeControlWindow()
+  treeControlWindow = Chili.Window:New{
     parent = Screen0,
     x = '15%',
     y = '1%',
@@ -160,40 +167,35 @@ function widget:Initialize()
 		resizable=true,
 		skinName='DarkGlass',
 		backgroundColor = {1,1,1,1},
-		-- OnMouseDown = { listenerStartSelectingNodes },
-		-- OnMouseUp = { listenerEndSelectingNodes },
   }
   
   controllerLabel = Chili.Label:New{
-    parent = windowBtController,
+    parent = treeControlWindow,
 	x = '1%',
 	y = '1%',
     width  = '10%',
     height = '100%',
-    caption = "BtController - Patrol tree",
+    caption = "BtController",
 		skinName='DarkGlass',
   }
   
   selectTreeButton = Chili.Button:New{
-    parent = windowBtController,
+    parent = treeControlWindow,
 	x = 50,
 	y = 15,
     width  = '20%',
     height = 30,
     caption = "Select tree",
-	OnClick = {showHideTreeSelectionWindow},
+	OnClick = {listenerClickOnSelectTreeButton},
 		skinName='DarkGlass',
   }
   
-  
-
-  
-  squadAssignemntButton = Chili.Button:New{
-	parent = windowBtController,
-	x = 50 ,
+  labelAssignemntButton = Chili.Button:New{
+	parent = treeControlWindow,
+	x = 100 ,
 	y = 45,
 	height = 30,
-	width = '20%',
+	width = '25%',
 	minWidth = 150,
 	caption = "Assign selected units",
 	OnClick = {listenerClickOnAssign},
@@ -201,28 +203,55 @@ function widget:Initialize()
 		focusColor = {0.5,0.5,0.5,0.5},
 	}
 	
-  squadName = Chili.TextBox:New{
-	parent = windowBtController, 
-	x = '2%',
+  labelName = Chili.TextBox:New{
+	parent = treeControlWindow, 
+	x = 5,
 	y = 54,
 	height = 30,
-	width =  50, --'50%',
+	width =  100,
 	minWidth = 50,
-	text = "Patrol:",
-	--skinName = "DarkGlass",
-	--focusColor = {0.5,0.5,0.5,0.5},
+	text = "Default role:",
+		skinName = "DarkGlass",
+		focusColor = {0.5,0.5,0.5,0.5},
   }
   
+  showBtCreatorButton = Chili.Button:New{
+	parent = treeControlWindow,
+	x = '72%',
+	y = 45,
+	height = 30,
+	width = '20%',
+	minWidth = 150,
+	caption = "Show tree",
+	OnClick = {listenerClickOnShowTreeButton},
+		skinName = "DarkGlass",
+		focusColor = {0.5,0.5,0.5,0.5},
+	}
+end
+
+function widget:Initialize()	
+  -- Get ready to use Chili
+  Chili = WG.ChiliClone
+  Screen0 = Chili.Screen0	
+  
+  WG.BtCreatorShowed = false
+  
+   -- Create the window
+   
+  setUpTreeControlWindow()
+  treeControlWindow:Hide()
+  
   setUpTreeSelectionWindow()
-  windowTreeSelection:Hide()
-  --windowTreeSelection.visible = false
+  treeSelectionWindow:Show()
+  
+ 
   
   Spring.Echo("BtController reports for duty!")
   
-
+end
   
  -------------------------------------------------------------------------------
- ----------------------UNUSED PARTS (stupid thinqs i was messing around):-------
+ ----------------------UNUSED PARTS (stupid things i was messing around):-------
  -------------------------------------------------------------------------------
  -------------------------------------------------------------------------------
  
@@ -292,6 +321,3 @@ function widget:Initialize()
 		skinName='DarkGlass',
   }  
 	]]--
-
-	
-end

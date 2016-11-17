@@ -13,12 +13,15 @@ end
 local Chili, Screen0
 
 local BtEvaluator
- 
+
 local windowBtCreator
 local nodePoolLabel
 local nodePoolPanel
+local buttonPanel
 local loadTreeButton
 local saveTreeButton
+local serializeTestButton
+
 local treeName
 
 --- Contains all the TreeNodes on the editable area - windowBtCreator aka canvas. 
@@ -331,8 +334,16 @@ function widget:Initialize()
 		id = false,
 	})
 	
-	saveTreeButton = Chili.Button:New{
+	buttonPanel = Chili.Control:New{
 		parent = Screen0,
+		x = 0,
+		y = 0,
+		width = '100%',
+		height = '100%',
+	}
+	
+	saveTreeButton = Chili.Button:New{
+		parent = buttonPanel,
 		x = windowBtCreator.x,
 		y = windowBtCreator.y - 30,
 		width = 90,
@@ -343,7 +354,7 @@ function widget:Initialize()
 		OnClick = { listenerClickOnSaveTree },
 	}
 	loadTreeButton = Chili.Button:New{
-		parent = Screen0,
+		parent = buttonPanel,
 		x = saveTreeButton.x + saveTreeButton.width,
 		y = saveTreeButton.y,
 		width = 90,
@@ -355,7 +366,7 @@ function widget:Initialize()
 	}
 	
 	serializeTestButton = Chili.Button:New{
-		parent = Screen0,
+		parent = buttonPanel,
 		x = loadTreeButton.x + loadTreeButton.width,
 		y = loadTreeButton.y,
 		width = 90,
@@ -393,6 +404,27 @@ function widget:KeyPress(key)
 	
 end
 
+function showBtCreator()
+	windowBtCreator:Show()
+	nodePoolPanel:Show()
+	buttonPanel:Show()
+end
+function hideBtCreator()
+	windowBtCreator:Hide()
+	nodePoolPanel:Hide()
+	buttonPanel:Hide()
+end 
+
+-- this function checks if there BtCreator should be shown
+function widget:GameFrame()
+	if(WG.BtCreatorShowed  ~= nil) then
+		if(WG.BtCreatorShowed == true) then
+			showBtCreator()
+		else
+			hideBtCreator()
+		end
+	end
+end
 
 local fieldsToSerialize = {
 	'id',
