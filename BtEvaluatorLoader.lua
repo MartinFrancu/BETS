@@ -23,7 +23,7 @@ local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyT
 
 -- BtEvaluator interface definitions
 local BtEvaluator = Sentry:New()
-function BtEvaluator.SendMessage(messageType, messageData)
+function BtEvaluator.sendMessage(messageType, messageData)
 	local payload = "BETS " .. messageType;
 	if(messageData)then
 		payload = payload .. " "
@@ -33,17 +33,18 @@ function BtEvaluator.SendMessage(messageType, messageData)
 			payload = payload .. JSON:encode(messageData)
 		end
 	end
+	Logger.log("communication", payload)
 	Spring.SendSkirmishAIMessage(Spring.GetLocalPlayerID(), payload)
 end
 
-function BtEvaluator.RequestNodeDefinitions()
-	BtEvaluator.SendMessage("REQUEST_NODE_DEFINITIONS")
+function BtEvaluator.requestNodeDefinitions()
+	BtEvaluator.sendMessage("REQUEST_NODE_DEFINITIONS")
 end
-function BtEvaluator.AssignUnits()
-	BtEvaluator.SendMessage("ASSIGN_UNITS")
+function BtEvaluator.assignUnits()
+	BtEvaluator.sendMessage("ASSIGN_UNITS")
 end
-function BtEvaluator.CreateTree(treeDefinition)
-	BtEvaluator.SendMessage("CREATE_TREE", treeDefinition)
+function BtEvaluator.createTree(treeDefinition)
+	BtEvaluator.sendMessage("CREATE_TREE", JSON:encode(treeDefinition.root))
 end
 
 

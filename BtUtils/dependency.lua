@@ -5,6 +5,8 @@ local Utils = BtUtils
 return Utils:Assign("Dependency", function()
 	local Dependency = {}
 
+	local Logger = Utils.Debug.Logger
+	
 	local dependencies = {}
 
 	function Dependency.defer(f, ...)
@@ -19,10 +21,13 @@ return Utils:Assign("Dependency", function()
 		end
 
 		if(unfulfilledCount == 0)then
+			Logger.log("dependency", "Dependencies fulfilled already.")
 			f()
 		elseif(unfulfilledCount == 1)then
+			Logger.log("dependency", "Single unfulfilled dependency.")
 			table.insert(unfulfilled[1], f)
 		else
+			Logger.log("dependency", "Multiple unfulfilled dependencies.")
 			local function deferer()
 				unfulfilledCount = unfulfilledCount - 1
 				if(unfulfilledCount == 0)then
@@ -39,15 +44,16 @@ return Utils:Assign("Dependency", function()
 	function Dependency.deferWidget(widget, ...)
 		local dependenciesFulfilled = false
 		local initializeTriggered = false
-		local initialize = widget.Initialized
+		local initialize = widget.Initialize
 		function widget.Initialize(...)
 			initializeTriggered = true
 			if(dependenciesFulfilled)then
 				initialize(...)
 			end
 		end
+		local protectedMethods = { Initialize = true, GetInfo = true }
 		for k, v in pairs(widget) do
-			if(k ~= "Initialize" and type(v) == "function")then
+			if(not protectedMethods[k] and type(v) == "function")then
 				widget[k] = function(...)
 					if(dependenciesFulfilled)then
 						return v(...)
@@ -59,7 +65,10 @@ return Utils:Assign("Dependency", function()
 		Dependency.defer(function()
 			dependenciesFulfilled = true
 			if(initializeTriggered)then
+				Logger.log("dependency", "Defered widget initialization due to dependency.")
 				initialize(widget)
+			else
+				Logger.log("dependency", "Widget dependency fulfilled before initialization.")
 			end
 		end, ...)
 	end

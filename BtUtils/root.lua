@@ -19,28 +19,31 @@ WG.BtUtils = WG.BtUtils or (function()
 
 	-- creating Locator, which is the only object that needs to be created directly, as it's a bootstrapper
 	local Locator = {};
+	local locatorPrototype = {
+		Assign = function(self, key, creator)
+			local location = rawget(self, key)
+			if(not location)then
+				location = creator(self, key)
+				self[key] = location
+			end
+			return location
+		end,
+		Reload = function(self)
+			for k, _ in pairs(locators) do
+				self[k] = nil
+			end
+		end,
+	}
 	function Locator:New(t, locators, prefix) -- returns both altered parameters as a result
 		prefix = prefix or ""
 		locators = locators or {}
 		return setmetatable(t or {}, {
 			__index = function(self, key)
-				-- special handling for setting the key if it doesn't exist yet without invoking the automatic include
+				-- prototype functions are lookep up first, so that the key doesn't even go towards the locating code
 				-- (which could lead to recursion)
-				if(key == "Assign")then
-					return function(self, key, creator)
-						local location = rawget(self, key)
-						if(not location)then
-							location = creator(self, key)
-							self[key] = location
-						end
-						return location
-					end
-				elseif(key == "Reload")then
-					return function(self)
-						for k, _ in pairs(locators) do
-							self[k] = nil
-						end
-					end
+				local prototypeValue = locatorPrototype[key]
+				if(prototypeValue ~= nil)then
+					return prototypeValue
 				end
 			
 				local locator = locators[key]

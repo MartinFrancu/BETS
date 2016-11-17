@@ -11,6 +11,8 @@ function widget:GetInfo()
 end
  
 local Chili, Screen0
+
+local BtEvaluator
  
 local windowBtCreator
 local nodePoolLabel
@@ -31,6 +33,7 @@ local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.
 
 local JSON = Utils.JSON
 local BehaviourTree = Utils.BehaviourTree
+local Dependency = Utils.Dependency
 
 local Debug = Utils.Debug;
 local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyTable, Debug.fileTable
@@ -124,9 +127,14 @@ function listenerClickOnTest(self)
 		'text',
 		'parameters'
 	}
-	local stringTree = JSON:encode(formBehaviourTree().root) --TreeToStringJSON(WG.nodeList[rootID], fieldsToSerialize )
-	Logger.log("create-tree", "BETS CREATE_TREE ", stringTree)
-	SendStringToBtEvaluator("CREATE_TREE " .. stringTree)
+	local bt = formBehaviourTree()
+	
+	BtEvaluator.createTree(bt)
+	
+	-- old approach, TODO: remove
+	-- local stringTree = JSON:encode(bt.root) --TreeToStringJSON(WG.nodeList[rootID], fieldsToSerialize )
+	-- Logger.log("create-tree", "BETS CREATE_TREE ", stringTree)
+	-- SendStringToBtEvaluator("CREATE_TREE " .. stringTree)
 end
 
 -- //////////////////////////////////////////////////////////////////////
@@ -260,11 +268,13 @@ function SendStringToBtEvaluator(message)
 end
 
 function widget:Initialize()	
-	if (not WG.ChiliClone) and (not WG.BtEvaluatorIsLoaded) then
-		-- don't run if we can't find Chili, or JSON, or BtEvaluatorLoader
+	if (not WG.ChiliClone) then
+		-- don't run if we can't find Chili
 		widgetHandler:RemoveWidget()
 		return
 	end
+	
+	BtEvaluator = WG.BtEvaluator
  
 	-- Get ready to use Chili
 	Chili = WG.ChiliClone
@@ -305,8 +315,7 @@ function widget:Initialize()
 		-- OnMouseUp = { listenerEndSelectingNodes },
 	}	
 	
-	Logger.log("communication", "BETS REQUEST_NODE_DEFINITIONS")
-	Spring.SendSkirmishAIMessage (Spring.GetLocalPlayerID (), "BETS REQUEST_NODE_DEFINITIONS")
+	BtEvaluator.requestNodeDefinitions()
 	
 	-- rootID = 1
 	addNodeToCanvas(Chili.TreeNode:New{
@@ -614,3 +623,5 @@ function DeserializeForest()
 	inputFile:close()
 	WG.clearSelection()
 end
+
+Dependency.deferWidget(widget, Dependency.BtEvaluator)
