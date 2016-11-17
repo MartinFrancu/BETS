@@ -210,6 +210,7 @@ local function generateNodePoolNodes(messageBody)
 end
 
 local scripts = {}
+local commands = {}
 
 local function getCommandClass(name) 
 	c = scripts[name] 
@@ -220,16 +221,31 @@ local function getCommandClass(name)
 	return c
 end
 
+local function getCommand(name, id)
+	commandMap = commands[name]
+	if not commandMap then
+		commandMap = {}
+		commands[name] = commandMap
+	end
+	
+	cmd = commandMap[id]
+	if not cmd then
+		cmd = getCommandClass(name):New()
+		commandMap[id] = cmd
+	end
+	return cmd
+end
+
 local function executeScript(messageBody)
 	params = JSON:decode(messageBody)
-	command = getCommandClass(params.name):New()
+	command = getCommand(params.name, params.id)
 
 	if (params.func == "RUN") then
-		res = command.run(params.units, params.parameter)
+		res = command:Run(params.units, params.parameter)
 		Logger.log("luacommand", "Result: ", res)
 		return res
 	elseif (params.func == "RESET") then
-		command.reset()
+		command:Reset()
 		return nil
 	end
 end

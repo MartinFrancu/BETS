@@ -9,14 +9,18 @@ cmd.n = 0
 
 -- Spring.Echo("---------------------  LOADING ---------------------")
 
-function cmd.run(unitIds, parameter)
-	cmd.indexOfComma = string.find(parameter, ",")
+function cmd:Run(unitIds, parameter)
+	if #unitIds == 0 then
+		return "F"
+	end
+
+	self.indexOfComma = string.find(parameter, ",")
 	
-	dx = parameter:sub(1, cmd.indexOfComma - 1)
-	dz = parameter:sub(cmd.indexOfComma + 1)
+	dx = parameter:sub(1, self.indexOfComma - 1)
+	dz = parameter:sub(self.indexOfComma + 1)
 	
-	Logger.log("move-command", "Lua MOVE command run, unitIds: ", unitIds, ", parameter: " .. parameter .. ", dx: " .. dx .. ", dz: " .. dz .. ", tick: "..cmd.n)
-	cmd.n = cmd.n + 1
+	Logger.log("move-command", "Lua MOVE command run, unitIds: ", unitIds, ", parameter: " .. parameter .. ", dx: " .. dx .. ", dz: " .. dz .. ", tick: "..self.n)
+	self.n = self.n + 1
 	done = true
 	
 	x,y,z = 0,0,0
@@ -26,18 +30,17 @@ function cmd.run(unitIds, parameter)
 		tarX = x + dx
 		tarZ = z + dz
 		
-		if not cmd.targets[unitIds[i]] then
-			cmd.targets[unitIds[i]] = {tarX,y,tarZ}
-			Spring.GiveOrderToUnit(unitIds[i], CMD.MOVE, cmd.targets[unitIds[i]], {})  
+		if not self.targets[unitIds[i]] then
+			self.targets[unitIds[i]] = {tarX,y,tarZ}
+			Spring.GiveOrderToUnit(unitIds[i], CMD.MOVE, self.targets[unitIds[i]], {})  
 		end
 		
-		Logger.log("move-command", "AtX: " .. x .. ", TargetX: " .. cmd.targets[unitIds[i]][1] .. " AtZ: " .. z .. ", TargetZ: " .. cmd.targets[unitIds[i]][2])
-		if math.abs(x - cmd.targets[unitIds[i]][1]) > 10 or math.abs(z - cmd.targets[unitIds[i]][3]) > 10 then
+		Logger.log("move-command", "AtX: " .. x .. ", TargetX: " .. self.targets[unitIds[i]][1] .. " AtZ: " .. z .. ", TargetZ: " .. self.targets[unitIds[i]][2])
+		if math.abs(x - self.targets[unitIds[i]][1]) > 10 or math.abs(z - self.targets[unitIds[i]][3]) > 10 then
 			done = false
 		end
  	end
 	if done then
-		cmd.reset() -- reusing the same object for all move commands, so need to reset on success (TODO - 1 object per command instance)
 		return "S"
 	else
 		return "R"
@@ -46,11 +49,11 @@ function cmd.run(unitIds, parameter)
 	-- TODO implement failure (return "F")
 end
 
-function cmd.reset()
+function cmd:Reset()
 	Logger.log("move-command", "Lua command reset")
 
-	cmd.targets = {}
-	cmd.n = 0
+	self.targets = {}
+	self.n = 0
 end
 
 return cmd
