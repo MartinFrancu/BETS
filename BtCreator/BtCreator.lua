@@ -265,7 +265,7 @@ function widget:RecvSkirmishAIMessage(aiTeam, message)
 		return
 	end
 	messageShorter = message:sub(6)
-	indexOfFirstSpace = string.find(messageShorter, " ")
+	indexOfFirstSpace = string.find(messageShorter, " ") or (message:len() + 1)
 	messageType = messageShorter:sub(1, indexOfFirstSpace - 1):upper()	
 	messageBody = messageShorter:sub(indexOfFirstSpace + 1)
 	Logger.log("communication", "Message from AI received: message body: ", messageBody)
@@ -439,6 +439,7 @@ function widget:GameFrame()
 		else
 			hideBtCreator()
 		end
+		WG.BtCreatorShowed = nil
 	end
 end
 

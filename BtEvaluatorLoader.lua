@@ -49,7 +49,7 @@ end
 
 
 function widget:Initialize()	
-	Spring.SendCommands("AIKill " ..Spring.GetLocalPlayerID())
+	--Spring.SendCommands("AIKill " ..Spring.GetLocalPlayerID())
 	Spring.SendCommands("AIControl "..Spring.GetLocalPlayerID().." BtEvaluator")
 	
 	WG.BtEvaluator = BtEvaluator
