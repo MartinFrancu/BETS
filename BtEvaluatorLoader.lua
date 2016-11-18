@@ -49,6 +49,7 @@ end
 
 
 function widget:Initialize()	
+	Spring.SendCommands("AIKill " ..Spring.GetLocalPlayerID())
 	Spring.SendCommands("AIControl "..Spring.GetLocalPlayerID().." BtEvaluator")
 	
 	WG.BtEvaluator = BtEvaluator
@@ -57,6 +58,8 @@ function widget:Initialize()
 end
 
 function widget:RecvSkirmishAIMessage(aiTeam, message)
+	Logger.log("communication", "Received message from team " .. tostring(aiTeam) .. ": " .. message)
+
 	-- Dont respond to other players AI
 	if(aiTeam ~= Spring.GetLocalPlayerID()) then
 		return
@@ -67,12 +70,14 @@ function widget:RecvSkirmishAIMessage(aiTeam, message)
 	end
 	
 	local messageShorter = message:sub(6)
-	local indexOfFirstSpace = string.find(messageShorter, " ")
+	local indexOfFirstSpace = string.find(messageShorter, " ") or (message:len() + 1)
 	local messageType = messageShorter:sub(1, indexOfFirstSpace - 1):upper()	
 	
 	-- messages without parameter
 	if(messageType == "LOG") then 
 		Logger.log("BtEvaluator", messageBody)
+		return true
+	elseif(messageType == "INITIALIZED") then 
 		return true
 	else
 		local handler = ({
