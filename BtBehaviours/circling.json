@@ -1,0 +1,67 @@
+{
+	"additionalNodes": [],
+	"properties": {
+		"GFvC2OP7WNzEjVSaDm7syFxFqYCYmr7Y": {
+			"hasConnectionIn": true,
+			"hasConnectionOut": false,
+			"height": 60,
+			"width": 110,
+			"x": 262,
+			"y": 369
+		},
+		"MtRw0RQaRLRnp4EYdpZq6XA4cBzOh0IG": {
+			"hasConnectionIn": true,
+			"hasConnectionOut": false,
+			"height": 60,
+			"width": 110,
+			"x": 297,
+			"y": 203
+		},
+		"cee9yBRQj91ibXe4toU06o2fKJ0RUoci": {
+			"hasConnectionIn": true,
+			"hasConnectionOut": false,
+			"height": 60,
+			"width": 110,
+			"x": 302,
+			"y": 88
+		},
+		"fjFweGC5VXTHWa4MHmOuQIxfFbFzRzrb": {
+			"hasConnectionIn": true,
+			"hasConnectionOut": false,
+			"height": 60,
+			"width": 110,
+			"x": 304,
+			"y": 291
+		},
+		"gln4jU3MI4wh8mdRi69Voj0K5QkZRn1y": {
+			"hasConnectionIn": true,
+			"hasConnectionOut": true,
+			"height": 60,
+			"width": 110,
+			"x": 132,
+			"y": 195
+		}
+	},
+	"root": {
+		"id": "gln4jU3MI4wh8mdRi69Voj0K5QkZRn1y",
+		"nodeType": "sequence",
+		"children": [
+			{ "id": "cee9yBRQj91ibXe4toU06o2fKJ0RUoci", "nodeType": "luaCommand", "parameters": [ 
+				{ "name": "scriptName", "value": "move.lua" },
+				{ "name": "parameter", "value": "100,0" } 
+			] },
+			{ "id": "MtRw0RQaRLRnp4EYdpZq6XA4cBzOh0IG", "nodeType": "luaCommand", "parameters": [ 
+				{ "name": "scriptName", "value": "move.lua" },
+				{ "name": "parameter", "value": "0,-100" } 
+			] },
+			{ "id": "fjFweGC5VXTHWa4MHmOuQIxfFbFzRzrb", "nodeType": "luaCommand", "parameters": [ 
+				{ "name": "scriptName", "value": "move.lua" },
+				{ "name": "parameter", "value": "-100,0" } 
+			] },
+			{ "id": "GFvC2OP7WNzEjVSaDm7syFxFqYCYmr7Y", "nodeType": "luaCommand", "parameters": [ 
+				{ "name": "scriptName", "value": "move.lua" },
+				{ "name": "parameter", "value": "0,100" } 
+			] }
+		]
+	}
+}
