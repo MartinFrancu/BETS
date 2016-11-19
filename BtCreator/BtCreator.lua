@@ -13,12 +13,15 @@ end
 local Chili, Screen0
 
 local BtEvaluator
- 
+
 local windowBtCreator
 local nodePoolLabel
 local nodePoolPanel
+local buttonPanel
 local loadTreeButton
 local saveTreeButton
+local serializeTestButton
+
 local treeName
 
 --- Contains all the TreeNodes on the editable area - windowBtCreator aka canvas. 
@@ -38,7 +41,7 @@ local Dependency = Utils.Dependency
 local Debug = Utils.Debug;
 local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyTable, Debug.fileTable
 
-
+--- Adds Treenode to canvas, and also selects it. 
 local function addNodeToCanvas(node)
 	if next(WG.nodeList) == nil then
 		rootID = node.id
@@ -87,25 +90,24 @@ function listenerEndCopyingNode(self, x , y)
 				nodeType = copyTreeNode.nodeType,
 				x = x - nodePoolPanel.width - startCopyingLocation.x,
 				y = y + startCopyingLocation.y - 70,
+				width = copyTreeNode.width,
+				height = copyTreeNode.height,
 				connectable = true,
 				draggable = true,
 				hasConnectionIn = copyTreeNode.hasConnectionIn,
 				hasConnectionOut = copyTreeNode.hasConnectionOut,
+				parameters = copyTreeNode.parameters,
 				-- OnMouseUp = { listenerEndSelectingNodes },
 			})
 		copyTreeNode = nil
 	end
 end
 
-local SerializeForest
-local DeserializeForest
-
 local clearCanvas, loadBehaviourTree, formBehaviourTree
 
 function listenerClickOnSaveTree(self)
 	Logger.log("save-and-load", "Save Tree clicked on. ")
 	formBehaviourTree():Save(treeName.text)
-	SerializeForest()
 end
 
 function listenerClickOnLoadTree(self)
@@ -115,8 +117,9 @@ function listenerClickOnLoadTree(self)
 		clearCanvas()
 		loadBehaviourTree(bt)
 	else
-		DeserializeForest()
+		error("BeahviourTree instance not found. " .. debug.traceback())
 	end
+	
 end
 
 function listenerClickOnTest(self)
@@ -128,13 +131,7 @@ function listenerClickOnTest(self)
 		'parameters'
 	}
 	local bt = formBehaviourTree()
-	
 	BtEvaluator.createTree(bt)
-	
-	-- old approach, TODO: remove
-	-- local stringTree = JSON:encode(bt.root) --TreeToStringJSON(WG.nodeList[rootID], fieldsToSerialize )
-	-- Logger.log("create-tree", "BETS CREATE_TREE ", stringTree)
-	-- SendStringToBtEvaluator("CREATE_TREE " .. stringTree)
 end
 
 -- //////////////////////////////////////////////////////////////////////
@@ -178,12 +175,10 @@ local function updateStatesMessage(messageBody)
 end
 
 local function generateNodePoolNodes(messageBody)
-	-- messageBody = '[{ "name": "name 1", "children": null, "defaultWidth": 70, "defaultHeight": 100 }, {"name":"Sequence","children":[]}]'
 	nodes = JSON:decode(messageBody)
 	Logger.log("communication", "NODES DECODED:  ", nodes)
 	local heightSum = 30 -- skip NodePoolLabel
-	for i=1,#nodes do
-		Logger.log("communication", "NODES DECODED i-th node:  ", nodes[i])
+	for i=1,#nodes do		
 		local nodeParams = {
 			name = nodes[i].name,
 			hasConnectionOut = (nodes[i].children == null) or (type(nodes[i].children) == "table" and #nodes[i].children ~= 0),
@@ -196,12 +191,21 @@ local function generateNodePoolNodes(messageBody)
 			connectable = false,
 			onMouseDown = { listenerStartCopyingNode },
 			onMouseUp = { listenerEndCopyingNode },
+			parameters = nodes[i]["parameters"],
 		}
 		if(nodes[i].defaultWidth) then
-			nodeParams.width = math.max(110, nodes[i].defaultWidth)
+			local minWidth = 110
+			if(#nodes[i]["parameters"] > 0) then
+				for k=1,#nodes[i]["parameters"] do
+					minWidth = math.max(minWidth, nodePoolPanel.font:GetTextWidth(nodes[i]["parameters"][k]["defaultValue"]) + nodePoolPanel.font:GetTextWidth(nodes[i]["parameters"][k]["name"]) + 40)
+					--nodes[i]["parameters"][k]["defaultValue"]:len()
+				end
+				
+			end
+			nodeParams.width = math.max(minWidth, nodes[i].defaultWidth)
 		end
 		if(nodes[i].defaultHeight) then
-			nodeParams.height = math.max(50, nodes[i].defaultHeight)
+			nodeParams.height = math.max(50 + #nodes[i]["parameters"]*20, nodes[i].defaultHeight)
 		end
 		heightSum = heightSum + (nodeParams.height or 60)
 		table.insert(nodePoolList, Chili.TreeNode:New(nodeParams))
@@ -262,7 +266,7 @@ function widget:RecvSkirmishAIMessage(aiTeam, message)
 		return
 	end
 	messageShorter = message:sub(6)
-	indexOfFirstSpace = string.find(messageShorter, " ")
+	indexOfFirstSpace = string.find(messageShorter, " ") or (message:len() + 1)
 	messageType = messageShorter:sub(1, indexOfFirstSpace - 1):upper()	
 	messageBody = messageShorter:sub(indexOfFirstSpace + 1)
 	Logger.log("communication", "Message from AI received: message body: ", messageBody)
@@ -296,6 +300,8 @@ function widget:Initialize()
 	Chili = WG.ChiliClone
 	Screen0 = Chili.Screen0	
 	
+	
+	
 	nodePoolPanel = Chili.ScrollPanel:New{
 		parent = Screen0,
 		y = '56%',
@@ -314,10 +320,20 @@ function widget:Initialize()
 		caption = "Node Pool",
 		skinName='DarkGlass',
 	} 
+	
+	BtEvaluator.requestNodeDefinitions()
+	local maxNodeWidth = 125
+	for i=1,#nodePoolList do
+		if(nodePoolList[i].width + 15 > maxNodeWidth) then
+			maxNodeWidth = nodePoolList[i].width + 15
+		end
+	end
+	nodePoolPanel.width = maxNodeWidth
+	nodePoolPanel:RequestUpdate()
 	 -- Create the window
 	windowBtCreator = Chili.Window:New{
 		parent = Screen0,
-		x = nodePoolPanel.width + 15,
+		x = nodePoolPanel.width + 22,
 		y = '56%',
 		width  = Screen0.width - nodePoolPanel.width - 25,
 		height = '42%',	
@@ -331,9 +347,6 @@ function widget:Initialize()
 		-- OnMouseUp = { listenerEndSelectingNodes },
 	}	
 	
-	BtEvaluator.requestNodeDefinitions()
-	
-	-- rootID = 1
 	addNodeToCanvas(Chili.TreeNode:New{
 		parent = windowBtCreator,
 		nodeType = "Root",
@@ -347,8 +360,16 @@ function widget:Initialize()
 		id = false,
 	})
 	
-	saveTreeButton = Chili.Button:New{
+	buttonPanel = Chili.Control:New{
 		parent = Screen0,
+		x = 0,
+		y = 0,
+		width = '100%',
+		height = '100%',
+	}
+	
+	saveTreeButton = Chili.Button:New{
+		parent = buttonPanel,
 		x = windowBtCreator.x,
 		y = windowBtCreator.y - 30,
 		width = 90,
@@ -359,7 +380,7 @@ function widget:Initialize()
 		OnClick = { listenerClickOnSaveTree },
 	}
 	loadTreeButton = Chili.Button:New{
-		parent = Screen0,
+		parent = buttonPanel,
 		x = saveTreeButton.x + saveTreeButton.width,
 		y = saveTreeButton.y,
 		width = 90,
@@ -371,7 +392,7 @@ function widget:Initialize()
 	}
 	
 	serializeTestButton = Chili.Button:New{
-		parent = Screen0,
+		parent = buttonPanel,
 		x = loadTreeButton.x + loadTreeButton.width,
 		y = loadTreeButton.y,
 		width = 90,
@@ -409,6 +430,28 @@ function widget:KeyPress(key)
 	
 end
 
+function showBtCreator()
+	windowBtCreator:Show()
+	nodePoolPanel:Show()
+	buttonPanel:Show()
+end
+function hideBtCreator()
+	windowBtCreator:Hide()
+	nodePoolPanel:Hide()
+	buttonPanel:Hide()
+end 
+
+-- this function checks if there BtCreator should be shown
+function widget:GameFrame()
+	if(WG.BtCreatorShowed  ~= nil) then
+		if(WG.BtCreatorShowed == true) then
+			showBtCreator()
+		else
+			hideBtCreator()
+		end
+		WG.BtCreatorShowed = nil
+	end
+end
 
 local fieldsToSerialize = {
 	'id',
@@ -420,6 +463,7 @@ local fieldsToSerialize = {
 	'height',
 	'hasConnectionIn',
 	'hasConnectionOut',
+	'parameters',
 }
 
 function formBehaviourTree()
@@ -430,6 +474,12 @@ function formBehaviourTree()
 			local params = {}
 			for i, key in ipairs(fieldsToSerialize) do
 				params[key] = node[key]
+			end
+			-- get the string value from editbox
+			for i=1,#node.parameters do
+				if(node.parameters[i]["componentType"]=="editBox") then
+					params.parameters[i].value = node.parameterObjects[i]["editBox"].text
+				end
 			end
 			nodeMap[node] = bt:NewNode(params)
 		end
@@ -509,52 +559,15 @@ function loadBehaviourTree(bt)
 	for _, node in ipairs(bt.additionalNodes) do
 		loadBehaviourNode(bt, node)
 	end
-end
-
-function SerializeForest()
-	Spring.CreateDir("LuaUI/Widgets/BtBehaviours")
-	local outputFile = io.open("LuaUI/Widgets/BtBehaviours/"..treeName.text..".txt", "w")
-	if outputFile == nil then 
-		return 
-	end
-	-- find all the nodes with incoming connection lines; store them using their names as indexes
-	local nodesWithIncomingConnections = {}
-	SerializeTree(WG.nodeList[rootID], "", outputFile)
-	for i=1,#WG.connectionLines do
-		nodesWithIncomingConnections[WG.connectionLines[i][6].treeNode.name] = true
-	end
-	-- serialize all nodes(except root) without connectionIns and the one without incoming connection lines.
-	for id,node in pairs(WG.nodeList) do
-		if( (node.connectionIn == nil or nodesWithIncomingConnections[node.name] == nil) and id ~= rootID ) then 
-			SerializeTree(node, "", outputFile)
-		end
-	end
-	outputFile:close()
-end
-
-
-function SerializeTree(root, spaces, outputFile)
-	local children = root:GetChildren()
-	outputFile:write(spaces.."{\n" )
-	root:Serialize(spaces.."  ", outputFile, fieldsToSerialize)
-	outputFile:write(spaces.."  ".."children = {\n" )
-	for i=1,#children do 
-		SerializeTree(children[i], spaces.."    ", outputFile)
-	end
-	outputFile:write(spaces.."  ".."}\n" )
-	outputFile:write(spaces.."},\n" )
+	WG.clearSelection()
 end
 
 -- Create a table with structure of given tree.
 function LoadTreeInTableRecursive(root, fieldsToSerialize)
-
-	local tree = {}
-	
+	local tree = {}	
 	for nameInd=1,#fieldsToSerialize do
 		tree[fieldsToSerialize[nameInd]] = root[fieldsToSerialize[nameInd]]
-	end
-	
-	
+	end	
 	tree.children = {}
 	local children = root:GetChildren()
 	for i=1,#children do 
@@ -579,65 +592,6 @@ end
 --- Removes white spaces from the beginnign and from the end the string s.
 local function trim(s)
 	return (s:gsub("^%s*(.-)%s*$", "%1"))
-end
-
-
-function ReadTreeNode(inputFile)
-	local input = inputFile:read()
-	if(input == nil or input == "" or trim(input) == "}" or trim(input) == "},") then
-		return nil
-	end
-	local line = trim(input)
-	if(line ~= "{") then 
-		
-		Logger.log("save-and-load", "Unknown format of saved behaviour tree. ")
-		Logger.log("save-and-load", "Found: '", line, "', expected {")
-	end
-	local paramsString = ""
-	while line ~= "children = {" do
-		paramsString = paramsString..line
-		line = trim(inputFile:read())
-	end
-	--Spring.Echo("params: "..paramsString .. "}")
-	local params = loadstring("return "..paramsString .."}")()
-	params.name = nil
-	params.parent = windowBtCreator
-	params.connectable = true
-	params.draggable = true
-	local root = Chili.TreeNode:New(params)
-	addNodeToCanvas(root)
-	while true do
-		local child = ReadTreeNode(inputFile)
-		if (child == nil) then
-			break
-		end
-		--Spring.Echo("Child OOOOO")
-		WG.AddConnectionLine(root.connectionOut, child.connectionIn)
-		--line = trim(inputFile:read())
-	end
-	line = trim(inputFile:read())
-	if(line ~= "},") then
-		Logger.log("save-and-load", "Uknown format of saved behaviour tree. ")
-		Logger.log("save-and-load", "Found: '", line, "', expected {")
-	end
-	return root
-end
-
---- First removes all TreeNodes and connectionLines from canvas, 
---  then deserialize all the nodes and connections from a file. 
-function DeserializeForest()
-	clearCanvas(true)
-
-	 -- rootIndex = 1
-	if(not VFS.FileExists("LuaUI/Widgets/BtBehaviours/01-test.txt", "r")) then
-		Logger.log("save-and-load", "BtCreator.lua: DeserializeForest(): File to deserialize not found in LuaUI/Widgets/BtBehaviours/01-test.txt ")
-		return
-	end	
-	local inputFile = io.open("LuaUI/Widgets/BtBehaviours/01-test.txt", "r")
-	while(ReadTreeNode(inputFile)) do
-	end
-	inputFile:close()
-	WG.clearSelection()
 end
 
 Dependency.deferWidget(widget, Dependency.BtEvaluator)
