@@ -170,9 +170,9 @@ end
 
 function EditBox:MouseDown(x, y, ...)
 	Spring.Echo("EditBox MouseDown.")
-	--if(not self.editingText) then
-		--return
-	--end		
+	if(not self.editingText) then
+		return
+	end		
 	WG.movingNodes = false
 	local _, _, _, shift = Spring.GetModKeyState()
 	local cp = self.cursor

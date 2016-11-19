@@ -30,6 +30,9 @@ TreeNode = Control:Inherit{
 	connectionOut = nil,
 	nameEditBox = nil,
 	
+	parameters = {},
+	parameterObjects = {},
+	
 	--- List of all connected connectionLines. 
 	attachedLines = {}
 }
@@ -128,6 +131,39 @@ function TreeNode:New(obj)
 		backgroundColor = {0,0,0,0},
 		editingText = false,
 	}
+	
+	local parameters = obj.parameters
+	--Spring.Echo("parameters: "..dump(parameters))
+	-- obj.parameters = {}
+	for i=1,#parameters do
+		--Spring.Echo("parameters["..i.."]="..parameters[i])
+		if (parameters[i]["componentType"]:lower() == "editbox") then
+			obj.parameterObjects[i] = {}
+			obj.parameterObjects[i]["label"] = Label:New{
+				parent = obj.nodeWindow,
+				x = 15,
+				y = 10 + i*20,
+				width  = obj.nodeWindow.font:GetTextWidth(parameters[i]["name"]),
+				height = '10%',
+				caption = parameters[i]["name"],
+				--skinName='DarkGlass',
+			}
+			obj.parameterObjects[i]["editBox"] = EditBox:New{
+				parent = obj.nodeWindow,
+				text = parameters[i]["defaultValue"],
+				width = obj.nodeWindow.font:GetTextWidth(parameters[i]["defaultValue"])+10,
+				x = obj.nodeWindow.font:GetTextWidth(parameters[i]["name"]) + 20,
+				y = 10 + i*20,
+				align = 'left',
+				--skinName = 'DarkGlass',
+				borderThickness = 0,
+				backgroundColor = {0,0,0,0},
+				editingText = false,
+			}	
+			obj.parameters[i]["defaultValue"] = obj.parameterObjects[i]["editBox"].text
+		end
+	end
+	
   return obj
 end
 
@@ -547,6 +583,11 @@ local function removeNodeFromSelection(nodeWindow)
 	nodeWindow.backgroundColor[4] = ALPHA_OF_NOT_SELECTED_NODES
 	WG.selectedNodes[nodeWindow.treeNode.id] = nil
 	nodeWindow.treeNode.nameEditBox.editingText = false
+	for i=1,#nodeWindow.treeNode.parameters do
+		if(nodeWindow.treeNode.parameters[i]["editBox"]) then
+			nodeWindow.treeNode.parameters[i]["editBox"].editingText = false
+		end
+	end	
 	nodeWindow:Invalidate()
 end
 
@@ -554,6 +595,11 @@ local function addNodeToSelection(nodeWindow)
 	nodeWindow.backgroundColor[4] = ALPHA_OF_SELECTED_NODES
 	WG.selectedNodes[nodeWindow.treeNode.id] = true
 	nodeWindow.treeNode.nameEditBox.editingText = true
+	for i=1,#nodeWindow.treeNode.parameters do
+		if(nodeWindow.treeNode.parameters[i]["componentType"] == "editBox") then
+			nodeWindow.treeNode.parameterObjects[i]["editBox"].editingText = true
+		end
+	end	
 	nodeWindow:Invalidate()
 end
 

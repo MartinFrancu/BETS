@@ -90,10 +90,13 @@ function listenerEndCopyingNode(self, x , y)
 				nodeType = copyTreeNode.nodeType,
 				x = x - nodePoolPanel.width - startCopyingLocation.x,
 				y = y + startCopyingLocation.y - 70,
+				width = copyTreeNode.width,
+				height = copyTreeNode.height,
 				connectable = true,
 				draggable = true,
 				hasConnectionIn = copyTreeNode.hasConnectionIn,
 				hasConnectionOut = copyTreeNode.hasConnectionOut,
+				parameters = copyTreeNode.parameters,
 				-- OnMouseUp = { listenerEndSelectingNodes },
 			})
 		copyTreeNode = nil
@@ -185,8 +188,7 @@ local function generateNodePoolNodes(messageBody)
 	nodes = JSON:decode(messageBody)
 	Logger.log("communication", "NODES DECODED:  ", nodes)
 	local heightSum = 30 -- skip NodePoolLabel
-	for i=1,#nodes do
-		Logger.log("communication", "NODES DECODED i-th node:  ", nodes[i])
+	for i=1,#nodes do		
 		local nodeParams = {
 			name = nodes[i].name,
 			hasConnectionOut = (nodes[i].children == null) or (type(nodes[i].children) == "table" and #nodes[i].children ~= 0),
@@ -199,12 +201,22 @@ local function generateNodePoolNodes(messageBody)
 			connectable = false,
 			onMouseDown = { listenerStartCopyingNode },
 			onMouseUp = { listenerEndCopyingNode },
+			parameters = nodes[i]["parameters"],
 		}
 		if(nodes[i].defaultWidth) then
-			nodeParams.width = math.max(110, nodes[i].defaultWidth)
+			local minWidth = 110
+			if(#nodes[i]["parameters"] > 0) then
+				for k=1,#nodes[i]["parameters"] do
+					minWidth = math.max(minWidth, nodePoolPanel.font:GetTextWidth(nodes[i]["parameters"][k]["defaultValue"]) + nodePoolPanel.font:GetTextWidth(nodes[i]["parameters"][k]["name"]) + 40)
+					--Spring.Echo("LENGTH: "..minWidth)
+					--nodes[i]["parameters"][k]["defaultValue"]:len()
+				end
+				
+			end
+			nodeParams.width = math.max(minWidth, nodes[i].defaultWidth)
 		end
 		if(nodes[i].defaultHeight) then
-			nodeParams.height = math.max(50, nodes[i].defaultHeight)
+			nodeParams.height = math.max(50 + #nodes[i]["parameters"]*20, nodes[i].defaultHeight)
 		end
 		heightSum = heightSum + (nodeParams.height or 60)
 		table.insert(nodePoolList, Chili.TreeNode:New(nodeParams))
@@ -453,6 +465,7 @@ local fieldsToSerialize = {
 	'height',
 	'hasConnectionIn',
 	'hasConnectionOut',
+	'parameters',
 }
 
 function formBehaviourTree()
@@ -463,6 +476,12 @@ function formBehaviourTree()
 			local params = {}
 			for i, key in ipairs(fieldsToSerialize) do
 				params[key] = node[key]
+			end
+			-- get the string value from editbox
+			for i=1,#node.parameters do
+				if(node.parameters[i]["componentType"]=="editBox") then
+					params.parameters[i].defaultValue = node.parameterObjects[i]["editBox"].text
+				end
 			end
 			nodeMap[node] = bt:NewNode(params)
 		end
