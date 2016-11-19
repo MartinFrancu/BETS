@@ -50,11 +50,10 @@ end
 
 function widget:Initialize()	
 	--Spring.SendCommands("AIKill " ..Spring.GetLocalPlayerID())
+	BtEvaluator.sendMessage("REINITIALIZE")
 	Spring.SendCommands("AIControl "..Spring.GetLocalPlayerID().." BtEvaluator")
 	
 	WG.BtEvaluator = BtEvaluator
-	
-	Dependency.fill(Dependency.BtEvaluator)
 end
 
 function widget:RecvSkirmishAIMessage(aiTeam, message)
@@ -78,6 +77,7 @@ function widget:RecvSkirmishAIMessage(aiTeam, message)
 		Logger.log("BtEvaluator", messageBody)
 		return true
 	elseif(messageType == "INITIALIZED") then 
+		Dependency.fill(Dependency.BtEvaluator)
 		return true
 	else
 		local handler = ({
