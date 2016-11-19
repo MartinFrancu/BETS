@@ -170,35 +170,6 @@ function TreeNode:New(obj)
   return obj
 end
 
-function TreeNode:Serialize(spaces ,file, fieldToSerialize)
-	for i=1,#fieldToSerialize do
-		local name = fieldToSerialize[i]
-		local value = self[fieldToSerialize[i]]
-		if (name=="text") then
-			file:write(spaces.."text".." = "..'"'..self.nameEditBox.text..'"'..",\n")
-		elseif (type(value) == "boolean") then
-			file:write(spaces..name.." = "..tostring(value)..",\n")
-		elseif (type(value) == "number") then
-			file:write(spaces..name.." = "..value..",\n")
-		elseif (type(value) == "string") then
-			file:write(spaces..name.." = "..'"'..value..'"'..",\n")
-		else
-			file:write(spaces..name.." = "..'"uknown type"'..",\n")
-		end
-	end
-	--file:write(spaces..'TreeNode\n')
-	--[[file:write(spaces..'name = '..self.name..",\n")
-	file:write(spaces..'nodeType = '..self.nodeType..",\n")
-	file:write(spaces..'text = '..self.nameEditBox.text..",\n")
-	file:write(spaces..'x = '..self.nodeWindow.x..",\n")
-	file:write(spaces..'y = '..self.nodeWindow.y..",\n")
-	file:write(spaces..'width = '..self.nodeWindow.width..",\n")
-	file:write(spaces..'height = '..self.nodeWindow.height..",\n")
-	file:write(spaces..'visible = '..tostring(self.visible)..",\n")
-	file:write(spaces..'hasConnectionIn = '..tostring(self.hasConnectionIn)..",\n")
-	file:write(spaces..'hasConnectionOut = '..tostring(self.hasConnectionOut)..",\n")]]--
-end
-
 --- Returns a table of children in order of y-coordinate(first is the one with the smallest one)
 function TreeNode:GetChildren()
 	if( not self.hasConnectionOut ) then 
