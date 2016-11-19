@@ -13,13 +13,11 @@ function cmd:Run(unitIds, parameter)
 	if #unitIds == 0 then
 		return "F"
 	end
-
-	self.indexOfComma = string.find(parameter, ",")
 	
-	dx = parameter:sub(1, self.indexOfComma - 1)
-	dz = parameter:sub(self.indexOfComma + 1)
+	dx = parameter.x
+	dz = parameter.y
 	
-	Logger.log("move-command", "Lua MOVE command run, unitIds: ", unitIds, ", parameter: " .. parameter .. ", dx: " .. dx .. ", dz: " .. dz .. ", tick: "..self.n)
+	Logger.log("move-command", "Lua MOVE command run, unitIds: ", unitIds, ", dx: " .. dx .. ", dz: " .. dz .. ", tick: "..self.n)
 	self.n = self.n + 1
 	done = true
 	
