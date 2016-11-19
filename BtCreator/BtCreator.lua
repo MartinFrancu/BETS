@@ -324,8 +324,8 @@ function widget:Initialize()
 	BtEvaluator.requestNodeDefinitions()
 	local maxNodeWidth = 125
 	for i=1,#nodePoolList do
-		if(nodePoolList[i].width + 15 > maxNodeWidth) then
-			maxNodeWidth = nodePoolList[i].width + 15
+		if(nodePoolList[i].width + 21 > maxNodeWidth) then
+			maxNodeWidth = nodePoolList[i].width + 21
 		end
 	end
 	nodePoolPanel.width = maxNodeWidth

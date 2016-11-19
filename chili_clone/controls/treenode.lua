@@ -131,6 +131,8 @@ function TreeNode:New(obj)
 		backgroundColor = {0,0,0,0},
 		editingText = false,
 	}
+	obj.nodeWindow.minWidth = math.max(obj.nodeWindow.minWidth, obj.nameEditBox.font:GetTextWidth(obj.nameEditBox.text) + 33)
+	obj.nodeWindow.minHeight = obj.nodeWindow.height
 	
 	local parameters = obj.parameters
 	--Spring.Echo("parameters: "..dump(parameters))
@@ -145,7 +147,7 @@ function TreeNode:New(obj)
 			obj.parameterObjects[i] = {}
 			obj.parameterObjects[i]["label"] = Label:New{
 				parent = obj.nodeWindow,
-				x = 15,
+				x = 18,
 				y = 10 + i*20,
 				width  = obj.nodeWindow.font:GetTextWidth(parameters[i]["name"]),
 				height = '10%',
@@ -155,15 +157,16 @@ function TreeNode:New(obj)
 			obj.parameterObjects[i]["editBox"] = EditBox:New{
 				parent = obj.nodeWindow,
 				text = parameters[i]["value"],
-				width = obj.nodeWindow.font:GetTextWidth(parameters[i]["value"])+10,
-				x = obj.nodeWindow.font:GetTextWidth(parameters[i]["name"]) + 20,
+				width = math.max(obj.nodeWindow.font:GetTextWidth(parameters[i]["value"])+10, 35),
+				x = obj.nodeWindow.font:GetTextWidth(parameters[i]["name"]) + 25,
 				y = 10 + i*20,
 				align = 'left',
 				--skinName = 'DarkGlass',
 				borderThickness = 0,
 				backgroundColor = {0,0,0,0},
 				editingText = false,
-			}	
+			}
+			obj.nodeWindow.minWidth = math.max(obj.nodeWindow.minWidth, obj.nodeWindow.font:GetTextWidth(parameters[i]["value"])+ 48 + obj.nodeWindow.font:GetTextWidth(parameters[i]["name"]))
 		end
 	end
 	
