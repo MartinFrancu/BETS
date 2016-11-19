@@ -136,7 +136,11 @@ function TreeNode:New(obj)
 	--Spring.Echo("parameters: "..dump(parameters))
 	-- obj.parameters = {}
 	for i=1,#parameters do
-		--Spring.Echo("parameters["..i.."]="..parameters[i])
+		if(parameters[i]["defaultValue"]) then
+			parameters[i]["value"] = parameters[i]["defaultValue"]
+			parameters[i]["defaultValue"] = nil
+		end
+		
 		if (parameters[i]["componentType"]:lower() == "editbox") then
 			obj.parameterObjects[i] = {}
 			obj.parameterObjects[i]["label"] = Label:New{
@@ -150,8 +154,8 @@ function TreeNode:New(obj)
 			}
 			obj.parameterObjects[i]["editBox"] = EditBox:New{
 				parent = obj.nodeWindow,
-				text = parameters[i]["defaultValue"],
-				width = obj.nodeWindow.font:GetTextWidth(parameters[i]["defaultValue"])+10,
+				text = parameters[i]["value"],
+				width = obj.nodeWindow.font:GetTextWidth(parameters[i]["value"])+10,
 				x = obj.nodeWindow.font:GetTextWidth(parameters[i]["name"]) + 20,
 				y = 10 + i*20,
 				align = 'left',
@@ -160,7 +164,6 @@ function TreeNode:New(obj)
 				backgroundColor = {0,0,0,0},
 				editingText = false,
 			}	
-			obj.parameters[i]["defaultValue"] = obj.parameterObjects[i]["editBox"].text
 		end
 	end
 	
