@@ -124,7 +124,7 @@ function TreeNode:New(obj)
 		text = obj.nodeType,
 		defaultWidth = '80%',
 		x = '10%',
-		y = '10%',
+		y = 6,
 		align = 'center',
 		skinName = 'DarkGlass',
 		borderThickness = 0,

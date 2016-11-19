@@ -300,6 +300,8 @@ function widget:Initialize()
 	Chili = WG.ChiliClone
 	Screen0 = Chili.Screen0	
 	
+	
+	
 	nodePoolPanel = Chili.ScrollPanel:New{
 		parent = Screen0,
 		y = '56%',
@@ -318,6 +320,16 @@ function widget:Initialize()
 		caption = "Node Pool",
 		skinName='DarkGlass',
 	} 
+	
+	BtEvaluator.requestNodeDefinitions()
+	local maxNodeWidth = 125
+	for i=1,#nodePoolList do
+		if(nodePoolList[i].width + 15 > maxNodeWidth) then
+			maxNodeWidth = nodePoolList[i].width + 15
+		end
+	end
+	nodePoolPanel.width = maxNodeWidth
+	nodePoolPanel:RequestUpdate()
 	 -- Create the window
 	windowBtCreator = Chili.Window:New{
 		parent = Screen0,
@@ -335,9 +347,6 @@ function widget:Initialize()
 		-- OnMouseUp = { listenerEndSelectingNodes },
 	}	
 	
-	BtEvaluator.requestNodeDefinitions()
-	
-	-- rootID = 1
 	addNodeToCanvas(Chili.TreeNode:New{
 		parent = windowBtCreator,
 		nodeType = "Root",
