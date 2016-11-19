@@ -10,11 +10,7 @@ function Command:Extend()
         setmetatable( newinst, class_mt )
         return newinst
     end
-
-    if baseClass then
-        setmetatable( new_class, { __index = self } )
-    end
-
+    setmetatable( new_class, { __index = self } )
     return new_class
 end
 
