@@ -143,7 +143,7 @@ function TreeNode:New(obj)
 			parameters[i]["defaultValue"] = nil
 		end
 		
-		if (parameters[i]["componentType"]:lower() == "editbox") then
+		if (parameters[i]["componentType"] and parameters[i]["componentType"]:lower() == "editbox") then
 			obj.parameterObjects[i] = {}
 			obj.parameterObjects[i]["label"] = Label:New{
 				parent = obj.nodeWindow,
@@ -156,7 +156,7 @@ function TreeNode:New(obj)
 			}
 			obj.parameterObjects[i]["editBox"] = EditBox:New{
 				parent = obj.nodeWindow,
-				text = parameters[i]["value"],
+				text = tostring(parameters[i]["value"]),
 				width = math.max(obj.nodeWindow.font:GetTextWidth(parameters[i]["value"])+10, 35),
 				x = obj.nodeWindow.font:GetTextWidth(parameters[i]["name"]) + 25,
 				y = 10 + i*20,

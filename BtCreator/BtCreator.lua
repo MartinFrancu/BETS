@@ -20,7 +20,7 @@ local nodePoolPanel
 local buttonPanel
 local loadTreeButton
 local saveTreeButton
-local serializeTestButton
+local minimizeButton
 
 local treeName
 
@@ -105,12 +105,12 @@ end
 
 local clearCanvas, loadBehaviourTree, formBehaviourTree
 
-function listenerClickOnSaveTree(self)
+function listenerClickOnSaveTree()
 	Logger.log("save-and-load", "Save Tree clicked on. ")
 	formBehaviourTree():Save(treeName.text)
 end
 
-function listenerClickOnLoadTree(self)
+function listenerClickOnLoadTree()
 	Logger.log("save-and-load", "Load Tree clicked on. ")
 	local bt = BehaviourTree.load(treeName.text)
 	if(bt)then
@@ -122,16 +122,13 @@ function listenerClickOnLoadTree(self)
 	
 end
 
-function listenerClickOnTest(self)
-	Logger.log("assign-tree", "Assign Tree")
-	local fieldsToSerialize = {
-		'id',
-		'nodeType',
-		'text',
-		'parameters'
-	}
-	local bt = formBehaviourTree()
-	BtEvaluator.createTree(bt)
+function listenerClickOnMinimize()
+	Logger.log("tree-editing", "Minimize BtCreator. ")
+	-- Spring.Echo("visible: "..tostring(windowBtCreator.visible))
+	windowBtCreator:Hide()
+	-- Spring.Echo("visible: "..tostring(windowBtCreator.visible))
+	nodePoolPanel:Hide()
+	buttonPanel:Hide()
 end
 
 -- //////////////////////////////////////////////////////////////////////
@@ -391,16 +388,16 @@ function widget:Initialize()
 		OnClick = { listenerClickOnLoadTree },
 	}
 	
-	serializeTestButton = Chili.Button:New{
+	minimizeButton = Chili.Button:New{
 		parent = buttonPanel,
 		x = loadTreeButton.x + loadTreeButton.width,
 		y = loadTreeButton.y,
 		width = 90,
 		height = 30,
-		caption = "TEST",
+		caption = "Minimize",
 		skinName = "DarkGlass",
 		focusColor = {0.5,0.5,0.5,0.5},
-		OnClick = {listenerClickOnTest},
+		OnClick = { listenerClickOnMinimize },
 	}
 	
 	treeName = Chili.EditBox:New{
@@ -430,26 +427,27 @@ function widget:KeyPress(key)
 	
 end
 
-function showBtCreator()
-	windowBtCreator:Show()
-	nodePoolPanel:Show()
-	buttonPanel:Show()
-end
-function hideBtCreator()
-	windowBtCreator:Hide()
-	nodePoolPanel:Hide()
-	buttonPanel:Hide()
-end 
-
--- this function checks if there BtCreator should be shown
-function widget:GameFrame()
-	if(WG.BtCreatorShowed  ~= nil) then
-		if(WG.BtCreatorShowed == true) then
-			showBtCreator()
-		else
-			hideBtCreator()
+function widget:RecvLuaMsg(message, playerID)
+	if(playerID ~= Spring.GetLocalPlayerID()) then
+		return
+	end
+	if(not (message:len() > 4 and message:sub(1,4):upper() == "BETS")) then
+		return
+	end
+	messageShorter = message:sub(6)
+	indexOfFirstSpace = string.find(messageShorter, " ") or (message:len() + 1)
+	messageType = messageShorter:sub(1, indexOfFirstSpace - 1):upper()	
+	messageBody = messageShorter:sub(indexOfFirstSpace + 1)
+	if(messageType == "SHOW_BTCREATOR") then 
+		Logger.log("communication", "Message from BtController send: message type SHOW_BTCREATOR")
+		if(not windowBtCreator.visible) then
+			windowBtCreator:Show()
+			nodePoolPanel:Show()
+			buttonPanel:Show()
 		end
-		WG.BtCreatorShowed = nil
+		treeName.text = messageBody:sub(1,messageBody:len()-5)
+		treeName:RequestUpdate()
+		listenerClickOnLoadTree()
 	end
 end
 

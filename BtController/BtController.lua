@@ -74,12 +74,8 @@ local function listenerClickOnSelectedTreeDoneButton(self)
 end
 
 function listenerClickOnShowTreeButton(self)
-  --Spring.SendLuaUIMsg("BETS SHBtC true")
-  if(WG.BtCreatorShowed) then 
-	WG.BtCreatorShowed = false
-  else
-    WG.BtCreatorShowed = true
-  end
+	Logger.log("communication", "Message to BtCreator send: message type SHOW_BTCREATOR")
+  Spring.SendLuaUIMsg("BETS SHOW_BTCREATOR "..treeSelectionComboBox.items[treeSelectionComboBox.selected])
 end
 
 local function showHideTreeSelectionWindow()
