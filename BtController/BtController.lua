@@ -30,7 +30,6 @@ local Dependency = Utils.Dependency
 local Debug = Utils.Debug;
 local Logger = Debug.Logger
 
-
  
 --local windowBtController
 local controllerLabel
@@ -64,12 +63,39 @@ local function reloadTree(treeName)
 	-- BtEvaluator.createTree(currentTree)
 end
 
-local function getStringWithSuffix(list, suff)
-	-- returns list which contains only string
-	
+function string.starts(String,Start)
+   return string.sub(String,1,string.len(Start))==Start
+end
+
+function string.ends(String,End)
+   return End=='' or string.sub(String,-string.len(End))==End
+end
+
+local function getStringsWithoutSuffix(list, suff)
+	-- returns list which contains only string without this suffix
+	local result = {}
+	for i,v in ipairs(list)do
+		if(string.ends(v,suff)) then
+		--vRes = v.sub(v, string.len( BehavioursDirectory)+2 )
+		--table.insert(result,v.sub(1, v:len()))
+		table.insert(result,v:sub(1,v:len()- suff:len()))
+		end
+   end
+   return result
 end
 
 
+local function getNamesInDirectory(directoryName, suffix)
+   local folderContent = VFS.DirList(directoryName)
+   -- get just names .json files
+   folderContent = getStringsWithoutSuffix(folderContent, ".json")
+   -- Remove the path prefix of folder:
+   for i,v in ipairs(folderContent)do
+	folderContent[i] = string.sub(v, string.len( directoryName)+2 ) --THIS WILL MAKE TROUBLES WHEN DIRECTORY IS DIFFERENT: the slashes are sometimes counted once, sometimes twice!!!\\
+   end
+   return folderContent
+end
+---------------------------------------LISTENERS
 local function listenerClickOnAssign(self)
 	BtEvaluator.createTree(currentTree)
 	-- 
@@ -81,6 +107,9 @@ local function listenerClickOnShowHideTree(self)
 end
 
 local function listenerClickOnSelectTreeButton(self)
+	names = getNamesInDirectory(BehavioursDirectory, ".json")
+	treeSelectionComboBox.items = names 
+	treeSelectionComboBox:RequestUpdate()
 	treeControlWindow:Hide()
 	treeSelectionWindow:Show()
 end
@@ -89,7 +118,7 @@ local function listenerClickOnSelectedTreeDoneButton(self)
 	--currentTreeName = treeSelectionComboBox.items[treeSelectionComboBox.selected]
 	--currentTree = BehaviourTree.loadTree(currentTreeName)
 	local name = treeSelectionComboBox.items[treeSelectionComboBox.selected]
-	name = name:sub(1,name:len()-5)
+	--should not be needed anymore: name = name:sub(1,name:len()-5)
 	reloadTree(name)
 	treeControlWindow:Show()
 	treeSelectionWindow:Hide()
@@ -99,6 +128,8 @@ function listenerClickOnShowTreeButton(self)
 	Logger.log("communication", "Message to BtCreator send: message type SHOW_BTCREATOR")
   Spring.SendLuaUIMsg("BETS SHOW_BTCREATOR "..currentTreeName)
 end
+
+---------------------------------------LISTENERS
 
 local function showHideTreeSelectionWindow()
 	if(treeSelectionWindow.visible == false)then
@@ -128,15 +159,17 @@ function setUpTreeSelectionWindow()
 		caption = "Select tree:",
 		skinName='DarkGlass',
    }
-   local folderContent = VFS.DirList(BehavioursDirectory)
+   --[[local folderContent = VFS.DirList(BehavioursDirectory)
    -- Remove the path prefix
    for i,v in ipairs(folderContent)do
 	folderContent[i] = string.sub(v, string.len( BehavioursDirectory)+2 )
    end
-	
+   
+   folderContent = getStringsWithoutSuffix(folderContent, ".json")]]--
+	names = getNamesInDirectory(BehavioursDirectory, ".json")
 	
 	treeSelectionComboBox = Chili.ComboBox:New{
-		items = folderContent,
+		items = names,
 		width = '60%',
 		x = '35%',
 		y = '-1%',
