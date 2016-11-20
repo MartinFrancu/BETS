@@ -50,7 +50,7 @@
 			"parameters": [ {
 				"componentType": "editBox",
 				"name": "scriptName",
-				"value": "name.lua",
+				"value": "move.lua",
 				"variableType": "string"
 			}, {
 				"componentType": "editBox",
@@ -70,7 +70,7 @@
 			"parameters": [ {
 				"componentType": "editBox",
 				"name": "scriptName",
-				"value": "name.lua",
+				"value": "move.lua",
 				"variableType": "string"
 			}, {
 				"componentType": "editBox",
@@ -90,7 +90,7 @@
 			"parameters": [ {
 				"componentType": "editBox",
 				"name": "scriptName",
-				"value": "name.lua",
+				"value": "move.lua",
 				"variableType": "string"
 			}, {
 				"componentType": "editBox",
@@ -110,7 +110,7 @@
 			"parameters": [ {
 				"componentType": "editBox",
 				"name": "scriptName",
-				"value": "name.lua",
+				"value": "move.lua",
 				"variableType": "string"
 			}, {
 				"componentType": "editBox",
