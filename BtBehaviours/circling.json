@@ -55,12 +55,12 @@
 			}, {
 				"componentType": "editBox",
 				"name": "x",
-				"value": "100",
+				"value": 100,
 				"variableType": "number"
 			}, {
 				"componentType": "editBox",
 				"name": "y",
-				"value": "0",
+				"value": 0,
 				"variableType": "number"
 			} ]
 		}, {
@@ -75,12 +75,12 @@
 			}, {
 				"componentType": "editBox",
 				"name": "x",
-				"value": "0",
+				"value": 0,
 				"variableType": "number"
 			}, {
 				"componentType": "editBox",
 				"name": "y",
-				"value": "-100",
+				"value": -100,
 				"variableType": "number"
 			} ]
 		}, {
@@ -95,12 +95,12 @@
 			}, {
 				"componentType": "editBox",
 				"name": "x",
-				"value": "-100",
+				"value": -100,
 				"variableType": "number"
 			}, {
 				"componentType": "editBox",
 				"name": "y",
-				"value": "0",
+				"value": 0,
 				"variableType": "number"
 			} ]
 		}, {
@@ -115,12 +115,12 @@
 			}, {
 				"componentType": "editBox",
 				"name": "x",
-				"value": "0",
+				"value": 0,
 				"variableType": "number"
 			}, {
 				"componentType": "editBox",
 				"name": "y",
-				"value": "100",
+				"value": 100,
 				"variableType": "number"
 			} ]
 		} ],

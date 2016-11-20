@@ -476,7 +476,11 @@ function formBehaviourTree()
 			-- get the string value from editbox
 			for i=1,#node.parameters do
 				if(node.parameters[i]["componentType"]=="editBox") then
-					params.parameters[i].value = node.parameterObjects[i]["editBox"].text
+					if(node.parameters[i]["variableType"] == "number") then
+						params.parameters[i].value = tonumber(node.parameterObjects[i]["editBox"].text)
+					else
+						params.parameters[i].value = node.parameterObjects[i]["editBox"].text
+					end
 				end
 			end
 			nodeMap[node] = bt:NewNode(params)
