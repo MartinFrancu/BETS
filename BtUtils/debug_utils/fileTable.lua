@@ -1,8 +1,16 @@
+--- fileTable
+-- @script fileTable
+
 if(not BtUtils)then VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST) end
 
 local dump = BtUtils.Debug.dump
+local fileTable
 
-local function fileTable(path)
+--- fileTable
+-- @return @{FileTable}
+function fileTable(
+		path -- path within the VFS
+	)
 	local t = VFS.FileExists(path) and VFS.Include(path, {}, VFS.RAW_FIRST) or {}
 	local result = {
 		Pairs = function(self) return pairs(t) end,
@@ -34,5 +42,10 @@ local function fileTable(path)
 	setmetatable(result, mt)
 	return result
 end
+
+--- FileTable
+-- @table FileTable
+-- @field[1] __comment String that should be used as a comment on the beggining of the file.
+-- @field[2] ... anything
 
 return fileTable
