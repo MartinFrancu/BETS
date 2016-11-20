@@ -49,11 +49,12 @@ end
 
 
 function widget:Initialize()	
+	WG.BtEvaluator = BtEvaluator
+	
 	--Spring.SendCommands("AIKill " ..Spring.GetLocalPlayerID())
 	BtEvaluator.sendMessage("REINITIALIZE")
 	Spring.SendCommands("AIControl "..Spring.GetLocalPlayerID().." BtEvaluator")
 	
-	WG.BtEvaluator = BtEvaluator
 end
 
 function widget:RecvSkirmishAIMessage(aiTeam, message)
