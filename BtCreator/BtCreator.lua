@@ -445,7 +445,7 @@ function widget:RecvLuaMsg(message, playerID)
 			nodePoolPanel:Show()
 			buttonPanel:Show()
 		end
-		treeName.text = messageBody:sub(1,messageBody:len()-5)
+		treeName.text = messageBody -- .json suffix is not send anymore :sub(1,messageBody:len()-5)
 		treeName:RequestUpdate()
 		listenerClickOnLoadTree()
 	end
