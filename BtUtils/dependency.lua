@@ -41,6 +41,10 @@ return Utils:Assign("Dependency", function()
 		end
 	end
 
+	local function isUpper(s)
+		return s:lower() ~= s
+	end
+	
 	function Dependency.deferWidget(widget, ...)
 		local dependenciesFulfilled = false
 		local initializeTriggered = false
@@ -53,7 +57,7 @@ return Utils:Assign("Dependency", function()
 		end
 		local protectedMethods = { Initialize = true, GetInfo = true }
 		for k, v in pairs(widget) do
-			if(not protectedMethods[k] and type(v) == "function")then
+			if(type(k) == "string" and type(v) == "function" and isUpper(k:sub(1,1)) and not protectedMethods[k])then
 				widget[k] = function(...)
 					if(dependenciesFulfilled)then
 						return v(...)
