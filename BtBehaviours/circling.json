@@ -100,7 +100,7 @@
 			}, {
 				"componentType": "editBox",
 				"name": "y",
-				"value": "-100",
+				"value": "0",
 				"variableType": "number"
 			} ]
 		}, {
