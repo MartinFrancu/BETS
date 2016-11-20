@@ -530,6 +530,8 @@ function clearCanvas(omitRoot)
 end
 
 local function loadBehaviourNode(bt, btNode)
+	if(not btNode)then return nil end
+
 	local params = {}
 	for k, v in pairs(btNode) do
 		params[k] = v
@@ -553,7 +555,10 @@ end
 
 function loadBehaviourTree(bt)
 	local root = loadBehaviourNode(bt, bt.root)
-	WG.AddConnectionLine(WG.nodeList[rootID].connectionOut, root.connectionIn)
+	if(root)then
+		WG.AddConnectionLine(WG.nodeList[rootID].connectionOut, root.connectionIn)
+	end
+	
 	for _, node in ipairs(bt.additionalNodes) do
 		loadBehaviourNode(bt, node)
 	end
