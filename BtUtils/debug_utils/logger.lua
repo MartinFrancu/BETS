@@ -66,7 +66,7 @@ Each log-group can have one of the following values:
 		end
 		
 		if(not Logger.settings[logGroup])then
-			Logger.settings[logGroup] = SPRING_ECHO
+			Logger.settings[logGroup] = FUNNEL
 		end
 			
 		local handler = handlers[Logger.settings[logGroup]]
