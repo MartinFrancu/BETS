@@ -1,3 +1,6 @@
+--- Sentry.
+-- @classmod Sentry
+
 local Sentry = {}
 
 function isEventKey(key)
@@ -19,6 +22,7 @@ local eventHandlerMetatable = {
 	__index = eventHandlerPrototype
 }
 
+--- Creates new instance of sentry.
 function Sentry:New(t, events)
 	local t = t or {}
 	local events = events or {}

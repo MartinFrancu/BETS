@@ -21,12 +21,14 @@ local BtController = widget
 
 
 local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
+local BtEvaluator
 
 local JSON = Utils.JSON
+local BehaviourTree = Utils.BehaviourTree
+local Dependency = Utils.Dependency
 
 local Debug = Utils.Debug;
 local Logger = Debug.Logger
-
 
  
 --local windowBtController
@@ -47,16 +49,57 @@ local treeSelectionDoneButton
 
 -------------------------------------------------------------------------------------
 
---local showTreeSelectionWindow 
+local currentTreeName
+local currentTree
 
 -------------------------------------------------------------------------------------
 
 local showBtCreatorButton
 
+local function reloadTree(treeName)
+	currentTreeName = treeName
+	currentTree = BehaviourTree.load(currentTreeName)
+	-- call btEvaluator to create such tree 
+	-- BtEvaluator.createTree(currentTree)
+end
 
+function string.starts(String,Start)
+   return string.sub(String,1,string.len(Start))==Start
+end
+
+function string.ends(String,End)
+   return End=='' or string.sub(String,-string.len(End))==End
+end
+
+local function getStringsWithoutSuffix(list, suff)
+	-- returns list which contains only string without this suffix
+	local result = {}
+	for i,v in ipairs(list)do
+		if(string.ends(v,suff)) then
+		--vRes = v.sub(v, string.len( BehavioursDirectory)+2 )
+		--table.insert(result,v.sub(1, v:len()))
+		table.insert(result,v:sub(1,v:len()- suff:len()))
+		end
+   end
+   return result
+end
+
+
+local function getNamesInDirectory(directoryName, suffix)
+   local folderContent = VFS.DirList(directoryName)
+   -- get just names .json files
+   folderContent = getStringsWithoutSuffix(folderContent, ".json")
+   -- Remove the path prefix of folder:
+   for i,v in ipairs(folderContent)do
+	folderContent[i] = string.sub(v, string.len( directoryName)+2 ) --THIS WILL MAKE TROUBLES WHEN DIRECTORY IS DIFFERENT: the slashes are sometimes counted once, sometimes twice!!!\\
+   end
+   return folderContent
+end
+---------------------------------------LISTENERS
 local function listenerClickOnAssign(self)
-	Spring.Echo("BETS CREATE_TREE SENDING UNITS")
-	SendStringToBtEvaluator("ASSIGN_UNITS")
+	BtEvaluator.createTree(currentTree)
+	-- 
+	-- SendStringToBtEvaluator("ASSIGN_UNITS")
 end
 
 local function listenerClickOnShowHideTree(self)
@@ -64,19 +107,29 @@ local function listenerClickOnShowHideTree(self)
 end
 
 local function listenerClickOnSelectTreeButton(self)
+	names = getNamesInDirectory(BehavioursDirectory, ".json")
+	treeSelectionComboBox.items = names 
+	treeSelectionComboBox:RequestUpdate()
 	treeControlWindow:Hide()
 	treeSelectionWindow:Show()
 end
 
 local function listenerClickOnSelectedTreeDoneButton(self)
+	--currentTreeName = treeSelectionComboBox.items[treeSelectionComboBox.selected]
+	--currentTree = BehaviourTree.loadTree(currentTreeName)
+	local name = treeSelectionComboBox.items[treeSelectionComboBox.selected]
+	--should not be needed anymore: name = name:sub(1,name:len()-5)
+	reloadTree(name)
 	treeControlWindow:Show()
 	treeSelectionWindow:Hide()
 end
 
 function listenerClickOnShowTreeButton(self)
 	Logger.log("communication", "Message to BtCreator send: message type SHOW_BTCREATOR")
-  Spring.SendLuaUIMsg("BETS SHOW_BTCREATOR "..treeSelectionComboBox.items[treeSelectionComboBox.selected])
+  Spring.SendLuaUIMsg("BETS SHOW_BTCREATOR "..currentTreeName)
 end
+
+---------------------------------------LISTENERS
 
 local function showHideTreeSelectionWindow()
 	if(treeSelectionWindow.visible == false)then
@@ -85,6 +138,8 @@ local function showHideTreeSelectionWindow()
 		treeSelectionWindow:Hide()
 	end
 end
+
+
 
 function SendStringToBtEvaluator(message)
 	Spring.SendSkirmishAIMessage(Spring.GetLocalPlayerID(), "BETS " .. message)
@@ -104,15 +159,17 @@ function setUpTreeSelectionWindow()
 		caption = "Select tree:",
 		skinName='DarkGlass',
    }
-   local folderContent = VFS.DirList(BehavioursDirectory)
+   --[[local folderContent = VFS.DirList(BehavioursDirectory)
    -- Remove the path prefix
    for i,v in ipairs(folderContent)do
 	folderContent[i] = string.sub(v, string.len( BehavioursDirectory)+2 )
    end
-	
+   
+   folderContent = getStringsWithoutSuffix(folderContent, ".json")]]--
+	names = getNamesInDirectory(BehavioursDirectory, ".json")
 	
 	treeSelectionComboBox = Chili.ComboBox:New{
-		items = folderContent,
+		items = names,
 		width = '60%',
 		x = '35%',
 		y = '-1%',
@@ -230,7 +287,7 @@ function widget:Initialize()
   Chili = WG.ChiliClone
   Screen0 = Chili.Screen0	
   
-  WG.BtCreatorShowed = false
+  BtEvaluator = WG.BtEvaluator 
   
    -- Create the window
    
@@ -246,74 +303,4 @@ function widget:Initialize()
   
 end
   
- -------------------------------------------------------------------------------
- ----------------------UNUSED PARTS (stupid things i was messing around):-------
- -------------------------------------------------------------------------------
- -------------------------------------------------------------------------------
- 
- 
-  --VFS.Include(BtSquadControlPath, BtController, VFS.RAW_FIRST )
-  --dofile(BtSquadControlPath)
-  
- --[[ BtSquadControl = Chili.Control:Inherit{
-  classname= "BtSquadControl",
-  caption  = 'SquadControl', 
-  defaultWidth  = 70,
-  defaultHeight = 20,
-}--]]
-  
---[[	
-	BtControllerPanel = Chili.ScrollPanel:New{
-		parent = Screen0,
-		y = '0%',
-		x = '35%',
-		width  = 125,
-		minWidth = 50,
-		height = 50,
-		skinName='DarkGlass',
-	}]]--
-
-  
-	
- --[[ squadControlBasic = Chili.Button:New{
-	parent = windowBtController,
-	x = '10%',
-    y = '10%' }]]--
-  
-  
---[[    squadControlBasic = BtController.BtSquadControl:New{
-	parent = windowBtController,
-	x = '10%',
-    y = '10%' } ]]--
-
-  
-  --[[scrollPanel = Chili.ScrollPanel:New{
-		parent = windowBtController,
-		x = '1%',
-		y = '1%',
-		width ='100%',
-		height = '100%'
-		}]]--
-
-	
- --[[ treeTabPanels = Chili.TabPanel:New{
-	parent = windowBtController,
-	x = '0%',
-	y = '0%',
-	width = '100%',
-	height = '100%',
-	tabs = {{name = "Patrol tree", child = scrollPanel}},
-	currentTab = scrollPanel
-  } ]]--
- -- scrollPanel:SetParent(treeTabPanels)
-
---[[	BtControllerLabel = Chili.Label:New{
-    parent = windowBtController,
-		x = '20%',
-		y = '3%',
-    width  = '10%',
-    height = '10%',
-    caption = "BtController",
-		skinName='DarkGlass',
-  }  
-	]]--
+Dependency.deferWidget(widget, Dependency.BtEvaluator)

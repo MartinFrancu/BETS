@@ -1,0 +1,34 @@
+{
+	"additionalNodes": [],
+	"properties": {
+		"ytVCQqVeUzO5Ip0vUXzz1JOpfXh6kNHj": {
+			"hasConnectionIn": true,
+			"hasConnectionOut": false,
+			"height": 110,
+			"width": 177.071442,
+			"x": 192,
+			"y": 119
+		}
+	},
+	"root": {
+		"children": [],
+		"id": "ytVCQqVeUzO5Ip0vUXzz1JOpfXh6kNHj",
+		"nodeType": "luaCommand",
+		"parameters": [ {
+			"componentType": "editBox",
+			"name": "scriptName",
+			"value": "move.lua",
+			"variableType": "string"
+		}, {
+			"componentType": "editBox",
+			"name": "x",
+			"value": "100",
+			"variableType": "number"
+		}, {
+			"componentType": "editBox",
+			"name": "y",
+			"value": "0",
+			"variableType": "number"
+		} ]
+	}
+}
