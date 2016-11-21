@@ -237,17 +237,47 @@ local function getCommand(name, id)
 	return cmd
 end
 
+local commandsForUnits = {}-- map(unitId,command)
+
 local function executeScript(messageBody)
 	params = JSON:decode(messageBody)
 	command = getCommand(params.name, params.id)
 
 	if (params.func == "RUN") then
-		res = command:Run(params.units, params.parameter)
+		for i = 1, #params.units do
+			commandsForUnits[params.units[i]] = command
+		end
+		
+		res = command:BaseRun(params.units, params.parameter)
 		Logger.log("luacommand", "Result: ", res)
 		return res
 	elseif (params.func == "RESET") then
-		command:Reset()
+		command:BaseReset()
 		return nil
+	end
+end
+
+function widget:UnitCommand(unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdOpts, cmdTag) 
+	Logger.log("command", "----UnitCommand---")
+	cmd = commandsForUnits[unitID]
+	if cmd  then
+		cmd:AddActiveCommand(unitID,cmdID,cmdTag)
+	end
+end
+
+function widget:UnitCmdDone(unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdOpts, cmdTag)
+	Logger.log("command", "----UnitCmdDone---")
+	cmd = commandsForUnits[unitID]
+	if cmd then
+		cmd:CommandDone(unitID,cmdID,cmdTag)
+	end
+end
+
+function widget:UnitIdle(unitID, unitDefID, unitTeam)
+	Logger.log("command", "----UnitIdle---")
+	cmd = commandsForUnits[unitID]
+	if cmd then
+		cmd:SetUnitIdle(unitID)
 	end
 end
 
