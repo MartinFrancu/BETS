@@ -56,9 +56,14 @@ local currentTree
 
 local showBtCreatorButton
 
+
+local function changeLabel()
+	controllerLabel:SetCaption("BtController (".. currentTreeName.. ")")
+end
 local function reloadTree(treeName)
 	currentTreeName = treeName
 	currentTree = BehaviourTree.load(currentTreeName)
+	changeLabel()
 	-- call btEvaluator to create such tree 
 	-- BtEvaluator.createTree(currentTree)
 end

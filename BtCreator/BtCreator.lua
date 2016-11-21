@@ -413,6 +413,7 @@ function widget:Initialize()
 		editingText = true,
 	}
 	-- treeName.font.size = 16
+	listenerClickOnMinimize()
 end 
 
 function widget:KeyPress(key)
