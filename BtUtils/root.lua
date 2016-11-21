@@ -1,3 +1,6 @@
+--- BtUtils
+-- @module BtUtils
+
 WG = WG or {}
 WG.BtUtils = WG.BtUtils or (function()
 	local locators = {

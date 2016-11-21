@@ -1,8 +1,11 @@
+--- Accessed through @{BtUtils.Debug}.Logger.
+-- @classmod Logger
+
 if(not BtUtils)then VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST) end
 
 local Debug = BtUtils.Debug
 return Debug:Assign("Logger", function()
-	local logger = {}
+	local Logger = {}
 	
 	local LOGGER_SETTINGS = LUAUI_DIRNAME .. "Config/debug_utils_logger.lua"
 	local LOG_PATH = LUAUI_DIRNAME .. "Logs/"
@@ -12,7 +15,8 @@ return Debug:Assign("Logger", function()
 	local dump = Debug.dump
 	local fileTable = Debug.fileTable
 	
-	logger.settings = fileTable(LOGGER_SETTINGS)
+	--- Stores the settings with regard to how to log different log-groups.
+	Logger.settings = fileTable(LOGGER_SETTINGS)
 	
 	local SPRING_ECHO = "spring"
 	local FUNNEL = "funnel"
@@ -20,13 +24,15 @@ return Debug:Assign("Logger", function()
 	local IGNORE = "ignore"
 	
 	local funnelFile = io.open(LOG_PATH .. "funnel-log.txt", "w")
-	for k,v in logger.settings:Pairs() do
+	for k,v in Logger.settings:Pairs() do
 		if(string.sub(k,1,string.len("__"))~="__")then
 			io.open(LOG_PATH .. "log_" .. k .. ".txt", "w"):close() -- clear the files
 		end
 	end
 	
-	logger.settings.__comment = [[
+	--- the __comment field is saved as a comment in the file, see @{fileTable}
+	-- @local
+	Logger.settings.__comment = [[
 Each log-group can have one of the following values:
 	"]] .. SPRING_ECHO .. [[" - uses Spring.Echo
 	"]] .. FUNNEL ..      [[" - logs the message into funnel-log.txt
@@ -49,25 +55,30 @@ Each log-group can have one of the following values:
 		end,
 	}
 	
-	function logger.log(logGroup, ...)
+	--- Logs the message under the supplied log-group.
+	function Logger.log(
+			logGroup, -- specifies the log-group under which the message belongs
+			... -- the rest of the arguments forms the message after their conversion to string
+		)
 		local message = ""
 		for i,v in ipairs({ ... }) do
 			message = message .. (type(v) == "string" and v or dump(v))
 		end
 		
-		if(not logger.settings[logGroup])then
-			logger.settings[logGroup] = SPRING_ECHO
+		if(not Logger.settings[logGroup])then
+			Logger.settings[logGroup] = SPRING_ECHO
 		end
 			
-		local handler = handlers[logger.settings[logGroup]]
+		local handler = handlers[Logger.settings[logGroup]]
 		if(handler)then
 			handler(logGroup, message)
 		end
 	end
 	
-	function logger.disable(logGroup)
-		logger.settings[logGroup] = IGNORE
+	--- Disables the logging of the specified log-group.
+	function Logger.disable(logGroup)
+		Logger.settings[logGroup] = IGNORE
 	end
 	
-	return logger
+	return Logger
 end)
