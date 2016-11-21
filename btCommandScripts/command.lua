@@ -5,19 +5,22 @@ local dump = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.R
 Command = {}
 Command_mt = { __index = Command }
 
-Command.unitsAssigned = {}
 
-Command.activeCommands = {} -- map(unitID, setOfCmdTags)
-
-Command.idleUnits = {}
 
 function Command:Extend()
     local new_class = {}
     local class_mt = { __index = new_class }
 
-    function new_class:New()
+    function new_class:BaseNew()
         local newinst = {}
         setmetatable( newinst, class_mt )
+		
+		newinst.unitsAssigned = {}
+
+		newinst.activeCommands = {} -- map(unitID, setOfCmdTags)
+
+		newinst.idleUnits = {}
+		newinst:New()
         return newinst
     end
     setmetatable( new_class, { __index = self } )

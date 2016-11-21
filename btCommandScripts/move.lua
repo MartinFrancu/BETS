@@ -1,15 +1,15 @@
 local Logger = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/debug_utils/logger.lua", nil, VFS.RAW_FIRST)
 --local baseCommand = VFS.Include(LUAUI_DIRNAME .. "Widgets/btCommandScripts/command.lua", nil, VFS.RAW_FIRST)
 
-local cmd = VFS.Include(LUAUI_DIRNAME .. "Widgets/btCommandScripts/command.lua", nil, VFS.RAW_FIRST)
+local cmdClass = VFS.Include(LUAUI_DIRNAME .. "Widgets/btCommandScripts/command.lua", nil, VFS.RAW_FIRST)
 
-cmd.targets = {}
+function cmdClass:New()
+	self.targets = {}
+	self.n = 0
+	self.lastPositions = {}
+end
 
-cmd.n = 0
-
-cmd.lastPositions = {}
-
-function cmd:UnitMoved(unitID)
+function cmdClass:UnitMoved(unitID)
 	x, _, z = Spring.GetUnitPosition(unitID)
 	lastPos = self.lastPositions[unitID]
 	
@@ -26,7 +26,7 @@ function cmd:UnitMoved(unitID)
 	return moved
 end
 
-function cmd:Run(unitIds, parameter)
+function cmdClass:Run(unitIds, parameter)
 	dx = parameter.x
 	dz = parameter.y
 	
@@ -65,7 +65,7 @@ function cmd:Run(unitIds, parameter)
 	end
 end
 
-function cmd:Reset()
+function cmdClass:Reset()
 	Logger.log("move-command", "Lua command reset")
 
 	self.targets = {}
@@ -73,4 +73,4 @@ function cmd:Reset()
 	self.lastPositions = {}
 end
 
-return cmd
+return cmdClass

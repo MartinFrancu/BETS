@@ -231,7 +231,7 @@ local function getCommand(name, id)
 	
 	cmd = commandMap[id]
 	if not cmd then
-		cmd = getCommandClass(name):New()
+		cmd = getCommandClass(name):BaseNew()
 		commandMap[id] = cmd
 	end
 	return cmd
