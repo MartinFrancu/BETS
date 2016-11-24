@@ -1,5 +1,8 @@
---- Accessed through @{BtUtils.Debug}.Logger.
--- @classmod Logger
+--- Located through @{BtUtils.Debug}.Logger.
+-- @module Logger
+-- @pragma nostrip
+
+-- tag @pragma makes it so that the name of the module is not stripped from the function names
 
 if(not BtUtils)then VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST) end
 
@@ -16,6 +19,8 @@ return Debug:Assign("Logger", function()
 	local fileTable = Debug.fileTable
 	
 	--- Stores the settings with regard to how to log different log-groups.
+	--
+	-- Instance of @{fileTable} linked with the file `LuaUI/Config/debug_utils_logger.lua`.
 	Logger.settings = fileTable(LOGGER_SETTINGS)
 	
 	local SPRING_ECHO = "spring"
