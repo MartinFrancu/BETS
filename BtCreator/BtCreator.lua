@@ -55,7 +55,7 @@ end
 local function removeNodeFromCanvas(id)
 	local node = WG.nodeList[id]
 	for i=#node.attachedLines,1,-1 do
-		WG.RemoveConnectionLine(node.attachedLines[i])
+		WG.removeConnectionLine(node.attachedLines[i])
 	end
 	WG.selectedNodes[id] = nil
 	node:Dispose()
@@ -306,12 +306,6 @@ function widget:RecvSkirmishAIMessage(aiTeam, message)
 	elseif (messageType == "COMMAND") then
 		return executeScript(messageBody)
 	end
-end
-
--- ///////////////////////////////////////////////////////////////////
--- it adds the prefix BETS and sends the string through Spring
-function SendStringToBtEvaluator(message)
-	Spring.SendSkirmishAIMessage(Spring.GetLocalPlayerID(), "BETS " .. message)
 end
 
 function widget:Initialize()	
@@ -582,7 +576,7 @@ local function loadBehaviourNode(bt, btNode)
 	addNodeToCanvas(node)
 	for _, btChild in ipairs(btNode.children) do
 		local child = loadBehaviourNode(bt, btChild)
-		WG.AddConnectionLine(node.connectionOut, child.connectionIn)
+		WG.addConnectionLine(node.connectionOut, child.connectionIn)
 	end
 	return node
 end
@@ -590,45 +584,13 @@ end
 function loadBehaviourTree(bt)
 	local root = loadBehaviourNode(bt, bt.root)
 	if(root)then
-		WG.AddConnectionLine(WG.nodeList[rootID].connectionOut, root.connectionIn)
+		WG.addConnectionLine(WG.nodeList[rootID].connectionOut, root.connectionIn)
 	end
 	
 	for _, node in ipairs(bt.additionalNodes) do
 		loadBehaviourNode(bt, node)
 	end
 	WG.clearSelection()
-end
-
--- Create a table with structure of given tree.
-function LoadTreeInTableRecursive(root, fieldsToSerialize)
-	local tree = {}	
-	for nameInd=1,#fieldsToSerialize do
-		tree[fieldsToSerialize[nameInd]] = root[fieldsToSerialize[nameInd]]
-	end	
-	tree.children = {}
-	local children = root:GetChildren()
-	for i=1,#children do 
-		tree.children[i] = LoadTreeInTableRecursive(children[i], fieldsToSerialize)
-	end
-	return tree
-end
-
--- ignores the initial root:
-function TreeToStringJSON(root, fieldsToSerialize)
-	local rootChildren = root:GetChildren()
-	if table.getn(rootChildren) > 0 then
-		local firstChild = rootChildren[1]
-		local treeTable = LoadTreeInTableRecursive(firstChild, fieldsToSerialize)
-		local treeString = JSON:encode(treeTable)
-		return treeString
-	else
-		return "{}"
-	end
-end
-
---- Removes white spaces from the beginnign and from the end the string s.
-local function trim(s)
-	return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
 
 Dependency.deferWidget(widget, Dependency.BtEvaluator)
