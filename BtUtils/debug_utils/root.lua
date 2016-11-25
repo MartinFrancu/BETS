@@ -1,5 +1,5 @@
---- BtUtils.Debug
--- @module BtUtils.Debug
+--- Located through @{BtUtils}.Debug.
+-- @locator BtUtils.Debug
 
 if(not BtUtils)then VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST) end
 

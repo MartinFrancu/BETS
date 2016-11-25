@@ -1,5 +1,5 @@
 --- BtUtils
--- @module BtUtils
+-- @locator BtUtils
 
 WG = WG or {}
 WG.BtUtils = WG.BtUtils or (function()
@@ -21,6 +21,9 @@ WG.BtUtils = WG.BtUtils or (function()
 	end
 
 	-- creating Locator, which is the only object that needs to be created directly, as it's a bootstrapper
+	
+	--- test
+	-- @type Locator
 	local Locator = {};
 	local locatorPrototype = {
 		Assign = function(self, key, creator)
@@ -37,6 +40,7 @@ WG.BtUtils = WG.BtUtils or (function()
 			end
 		end,
 	}
+	--- vytvoří nový locator
 	function Locator:New(t, locators, prefix) -- returns both altered parameters as a result
 		prefix = prefix or ""
 		locators = locators or {}

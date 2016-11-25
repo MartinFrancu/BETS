@@ -1,3 +1,7 @@
+--- Accessed through @{BtUtils}.BehaviourTree.
+-- @classmod BehaviourTree
+-- @alias treePrototype
+
 if(not BtUtils)then VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST) end
 
 local Utils = BtUtils
@@ -18,49 +22,32 @@ return Utils:Assign("BehaviourTree", function()
 		return false
 	end
 	
-	local function makeNodeMetatable(tree, properties)
-		local nodePrototype = {}
-		function nodePrototype:Remove(toNode)
-			if(not removeItem(tree.additionalNodes, self))then error("Only disconnected nodes can be removed.") end
+	local makeNodeMetatable -- defined at the end, so that the LDoc generates the Node class after BehaviourTree methods
 
-			for _, child in ipairs(self.children) do
-				table.insert(tree.additionalNodes, child)
-			end
-			tree.properties[self.id] = nil
-		end
-
-		function nodePrototype:Connect(toNode)
-			self.children = self.children or {}
-			if(not removeItem(tree.additionalNodes, toNode))then error("Cannot connect to a node that is already a child of another node.") end
-			table.insert(self.children, toNode)
-		end
-
-		function nodePrototype:Disconnect(fromNode)
-			if(not removeItem(self.children, fromNode))then error("Attempt to disconnect from a node that is not a child") end
-			table.insert(tree.additionalNodes, fromNode)
-		end
-
-		local nodeMetatable = {
-			__index = function(self, key)
-				return nodePrototype[key] or properties[key]
-			end,
-			__newindex = properties,
-		}
-		
-		return nodeMetatable
-	end
-	
 	local treePrototype = {}
 	local treeMetatable = { __index = treePrototype }
 	
+	--- Stored fields.
+	-- @table BehaviourTree.
+	-- @tfield Node root main tree or `nil`
+	-- @tfield [Node] additionalNodes list of subtrees that are not connected to the root
+	
+	--- Creates a new instance of @{BehaviourTree}
+	-- @constructor
+	-- @treturn BehaviourTree
 	function BehaviourTree:New()
 		local bt = {}
 		bt.additionalNodes = {}
 		bt.properties = {}
 		return setmetatable(bt, treeMetatable)
 	end
-	
-	function treePrototype:NewNode(params)
+
+	--- Creates a new @{Node} that belongs to the tree.
+	-- @treturn Node the created node
+	-- @remark The `children` field of the `params` is a list of already created nodes (and not only their own `params`).
+	function treePrototype:NewNode(
+			params -- parameters of the node, such as `id`, `nodeType`, `parameters` and `children`
+		)
 		local properties = {}
 		local node = setmetatable({
 			id = params.id,
@@ -87,6 +74,7 @@ return Utils:Assign("BehaviourTree", function()
 		return node
 	end
 	
+	--- set root
 	function treePrototype:SetRoot(root)
 		if(self.root)then
 			table.insert(self.additionalNodes, self.root)
@@ -97,7 +85,6 @@ return Utils:Assign("BehaviourTree", function()
 		self.root = root
 	end
 
-	
 	-- loading
 	local function load_setupNode(tree, node)
 		if(not node)then return end
@@ -111,7 +98,13 @@ return Utils:Assign("BehaviourTree", function()
 			load_setupNode(tree, child)
 		end
 	end
-	function BehaviourTree.load(name)
+	
+	--- Loads a previously saved tree.
+	-- @static
+	-- @treturn BehaviourTree loaded tree if found, `nil` otherwise
+	function BehaviourTree.load(
+			name -- name under which to look for the tree
+		)
 		local file = io.open(BEHAVIOURS_DIRNAME .. name .. ".json", "r")
 		if(not file)then
 			return nil
@@ -131,9 +124,13 @@ return Utils:Assign("BehaviourTree", function()
 		return bt
 	end
 
-	
-	-- saving
-	function BehaviourTree.save(bt, name)
+	--- Saves the tree under the specified name.
+	-- @static
+	-- @return `true` if successful, `nil` otherwise
+	function BehaviourTree.save(
+			bt, -- the tree which to save
+			name -- name under which to save, must not contain path-illegal characters
+		)
 		local text = JSON:encode(bt, nil, { pretty = true, indent = "\t" })
 		
 		Spring.CreateDir(BEHAVIOURS_DIRNAME)
@@ -146,7 +143,66 @@ return Utils:Assign("BehaviourTree", function()
 		
 		return true
 	end
+	--- Alias to @{BehaviourTree.save}
+	-- @function Save
+	-- @param name See @{BehaviourTree.save}
+	-- @set no_return_or_parms=false -- unfortunately doesn't work
 	treePrototype.Save = BehaviourTree.save
+
+	
+	makeNodeMetatable = function(tree, properties)
+		--- Represents a single node of @{BehaviourTree}
+		-- @type Node
+		-- @static
+		local Node = {}
+		
+		--- Removes the node from its tree.
+		-- Any nodes below this node get added to the `additionalNodes` list.
+		function Node:Remove()
+			if(not removeItem(tree.additionalNodes, self))then error("Only disconnected nodes can be removed.") end
+
+			for _, child in ipairs(self.children) do
+				table.insert(tree.additionalNodes, child)
+			end
+			tree.properties[self.id] = nil
+		end
+
+		--- Connect the node to another, making it its child
+		function Node:Connect(
+				toNode -- node to which to connect
+			)
+			self.children = self.children or {}
+			if(not removeItem(tree.additionalNodes, toNode))then error("Cannot connect to a node that is already a child of another node.") end
+			table.insert(self.children, toNode)
+		end
+
+		--- Disconnects the node from its child.
+		function Node:Disconnect(
+				fromNode -- the child node from which to disconnect
+			)
+			if(not removeItem(self.children, fromNode))then error("Attempt to disconnect from a node that is not a child") end
+			table.insert(tree.additionalNodes, fromNode)
+		end
+
+		local nodeMetatable = {
+			__index = function(self, key)
+				return Node[key] or properties[key]
+			end,
+			__newindex = properties,
+		}
+		
+		--- Directly stored fields.
+		-- 
+		-- Whenever any other name is accessed (get or set), it is routed to the `properties` field of @{BehaviourTree} under the `id` of the current node.
+		--
+		-- @table Node.
+		-- @tfield string id ID of the node
+		-- @tfield string nodeType
+		-- @field parameters a
+		-- @tfield [Node] children a
+		
+		return nodeMetatable
+	end
 	
 	return BehaviourTree
 end)

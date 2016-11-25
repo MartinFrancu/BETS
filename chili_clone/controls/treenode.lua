@@ -134,7 +134,7 @@ function TreeNode:New(obj)
 	obj.nodeWindow.minWidth = math.max(obj.nodeWindow.minWidth, obj.nameEditBox.font:GetTextWidth(obj.nameEditBox.text) + 33)
 	obj.nodeWindow.minHeight = obj.nodeWindow.height
 	
-	local parameters = obj.parameters
+	local parameters = copyTable(obj.parameters)
 	--Spring.Echo("parameters: "..dump(parameters))
 	-- obj.parameters = {}
 	for i=1,#parameters do
