@@ -36,10 +36,9 @@ local controllerLabel
 
 -------------------------------------------------------------------------------------
 local treeControlWindow
-local labelAssignemntButton
-local labelName
 local selectTreeButton
 -------------------------------------------------------------------------------------
+local treeTabPanel
 local treeSelectionWindow
 local treeSelectionLabel
 local selectedTreeEditBox
@@ -49,23 +48,81 @@ local treeSelectionDoneButton
 
 -------------------------------------------------------------------------------------
 
-local currentTreeName
-local currentTree
+local currentTreeData = {chiliComponents = {}} 
+
+------------------------------------------------------------------------------------- 
+
+
+TreeHandle = {	Name = "no_name", 
+				TreeType = "no_tree_type", 
+				InstanceCode = "default", 
+				Tree = "no_tree", 
+				ChiliComponents = {}} 
+
+
+function TreeHandle:SendCreateTreeMessage()
+	BtEvaluator.createTree(self.Tree)
+end
+
+--function TreeHandle:SendAssignTreeMessage()
+--	-- TD send a message to BtEvaluator
+--end
+
+function TreeHandle:New(givenName, desiredTreeType)
+	newHandle = TreeHandle
+	newHandle.Name = givenName
+	newHandle.TreeType = desiredTreeType
+	newHandle.InstaceCode = "random_code" --TD
+	newHandle.Tree =  BehaviourTree.load(self.TreeType)
+	-- I should init the gui components
+	
+	labelNameTextBox = Chili.TextBox:New{
+	x = 5,
+	y = 54,
+	height = 30,
+	width =  100,
+	minWidth = 50,
+	text = "Assign selected units:",
+		skinName = "DarkGlass",
+		focusColor = {0.5,0.5,0.5,0.5},
+	}
+	table.insert(newHandle.ChiliComponents, labelNameTextBox)
+	
+	
+	labelAssignmentButton = Chili.Button:New{
+	x = 100 ,
+	y = 45,
+	height = 30,
+	width = '25%',
+	minWidth = 150,
+	caption = "Default role",
+	OnClick = {TreeHandle:SendCreateTreeMessage()},
+		skinName = "DarkGlass",
+		focusColor = {0.5,0.5,0.5,0.5},
+	}
+	table.insert(newHandle.ChiliComponents, labelAssignmentButton)
+	
+	return newHandle
+end
+
+--	Contains	.name = "name of tree"
+--				.tree = loaded tree into table
+-- 				chiliComponents.labelAssignemntButton = button to assign currently selected units to this label
+--				chiliComponents.labelNameTextBox = text box for assignment:
+-- 				chiliComponents.showBtCreatorButton = button to show current tree in bt creator
 
 -------------------------------------------------------------------------------------
 
-local showBtCreatorButton
+--local showBtCreatorButton
 
 
 local function changeLabel()
-	controllerLabel:SetCaption("BtController (".. currentTreeName.. ")")
+	controllerLabel:SetCaption("BtController ("..  currentTreeData.name .. ")")
 end
 local function reloadTree(treeName)
-	currentTreeName = treeName
-	currentTree = BehaviourTree.load(currentTreeName)
+	currentTreeData.name = treeName
+	currentTreeData.tree = BehaviourTree.load(currentTreeData.name)
 	changeLabel()
-	-- call btEvaluator to create such tree 
-	-- BtEvaluator.createTree(currentTree)
 end
 
 function string.starts(String,Start)
@@ -102,7 +159,7 @@ local function getNamesInDirectory(directoryName, suffix)
 end
 ---------------------------------------LISTENERS
 local function listenerClickOnAssign(self)
-	BtEvaluator.createTree(currentTree)
+	BtEvaluator.createTree(currentTreeData.tree)
 	-- 
 	-- SendStringToBtEvaluator("ASSIGN_UNITS")
 end
@@ -120,8 +177,6 @@ local function listenerClickOnSelectTreeButton(self)
 end
 
 local function listenerClickOnSelectedTreeDoneButton(self)
-	--currentTreeName = treeSelectionComboBox.items[treeSelectionComboBox.selected]
-	--currentTree = BehaviourTree.loadTree(currentTreeName)
 	local name = treeSelectionComboBox.items[treeSelectionComboBox.selected]
 	--should not be needed anymore: name = name:sub(1,name:len()-5)
 	reloadTree(name)
@@ -131,7 +186,7 @@ end
 
 function listenerClickOnShowTreeButton(self)
 	Logger.log("communication", "Message to BtCreator send: message type SHOW_BTCREATOR")
-  Spring.SendLuaUIMsg("BETS SHOW_BTCREATOR "..currentTreeName)
+	Spring.SendLuaUIMsg("BETS SHOW_BTCREATOR ".. currentTreeData.name)
 end
 
 ---------------------------------------LISTENERS
@@ -214,20 +269,20 @@ function setUpTreeSelectionWindow()
 end
 
 function setUpTreeControlWindow()
-  treeControlWindow = Chili.Window:New{
+	treeControlWindow = Chili.Window:New{
     parent = Screen0,
     x = '15%',
     y = '1%',
     width  = '35%' ,
-    height = '10%',	
+    height = 600,--'10%',	
 		padding = {10,10,10,10},
 		draggable=false,
 		resizable=true,
 		skinName='DarkGlass',
 		backgroundColor = {1,1,1,1},
-  }
+	}
   
-  controllerLabel = Chili.Label:New{
+	controllerLabel = Chili.Label:New{
     parent = treeControlWindow,
 	x = '1%',
 	y = '1%',
@@ -235,9 +290,11 @@ function setUpTreeControlWindow()
     height = '100%',
     caption = "BtController",
 		skinName='DarkGlass',
-  }
+	}
   
-  selectTreeButton = Chili.Button:New{
+  
+  
+	selectTreeButton = Chili.Button:New{
     parent = treeControlWindow,
 	x = 50,
 	y = 15,
@@ -246,37 +303,12 @@ function setUpTreeControlWindow()
     caption = "Select tree",
 	OnClick = {listenerClickOnSelectTreeButton},
 		skinName='DarkGlass',
-  }
-  
-  labelAssignemntButton = Chili.Button:New{
-	parent = treeControlWindow,
-	x = 100 ,
-	y = 45,
-	height = 30,
-	width = '25%',
-	minWidth = 150,
-	caption = "Assign selected units",
-	OnClick = {listenerClickOnAssign},
-		skinName = "DarkGlass",
-		focusColor = {0.5,0.5,0.5,0.5},
 	}
 	
-  labelName = Chili.TextBox:New{
-	parent = treeControlWindow, 
-	x = 5,
-	y = 54,
-	height = 30,
-	width =  100,
-	minWidth = 50,
-	text = "Default role:",
-		skinName = "DarkGlass",
-		focusColor = {0.5,0.5,0.5,0.5},
-  }
-  
-  showBtCreatorButton = Chili.Button:New{
+	currentTreeData.chiliComponents.showBtCreatorButton = Chili.Button:New{
 	parent = treeControlWindow,
-	x = '72%',
-	y = 45,
+	x = 200,
+	y = 15,
 	height = 30,
 	width = '20%',
 	minWidth = 150,
@@ -285,6 +317,46 @@ function setUpTreeControlWindow()
 		skinName = "DarkGlass",
 		focusColor = {0.5,0.5,0.5,0.5},
 	}
+	  
+	currentTreeData.chiliComponents.labelAssignemntButton = Chili.Button:New{
+	parent =  treeTabPanel,--treeControlWindow,
+	x = 100 ,
+	y = 45,
+	height = 30,
+	width = '25%',
+	minWidth = 150,
+	caption = "Default role",
+	OnClick = {listenerClickOnAssign},
+		skinName = "DarkGlass",
+		focusColor = {0.5,0.5,0.5,0.5},
+	}
+	
+	currentTreeData.chiliComponents.labelNameTextBox = Chili.TextBox:New{
+	parent =  treeTabPanel, --parent = treeControlWindow, 
+	x = 5,
+	y = 54,
+	height = 30,
+	width =  100,
+	minWidth = 50,
+	text = "Assign selected units:",
+		skinName = "DarkGlass",
+		focusColor = {0.5,0.5,0.5,0.5},
+	}
+  
+	newTab = {name = "Start tab", children ={currentTreeData.chiliComponents.labelAssignemntButton, currentTreeData.chiliComponents.labelNameTextBox } }
+	
+	treeTabPanel = Chili.TabPanel:New{
+		parent = treeControlWindow,
+		x = 0,
+		y = 35,
+		height = 570,
+		width = '100%',
+		tabs = {newTab},
+	}
+	
+	
+	
+	--treeTabPanel:AddTab(newTab)
 end
 
 function widget:Initialize()	
