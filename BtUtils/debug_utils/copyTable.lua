@@ -1,5 +1,5 @@
 ----------
--- @script copyTable
+-- @module copyTable
 
 local copyTable
 

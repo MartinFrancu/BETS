@@ -30,7 +30,7 @@ return Utils:Assign("BehaviourTree", function()
 	--- Stored fields.
 	-- @table BehaviourTree.
 	-- @tfield Node root main tree or `nil`
-	-- @tfield [Node] additionalNodes list of subtrees that are not connected to the root
+	-- @tfield {Node,...} additionalNodes list of subtrees that are not connected to the root
 	
 	--- Creates a new instance of @{BehaviourTree}
 	-- @constructor
@@ -154,11 +154,11 @@ return Utils:Assign("BehaviourTree", function()
 		--- Represents a single node of @{BehaviourTree}
 		-- @type Node
 		-- @static
-		local Node = {}
+		local nodePrototype = {}
 		
 		--- Removes the node from its tree.
 		-- Any nodes below this node get added to the `additionalNodes` list.
-		function Node:Remove()
+		function nodePrototype:Remove()
 			if(not removeItem(tree.additionalNodes, self))then error("Only disconnected nodes can be removed.") end
 
 			for _, child in ipairs(self.children) do
@@ -168,7 +168,7 @@ return Utils:Assign("BehaviourTree", function()
 		end
 
 		--- Connect the node to another, making it its child
-		function Node:Connect(
+		function nodePrototype:Connect(
 				toNode -- node to which to connect
 			)
 			self.children = self.children or {}
@@ -177,7 +177,7 @@ return Utils:Assign("BehaviourTree", function()
 		end
 
 		--- Disconnects the node from its child.
-		function Node:Disconnect(
+		function nodePrototype:Disconnect(
 				fromNode -- the child node from which to disconnect
 			)
 			if(not removeItem(self.children, fromNode))then error("Attempt to disconnect from a node that is not a child") end
@@ -186,7 +186,7 @@ return Utils:Assign("BehaviourTree", function()
 
 		local nodeMetatable = {
 			__index = function(self, key)
-				return Node[key] or properties[key]
+				return nodePrototype[key] or properties[key]
 			end,
 			__newindex = properties,
 		}
@@ -199,7 +199,7 @@ return Utils:Assign("BehaviourTree", function()
 		-- @tfield string id ID of the node
 		-- @tfield string nodeType
 		-- @field parameters a
-		-- @tfield [Node] children a
+		-- @tfield {Node,...} children a
 		
 		return nodeMetatable
 	end
