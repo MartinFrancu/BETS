@@ -12,7 +12,7 @@ return BtUtils:Assign("Debug", function()
 		Logger = "logger", -- @{Logger}
 		dump = "dump", -- @{dump}
 		copyTable = "copyTable", -- @{copyTable}
-		fileTable = "fileTable", -- @{fileTable}
+		FileTable = "fileTable", -- @{FileTable}
 	}
 
 	-- the return value is in brackets as we do not want to return our locators map

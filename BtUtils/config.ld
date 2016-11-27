@@ -1,9 +1,7 @@
 --[[
   This file serves as a configuration for generating the documentation of BtUtils.
   
-  To generate the documentation, use "ldoc .". You can find ldoc at http://stevedonovan.github.io/ldoc/
-  
-  -- Work In Progress --
+  To generate the documentation, use "ldoc .". You can install ldoc from http://stevedonovan.github.io/ldoc/
 ]]
 
 project = "BETS"

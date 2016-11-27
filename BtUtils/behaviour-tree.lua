@@ -1,4 +1,6 @@
---- Accessed through @{BtUtils}.BehaviourTree.
+--- Representation of behaviour trees (or forests) with separated important and additional data.
+-- The main advantage of this structure is that all properties of @{Node}s are stored directly, while additional data needed for other purposes, eg. editing in BtCreator, are stored in a separate table.
+-- However, for a user, it is possible to store any properties on the nodes themselves and they get assigned to the appropriate table.
 -- @classmod BehaviourTree
 -- @alias treePrototype
 
@@ -31,6 +33,7 @@ return Utils:Assign("BehaviourTree", function()
 	-- @table BehaviourTree.
 	-- @tfield Node root main tree or `nil`
 	-- @tfield {Node,...} additionalNodes list of subtrees that are not connected to the root
+	-- @tfield {[string]=tab} properties additional data of nodes, accessed through their @{Node}`.id`
 	
 	--- Creates a new instance of @{BehaviourTree}
 	-- @constructor
@@ -74,7 +77,8 @@ return Utils:Assign("BehaviourTree", function()
 		return node
 	end
 	
-	--- set root
+	--- Roots the behaviour tree on the specified, already created node.
+	-- @tparam Node root Node that becomes the new root.
 	function treePrototype:SetRoot(root)
 		if(self.root)then
 			table.insert(self.additionalNodes, self.root)
@@ -197,9 +201,9 @@ return Utils:Assign("BehaviourTree", function()
 		--
 		-- @table Node.
 		-- @tfield string id ID of the node
-		-- @tfield string nodeType
-		-- @field parameters a
-		-- @tfield {Node,...} children a
+		-- @tfield string nodeType specifies the type of the @{Node}.
+		-- @tfield {Parameter,...} parameters list of parameters containing their `name`s and `value`s.
+		-- @tfield {Node,...} children list of current children of the node
 		
 		return nodeMetatable
 	end

@@ -61,7 +61,7 @@ WG.BtUtils = WG.BtUtils or (function()
 	
 	--- Creates a new @{Locator}.
 	-- @constructor
-	-- @tab t preexisting table to convert into a creator or `nil`
+	-- @tab t preexisting table to convert into a @{Locator} or `nil`
 	-- @tparam {[string]=string} locators table mapping keys to relative paths (without the extension `.lua`) where to look for lua scripts defining the modules/classes or `nil`
 	-- @string prefix directory prefix to where the path of the Locator is supposed to be with respect to the BtUtils root directory or `nil`
 	-- @treturn Locator

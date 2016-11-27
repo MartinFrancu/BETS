@@ -1,4 +1,5 @@
---- Located through @{BtUtils.Debug}.Logger.
+--- Allows user-configurable logging.
+-- The messages can be logged using `Spring.Echo`, logged into a common file, logged into separate files or ignored altogether.
 -- @module Logger
 -- @pragma nostrip
 
@@ -16,12 +17,12 @@ return Debug:Assign("Logger", function()
 	Spring.CreateDir(LOG_PATH)
 	
 	local dump = Debug.dump
-	local fileTable = Debug.fileTable
+	local FileTable = Debug.FileTable
 	
 	--- Stores the settings with regard to how to log different log-groups.
 	--
-	-- Instance of @{fileTable} linked with the file `LuaUI/Config/debug_utils_logger.lua`.
-	Logger.settings = fileTable(LOGGER_SETTINGS)
+	-- Instance of @{FileTable} linked with the file `LuaUI/Config/debug_utils_logger.lua`.
+	Logger.settings = FileTable:New(LOGGER_SETTINGS)
 	
 	local SPRING_ECHO = "spring"
 	local FUNNEL = "funnel"
@@ -35,7 +36,7 @@ return Debug:Assign("Logger", function()
 		end
 	end
 	
-	--- the __comment field is saved as a comment in the file, see @{fileTable}
+	--- the __comment field is saved as a comment in the file, see @{FileTable}
 	-- @local
 	Logger.settings.__comment = [[
 Each log-group can have one of the following values:
