@@ -93,6 +93,7 @@ WG.BtUtils = WG.BtUtils or (function()
 	end
 
 	-- BtUtils is an instance of a Locator
+	-- the return value is in brackets as we do not want to return our locators map
 	return (Locator:New({ Locator = Locator }, locators));
 end)()
 
