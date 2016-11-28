@@ -16,19 +16,7 @@ if (widget and not widget.GetInfo) then
 		}
 	end
 	 
-	local KEYSYMS = _G.KEYSYMS --[[{
-		ESCAPE   = 27,
-		RETURN   = 13,
-		KP_ENTER = 271,
-
-		UP       = 273,
-		DOWN     = 274,
-		RIGHT    = 275,
-		LEFT     = 276,
-		
-		F8       = 289,
-		F9       = 290,
-	}]]
+	local KEYSYMS = _G.KEYSYMS
 	 
 	local RELOAD_KEY = KEYSYMS.F8
 	local TOGGLE_VISIBILITY_KEY = KEYSYMS.F9;
@@ -43,11 +31,29 @@ if (widget and not widget.GetInfo) then
 	 
 	local CONSOLE_SETTINGS = LUAUI_DIRNAME .. "Config/console.lua"
 	 
-	-- Include debug functions, copyTable() and dump()
+	-- using BtUtils
 	local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
 	
 	local Debug = Utils.Debug
 	local Logger, dump = Debug.Logger, Debug.dump
+	
+	--- Iterates not only through the regular pairs, but also over the pairs of a metatable
+	local function metanext(state, key)
+		local k, v = next(state.current, key)
+		if(k ~= nil)then
+			return k, v
+		else
+			local mt = getmetatable(state.current)
+			if(not mt or type(mt.__index) ~= "table")then
+				return nil
+			end
+			state.current = mt.__index;
+			return metanext(state, nil)
+		end
+	end
+	local function metapairs(t)
+		return metanext, { current = t }, nil
+	end
 	
 	local function loadSettings()
 		if(VFS.FileExists(CONSOLE_SETTINGS))then
@@ -151,12 +157,13 @@ if (widget and not widget.GetInfo) then
 		end
 	end
 	
+	-- sets up the context that is used as the environment in the console
 	local consoleContext = { }
 	consoleContext._G = consoleContext
 	consoleContext.history = history
 	consoleContext.Logger = Logger
 	consoleContext.widget = widget
-	function consoleContext.clear()
+	consoleContext.clear = function()
 		consoleLog:ClearChildren()
 		consoleLog.justCleared = true
 		history = {}
@@ -173,6 +180,25 @@ if (widget and not widget.GetInfo) then
 				return _G[key]
 			end
 		end })
+	local function contextNext(state, key)
+		local k, v = next(state.current, key)
+		if(k ~= nil)then
+			return k, v
+		else
+			if(state.current == consoleContext)then
+				state.current = WG
+			elseif(state.current == WG)then
+				state.current = _G
+			elseif(state.current == _G)then
+				return nil
+			end
+			return contextNext(state, nil)
+		end
+	end
+	local function contextPairs(_)
+		return contextNext, { current = consoleContext }, nil
+	end
+	
 	local function runCommand(text)
 		-- attempt to compile te chunk as an epxression
 		local isExpression, command, msg = true, loadstring("return ("..text..")")
@@ -197,6 +223,45 @@ if (widget and not widget.GetInfo) then
 
 		-- error occured
 		addLine(text, "error", msg)
+	end
+	
+	local function fillInCommand()
+		local cursor = commandInput.cursor
+		local beforeCursor = commandInput.text:sub(1, cursor - 1)
+		local partialProperty = beforeCursor:match("[%w%.:]+$") or ""
+		
+		local container = consoleContext
+		local keyList = contextPairs
+		local get = function(t, key) return t[key] end
+		for key in partialProperty:gmatch("%w+[%.:]") do
+			container = get(container, key:sub(1, key:len() - 1))
+			if(not container)then
+				return false
+			end
+			get = rawget
+			keyList = metapairs
+		end
+		
+		local partialKey = partialProperty:match("%w*$") or ""
+		local partialLength = partialKey:len()
+		local candidates, candidateCount = {}, 0
+		for k in keyList(container) do
+			if(type(k) == "string" and k:sub(1, partialLength) == partialKey)then
+				table.insert(candidates, k)
+				candidateCount = candidateCount + 1
+			end
+		end
+		if(candidateCount == 0)then
+			return false
+		elseif(candidateCount > 1)then
+			addLine(partialProperty .. ".*", "info", candidates)
+		else
+			local afterCursor = commandInput.text:sub(cursor)
+			commandInput:SetText(beforeCursor .. candidates[1]:sub(partialLength + 1) .. afterCursor)
+			commandInput.cursor = cursor + candidates[1]:len() - partialLength
+		end
+		--commandInput:SetText(history[currentCommand])
+		--commandInput.cursor = history[currentCommand]:len() + 1
 	end
 	
 	local function handleGlobalHotkey(element, key, modifiers, isRepeat)
@@ -262,6 +327,8 @@ if (widget and not widget.GetInfo) then
 					if(key == KEYSYMS.RETURN or key == KEYSYMS.KP_ENTER)then
 						runCommand(commandInput.text)
 						resetCommand()
+					elseif(key == KEYSYMS.TAB)then
+						fillInCommand()
 					elseif(key == KEYSYMS.UP)then
 						stepCommand(-1)
 					elseif(key == KEYSYMS.DOWN)then

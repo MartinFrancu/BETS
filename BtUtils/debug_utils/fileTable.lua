@@ -49,7 +49,6 @@ function FileTable:New(
 	end
 	
 	local mt = {
-		__metatable = "locked",
 		__tostring = function(self) return tostring(t) end,
 		__pairs = result.Pairs,
 		__index = t,
