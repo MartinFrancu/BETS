@@ -39,8 +39,6 @@ EditBox = Control:Inherit{
 
   allowUnicode = true,
   passwordInput = false,
-	
-	editingText = false,
 }
 if Script.IsEngineMinVersion == nil or not Script.IsEngineMinVersion(97) then
     EditBox.allowUnicode = false
@@ -169,11 +167,6 @@ function EditBox:_SetCursorByMousePos(x, y)
 end
 
 function EditBox:MouseDown(x, y, ...)
-	Spring.Echo("EditBox MouseDown.")
-	if(not self.editingText) then
-		return
-	end		
-	WG.movingNodes = false
 	local _, _, _, shift = Spring.GetModKeyState()
 	local cp = self.cursor
 	self:_SetCursorByMousePos(x, y)

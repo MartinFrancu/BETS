@@ -78,7 +78,7 @@ function listenerStartCopyingNode(node, x , y)
 	copyTreeNode = node
 	startCopyingLocation.x = x + node.x
 	startCopyingLocation.y = y + node.y
-	return true
+	return node
 end
 
 function listenerEndCopyingNode(self, x , y)
@@ -124,9 +124,7 @@ end
 
 function listenerClickOnMinimize()
 	Logger.log("tree-editing", "Minimize BtCreator. ")
-	-- Spring.Echo("visible: "..tostring(windowBtCreator.visible))
 	windowBtCreator:Hide()
-	-- Spring.Echo("visible: "..tostring(windowBtCreator.visible))
 	nodePoolPanel:Hide()
 	buttonPanel:Hide()
 end
@@ -388,11 +386,11 @@ function widget:Initialize()
 	
 	minimizeButton = Chili.Button:New{
 		parent = buttonPanel,
-		x = loadTreeButton.x + loadTreeButton.width,
+		x = buttonPanel.width - 50,
 		y = loadTreeButton.y,
-		width = 90,
+		width = 35,
 		height = 30,
-		caption = "Minimize",
+		caption = "_",
 		skinName = "DarkGlass",
 		focusColor = {0.5,0.5,0.5,0.5},
 		OnClick = { listenerClickOnMinimize },

@@ -83,10 +83,12 @@ function TreeNode:New(obj)
 		OnResize = { listenerNodeResize },
 		treeNode = obj,
 		connectable = obj.connectable,
+		disableChildrenHitTest = true,
 	}
 	if ( obj.connectable ) then
 		nodeWindowOptions.OnMouseDown = { listenerOnMouseDownMoveNode }
 		nodeWindowOptions.OnMouseUp = { listenerOnMouseUpMoveNode }
+		nodeWindowOptions.disableChildrenHitTest = false
 	end
 	
 	obj.nodeWindow = Window:New(copyTable(nodeWindowOptions))
@@ -129,7 +131,6 @@ function TreeNode:New(obj)
 		skinName = 'DarkGlass',
 		borderThickness = 0,
 		backgroundColor = {0,0,0,0},
-		editingText = false,
 	}
 	obj.nodeWindow.minWidth = math.max(obj.nodeWindow.minWidth, obj.nameEditBox.font:GetTextWidth(obj.nameEditBox.text) + 33)
 	obj.nodeWindow.minHeight = obj.nodeWindow.height
@@ -157,6 +158,7 @@ function TreeNode:New(obj)
 			obj.parameterObjects[i]["editBox"] = EditBox:New{
 				parent = obj.nodeWindow,
 				text = tostring(parameters[i]["value"]),
+				validatedText = tostring(parameters[i]["value"]),
 				width = math.max(obj.nodeWindow.font:GetTextWidth(parameters[i]["value"])+10, 35),
 				x = obj.nodeWindow.font:GetTextWidth(parameters[i]["name"]) + 25,
 				y = 10 + i*20,
@@ -164,7 +166,6 @@ function TreeNode:New(obj)
 				--skinName = 'DarkGlass',
 				borderThickness = 0,
 				backgroundColor = {0,0,0,0},
-				editingText = false,
 			}
 			obj.nodeWindow.minWidth = math.max(obj.nodeWindow.minWidth, obj.nodeWindow.font:GetTextWidth(parameters[i]["value"])+ 48 + obj.nodeWindow.font:GetTextWidth(parameters[i]["name"]))
 		end
@@ -495,7 +496,7 @@ end
 
 
 local connectionPanelBackgroundColor = {0.1,0.1,0.1,0.7}
-WG.movingNodes = false
+local movingNodes = false
 
 function listenerOverConnectionPanel(self)
 	if (clickedConnection ~= nil and connectionLineCanBeCreated(self)) then
@@ -511,7 +512,7 @@ end
 
 function listenerClickOnConnectionPanel(self)
 	Spring.Echo("clicked on Connection panel. ")
-	WG.movingNodes = false
+	movingNodes = false
 	if (clickedConnection == nil) then
 		clickedConnection = self
 		self.backgroundColor = {1, 0.5, 0.0, 1}
@@ -558,24 +559,35 @@ end
 --// Listeners for node selections and their helper functions
 --//=============================================================================
 
-
 local previousPosition = {}
 
 --- Key is node id, value is true
 WG.selectedNodes = {}
 ---local selectedNodes = WG.selectedNodes
 
+local ALPHA_OF_SELECTED_NODES = 1
+local ALPHA_OF_NOT_SELECTED_NODES = 0.6
 
-ALPHA_OF_SELECTED_NODES = 1
-ALPHA_OF_NOT_SELECTED_NODES = 0.6
+local function validateEditBox(editbox)
+	if(editbox.text == editbox.validatedText) then
+		return
+	end
+	local numberOld = tonumber(editbox.text)
+	local numberNew = tonumber(editbox.validatedText)
+	if((numberOld and numberNew) or ((not numberOld) and (not numberNew))) then
+		editbox.validatedText = editbox.text
+	else
+		editbox.text = editbox.validatedText
+	end
+end
 
 local function removeNodeFromSelection(nodeWindow)
 	nodeWindow.backgroundColor[4] = ALPHA_OF_NOT_SELECTED_NODES
 	WG.selectedNodes[nodeWindow.treeNode.id] = nil
-	nodeWindow.treeNode.nameEditBox.editingText = false
-	for i=1,#nodeWindow.treeNode.parameters do
-		if(nodeWindow.treeNode.parameters[i]["editBox"]) then
-			nodeWindow.treeNode.parameters[i]["editBox"].editingText = false
+	for i=1,#nodeWindow.treeNode.parameterObjects do
+		local editbox = nodeWindow.treeNode.parameterObjects[i]["editBox"]
+		if(editbox) then
+			validateEditBox(editbox)
 		end
 	end	
 	nodeWindow:Invalidate()
@@ -584,12 +596,6 @@ end
 local function addNodeToSelection(nodeWindow)
 	nodeWindow.backgroundColor[4] = ALPHA_OF_SELECTED_NODES
 	WG.selectedNodes[nodeWindow.treeNode.id] = true
-	nodeWindow.treeNode.nameEditBox.editingText = true
-	for i=1,#nodeWindow.treeNode.parameters do
-		if(nodeWindow.treeNode.parameters[i]["componentType"] == "editBox") then
-			nodeWindow.treeNode.parameterObjects[i]["editBox"].editingText = true
-		end
-	end	
 	nodeWindow:Invalidate()
 end
 
@@ -627,29 +633,48 @@ local function ctrlSelectNodes(nodeWindow, recursive)
 		end
 end
 
+local lastClicked = Spring.GetTimer()
 
 function listenerOnMouseDownMoveNode(self, x ,y, button)
-	if(clickedConnection) then -- connecting lines
-		return false
+	if(clickedConnection) then -- check if we are connecting nodes
+		return
 	end
-	local cin = self.treeNode.connectionIn
-	if(cin and x > cin.x and x < cin.x + cin.width and y > cin.y and y < cin.y+cin.height) then
-		return false
+	local childName = self:HitTest(x, y).name
+	-- Check if the connectionIn or connectionOut was clicked
+	if((self.treeNode.connectionIn and childName == self.treeNode.connectionIn.name) or (self.treeNode.connectionOut and childName == self.treeNode.connectionOut.name)) then 
+		return
 	end
-	local cout = self.treeNode.connectionOut
-	if(cout and x > cout.x and x < cout.x + cout.width and y > cout.y and y < cout.y+cout.height) then
-		return false
+	-- Check if the parameters editbox text hasnt changed
+	for i=1,#self.treeNode.parameterObjects do
+		validateEditBox(self.treeNode.parameterObjects[i]["editBox"])
 	end
-	Spring.Echo("listenerOnMouseDownMoveNode")
-	local alt, ctrl, _, shift = Spring.GetModKeyState()
+	for i=1,#self.treeNode.parameterObjects do
+		if(childName == self.treeNode.parameterObjects[i]["editBox"].name) then
+			return
+		end
+	end
+	local now = Spring.GetTimer()
+	if(childName == self.treeNode.nameEditBox.name and Spring.DiffTimers(now, lastClicked) < 0.3) then
+		-- Spring.Echo("HHHHHHHHHHHHHHHHHHHHnameEditBox:IsAbove(x, y)")
+		lastClicked = now
+		return
+	end
+	lastClicked = now
+	--Spring.Echo("self:HitTest(x, y).name ".. self:HitTest(x,y).name)
+	local _, ctrl, _, shift = Spring.GetModKeyState()
+	if(WG.selectedNodes[self.treeNode.id]==nil and (not ctrl) and (not shift) and button ~= 3) then
+		WG.clearSelection()
+		addNodeToSelection(self)
+	end
 	if(WG.selectedNodes[self.treeNode.id] and (not ctrl) and (not shift) and button ~= 3) then
-		Spring.Echo("Start moving")
-		WG.movingNodes = true
+		movingNodes = true
 		previousPosition.x = self.x
 		previousPosition.y = self.y
-	end
-	if(WG.movingNodes) then
-		return
+		self:StartDragging(x, y)
+		return self
+	end	
+	if(movingNodes) then
+		return self
 	end
 	
 	local selectSubtree = false
@@ -670,13 +695,9 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 	return self
 end
 
-function listenerOnMouseUpMoveNode(self, x ,y)	
-	self.treeNode.width = self.width
-	self.treeNode.height = self.height
-	self.treeNode.x = self.x 
-	self.treeNode.y = self.y 
+function listenerOnMouseUpMoveNode(self, x ,y)
 	self:Invalidate()
-	if(WG.movingNodes) then 
+	if(movingNodes) then 
 		local diffx = self.x - previousPosition.x
 		local diffy = self.y - previousPosition.y
 		-- Spring.Echo("diffx="..diffx..", diffy="..diffy)
@@ -687,16 +708,16 @@ function listenerOnMouseUpMoveNode(self, x ,y)
 				node.nodeWindow.y = node.nodeWindow.y + diffy
 				node.x = node.x + diffx
 				node.y = node.y + diffy
+				node.nodeWindow:StopDragging(x, y)
 				node.nodeWindow:Invalidate()
 				for i=1,#node.attachedLines do
 					updateConnectionLine(node.attachedLines[i])
 				end
 			end
 		end
-		WG.movingNodes = false
+		movingNodes = false
 	end
-	Spring.Echo("listenerOnMouseUpMoveNode")
-	-- return true
+	return self
 end
 
 
