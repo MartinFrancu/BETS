@@ -35,7 +35,6 @@ local treeControlWindow
 local controllerLabel
 local selectTreeButton
 local treeTabPanel
-
 local treeHandles = {}
 -------------------------------------------------------------------------------------
 local treeSelectionWindow
@@ -69,6 +68,17 @@ local function getStringsWithoutSuffix(list, suff)
    return result
 end
 
+local function getNamesInDirectory(directoryName, suffix)
+   local folderContent = VFS.DirList(directoryName)
+   -- get just names .json files
+   folderContent = getStringsWithoutSuffix(folderContent, ".json")
+   -- Remove the path prefix of folder:
+   for i,v in ipairs(folderContent)do
+	folderContent[i] = string.sub(v, string.len( directoryName)+2 ) --THIS WILL MAKE TROUBLES WHEN DIRECTORY IS DIFFERENT: the slashes are sometimes counted once, sometimes twice!!!\\
+   end
+   return folderContent
+end
+
 
 function addTreeToTreeTabPanel(treeHandle)
 	local newTab =  {name = treeHandle.Name, children = treeHandle.ChiliComponents }
@@ -86,10 +96,12 @@ function addTreeToTreeTabPanel(treeHandle)
 	-- no treeTabPanel is initialized
 	treeTabPanel:AddTab(newTab)
 	end
+	-- Now I should add a listener to show proper tree:
+	-- get tabBar
+	local tabBar = treeTabPanel.children[1]
+	
 end
 
-
-local function getNamesInDirectory(directoryName, suffix)
 
 function listenerCreateTreeMessageButton(self)	
 	-- self = button
@@ -181,8 +193,6 @@ function TreeHandle:New(obj)
 	}
 	table.insert(obj.ChiliComponents, labelAssignmentButton)
 	
-	--Logger.log("communication", "4")
-	
 	return obj
 end
 
@@ -193,31 +203,6 @@ end
 --				chiliComponents.labelNameTextBox = text box for assignment:
 -- 				chiliComponents.showBtCreatorButton = button to show current tree in bt creator
 -------------------------------------------------------------------------------------
-
---local showBtCreatorButton
-
---[[
-local function changeLabel()
-	controllerLabel:SetCaption("BtController ("..  currentTreeData.name .. ")")
-end]]--
---[[
-local function reloadTree(treeName)
-	currentTreeData.name = treeName
-	currentTreeData.tree = BehaviourTree.load(currentTreeData.name)
-	changeLabel()
-end
-]]--
-
-   local folderContent = VFS.DirList(directoryName)
-   -- get just names .json files
-   folderContent = getStringsWithoutSuffix(folderContent, ".json")
-   -- Remove the path prefix of folder:
-   for i,v in ipairs(folderContent)do
-	folderContent[i] = string.sub(v, string.len( directoryName)+2 ) --THIS WILL MAKE TROUBLES WHEN DIRECTORY IS DIFFERENT: the slashes are sometimes counted once, sometimes twice!!!\\
-   end
-   return folderContent
-end
-
 
 
 
@@ -402,8 +387,8 @@ function setUpTreeControlWindow()
 		skinName = "DarkGlass",
 		focusColor = {0.5,0.5,0.5,0.5},
 	}
-	]]--
---[[
+--]]
+
 	currentTreeData.chiliComponents
 	  
 	currentTreeData.chiliComponents.labelAssignemntButton = Chili.Button:New{
