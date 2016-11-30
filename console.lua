@@ -79,7 +79,7 @@ if (widget and not widget.GetInfo) then
 		settingsFile:close()
 	end
 	
-	local function addLine(command, resultType, value)
+	local function addResult(command, resultType, value)
 		if(consoleLog.justCleared)then
 			consoleLog.justCleared = false
 			return
@@ -91,16 +91,79 @@ if (widget and not widget.GetInfo) then
 			font = { size = 16, color = {1,1,1,1} },
 			caption = _G.YellowStr .. "> " .. command
 		}
-		local valueLabel
+		local y = commandLabel.height
+		local children = { commandLabel }
 		
 		if(value)then
-			valueLabel = Chili.Label:New{
+			local function makeLine(color, text, indentation, onClick)
+				indentation = type(indentation) == "number" and string.rep("  ", indentation or 0) or tostring(indentation or "")
+				if(type(color) == "table")then
+					color = string.char(color[3], color[2], color[1], color[0])
+				else
+					color = tostring(string.gsub(tostring(color or ""), "^(%a)(%a*)$", function(a,b) return _G[string.upper(a) .. b .. "Str"] end) or "")
+				end
+				
+				local line = Chili.Label:New{
+					autosize = true,
+					x = 0,
+					y = y,
+					font = { size = 16, color = {1,1,1,1} },
+					caption = indentation .. color .. text,
+					OnMouseOver = onClick and { function(self) self.font.color = {1,1,0,1} self:Invalidate() return self end } or nil,
+					OnMouseOut = onClick and { function(self) self.font.color = {1,1,1,1} self:Invalidate() return self end } or nil,
+					OnMouseDown = onClick and { function(self) return self end } or nil,
+					OnMouseUp = onClick and { onClick } or nil
+				}
+				table.insert(children, line)
+				y = y + line.height
+				return line
+			end
+			
+			if(resultType == "error")then
+				makeLine("red", value)
+			elseif(type(value) == "table")then
+				local keyList = metapairs
+				local isArray, isEmpty = true, true
+				for k, _ in keyList(value) do if(type(k) ~= "number" or k < 1)then isArray = false end isEmpty = false end
+				if(isArray)then
+					keyList = ipairs
+				end
+				if(isEmpty)then
+					makeLine("", "{}")
+				else
+					makeLine("", "{")
+					for k, v in keyList(value) do
+						local text = (type(v) == "table") and "{...}" or dump(v) .. ","
+						if(not isArray)then
+							if(type(k) == "string" and k:match("^[%a_][%w_]*$"))then
+								text = k .. " = " .. text
+							else
+								text = "[" .. dump(k) .. "] = " .. text
+							end
+						end
+						local valueLine = makeLine("", text, 1, (type(v) == "table" or type(v) == "function" or type(v) == "userdata") and function(self) addResult(_G.GreyStr .. command .. "." .. _G.YellowStr .. k, "info", v) return self end)
+							--[[
+							valueLine.evaluationCode = command .. "." .. k
+							valueLine.evaluatedObject = v
+							]]
+					end
+					makeLine("", "}")
+				end
+			elseif(type(value) == "function")then
+				local success, result = pcall(string.dump, value)
+				makeLine("", success and result or "<native function>")
+			else
+				makeLine("", dump(value))
+			end
+			--[[
+			table.insert(children, Chili.Label:New{
 				autosize = true,
 				x = 0,
-				y = commandLabel.height,
+				y = y,
 				font = { size = 16, color = {1,1,1,1} },
 				caption = ((resultType == "error") and _G.RedStr or "") .. tostring(dump(value))
-			}
+			})
+			]]
 		end
 
 		Chili.Control:New{
@@ -109,10 +172,7 @@ if (widget and not widget.GetInfo) then
 			y = 0,
 			padding = {0,0,0,0},
 			autosize = true,
-			children = {
-				commandLabel,
-				valueLabel
-			}
+			children = children,
 		}:UpdateLayout()
 		
 		local childrenCount = #consoleLog.children
@@ -211,9 +271,9 @@ if (widget and not widget.GetInfo) then
 			local success, result = pcall(command)
 			if(success)then
 				if(isExpression or result ~= nil)then
-					addLine(text, "result", result)
+					addResult(text, "result", result)
 				else
-					addLine(text, "result", nil)
+					addResult(text, "result", nil)
 				end
 				return nil
 			else
@@ -222,7 +282,7 @@ if (widget and not widget.GetInfo) then
 		end
 
 		-- error occured
-		addLine(text, "error", msg)
+		addResult(text, "error", msg)
 	end
 	
 	local function fillInCommand()
@@ -254,7 +314,7 @@ if (widget and not widget.GetInfo) then
 		if(candidateCount == 0)then
 			return false
 		elseif(candidateCount > 1)then
-			addLine(partialProperty .. ".*", "info", candidates)
+			addResult(partialProperty .. ".*", "info", candidates)
 		else
 			local afterCursor = commandInput.text:sub(cursor)
 			commandInput:SetText(beforeCursor .. candidates[1]:sub(partialLength + 1) .. afterCursor)
@@ -298,7 +358,7 @@ if (widget and not widget.GetInfo) then
 		-- Get ready to use Chili
 		Chili = WG.ChiliClone
 		ChiliRoot = Chili.Screen0	
-		
+
 		consolePanel = Chili.Panel:New{
 			parent = ChiliRoot,
 			x = '20%',
