@@ -33,6 +33,7 @@ function cmdClass:Run(unitIds, parameter)
 	Logger.log("move-command", "Lua MOVE command run, unitIds: ", unitIds, ", dx: " .. dx .. ", dz: " .. dz .. ", tick: "..self.n)
 	self.n = self.n + 1
 	done = true
+	noneMoved = true
 	
 	x,y,z = 0,0,0
 	for i = 1, #unitIds do
@@ -46,20 +47,22 @@ function cmdClass:Run(unitIds, parameter)
 			self.targets[unitID] = {tarX,y,tarZ}
 			Spring.GiveOrderToUnit(unitID, CMD.MOVE, self.targets[unitID], {})
 			done = false
+			noneMoved = false
 		else
 			Logger.log("move-command", "AtX: " .. x .. ", TargetX: " .. self.targets[unitID][1] .. " AtZ: " .. z .. ", TargetZ: " .. self.targets[unitID][2])
 			if not self:UnitIdle(unitID) then
 				done = false
 			end
-			
-			if not self:UnitMoved(unitID) then -- cannot get to target location
-				return "F"
+			if self:UnitMoved(unitID) then -- cannot get to target location
+				noneMoved = false
 			end
 		end
  	end
 	
 	if done then
 		return "S"
+	elseif noneMoved then
+		return "F"
 	else
 		return "R"
 	end

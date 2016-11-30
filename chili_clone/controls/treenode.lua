@@ -200,13 +200,26 @@ function TreeNode:Dispose()
 	if(self.nodeWindow) then
 		self.nodeWindow:Dispose()
 	end
+	if(self.nameEditBox) then
+		self.nameEditBox:Dispose()
+	end
+	if(parameterObjects) then
+		for i=1,#parameterObjects do
+			if(parameterObjects[i]["label"]) then
+				parameterObjects[i]["label"]:Dispose()
+			end
+			if(parameterObjects[i]["editBox"]) then
+				parameterObjects[i]["editBox"]:Dispose()
+			end
+		end
+	end
 end
 
 --//=============================================================================
 --// Connection lines
 --//=============================================================================
 
-function ComputeConnectionLineCoordinates(connectionOut, connectionIn)
+function computeConnectionLineCoordinates(connectionOut, connectionIn)
 	local transparentBorderWidth = 5
 	local lineOutx = connectionOut.parent.x + connectionOut.x + 2
 	local lineOuty = connectionOut.parent.y + connectionOut.y
@@ -224,23 +237,23 @@ end
 
 
 
-function AddConnectionLine(connectionOut, connectionIn)
+function addConnectionLine(connectionOut, connectionIn)
 	if (connectionOut.treeNode.connectionIn and connectionOut.name == connectionOut.treeNode.connectionIn.name) then
-		AddConnectionLine(connectionIn, connectionOut)
+		addConnectionLine(connectionIn, connectionOut)
 		return
 	end
 	-- if root node is to be connected, then remove all the existing connections, so there is only one connectionLine going from root
 	if (connectionOut.treeNode.nodeType == "Root") then
 		for i=1,#connectionLines do
 			if (connectionLines[i][1].treeNode.nodeType == "Root") then
-				WG.RemoveConnectionLine(i)
+				WG.removeConnectionLine(i)
 				break
 			end
 		end
 	end
 	
 	local lineIndex = (#connectionLines + 1)
-	local lineOutx,lineOuty,halfDistance,lineVx,lineInx,lineIny,transparentBorderWidth = ComputeConnectionLineCoordinates(connectionOut, connectionIn)
+	local lineOutx,lineOuty,halfDistance,lineVx,lineInx,lineIny,transparentBorderWidth = computeConnectionLineCoordinates(connectionOut, connectionIn)
 	local lineOut = Line:New{ 
 		parent = connectionOut.parent.parent,
 		width = halfDistance,
@@ -311,9 +324,9 @@ function AddConnectionLine(connectionOut, connectionIn)
 	--Spring.Echo("lineV.lineIndex: "..lineIndex)
 end
 
-WG.AddConnectionLine = AddConnectionLine
+WG.addConnectionLine = addConnectionLine
 
-function ConnectionLineExists(connection1, connection2)
+function connectionLineExists(connection1, connection2)
 	for i=1,#connectionLines do
 		if(connectionLines[i][1].name == connection1.name and connectionLines[i][6].name == connection2.name) then
 			return true
@@ -326,10 +339,10 @@ function ConnectionLineExists(connection1, connection2)
 end
 
 --- Updates location of connectionLine on given index. 
-function UpdateConnectionLine(index)
+function updateConnectionLine(index)
 	local connectionOut = connectionLines[index][1]
 	local connectionIn = connectionLines[index][#connectionLines[index]]
-	local lineOutx,lineOuty,halfDistance,lineVx,lineInx,lineIny,transparentBorderWidth = ComputeConnectionLineCoordinates(connectionOut, connectionIn)
+	local lineOutx,lineOuty,halfDistance,lineVx,lineInx,lineIny,transparentBorderWidth = computeConnectionLineCoordinates(connectionOut, connectionIn)
 	local lineOut = connectionLines[index][2]
 	local lineV = connectionLines[index][3]
 	local lineIn = connectionLines[index][4]
@@ -352,7 +365,7 @@ end
 
 --- Remove connectionLine with given index from global connectionLines table. All the connectionLines with larger
 -- indexes decrements its index by one, so the indexes in attachedLines field and lineIndex are decremented by one. 
-function RemoveConnectionLine(index)
+function removeConnectionLine(index)
 	for i=2,5 do
 		connectionLines[index][i]:Dispose()
 	end
@@ -371,7 +384,7 @@ function RemoveConnectionLine(index)
 		table.remove(connectionLines[index][1].treeNode.attachedLines, foundIndex)
 		--Spring.Echo("attachedLines after delete: "..dump(connectionLines[index][1].treeNode.attachedLines))
 	else	
-		Spring.Echo("ERROR: Line index not found in connectionOut panel, in RemoveConnectionLine(). ")
+		Spring.Echo("ERROR: Line index not found in connectionOut panel, in removeConnectionLine(). ")
 	end
 	
 	found = false
@@ -386,7 +399,7 @@ function RemoveConnectionLine(index)
 	if (found) then  
 		table.remove(connectionLines[index][6].treeNode.attachedLines, foundIndex)
 	else
-		Spring.Echo("ERROR: Line index not found in connectionIn panel, in RemoveConnectionLine(). ")
+		Spring.Echo("ERROR: Line index not found in connectionIn panel, in removeConnectionLine(). ")
 	end
 	table.remove(connectionLines, index)
 	-- We deleted an entry from connectionLines. So all the indices which are after the lineIndex
@@ -415,7 +428,7 @@ function RemoveConnectionLine(index)
 	return true
 end
 
-WG.RemoveConnectionLine = RemoveConnectionLine
+WG.removeConnectionLine = removeConnectionLine
 
 local clickedConnection
 
@@ -425,7 +438,7 @@ function connectionLineCanBeCreated(obj)
 	if (clickedConnection.treeNode.name == obj.treeNode.name) then 
 		return false
 	end
-	if(ConnectionLineExists(obj, clickedConnection)) then
+	if(connectionLineExists(obj, clickedConnection)) then
 		return false
 	end
 	-- Check that connectionIn has no other connectionLine before Adding new one
@@ -512,7 +525,7 @@ function listenerClickOnConnectionPanel(self)
 	if( connectionLineCanBeCreated(self) ) then
 		clickedConnection.backgroundColor = connectionPanelBackgroundColor
 		self.backgroundColor = connectionPanelBackgroundColor
-		AddConnectionLine(clickedConnection, self)
+		addConnectionLine(clickedConnection, self)
 		-- Spring.Echo("Connection line added: "..dump(connectionLines))
 		clickedConnection = nil
 		return self
@@ -534,7 +547,7 @@ function listenerNodeResize(self, x, y)
 		
 		for i=1,#self.treeNode.attachedLines do
 			lineIdx = self.treeNode.attachedLines[i]
-			UpdateConnectionLine(lineIdx)
+			updateConnectionLine(lineIdx)
 		end
 	end
 	--return true
@@ -676,7 +689,7 @@ function listenerOnMouseUpMoveNode(self, x ,y)
 				node.y = node.y + diffy
 				node.nodeWindow:Invalidate()
 				for i=1,#node.attachedLines do
-					UpdateConnectionLine(node.attachedLines[i])
+					updateConnectionLine(node.attachedLines[i])
 				end
 			end
 		end
@@ -743,7 +756,7 @@ function listenerOutOfConnectionLine(self)
 end
 
 function listenerClickOnConnectionLine(self)
-	return RemoveConnectionLine(self.lineIndex)
+	return removeConnectionLine(self.lineIndex)
 end
 
 

@@ -1,5 +1,5 @@
-----------
--- @script copyTable
+--- Function for creating a deep-copy of a table.
+-- @module copyTable
 
 local copyTable
 

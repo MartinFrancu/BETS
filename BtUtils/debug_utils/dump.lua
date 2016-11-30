@@ -1,4 +1,13 @@
-local function dump(o, maxDepth)
+--- Function for outputting the contents of a table.
+-- @module dump
+
+local dump
+
+--- Serializes the given table to a lua-readable form.
+-- @tab o asfasf
+-- @int[opt] maxDepth asfa
+-- @remark It is preferable that the graph of the tables that are to be serialized should not contain cycles. If it does, @{dump} might end up producing duplicite output.
+function dump(o, maxDepth)
 	maxDepth = maxDepth or 1
 	if type(o) == 'table' then
 		if (maxDepth == 0) then 
