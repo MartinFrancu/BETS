@@ -99,14 +99,17 @@ function addTreeToTreeTabPanel(treeHandle)
 	-- Now I should add a listener to show proper tree:
 	-- get tabBar
 	local tabBar = treeTabPanel.children[1]
+	-- find corresponding tabBarItem: 
+	local barItems = tabBar.children
+	for index,item in ipairs(barItems) do
+		if(item.caption == newTab.name) then
+			-- add the listener
+			local currentListeners  = item.OnMouseDown
+			table.insert(currentListeners,listenerBtCreatorShowTreeButton)
+			item.TreeHandle = treeHandle
+		end
+	end
 	
-end
-
-
-function listenerCreateTreeMessageButton(self)	
-	-- self = button
-	Logger.log("communication", "TreeHandle send a messsage. " )
-	BtEvaluator.createTree(self.TreeHandle.Tree)
 end
 
 
@@ -222,6 +225,11 @@ end
 
 
 ---------------------------------------LISTENERS
+function listenerCreateTreeMessageButton(self)	
+	-- self = button
+	Logger.log("communication", "TreeHandle send a messsage. " )
+	BtEvaluator.createTree(self.TreeHandle.Tree)
+end
 
 
 
@@ -229,6 +237,7 @@ local function listenerClickOnSelectTreeButton(self)
 	names = getNamesInDirectory(BehavioursDirectory, ".json")
 	treeSelectionComboBox.items = names 
 	treeSelectionComboBox:RequestUpdate()
+	treeNameEditBox.text = "CHANGE_ME"
 	treeControlWindow:Hide()
 	treeSelectionWindow:Show()
 end
@@ -241,8 +250,10 @@ local function listenerClickOnSelectedTreeDoneButton(self)
 		Name = treeNameEditBox.text,
 		TreeType = selectedTreeType,
 	}
-
+	-- show the tree
+	
 	addTreeToTreeTabPanel(newTreeHandle)
+	listenerBtCreatorShowTreeButton({TreeHandle = newTreeHandle})
 	treeControlWindow:Show()
 	treeSelectionWindow:Hide()
 
@@ -298,7 +309,7 @@ function setUpTreeSelectionWindow()
 		y = 30,
 		width  = 200,
 		height = 20,
-		text = "name",
+		text = "CHANGE_ME",
 		skinName='DarkGlass',
 		--align = 'center',
 		borderThickness = 0,
@@ -388,7 +399,7 @@ function setUpTreeControlWindow()
 		focusColor = {0.5,0.5,0.5,0.5},
 	}
 --]]
-
+--[[
 	currentTreeData.chiliComponents
 	  
 	currentTreeData.chiliComponents.labelAssignemntButton = Chili.Button:New{
@@ -425,7 +436,8 @@ function setUpTreeControlWindow()
 		height = 570,
 		width = '100%',
 	}
-	treeTabPanel:AddTab(newTab) ]]--
+	treeTabPanel:AddTab(newTab) 
+	--]]
 end
 
 function widget:Initialize()	
