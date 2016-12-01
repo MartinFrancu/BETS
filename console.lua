@@ -104,7 +104,7 @@ if (widget and not widget.GetInfo) then
 		local y = commandLabel.height
 		local children = { commandLabel }
 		
-		if(value)then
+		if(value or resultType ~= "command")then
 			local function makeLine(color, text, indentation, onClick)
 				indentation = type(indentation) == "number" and string.rep("  ", indentation or 0) or tostring(indentation or "")
 				if(type(color) == "table")then
@@ -141,7 +141,13 @@ if (widget and not widget.GetInfo) then
 				if(isEmpty)then
 					makeLine("", (type(value) == "userdata") and "<userdata> {}" or "{}")
 				else
-					makeLine("", (type(value) == "userdata") and "<userdata> {" or "{")
+					makeLine("", (type(value) == "userdata") and "<userdata> {" or (resultType == "multiresult") and "results:" or "{")
+					
+					local oldCommand = command:gsub(_G.YellowStr, "")
+					if(resultType == "multiresult")then
+						oldCommand = "{" .. oldCommand .. "}"
+					end
+					
 					for k, v in keyList(value) do
 						local text, keyAccess = (type(v) == "table") and "{...}" or dump(v) .. ","
 						if(not isArray)then
@@ -155,9 +161,10 @@ if (widget and not widget.GetInfo) then
 						else
 							keyAccess = _G.YellowStr .. "[" .. k .. "]"
 						end
+						
 						local valueLine = makeLine("", text, 1,
 							(type(v) == "table" or type(v) == "function" or type(v) == "userdata") and function(self)
-								addResult(_G.GreyStr .. command:gsub(_G.YellowStr, "") .. keyAccess, "info", v)
+								addResult(_G.GreyStr .. oldCommand .. keyAccess, "info", v)
 								ChiliRoot:FocusControl(commandInput)
 								return self
 							end)
@@ -166,7 +173,9 @@ if (widget and not widget.GetInfo) then
 							valueLine.evaluatedObject = v
 							]]
 					end
-					makeLine("", "}")
+					if(resultType ~= "multiresult")then
+						makeLine("", "}")
+					end
 				end
 			elseif(type(value) == "function")then
 				local success, result = pcall(string.dump, value)
@@ -280,23 +289,29 @@ if (widget and not widget.GetInfo) then
 	
 	local function runCommand(text)
 		-- attempt to compile te chunk as an epxression
-		local isExpression, command, msg = true, loadstring("return ("..text..")")
+		local isExpression, command, msg = true, loadstring("return "..text.."")
 		if(not command)then -- if that fails, compile it regularly (which doesn't provide as with a result value, only nil)
 			isExpression, command, msg = false, loadstring(text)
 		end
 		
 		if(command)then
 			setfenv(command, consoleContext)
-			local success, result = pcall(command)
-			if(success)then
-				if(isExpression or result ~= nil)then
-					addResult(text, "result", result)
+			local results = { pcall(command) }
+			if(results[1])then
+				table.remove(results, 1)
+				Spring.Echo(#results)
+				if(--[[isExpression or ]]#results > 0)then
+					if(#results > 1)then
+						addResult(text, "multiresult", results)
+					else
+						addResult(text, "result", results[1])
+					end
 				else
-					addResult(text, "result", nil)
+					addResult(text, "command")
 				end
 				return nil
 			else
-				msg = result
+				msg = results[2]
 			end
 		end
 
