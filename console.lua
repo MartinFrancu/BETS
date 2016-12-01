@@ -378,7 +378,8 @@ if (widget and not widget.GetInfo) then
 		if (not isRepeat) then
 			if (key == TOGGLE_VISIBILITY_KEY) then
 				consolePanel:ToggleVisibility()
-				if (commandInput.visible) then
+				if (consolePanel.visible) then
+					consolePanel:BringToFront()
 					ChiliRoot:FocusControl(commandInput)
 				else
 					ChiliRoot:FocusControl(nil)
