@@ -448,7 +448,8 @@ if (widget and not widget.GetInfo) then
 					end
 					return true;
 				end
-			}
+			},
+			editingText = true
 		}
 		consoleContext.self = commandInput
 		
