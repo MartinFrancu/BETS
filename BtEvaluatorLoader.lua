@@ -18,11 +18,12 @@ local Sentry = Utils.Sentry
 local Dependency = Utils.Dependency
 
 local Debug = Utils.Debug
-local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyTable, Debug.fileTable
+local Logger = Debug.Logger
 
 
 -- BtEvaluator interface definitions
 local BtEvaluator = Sentry:New()
+local lastResponse = nil
 function BtEvaluator.sendMessage(messageType, messageData)
 	local payload = "BETS " .. messageType;
 	if(messageData)then
@@ -34,27 +35,45 @@ function BtEvaluator.sendMessage(messageType, messageData)
 		end
 	end
 	Logger.log("communication", payload)
+	lastResponse = nil
 	Spring.SendSkirmishAIMessage(Spring.GetLocalPlayerID(), payload)
+	if(lastResponse ~= nil)then
+		local response = lastResponse
+		lastResponse = nil
+		if(response.result)then
+			if(response.data == nil)then
+				return true
+			else
+				return response.data
+			end
+		else
+			return nil, response.error
+		end
+	end
 end
 
 function BtEvaluator.requestNodeDefinitions()
-	BtEvaluator.sendMessage("REQUEST_NODE_DEFINITIONS")
+	return BtEvaluator.sendMessage("REQUEST_NODE_DEFINITIONS")
 end
-function BtEvaluator.assignUnits()
-	BtEvaluator.sendMessage("ASSIGN_UNITS")
+function BtEvaluator.assignUnits(units, instanceId, label)
+	return BtEvaluator.sendMessage("ASSIGN_UNITS", { units = units, instanceId = instanceId, label = label })
 end
-function BtEvaluator.createTree(treeDefinition)
-	BtEvaluator.sendMessage("CREATE_TREE", JSON:encode(treeDefinition.root))
+function BtEvaluator.createTree(instanceId, treeDefinition)
+	return BtEvaluator.sendMessage("CREATE_TREE", { instanceId = instanceId, root = treeDefinition.root })
+end
+function BtEvaluator.removeTree(instanceId)
+  return BtEvaluator.sendMessage("REMOVE_TREE", { instanceId = instanceId })
+end
+function BtEvaluator.reportTree(instanceId)
+  return BtEvaluator.sendMessage("REPORT_TREE", { instanceId = instanceId })
 end
 
 
 function widget:Initialize()	
 	WG.BtEvaluator = BtEvaluator
 	
-	--Spring.SendCommands("AIKill " ..Spring.GetLocalPlayerID())
 	BtEvaluator.sendMessage("REINITIALIZE")
 	Spring.SendCommands("AIControl "..Spring.GetLocalPlayerID().." BtEvaluator")
-	
 end
 
 function widget:RecvSkirmishAIMessage(aiTeam, message)
@@ -73,25 +92,41 @@ function widget:RecvSkirmishAIMessage(aiTeam, message)
 	local indexOfFirstSpace = string.find(messageShorter, " ") or (message:len() + 1)
 	local messageType = messageShorter:sub(1, indexOfFirstSpace - 1):upper()	
 	
-	-- messages without parameter
+	-- internal messages without parameter
 	if(messageType == "LOG") then 
 		Logger.log("BtEvaluator", messageBody)
 		return true
 	elseif(messageType == "INITIALIZED") then 
 		Dependency.fill(Dependency.BtEvaluator)
 		return true
+	elseif(messageType == "RESPONSE")then
+		local messageBody = messageShorter:sub(indexOfFirstSpace + 1)
+		local data = JSON:decode(messageBody)
+		lastResponse = data
+		return true
 	else
+		-- messages without parameter
 		local handler = ({
-			["UPDATE_STATES"] = BtEvaluator.OnUpdateStates,
-			["NODE_DEFINITIONS"] = BtEvaluator.OnNodeDefinitions,
-			["COMMAND"] = BtEvaluator.OnCommand,
+			-- none so far
 		})[messageType]
 		
 		if(handler)then
-			local messageBody = messageShorter:sub(indexOfFirstSpace + 1)
-			local data = JSON:decode(messageBody)
+			return handler:Invoke()
+		else
+			handler = ({
+				["UPDATE_STATES"] = BtEvaluator.OnUpdateStates,
+				["NODE_DEFINITIONS"] = BtEvaluator.OnNodeDefinitions,
+				["COMMAND"] = BtEvaluator.OnCommand,
+			})[messageType]
 			
-			return handler:Invoke(data)
+			if(handler)then
+				local messageBody = messageShorter:sub(indexOfFirstSpace + 1)
+				local data = JSON:decode(messageBody)
+				
+				return handler:Invoke(data)
+			else
+				Logger.log("communication", "Unknown message type: ", messageType)
+			end
 		end
 	end
 end

@@ -228,7 +228,7 @@ end
 function listenerCreateTreeMessageButton(self)	
 	-- self = button
 	Logger.log("communication", "TreeHandle send a messsage. " )
-	BtEvaluator.createTree(self.TreeHandle.Tree)
+	BtEvaluator.createTree("[current instanceId]", self.TreeHandle.Tree)
 end
 
 
