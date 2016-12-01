@@ -52,8 +52,18 @@ if (widget and not widget.GetInfo) then
 		end
 	end
 	local function metapairs(t)
+		if(type(t) == "userdata")then
+			local mt = getmetatable(t)
+			if(not mt or type(mt.__index) ~= "table")then
+				return function() return nil end
+			end
+			t = mt.__index;
+		end
 		return metanext, { current = t }, nil
 	end
+	
+	local consoleContext
+	local contextNext, contextPairs
 	
 	local function loadSettings()
 		if(VFS.FileExists(CONSOLE_SETTINGS))then
@@ -121,27 +131,36 @@ if (widget and not widget.GetInfo) then
 			
 			if(resultType == "error")then
 				makeLine("red", value)
-			elseif(type(value) == "table")then
-				local keyList = metapairs
+			elseif(type(value) == "table" or type(value) == "userdata")then
+				local keyList = (value == consoleContext) and contextPairs or metapairs
 				local isArray, isEmpty = true, true
 				for k, _ in keyList(value) do if(type(k) ~= "number" or k < 1)then isArray = false end isEmpty = false end
 				if(isArray)then
 					keyList = ipairs
 				end
 				if(isEmpty)then
-					makeLine("", "{}")
+					makeLine("", (type(value) == "userdata") and "<userdata> {}" or "{}")
 				else
-					makeLine("", "{")
+					makeLine("", (type(value) == "userdata") and "<userdata> {" or "{")
 					for k, v in keyList(value) do
-						local text = (type(v) == "table") and "{...}" or dump(v) .. ","
+						local text, keyAccess = (type(v) == "table") and "{...}" or dump(v) .. ","
 						if(not isArray)then
 							if(type(k) == "string" and k:match("^[%a_][%w_]*$"))then
 								text = k .. " = " .. text
+								keyAccess = ".".. _G.YellowStr .. k
 							else
 								text = "[" .. dump(k) .. "] = " .. text
+								keyAccess = _G.YellowStr .. "[" .. k .. "]"
 							end
+						else
+							keyAccess = _G.YellowStr .. "[" .. k .. "]"
 						end
-						local valueLine = makeLine("", text, 1, (type(v) == "table" or type(v) == "function" or type(v) == "userdata") and function(self) addResult(_G.GreyStr .. command .. "." .. _G.YellowStr .. k, "info", v) return self end)
+						local valueLine = makeLine("", text, 1,
+							(type(v) == "table" or type(v) == "function" or type(v) == "userdata") and function(self)
+								addResult(_G.GreyStr .. command:gsub(_G.YellowStr, "") .. keyAccess, "info", v)
+								ChiliRoot:FocusControl(commandInput)
+								return self
+							end)
 							--[[
 							valueLine.evaluationCode = command .. "." .. k
 							valueLine.evaluatedObject = v
@@ -151,7 +170,7 @@ if (widget and not widget.GetInfo) then
 				end
 			elseif(type(value) == "function")then
 				local success, result = pcall(string.dump, value)
-				makeLine("", success and result or "<native function>")
+				makeLine("", success and ("<function>" .. result:gsub("[^ -~]", "")) or "<native function>")
 			else
 				makeLine("", dump(value))
 			end
@@ -218,7 +237,7 @@ if (widget and not widget.GetInfo) then
 	end
 	
 	-- sets up the context that is used as the environment in the console
-	local consoleContext = { }
+	consoleContext = { }
 	consoleContext._G = consoleContext
 	consoleContext.history = history
 	consoleContext.Logger = Logger
@@ -240,7 +259,7 @@ if (widget and not widget.GetInfo) then
 				return _G[key]
 			end
 		end })
-	local function contextNext(state, key)
+	function contextNext(state, key)
 		local k, v = next(state.current, key)
 		if(k ~= nil)then
 			return k, v
@@ -255,7 +274,7 @@ if (widget and not widget.GetInfo) then
 			return contextNext(state, nil)
 		end
 	end
-	local function contextPairs(_)
+	function contextPairs(_)
 		return contextNext, { current = consoleContext }, nil
 	end
 	
@@ -288,26 +307,29 @@ if (widget and not widget.GetInfo) then
 	local function fillInCommand()
 		local cursor = commandInput.cursor
 		local beforeCursor = commandInput.text:sub(1, cursor - 1)
-		local partialProperty = beforeCursor:match("[%w%.:]+$") or ""
+		local partialProperty = beforeCursor:match("[_%w%.:]+$") or ""
 		
 		local container = consoleContext
 		local keyList = contextPairs
 		local get = function(t, key) return t[key] end
-		for key in partialProperty:gmatch("%w+[%.:]") do
-			container = get(container, key:sub(1, key:len() - 1))
-			if(not container)then
+		local lastSeparator = "."
+		for key, separator in partialProperty:gmatch("([_%w]+)([%.:])") do
+			container = get(container, key) --:sub(1, key:len() - 1)
+			if(not container or (type(container) ~= "table" and type(container) ~= "userdata"))then
 				return false
 			end
 			get = rawget
 			keyList = metapairs
+			lastSeparator = separator
 		end
 		
-		local partialKey = partialProperty:match("%w*$") or ""
+		local partialKey = string.lower(partialProperty:match("[_%w]*$") or "")
 		local partialLength = partialKey:len()
-		local candidates, candidateCount = {}, 0
-		for k in keyList(container) do
-			if(type(k) == "string" and k:sub(1, partialLength) == partialKey)then
+		local candidates, candidateSet, candidateCount = {}, {}, 0
+		for k, v in keyList(container) do
+			if(type(k) == "string" and string.lower(k:sub(1, partialLength)) == partialKey and not candidateSet[k] and (lastSeparator ~= ":" or type(v) == "function"))then
 				table.insert(candidates, k)
+				candidateSet[k] = true
 				candidateCount = candidateCount + 1
 			end
 		end
@@ -317,7 +339,7 @@ if (widget and not widget.GetInfo) then
 			addResult(partialProperty .. ".*", "info", candidates)
 		else
 			local afterCursor = commandInput.text:sub(cursor)
-			commandInput:SetText(beforeCursor .. candidates[1]:sub(partialLength + 1) .. afterCursor)
+			commandInput:SetText(beforeCursor:sub(1, -partialLength - 1) .. candidates[1] .. afterCursor)
 			commandInput.cursor = cursor + candidates[1]:len() - partialLength
 		end
 		--commandInput:SetText(history[currentCommand])
