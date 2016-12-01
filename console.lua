@@ -71,6 +71,9 @@ if (widget and not widget.GetInfo) then
 			history = settings.history
 			commandCount = #history
 			currentCommand = commandCount + 1
+			if(consoleContext)then
+				consoleContext.history = history
+			end
 		end
 	end
 	
@@ -267,6 +270,7 @@ if (widget and not widget.GetInfo) then
 		currentCommand = 1
 		storeSettings()
 		commandInput:SetText("")
+		consoleContext.history = history
 	end
 	setmetatable(consoleContext, { __index = function(t, key)
 			local value = WG[key]
