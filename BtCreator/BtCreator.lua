@@ -140,9 +140,7 @@ local RUNNING_COLOR = {1,0.5,0,0.6}
 local SUCCESS_COLOR = {0.5,1,0.5,0.6}
 local FAILURE_COLOR = {1,0.25,0.25,0.6}
 
-local function updateStatesMessage(messageBody)
-	Logger.log("communication", "Message from AI received: message type UPDATE_STATES")
-	states = JSON:decode(messageBody)
+local function updateStatesMessage(states)
 	for id, node in pairs(WG.nodeList) do
 		local color = copyTable(DEFAULT_COLOR);
 		if(states[id] ~= nil) then
@@ -171,8 +169,7 @@ local function updateStatesMessage(messageBody)
 	end
 end
 
-local function generateNodePoolNodes(messageBody)
-	nodes = JSON:decode(messageBody)
+local function generateNodePoolNodes(nodes)
 	Logger.log("communication", "NODES DECODED:  ", nodes)
 	local heightSum = 30 -- skip NodePoolLabel
 	for i=1,#nodes do		
@@ -239,8 +236,7 @@ end
 
 local commandsForUnits = {}-- map(unitId,command)
 
-local function executeScript(messageBody)
-	params = JSON:decode(messageBody)
+local function executeScript(params)
 	command = getCommand(params.name, params.id)
 
 	if (params.func == "RUN") then
@@ -281,32 +277,6 @@ function widget:UnitIdle(unitID, unitDefID, unitTeam)
 	end
 end
 
-function widget:RecvSkirmishAIMessage(aiTeam, message)
-	-- Dont respond to other players AI
-	if(aiTeam ~= Spring.GetLocalPlayerID()) then
-		Logger.log("communication", "Message from AI received: aiTeam ~= Spring.GetLocalPlayerID()")
-		return
-	end
-	-- Check if it starts with "BETS"
-	if(message:len() <= 4 and message:sub(1,4):upper() ~= "BETS") then
-		Logger.log("communication", "Message from AI received: beginning of message is not equal 'BETS', got: ", message:sub(1,4):upper())
-		return
-	end
-	messageShorter = message:sub(6)
-	indexOfFirstSpace = string.find(messageShorter, " ") or (message:len() + 1)
-	messageType = messageShorter:sub(1, indexOfFirstSpace - 1):upper()	
-	messageBody = messageShorter:sub(indexOfFirstSpace + 1)
-	Logger.log("communication", "Message from AI received: message body: ", messageBody)
-	if(messageType == "UPDATE_STATES") then 
-		Logger.log("communication", "Message from AI received: message type UPDATE_STATES")
-		updateStatesMessage(messageBody)		
-	elseif (messageType == "NODE_DEFINITIONS") then 
-		Logger.log("communication", "Message from AI received: message type NODE_DEFINITIONS")
-		generateNodePoolNodes(messageBody)
-	elseif (messageType == "COMMAND") then
-		return executeScript(messageBody)
-	end
-end
 
 function widget:Initialize()	
 	if (not WG.ChiliClone) then
@@ -316,6 +286,10 @@ function widget:Initialize()
 	end
 	
 	BtEvaluator = WG.BtEvaluator
+	
+	BtEvaluator.OnNodeDefinitions = generateNodePoolNodes
+	BtEvaluator.OnUpdateStates = updateStatesMessage
+	BtEvaluator.OnCommand = executeScript
  
 	-- Get ready to use Chili
 	Chili = WG.ChiliClone
