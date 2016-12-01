@@ -133,10 +133,18 @@ if (widget and not widget.GetInfo) then
 				makeLine("red", value)
 			elseif(type(value) == "table" or type(value) == "userdata")then
 				local keyList = (value == consoleContext) and contextPairs or metapairs
-				local isArray, isEmpty = true, true
-				for k, _ in keyList(value) do if(type(k) ~= "number" or k < 1)then isArray = false end isEmpty = false end
+				local isArray, arraySize, isEmpty = true, 0, true
+				for k, _ in keyList(value) do if(type(k) ~= "number" or k < 1)then isArray = false elseif(arraySize < k)then arraySize = k end isEmpty = false end
 				if(isArray)then
-					keyList = ipairs
+					keyList = function(t)
+						return function(_, x)
+							if(x < arraySize)then
+								return x + 1, t[x + 1]
+							else
+								return nil
+							end
+						end, nil, 0
+					end
 				end
 				if(isEmpty)then
 					makeLine("", (type(value) == "userdata") and "<userdata> {}" or "{}")
@@ -299,9 +307,10 @@ if (widget and not widget.GetInfo) then
 			local results = { pcall(command) }
 			if(results[1])then
 				table.remove(results, 1)
-				Spring.Echo(#results)
-				if(--[[isExpression or ]]#results > 0)then
-					if(#results > 1)then
+				local resultCount = 0
+				for k in pairs(results) do if(resultCount < k)then resultCount = k end end
+				if(--[[isExpression or ]]resultCount > 0)then
+					if(resultCount > 1)then
 						addResult(text, "multiresult", results)
 					else
 						addResult(text, "result", results[1])
