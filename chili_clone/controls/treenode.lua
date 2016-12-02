@@ -236,7 +236,10 @@ function computeConnectionLineCoordinates(connectionOut, connectionIn)
 	return lineOutx, lineOuty, halfDistance, lineVx, lineInx, lineIny, transparentBorderWidth
 end
 
-
+local arrowWhite				 	= LUAUI_DIRNAME .. "Widgets/BtCreator/arrow_white.png"
+local arrowWhiteFlipped		= LUAUI_DIRNAME .. "Widgets/BtCreator/arrow_white_flipped.png"
+local arrowOrange				 	= LUAUI_DIRNAME .. "Widgets/BtCreator/arrow_orange.png"
+local arrowOrangeFlipped	= LUAUI_DIRNAME .. "Widgets/BtCreator/arrow_orange_flipped.png"
 
 function addConnectionLine(connectionOut, connectionIn)
 	if (connectionOut.treeNode.connectionIn and connectionOut.name == connectionOut.treeNode.connectionIn.name) then
@@ -309,8 +312,7 @@ function addConnectionLine(connectionOut, connectionIn)
 		parent = connectionOut.parent.parent,
 		x = lineInx + halfDistance - 8,
 		y = lineIny + 1,
-		file = LUAUI_DIRNAME .. "Widgets/BtCreator/arrow_white.png",
-		--file2 = LUAUI_DIRNAME .. "Widgets/BtCreator/arrow_orange.png",
+		file = arrowWhite,
 		width = 5,
 		height = 8,
 		lineIndex = lineIndex,
@@ -318,11 +320,18 @@ function addConnectionLine(connectionOut, connectionIn)
 		onMouseOver = { listenerOverConnectionLine },
 		onMouseOut = { listenerOutOfConnectionLine },
 	}
+	if(lineVx > lineInx) then
+		arrow.x = math.min(lineInx + 8, lineInx + halfDistance - 8)
+		arrow.file = arrowWhiteFlipped
+		arrow.flip = true
+	else
+		arrow.file = arrowWhite
+		arrow.x = lineInx + halfDistance - 8
+		arrow.flip = false
+	end
 	table.insert( connectionLines, {connectionOut, lineOut, lineV, lineIn, arrow, connectionIn} )
 	table.insert( connectionIn.treeNode.attachedLines,  lineIndex )
 	table.insert( connectionOut.treeNode.attachedLines, lineIndex )
-	
-	--Spring.Echo("lineV.lineIndex: "..lineIndex)
 end
 
 WG.addConnectionLine = addConnectionLine
@@ -357,7 +366,15 @@ function updateConnectionLine(index)
 	lineV.height = math.abs(lineOuty-lineIny)
 	lineV.x = lineVx
 	lineV.y = math.min(lineOuty,lineIny)+transparentBorderWidth
-	arrow.x = lineInx + halfDistance - 8
+	if(lineVx > lineInx) then
+		arrow.x = math.min(lineInx + 8, lineInx + halfDistance - 8)
+		arrow.file = arrowWhiteFlipped
+		arrow.flip = true
+	else
+		arrow.file = arrowWhite
+		arrow.x = lineInx + halfDistance - 8
+		arrow.flip = false
+	end
 	arrow.y = lineIny + 1
 	for i=2,5 do
 		connectionLines[index][i]:RequestUpdate()
@@ -727,7 +744,7 @@ end
 
 
 function listenerOverConnectionLine(self)	
-	lineIndex = self.lineIndex
+	local lineIndex = self.lineIndex
 	for i=2,4 do
 		connectionLines[lineIndex][i].borderColor = {1,0.6,0.2,0.8}
 		connectionLines[lineIndex][i].borderColor2 = {1,0.6,0.2,0.8}
@@ -739,7 +756,8 @@ function listenerOverConnectionLine(self)
 		parent = oldArrow.parent,
 		x = oldArrow.x,
 		y = oldArrow.y,
-		file = LUAUI_DIRNAME .. "Widgets/BtCreator/arrow_orange.png",
+		flip = oldArrow.flip,
+		file = arrowOrange,
 		width = oldArrow.width,
 		height = oldArrow.height,
 		lineIndex = oldArrow.lineIndex,
@@ -747,8 +765,12 @@ function listenerOverConnectionLine(self)
 		onMouseOver = { listenerOverConnectionLine },
 		onMouseOut = { listenerOutOfConnectionLine },
 	}
+	if(arrow.flip) then
+		arrow.file = arrowOrangeFlipped
+	end
 	connectionLines[lineIndex][5]:Dispose()
 	connectionLines[lineIndex][5] = arrow
+	return self
 end
 
 function listenerOutOfConnectionLine(self)
@@ -764,7 +786,8 @@ function listenerOutOfConnectionLine(self)
 		parent = oldArrow.parent,
 		x = oldArrow.x,
 		y = oldArrow.y,
-		file = LUAUI_DIRNAME .. "Widgets/BtCreator/arrow_white.png",
+		file = arrowWhite,
+		flip = oldArrow.flip,
 		width = oldArrow.width,
 		height = oldArrow.height,
 		lineIndex = oldArrow.lineIndex,
@@ -772,12 +795,18 @@ function listenerOutOfConnectionLine(self)
 		onMouseOver = { listenerOverConnectionLine },
 		onMouseOut = { listenerOutOfConnectionLine },
 	}
+	if(arrow.flip) then
+		arrow.file = arrowWhiteFlipped
+	end
 	connectionLines[lineIndex][5]:Dispose()
 	connectionLines[lineIndex][5] = arrow
 end
 
 function listenerClickOnConnectionLine(self)
-	return removeConnectionLine(self.lineIndex)
+	if(removeConnectionLine(self.lineIndex)) then
+		return self
+	end
+	return
 end
 
 
