@@ -21,7 +21,7 @@ local BtController = widget
 
 
 local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
-local BtEvaluator
+local BtEvaluator, BtCreator
 
 local JSON = Utils.JSON
 local BehaviourTree = Utils.BehaviourTree
@@ -114,8 +114,9 @@ end
 
 
 function listenerBtCreatorShowTreeButton(self)
-	Logger.log("communication", "Message to BtCreator send: message type SHOW_BTCREATOR tree type: " .. self.TreeHandle.TreeType)	
-	Spring.SendLuaUIMsg("BETS SHOW_BTCREATOR ".. self.TreeHandle.TreeType )
+	if(not BtCreator)then return end
+	
+	BtCreator.show(self.TreeHandle.TreeType)
 end 
 
 
@@ -446,6 +447,8 @@ function widget:Initialize()
   Screen0 = Chili.Screen0	
   
   BtEvaluator = WG.BtEvaluator 
+	-- extract BtCreator into a local variable once available
+	Dependency.defer(function() BtCreator = WG.BtCreator end, Dependency.BtCreator)
   
    -- Create the window
    
@@ -458,7 +461,8 @@ function widget:Initialize()
  
   
   Spring.Echo("BtController reports for duty!")
-  
+ 
+ 	Dependency.fill(Dependency.BtController)
 end
   
 Dependency.deferWidget(widget, Dependency.BtEvaluator)

@@ -12,7 +12,7 @@ end
  
 local Chili, Screen0
 
-local BtEvaluator
+local BtEvaluator, BtCreator
 
 local windowBtCreator
 local nodePoolLabel
@@ -40,6 +40,21 @@ local Dependency = Utils.Dependency
 
 local Debug = Utils.Debug;
 local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyTable, Debug.fileTable
+
+
+-- BtEvaluator interface definitions
+local BtCreator = {} -- if we need events, change to Sentry:New()
+
+function BtCreator.show(tree)
+	if(not windowBtCreator.visible) then
+		windowBtCreator:Show()
+		nodePoolPanel:Show()
+		buttonPanel:Show()
+	end
+	treeName.text = tree
+	treeName:RequestUpdate()
+	listenerClickOnLoadTree()
+end
 
 --- Adds Treenode to canvas, and also selects it. 
 local function addNodeToCanvas(node)
@@ -117,7 +132,7 @@ function listenerClickOnLoadTree()
 		clearCanvas()
 		loadBehaviourTree(bt)
 	else
-		error("BeahviourTree instance not found. " .. debug.traceback())
+		error("BehaviourTree " .. treeName.text .. " instance not found. " .. debug.traceback())
 	end
 	
 end
@@ -288,7 +303,7 @@ function widget:Initialize()
 	BtEvaluator.OnNodeDefinitions = generateNodePoolNodes
 	BtEvaluator.OnUpdateStates = updateStatesMessage
 	BtEvaluator.OnCommand = executeScript
- 
+	
 	-- Get ready to use Chili
 	Chili = WG.ChiliClone
 	Screen0 = Chili.Screen0	
@@ -410,6 +425,9 @@ function widget:Initialize()
 	}
 	-- treeName.font.size = 16
 	listenerClickOnMinimize()
+	
+	WG.BtCreator = BtCreator
+	Dependency.fill(Dependency.BtCreator)
 end 
 
 function widget:KeyPress(key)
@@ -424,29 +442,6 @@ function widget:KeyPress(key)
 	
 end
 
-function widget:RecvLuaMsg(message, playerID)
-	if(playerID ~= Spring.GetLocalPlayerID()) then
-		return
-	end
-	if(not (message:len() > 4 and message:sub(1,4):upper() == "BETS")) then
-		return
-	end
-	messageShorter = message:sub(6)
-	indexOfFirstSpace = string.find(messageShorter, " ") or (message:len() + 1)
-	messageType = messageShorter:sub(1, indexOfFirstSpace - 1):upper()	
-	messageBody = messageShorter:sub(indexOfFirstSpace + 1)
-	if(messageType == "SHOW_BTCREATOR") then 
-		Logger.log("communication", "Message from BtController send: message type SHOW_BTCREATOR")
-		if(not windowBtCreator.visible) then
-			windowBtCreator:Show()
-			nodePoolPanel:Show()
-			buttonPanel:Show()
-		end
-		treeName.text = messageBody -- .json suffix is not send anymore :sub(1,messageBody:len()-5)
-		treeName:RequestUpdate()
-		listenerClickOnLoadTree()
-	end
-end
 
 local fieldsToSerialize = {
 	'id',
