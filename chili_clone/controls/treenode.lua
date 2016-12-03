@@ -672,12 +672,10 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 	end
 	local now = Spring.GetTimer()
 	if(childName == self.treeNode.nameEditBox.name and Spring.DiffTimers(now, lastClicked) < 0.3) then
-		-- Spring.Echo("HHHHHHHHHHHHHHHHHHHHnameEditBox:IsAbove(x, y)")
 		lastClicked = now
 		return
 	end
 	lastClicked = now
-	--Spring.Echo("self:HitTest(x, y).name ".. self:HitTest(x,y).name)
 	local _, ctrl, _, shift = Spring.GetModKeyState()
 	if(WG.selectedNodes[self.treeNode.id]==nil and (not ctrl) and (not shift) and button ~= 3) then
 		WG.clearSelection()
@@ -808,7 +806,6 @@ function listenerClickOnConnectionLine(self)
 	end
 	return
 end
-
 
 
 -- Include debug functions, copyTable() and dump()

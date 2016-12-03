@@ -77,7 +77,7 @@ function listenerStartCopyingNode(node, x , y)
 	Logger.log("tree-editing", "listener start Copy Object. x:", x + node.x, ", y=", y + node.y)
 	copyTreeNode = node
 	startCopyingLocation.x = x + node.x
-	startCopyingLocation.y = y + node.y
+	startCopyingLocation.y = y + node.y - nodePoolPanel.scrollPosY
 	return node
 end
 
