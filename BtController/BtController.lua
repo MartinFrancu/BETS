@@ -121,10 +121,10 @@ end
 
 
 
-TreeHandle = {	
+TreeHandle = {
 			Name = "no_name", 
 			TreeType = "no_tree_type", 
-			InstanceCode = "default", 
+			InstanceId = "default", 
 			Tree = "no_tree", 
 			ChiliComponents = {},
 			} 
@@ -133,7 +133,7 @@ function TreeHandle:New(obj)
 	obj = obj or TreeHandle
 	setmetatable(obj, self)
 	self.__index = self
-	obj.InstanceCode = "random_code" --TD
+	obj.InstanceId = GenerateID()
 	obj.Tree = BehaviourTree.load(obj.TreeType)
 	
 	obj.ChiliComponents = {}
@@ -229,7 +229,7 @@ end
 function listenerCreateTreeMessageButton(self)	
 	-- self = button
 	Logger.log("communication", "TreeHandle send a messsage. " )
-	BtEvaluator.createTree("[current instanceId]", self.TreeHandle.Tree)
+	BtEvaluator.createTree(self.TreeHandle.InstanceId, self.TreeHandle.Tree)
 end
 
 
@@ -463,6 +463,27 @@ function widget:Initialize()
   Spring.Echo("BtController reports for duty!")
  
  	Dependency.fill(Dependency.BtController)
+end
+
+local alphanum = {
+	"a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z",
+	"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z",
+	"0","1","2","3","4","5","6","7","8","9"
+	}
+
+local usedIDs = {}
+	
+function GenerateID()
+	local length = 32
+	local str = ""
+	for i = 1, length do
+		str = str..alphanum[math.random(#alphanum)]
+	end
+	if(usedIDs[str] ~= nil) then
+		return GenerateID()
+	end
+	usedIDs[str] = true
+	return str	
 end
   
 Dependency.deferWidget(widget, Dependency.BtEvaluator)
