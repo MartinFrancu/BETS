@@ -79,6 +79,29 @@ local function getNamesInDirectory(directoryName, suffix)
    return folderContent
 end
 
+-- //////////////////////////////////////////////////////////////////////////////////////////////////////
+-- Id Generation
+local alphanum = {
+	"a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z",
+	"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z",
+	"0","1","2","3","4","5","6","7","8","9"
+	}
+
+local usedIDs = {}
+	
+function GenerateID()
+	local length = 32
+	local str = ""
+	for i = 1, length do
+		str = str..alphanum[math.random(#alphanum)]
+	end
+	if(usedIDs[str] ~= nil) then
+		return GenerateID()
+	end
+	usedIDs[str] = true
+	return str	
+end
+-- //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 function addTreeToTreeTabPanel(treeHandle)
 	local newTab =  {name = treeHandle.Name, children = treeHandle.ChiliComponents }
@@ -463,27 +486,6 @@ function widget:Initialize()
   Spring.Echo("BtController reports for duty!")
  
  	Dependency.fill(Dependency.BtController)
-end
-
-local alphanum = {
-	"a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z",
-	"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z",
-	"0","1","2","3","4","5","6","7","8","9"
-	}
-
-local usedIDs = {}
-	
-function GenerateID()
-	local length = 32
-	local str = ""
-	for i = 1, length do
-		str = str..alphanum[math.random(#alphanum)]
-	end
-	if(usedIDs[str] ~= nil) then
-		return GenerateID()
-	end
-	usedIDs[str] = true
-	return str	
 end
   
 Dependency.deferWidget(widget, Dependency.BtEvaluator)
