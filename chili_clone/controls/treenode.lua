@@ -142,6 +142,7 @@ function TreeNode:New(obj)
 		if(parameters[i]["defaultValue"]) then
 			parameters[i]["value"] = parameters[i]["defaultValue"]
 			parameters[i]["defaultValue"] = nil
+			obj.parameters[i]["defaultValue"] = nil
 		end
 		
 		if (parameters[i]["componentType"] and parameters[i]["componentType"]:lower() == "editbox") then
@@ -711,6 +712,8 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 end
 
 function listenerOnMouseUpMoveNode(self, x ,y)
+	self.treeNode.x = self.x
+	self.treeNode.y = self.y
 	self:Invalidate()
 	if(movingNodes) then 
 		local diffx = self.x - previousPosition.x
