@@ -139,6 +139,7 @@ end
 function listenerBtCreatorShowTreeButton(self)
 	if(not BtCreator)then return end
 	
+	BtEvaluator.reportTree(self.TreeHandle.InstanceId)
 	BtCreator.show(self.TreeHandle.TreeType)
 end 
 
@@ -253,6 +254,7 @@ function listenerCreateTreeMessageButton(self)
 	-- self = button
 	Logger.log("communication", "TreeHandle send a messsage. " )
 	BtEvaluator.createTree(self.TreeHandle.InstanceId, self.TreeHandle.Tree)
+	BtEvaluator.reportTree(self.TreeHandle.InstanceId)
 end
 
 
