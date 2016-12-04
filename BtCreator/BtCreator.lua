@@ -232,17 +232,23 @@ local function getCommandClass(name)
 	return c
 end
 
-local function getCommand(name, id)
+local function getCommand(name, id, treeId)
 	commandMap = commands[name]
 	if not commandMap then
 		commandMap = {}
 		commands[name] = commandMap
 	end
 	
-	cmd = commandMap[id]
+	cmdsForInstance = commandMap[treeId]
+	if not cmdsForInstance then
+		cmdsForInstance = {}
+		commandMap[treeId] = cmdsForInstance
+	end
+	
+	cmd = cmdsForInstance[id]
 	if not cmd then
 		cmd = getCommandClass(name):BaseNew()
-		commandMap[id] = cmd
+		cmdsForInstance[id] = cmd
 	end
 	return cmd
 end
@@ -250,7 +256,7 @@ end
 local commandsForUnits = {}-- map(unitId,command)
 
 local function executeScript(params)
-	command = getCommand(params.name, params.id)
+	command = getCommand(params.name, params.id, params.treeId)
 
 	if (params.func == "RUN") then
 		for i = 1, #params.units do
