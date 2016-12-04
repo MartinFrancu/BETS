@@ -88,7 +88,8 @@ local alphanum = {
 	}
 
 local usedIDs = {}
-	
+local instanceIdCount = 0
+
 function GenerateID()
 	local length = 32
 	local str = ""
@@ -99,6 +100,7 @@ function GenerateID()
 		return GenerateID()
 	end
 	usedIDs[str] = true
+	instanceIdCount = instanceIdCount + 1
 	return str	
 end
 -- //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -263,7 +265,7 @@ local function listenerClickOnSelectTreeButton(self)
 	names = getNamesInDirectory(BehavioursDirectory, ".json")
 	treeSelectionComboBox.items = names 
 	treeSelectionComboBox:RequestUpdate()
-	treeNameEditBox.text = "CHANGE_ME"
+	treeNameEditBox.text = "Instance"..instanceIdCount
 	treeControlWindow:Hide()
 	treeSelectionWindow:Show()
 end
@@ -335,7 +337,7 @@ function setUpTreeSelectionWindow()
 		y = 30,
 		width  = 200,
 		height = 20,
-		text = "CHANGE_ME",
+		text = "Instance"..instanceIdCount,
 		skinName='DarkGlass',
 		--align = 'center',
 		borderThickness = 0,
