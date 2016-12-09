@@ -130,7 +130,7 @@ function getBarItemByName(tabs, tabName)
 end
 
 -- The following function will find tabBarItem witch such name and add to atributs under this name given data.
-function addAtributToBarItem(tabs, tabName, atributName, atribut)
+function addFieldToBarItem(tabs, tabName, atributName, atribut)
 	item = getBarItemByName(tabs,tabName)
 	if item[atributName] == nil then
 				item[atributName] = atribut
@@ -207,11 +207,12 @@ function addTreeToTreeTabPanel(treeHandle)
 	
 	-- Now I should add a listener to show proper tree:
 	-- get tabBar		
-	addAtributToBarItem(treeTabPanel, newTab.name, "OnMouseDown",listenerBtCreatorShowTreeButton)
-	addAtributToBarItem(treeTabPanel, newTab.name, "TreeHandle",treeHandle)
+	addFieldToBarItem(treeTabPanel, newTab.name, "OnClick",listenerBarItemClick)
+	addFieldToBarItem(treeTabPanel, newTab.name, "TreeHandle",treeHandle)
 	
 	moveToEndAddTab(treeTabPanel)
 end
+
 
 
 
@@ -322,13 +323,34 @@ function SendStringToBtEvaluator(message)
 end
 
 
+function removeTreeBtController(tabs,treeHandle)
+	-- remove the bar item
+	local tabBarChildIndex = 1
+	-- get tabBar
+	local tabBar = tabs.children[tabBarChildIndex]
+	tabBar:Remove(treeHandle.Name)
+	-- remove chili elements ?
+	local deleteFrame = tabs.tabIndexMapping[treeHandle.Name]
+	tabs.currentTab:RemoveChild(deleteFrame)
+	-- remove from tabPanel name-frame map
+	tabs.tabIndexMapping[treeHandle.Name] = nil
+	-- remove send message to BtEvaluator
+end
+
 ---------------------------------------LISTENERS
 
-function listenerBtCreatorShowTreeButton(self)
-	if(not BtCreator)then return end
+function listenerBarItemClick(self, x, y, button)
+	if button == 1 then
+		--left click
+		if(not BtCreator)then return end
 	
-	BtEvaluator.reportTree(self.TreeHandle.InstanceId)
-	BtCreator.show(self.TreeHandle.TreeType)
+		BtEvaluator.reportTree(self.TreeHandle.InstanceId)
+		BtCreator.show(self.TreeHandle.TreeType)
+	end
+	if button == 2 then
+		--middle click
+		removeTreeBtController(treeTabPanel, self.TreeHandle)
+	end
 end 
 
 
@@ -349,19 +371,24 @@ local function listenerRefreshTreeSelectionPanel(self)
 	treeNameEditBox.text = "Instance"..instanceIdCount
 end
 
-local function listenerClickOnSelectedTreeDoneButton(self)
-	local selectedTreeType = treeSelectionComboBox.items[treeSelectionComboBox.selected]
-	--should not be needed anymore: name = name:sub(1,name:len()-5)
-	--reloadTree(name)
-	local newTreeHandle = TreeHandle:New{
-		Name = treeNameEditBox.text,
-		TreeType = selectedTreeType,
-	}
-	-- show the tree
+local function listenerClickOnSelectedTreeDoneButton(self, x, y, button)
+	if button == 1 then
+		-- we react only on leftclicks
+		local selectedTreeType = treeSelectionComboBox.items[treeSelectionComboBox.selected]
+		--should not be needed anymore: name = name:sub(1,name:len()-5)
+		--reloadTree(name)
+		local newTreeHandle = TreeHandle:New{
+			Name = treeNameEditBox.text,
+			TreeType = selectedTreeType,
+		}
+		-- show the tree
 	
-	addTreeToTreeTabPanel(newTreeHandle)
-	listenerBtCreatorShowTreeButton({TreeHandle = newTreeHandle})
+		addTreeToTreeTabPanel(newTreeHandle)
+	
+		listenerBarItemClick({TreeHandle = newTreeHandle},0,0,1) 
+	end
 end
+
 ---------------------------------------LISTENERS
   
 function finalizeAddTreeBarItem(tabs)
@@ -484,7 +511,6 @@ function setUpTreeControlWindow()
 	}
 	
 	finalizeAddTreeBarItem(treeTabPanel)
-	--addAtributToBarItem(treeTabPanel, "+", "OnMouseDown" , listenerRefreshTreeSelectionPanel)
 	
 end
 
