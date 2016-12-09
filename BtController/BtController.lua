@@ -37,12 +37,13 @@ local selectTreeButton
 local treeTabPanel
 local treeHandles = {}
 -------------------------------------------------------------------------------------
-local treeSelectionWindow
+local treeSelectionPanel
+--local treeSelectionWindow
 local treeSelectionLabel
 local treeNameEditBox
 local treeSelectionComboBox
 local treeSelectionDoneButton
-local showBtCreatorButton
+--local showBtCreatorButton
 
 -------------------------------------------------------------------------------------
 
@@ -105,10 +106,59 @@ function GenerateID()
 end
 -- //////////////////////////////////////////////////////////////////////////////////////////////////////
 
+-- To show in treeTabPanel tab with given name:
+-- Here should be probably moved also a 
+function highlightTab(tabName)
+	-- first child should be the TabBar:
+	local tabBarChildIndex = 1
+	treeTabPanel:ChangeTab(tabName)
+	treeTabPanel.children[tabBarChildIndex]:Select(tabName)
+end
+--[[
+function addListenerOnMouseDownToBarItem(tabs, tabName, listener)
+	-- Now I should add a listener to show proper tree:
+	local tabBarChildIndex = 1
+	-- get tabBar
+	local tabBar = tabs.children[tabBarChildIndex]
+	-- find corresponding tabBarItem: 
+	local barItems = tabBar.children
+	for index,item in ipairs(barItems) do
+		if(item.caption == tabName) then
+			-- add the listener
+			local currentListeners  = item.OnMouseDown
+			table.insert(currentListeners,listener)
+			
+		end
+	end
+end
+]]--
+
+-- The following function will find tabBarItem witch such name and add to atributs under this name given data.
+function addAtributToBarItem(tabs, tabName, atributName, atribut)
+	-- Now I should add a listener to show proper tree:
+	local tabBarChildIndex = 1
+	-- get tabBar
+	local tabBar = tabs.children[tabBarChildIndex]
+	-- find corresponding tabBarItem: 
+	local barItems = tabBar.children
+	for index,item in ipairs(barItems) do
+		if(item.caption == tabName) then
+			-- add the atribut
+			if item[atributName] == nil then
+				item[atributName] = atribut
+			else
+				local currentAtt = item[atributName]
+				table.insert(currentAtt, atribut)
+			end
+		end
+	end
+end
+
+
 function addTreeToTreeTabPanel(treeHandle)
 	local newTab =  {name = treeHandle.Name, children = treeHandle.ChiliComponents }
 	-- if TabPanel is not inialized I have to initalize it:
-	if(treeTabPanel == nil)then
+	--[[if(treeTabPanel == nil)then
 		treeTabPanel = Chili.TabPanel:New{
 		parent = treeControlWindow,
 		x = 0,
@@ -118,23 +168,17 @@ function addTreeToTreeTabPanel(treeHandle)
 		tabs = {newTab}
 	}
 	else
-	-- no treeTabPanel is initialized
+		-- no treeTabPanel is initialized
+		treeTabPanel:AddTab(newTab)
+	end --]]
 	treeTabPanel:AddTab(newTab)
-	end
+	highlightTab(newTab.name)
+	
+	--addListenerOnMouseDownToBarItem(treeTabPanel, newTab.name, listenerBtCreatorShowTreeButton)
+	addAtributToBarItem(treeTabPanel, newTab.name, "OnMouseDown",listenerBtCreatorShowTreeButton)
+	addAtributToBarItem(treeTabPanel, newTab.name, "TreeHandle",treeHandle)
 	-- Now I should add a listener to show proper tree:
 	-- get tabBar
-	local tabBar = treeTabPanel.children[1]
-	-- find corresponding tabBarItem: 
-	local barItems = tabBar.children
-	for index,item in ipairs(barItems) do
-		if(item.caption == newTab.name) then
-			-- add the listener
-			local currentListeners  = item.OnMouseDown
-			table.insert(currentListeners,listenerBtCreatorShowTreeButton)
-			item.TreeHandle = treeHandle
-		end
-	end
-	
 end
 
 
@@ -235,7 +279,7 @@ end
 -------------------------------------------------------------------------------------
 
 
-
+--[[
 local function showHideTreeSelectionWindow()
 	if(treeSelectionWindow.visible == false)then
 		treeSelectionWindow:Show()
@@ -243,7 +287,7 @@ local function showHideTreeSelectionWindow()
 		treeSelectionWindow:Hide()
 	end
 end
-
+--]]
 
 
 function SendStringToBtEvaluator(message)
@@ -261,13 +305,11 @@ end
 
 
 
-local function listenerClickOnSelectTreeButton(self)
+local function listenerRefreshTreeSelectionPanel(self)
 	names = getNamesInDirectory(BehavioursDirectory, ".json")
 	treeSelectionComboBox.items = names 
 	treeSelectionComboBox:RequestUpdate()
 	treeNameEditBox.text = "Instance"..instanceIdCount
-	treeControlWindow:Hide()
-	treeSelectionWindow:Show()
 end
 
 local function listenerClickOnSelectedTreeDoneButton(self)
@@ -282,8 +324,8 @@ local function listenerClickOnSelectedTreeDoneButton(self)
 	
 	addTreeToTreeTabPanel(newTreeHandle)
 	listenerBtCreatorShowTreeButton({TreeHandle = newTreeHandle})
-	treeControlWindow:Show()
-	treeSelectionWindow:Hide()
+--	treeControlWindow:Show()
+--	treeSelectionWindow:Hide()
 
 end
 
@@ -292,7 +334,7 @@ end
 ---------------------------------------LISTENERS
   
 
-function setUpTreeSelectionWindow()
+function setUpTreeSelectionTab()
  
    treeSelectionLabel = Chili.Label:New{
 		--parent = treeSelectionWindow,
@@ -310,10 +352,10 @@ function setUpTreeSelectionWindow()
    end
    
    folderContent = getStringsWithoutSuffix(folderContent, ".json")]]--
-	local availibleTreeTypes = getNamesInDirectory(BehavioursDirectory, ".json")
+	local availableTreeTypes = getNamesInDirectory(BehavioursDirectory, ".json")
 	
 	treeSelectionComboBox = Chili.ComboBox:New{
-		items = availibleTreeTypes,
+		items = availableTreeTypes,
 		width = '60%',
 		x = 110,
 		y = 4,
@@ -348,7 +390,7 @@ function setUpTreeSelectionWindow()
    	treeSelectionDoneButton = Chili.Button:New{
 		x = 50,
 		y = 60,
-		width  = '40%',
+		width  = 60,
 		height = 30,
 		caption = "Done",
 		skinName='DarkGlass',
@@ -356,8 +398,7 @@ function setUpTreeSelectionWindow()
     }	
 	
   
-	treeSelectionWindow = Chili.Window:New{
-		parent = Screen0,
+	treeSelectionPanel = Chili.Control:New{
 		x = '20%',
 		y = '2%',
 		width = 400,
@@ -370,10 +411,7 @@ function setUpTreeSelectionWindow()
 		visible =false,
 		children = {treeSelectionLabel, treeSelectionDoneButton, treeSelectionComboBox, treeNameLabel, treeNameEditBox}
 	}
-   
-
-   
-
+	
 end
 
 
@@ -403,7 +441,7 @@ function setUpTreeControlWindow()
   
   
   
-	selectTreeButton = Chili.Button:New{
+--[[	selectTreeButton = Chili.Button:New{
     parent = treeControlWindow,
 	x = 5,
 	y = 15,
@@ -413,7 +451,7 @@ function setUpTreeControlWindow()
 	OnClick = {listenerClickOnSelectTreeButton},
 		skinName='DarkGlass',
 	}
-	
+	--]]
 --[[	showBtCreatorButton = Chili.Button:New{
 	parent = treeControlWindow,
 	x = 200,
@@ -456,38 +494,46 @@ function setUpTreeControlWindow()
 	}
   
 	newTab = {name = "Start tab", children = {currentTreeData.chiliComponents.labelAssignemntButton, currentTreeData.chiliComponents.labelNameTextBox } }
+	--]]
+
+	setUpTreeSelectionTab()
+	
+	local newTab = {name = "+", children = {treeSelectionPanel} }
 	
 	treeTabPanel = Chili.TabPanel:New{
 		parent = treeControlWindow,
 		x = 0,
-		y = 35,
+		y = 10,
 		height = 570,
 		width = '100%',
+		tabs = {newTab}
 	}
-	treeTabPanel:AddTab(newTab) 
-	--]]
+	
+	
+	addAtributToBarItem(treeTabPanel, "+", "OnMouseDown" , listenerRefreshTreeSelectionPanel)
+	
 end
 
 function widget:Initialize()	
-  -- Get ready to use Chili
-  Chili = WG.ChiliClone
-  Screen0 = Chili.Screen0	
+	-- Get ready to use Chili
+	Chili = WG.ChiliClone
+	Screen0 = Chili.Screen0	
   
-  BtEvaluator = WG.BtEvaluator 
+	BtEvaluator = WG.BtEvaluator 
 	-- extract BtCreator into a local variable once available
 	Dependency.defer(function() BtCreator = WG.BtCreator end, Dependency.BtCreator)
   
-   -- Create the window
+	-- Create the window
    
-  setUpTreeControlWindow()
-  treeControlWindow:Hide()
+	setUpTreeControlWindow()
+	-- treeControlWindow:Hide()
   
-  setUpTreeSelectionWindow()
-  treeSelectionWindow:Show()
+	--setUpTreeSelectionWindow()
+	--treeSelectionWindow:Show()
   
  
   
-  Spring.Echo("BtController reports for duty!")
+	Spring.Echo("BtController reports for duty!")
  
  	Dependency.fill(Dependency.BtController)
 end
