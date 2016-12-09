@@ -38,12 +38,10 @@ local treeTabPanel
 local treeHandles = {}
 -------------------------------------------------------------------------------------
 local treeSelectionPanel
---local treeSelectionWindow
 local treeSelectionLabel
 local treeNameEditBox
 local treeSelectionComboBox
 local treeSelectionDoneButton
---local showBtCreatorButton
 
 -------------------------------------------------------------------------------------
 
@@ -208,7 +206,7 @@ function addTreeToTreeTabPanel(treeHandle)
 	-- Now I should add a listener to show proper tree:
 	-- get tabBar		
 	addFieldToBarItem(treeTabPanel, newTab.name, "OnClick",listenerBarItemClick)
-	addFieldToBarItem(treeTabPanel, newTab.name, "TreeHandle",treeHandle)
+	addFieldToBarItem(treeTabPanel, newTab.name, "TreeHandle", treeHandle)
 	
 	moveToEndAddTab(treeTabPanel)
 end
@@ -307,16 +305,6 @@ end
 -------------------------------------------------------------------------------------
 
 
---[[
-local function showHideTreeSelectionWindow()
-	if(treeSelectionWindow.visible == false)then
-		treeSelectionWindow:Show()
-	else
-		treeSelectionWindow:Hide()
-	end
-end
---]]
-
 
 function SendStringToBtEvaluator(message)
 	Spring.SendSkirmishAIMessage(Spring.GetLocalPlayerID(), "BETS " .. message)
@@ -335,6 +323,7 @@ function removeTreeBtController(tabs,treeHandle)
 	-- remove from tabPanel name-frame map
 	tabs.tabIndexMapping[treeHandle.Name] = nil
 	-- remove send message to BtEvaluator
+	BtEvaluator.removeTree(treeHandle.InstanceId)
 end
 
 ---------------------------------------LISTENERS
@@ -361,6 +350,9 @@ function listenerCreateTreeMessageButton(self)
 	BtEvaluator.createTree(self.TreeHandle.InstanceId, self.TreeHandle.Tree)
 	BtEvaluator.reportTree(self.TreeHandle.InstanceId)
 end
+
+
+
 
 
 
