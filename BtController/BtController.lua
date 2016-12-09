@@ -114,9 +114,9 @@ function highlightTab(tabName)
 	treeTabPanel:ChangeTab(tabName)
 	treeTabPanel.children[tabBarChildIndex]:Select(tabName)
 end
---[[
-function addListenerOnMouseDownToBarItem(tabs, tabName, listener)
-	-- Now I should add a listener to show proper tree:
+
+
+function getBarItemByName(tabs, tabName)
 	local tabBarChildIndex = 1
 	-- get tabBar
 	local tabBar = tabs.children[tabBarChildIndex]
@@ -124,70 +124,97 @@ function addListenerOnMouseDownToBarItem(tabs, tabName, listener)
 	local barItems = tabBar.children
 	for index,item in ipairs(barItems) do
 		if(item.caption == tabName) then
-			-- add the listener
-			local currentListeners  = item.OnMouseDown
-			table.insert(currentListeners,listener)
-			
+			return item
 		end
 	end
 end
-]]--
 
 -- The following function will find tabBarItem witch such name and add to atributs under this name given data.
 function addAtributToBarItem(tabs, tabName, atributName, atribut)
-	-- Now I should add a listener to show proper tree:
-	local tabBarChildIndex = 1
-	-- get tabBar
-	local tabBar = tabs.children[tabBarChildIndex]
-	-- find corresponding tabBarItem: 
-	local barItems = tabBar.children
-	for index,item in ipairs(barItems) do
-		if(item.caption == tabName) then
-			-- add the atribut
-			if item[atributName] == nil then
+	item = getBarItemByName(tabs,tabName)
+	if item[atributName] == nil then
 				item[atributName] = atribut
 			else
 				local currentAtt = item[atributName]
 				table.insert(currentAtt, atribut)
 			end
+end
+
+-- Trouble is that we add listeners on barItems, now I have to move them with me. 
+function moveTabItemToEndWithListeners(tabs,tabName)
+	-- do we have such tab
+	----[[
+	if tabs.tabIndexMapping[tabName] == nil then
+		-- Or should I report it:
+		Logger.log("Error", "Trying to move tab and it is not there.")
+		return
+	end
+	--]]
+	local tabBarChildIndex = 1
+	-- get tabBar
+	local tabBar = tabs.children[tabBarChildIndex]
+	-- find corresponding tabBarItem: 
+	local onClickListeners
+	local barItems = tabBar.children
+	for index,item in ipairs(barItems) do
+		if(item.caption == tabName) then
+			-- get listeners
+			onClickListeners = item.OnMouseDown
 		end
 	end
+	
+
+	tabBar:Remove(tabName)
+	local newTabBarItem = Chili.TabBarItem:New{caption = tabName, defaultWidth = tabBar.minItemWidth, defaultHeight = tabBar.minItemHeight}
+	newTabBarItem.OnMouseDown = onClickListeners
+	tabBar:AddChild(
+        newTabBarItem
+    )
 end
+
+function moveToEndAddTab(tabs)
+	-- do we have such tab
+	----[[
+	if tabs.tabIndexMapping["+"] == nil then
+		-- Or should I report it:
+		Logger.log("Error", "Trying to move + tab and it is not there.")
+		return
+	end
+	--]]
+	local tabBarChildIndex = 1
+	-- get tabBar
+	local tabBar = tabs.children[tabBarChildIndex]
+	
+	tabBar:Remove("+")
+	local newTabBarItem = Chili.TabBarItem:New{
+		caption = "+", 
+		defaultWidth = tabBar.minItemWidth, 
+		defaultHeight = tabBar.minItemHeight
+	}
+	tabBar:AddChild(
+        newTabBarItem
+    )
+	finalizeAddTreeBarItem(tabs)
+end
+
 
 
 function addTreeToTreeTabPanel(treeHandle)
 	local newTab =  {name = treeHandle.Name, children = treeHandle.ChiliComponents }
 	-- if TabPanel is not inialized I have to initalize it:
-	--[[if(treeTabPanel == nil)then
-		treeTabPanel = Chili.TabPanel:New{
-		parent = treeControlWindow,
-		x = 0,
-		y = 50,
-		height = 570,
-		width = '100%',
-		tabs = {newTab}
-	}
-	else
-		-- no treeTabPanel is initialized
-		treeTabPanel:AddTab(newTab)
-	end --]]
 	treeTabPanel:AddTab(newTab)
 	highlightTab(newTab.name)
 	
-	--addListenerOnMouseDownToBarItem(treeTabPanel, newTab.name, listenerBtCreatorShowTreeButton)
+	-- Now I should add a listener to show proper tree:
+	-- get tabBar		
 	addAtributToBarItem(treeTabPanel, newTab.name, "OnMouseDown",listenerBtCreatorShowTreeButton)
 	addAtributToBarItem(treeTabPanel, newTab.name, "TreeHandle",treeHandle)
-	-- Now I should add a listener to show proper tree:
-	-- get tabBar
+	
+	moveToEndAddTab(treeTabPanel)
 end
 
 
-function listenerBtCreatorShowTreeButton(self)
-	if(not BtCreator)then return end
-	
-	BtEvaluator.reportTree(self.TreeHandle.InstanceId)
-	BtCreator.show(self.TreeHandle.TreeType)
-end 
+
 
 
 
@@ -296,6 +323,16 @@ end
 
 
 ---------------------------------------LISTENERS
+
+function listenerBtCreatorShowTreeButton(self)
+	if(not BtCreator)then return end
+	
+	BtEvaluator.reportTree(self.TreeHandle.InstanceId)
+	BtCreator.show(self.TreeHandle.TreeType)
+end 
+
+
+
 function listenerCreateTreeMessageButton(self)	
 	-- self = button
 	Logger.log("communication", "TreeHandle send a messsage. " )
@@ -324,15 +361,15 @@ local function listenerClickOnSelectedTreeDoneButton(self)
 	
 	addTreeToTreeTabPanel(newTreeHandle)
 	listenerBtCreatorShowTreeButton({TreeHandle = newTreeHandle})
---	treeControlWindow:Show()
---	treeSelectionWindow:Hide()
-
 end
-
-
-
 ---------------------------------------LISTENERS
   
+function finalizeAddTreeBarItem(tabs)
+	local item = getBarItemByName(tabs, "+")
+	item.focusColor = {0.2, 1.0, 0.2, 0.6}
+	local listeners = item.OnMouseDown
+	table.insert(listeners,listenerRefreshTreeSelectionPanel)
+end
 
 function setUpTreeSelectionTab()
  
@@ -344,14 +381,8 @@ function setUpTreeSelectionTab()
 		height = 20,
 		caption = "Select tree type:",
 		skinName='DarkGlass',
-   }
-   --[[local folderContent = VFS.DirList(BehavioursDirectory)
-   -- Remove the path prefix
-   for i,v in ipairs(folderContent)do
-	folderContent[i] = string.sub(v, string.len( BehavioursDirectory)+2 )
-   end
-   
-   folderContent = getStringsWithoutSuffix(folderContent, ".json")]]--
+	}
+	
 	local availableTreeTypes = getNamesInDirectory(BehavioursDirectory, ".json")
 	
 	treeSelectionComboBox = Chili.ComboBox:New{
@@ -438,63 +469,6 @@ function setUpTreeControlWindow()
     caption = "BtController",
 		skinName='DarkGlass',
 	}
-  
-  
-  
---[[	selectTreeButton = Chili.Button:New{
-    parent = treeControlWindow,
-	x = 5,
-	y = 15,
-    width  = 150,
-    height = 30,
-    caption = "Add tree instance",
-	OnClick = {listenerClickOnSelectTreeButton},
-		skinName='DarkGlass',
-	}
-	--]]
---[[	showBtCreatorButton = Chili.Button:New{
-	parent = treeControlWindow,
-	x = 200,
-	y = 15,
-	height = 30,
-	width = '20%',
-	minWidth = 150,
-	caption = "Show tree",
-	OnClick = {listenerClickOnShowTreeButton},
-		skinName = "DarkGlass",
-		focusColor = {0.5,0.5,0.5,0.5},
-	}
---]]
---[[
-	currentTreeData.chiliComponents
-	  
-	currentTreeData.chiliComponents.labelAssignemntButton = Chili.Button:New{
-	parent =  treeTabPanel,--treeControlWindow,
-	x = 100 ,
-	y = 45,
-	height = 30,
-	width = '25%',
-	minWidth = 150,
-	caption = "Default role",
-	OnClick = {listenerClickOnAssign},
-		skinName = "DarkGlass",
-		focusColor = {0.5,0.5,0.5,0.5},
-	}
-	
-	currentTreeData.chiliComponents.labelNameTextBox = Chili.TextBox:New{
-	parent =  treeTabPanel, --parent = treeControlWindow, 
-	x = 5,
-	y = 54,
-	height = 30,
-	width =  100,
-	minWidth = 50,
-	text = "Assign selected units:",
-		skinName = "DarkGlass",
-		focusColor = {0.5,0.5,0.5,0.5},
-	}
-  
-	newTab = {name = "Start tab", children = {currentTreeData.chiliComponents.labelAssignemntButton, currentTreeData.chiliComponents.labelNameTextBox } }
-	--]]
 
 	setUpTreeSelectionTab()
 	
@@ -509,8 +483,8 @@ function setUpTreeControlWindow()
 		tabs = {newTab}
 	}
 	
-	
-	addAtributToBarItem(treeTabPanel, "+", "OnMouseDown" , listenerRefreshTreeSelectionPanel)
+	finalizeAddTreeBarItem(treeTabPanel)
+	--addAtributToBarItem(treeTabPanel, "+", "OnMouseDown" , listenerRefreshTreeSelectionPanel)
 	
 end
 
