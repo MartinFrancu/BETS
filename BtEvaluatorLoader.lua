@@ -61,11 +61,11 @@ end
 function BtEvaluator.createTree(instanceId, treeDefinition)
 	return BtEvaluator.sendMessage("CREATE_TREE", { instanceId = instanceId, root = treeDefinition.root })
 end
-function BtEvaluator.removeTree(instanceId)
-  return BtEvaluator.sendMessage("REMOVE_TREE", { instanceId = instanceId })
+function BtEvaluator.removeTree(insId)
+  return BtEvaluator.sendMessage("REMOVE_TREE", { instanceId = insId })
 end
-function BtEvaluator.reportTree(instanceId)
-  return BtEvaluator.sendMessage("REPORT_TREE", { instanceId = instanceId })
+function BtEvaluator.reportTree(insId)
+  return BtEvaluator.sendMessage("REPORT_TREE", { instanceId = insId })
 end
 
 

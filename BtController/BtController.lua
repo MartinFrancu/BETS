@@ -179,20 +179,23 @@ function moveToEndAddTab(tabs)
 		return
 	end
 	--]]
+	
 	local tabBarChildIndex = 1
 	-- get tabBar
 	local tabBar = tabs.children[tabBarChildIndex]
-	
-	tabBar:Remove("+")
-	local newTabBarItem = Chili.TabBarItem:New{
-		caption = "+", 
-		defaultWidth = tabBar.minItemWidth, 
-		defaultHeight = tabBar.minItemHeight
-	}
-	tabBar:AddChild(
-        newTabBarItem
-    )
-	finalizeAddTreeBarItem(tabs)
+	if (#(tabBar.children) >= 2) then
+	-- if tabBar.children < 2 then Remove wont do anything.. and we hope that + is only and last tab
+		tabBar:Remove("+")
+		local newTabBarItem = Chili.TabBarItem:New{
+			caption = "+", 
+			defaultWidth = tabBar.minItemWidth, 
+			defaultHeight = tabBar.minItemHeight
+		}
+		tabBar:AddChild(
+			newTabBarItem
+		)
+		finalizeAddTreeBarItem(tabs)
+	end
 end
 
 
@@ -322,6 +325,8 @@ function removeTreeBtController(tabs,treeHandle)
 	tabs.currentTab:RemoveChild(deleteFrame)
 	-- remove from tabPanel name-frame map
 	tabs.tabIndexMapping[treeHandle.Name] = nil
+	-- make sure addtab is in right place
+	moveToEndAddTab(tabs)
 	-- remove send message to BtEvaluator
 	BtEvaluator.removeTree(treeHandle.InstanceId)
 end
