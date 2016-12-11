@@ -42,8 +42,11 @@ local treeSelectionLabel
 local treeNameEditBox
 local treeSelectionComboBox
 local treeSelectionDoneButton
-
--------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+local errorWindow
+local errorLabel
+local errorOkButton
+--------------------------------------------------------------------------------
 
 ------------------------------------------------------------------------------------- 
 function string.starts(String,Start)
@@ -104,6 +107,10 @@ function GenerateID()
 end
 -- //////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+
+
+
 -- To show in treeTabPanel tab with given name:
 -- Here should be probably moved also a 
 function highlightTab(tabName)
@@ -138,65 +145,8 @@ function addFieldToBarItem(tabs, tabName, atributName, atribut)
 			end
 end
 
--- Trouble is that we add listeners on barItems, now I have to move them with me. 
-function moveTabItemToEndWithListeners(tabs,tabName)
-	-- do we have such tab
-	----[[
-	if tabs.tabIndexMapping[tabName] == nil then
-		-- Or should I report it:
-		Logger.log("Error", "Trying to move tab and it is not there.")
-		return
-	end
-	--]]
-	local tabBarChildIndex = 1
-	-- get tabBar
-	local tabBar = tabs.children[tabBarChildIndex]
-	-- find corresponding tabBarItem: 
-	local onClickListeners
-	local barItems = tabBar.children
-	for index,item in ipairs(barItems) do
-		if(item.caption == tabName) then
-			-- get listeners
-			onClickListeners = item.OnMouseDown
-		end
-	end
-	
 
-	tabBar:Remove(tabName)
-	local newTabBarItem = Chili.TabBarItem:New{caption = tabName, defaultWidth = tabBar.minItemWidth, defaultHeight = tabBar.minItemHeight}
-	newTabBarItem.OnMouseDown = onClickListeners
-	tabBar:AddChild(
-        newTabBarItem
-    )
-end
 
-function moveToEndAddTab(tabs)
-	-- do we have such tab
-	----[[
-	if tabs.tabIndexMapping["+"] == nil then
-		-- Or should I report it:
-		Logger.log("Error", "Trying to move + tab and it is not there.")
-		return
-	end
-	--]]
-	
-	local tabBarChildIndex = 1
-	-- get tabBar
-	local tabBar = tabs.children[tabBarChildIndex]
-	if (#(tabBar.children) >= 2) then
-	-- if tabBar.children < 2 then Remove wont do anything.. and we hope that + is only and last tab
-		tabBar:Remove("+")
-		local newTabBarItem = Chili.TabBarItem:New{
-			caption = "+", 
-			defaultWidth = tabBar.minItemWidth, 
-			defaultHeight = tabBar.minItemHeight
-		}
-		tabBar:AddChild(
-			newTabBarItem
-		)
-		finalizeAddTreeBarItem(tabs)
-	end
-end
 
 
 
@@ -331,7 +281,19 @@ function removeTreeBtController(tabs,treeHandle)
 	BtEvaluator.removeTree(treeHandle.InstanceId)
 end
 
+
+function showErrorWindow(errorDecription)
+	errorLabel.caption = errorDecription
+	errorWindow:Show()
+end
 ---------------------------------------LISTENERS
+local function listenerRefreshTreeSelectionPanel(self)
+	names = getNamesInDirectory(BehavioursDirectory, ".json")
+	treeSelectionComboBox.items = names 
+	treeSelectionComboBox:RequestUpdate()
+	treeNameEditBox.text = "Instance"..instanceIdCount
+end
+
 
 function listenerBarItemClick(self, x, y, button)
 	if button == 1 then
@@ -357,36 +319,105 @@ function listenerCreateTreeMessageButton(self)
 end
 
 
-
-
-
-
-local function listenerRefreshTreeSelectionPanel(self)
-	names = getNamesInDirectory(BehavioursDirectory, ".json")
-	treeSelectionComboBox.items = names 
-	treeSelectionComboBox:RequestUpdate()
-	treeNameEditBox.text = "Instance"..instanceIdCount
+function listenerErrorOk(self)
+	errorWindow:Hide()
 end
+
+
+
+
 
 local function listenerClickOnSelectedTreeDoneButton(self, x, y, button)
 	if button == 1 then
 		-- we react only on leftclicks
-		local selectedTreeType = treeSelectionComboBox.items[treeSelectionComboBox.selected]
-		--should not be needed anymore: name = name:sub(1,name:len()-5)
-		--reloadTree(name)
-		local newTreeHandle = TreeHandle:New{
-			Name = treeNameEditBox.text,
-			TreeType = selectedTreeType,
-		}
-		-- show the tree
+		
+		-- check if instance name is not being used:
+		
+		if(treeTabPanel.tabIndexMapping[treeNameEditBox.text] == nil ) then
+			-- instance with such name is not used
+			local selectedTreeType = treeSelectionComboBox.items[treeSelectionComboBox.selected]
+			--should not be needed anymore: name = name:sub(1,name:len()-5)
+			--reloadTree(name)
+			local newTreeHandle = TreeHandle:New{
+				Name = treeNameEditBox.text,
+				TreeType = selectedTreeType,
+			}
+			-- show the tree
 	
-		addTreeToTreeTabPanel(newTreeHandle)
+			addTreeToTreeTabPanel(newTreeHandle)
 	
-		listenerBarItemClick({TreeHandle = newTreeHandle},0,0,1) 
+			listenerBarItemClick({TreeHandle = newTreeHandle},0,0,1)
+		else
+			-- if such instance name exits show error window
+			showErrorWindow("Duplicate instance name.")
+		end
 	end
 end
 
 ---------------------------------------LISTENERS
+function moveTabItemToEndWithListeners(tabs,tabName)
+	-- Trouble is that we add listeners on barItems, now I have to move them with me. 
+	-- do we have such tab
+	----[[
+	if tabs.tabIndexMapping[tabName] == nil then
+		-- Or should I report it:
+		Logger.log("Error", "Trying to move tab and it is not there.")
+		return
+	end
+	--]]
+	local tabBarChildIndex = 1
+	-- get tabBar
+	local tabBar = tabs.children[tabBarChildIndex]
+	-- find corresponding tabBarItem: 
+	local onClickListeners
+	local barItems = tabBar.children
+	for index,item in ipairs(barItems) do
+		if(item.caption == tabName) then
+			-- get listeners
+			onClickListeners = item.OnMouseDown
+		end
+	end
+	
+
+	tabBar:Remove(tabName)
+	local newTabBarItem = Chili.TabBarItem:New{caption = tabName, defaultWidth = tabBar.minItemWidth, defaultHeight = tabBar.minItemHeight}
+	newTabBarItem.OnMouseDown = onClickListeners
+	tabBar:AddChild(
+        newTabBarItem
+    )
+end
+
+function moveToEndAddTab(tabs)
+	-- do we have such tab
+	----[[
+	if tabs.tabIndexMapping["+"] == nil then
+		-- Or should I report it:
+		Logger.log("Error", "Trying to move + tab and it is not there.")
+		return
+	end
+	--]]
+	
+	listenerRefreshTreeSelectionPanel()
+	
+	local tabBarChildIndex = 1
+	-- get tabBar
+	local tabBar = tabs.children[tabBarChildIndex]
+	if (#(tabBar.children) >= 2) then
+		-- if tabBar.children < 2 then Remove wont do anything.. and we hope that "+" is the only and last tab
+		tabBar:Remove("+")
+		local newTabBarItem = Chili.TabBarItem:New{
+			caption = "+", 
+			defaultWidth = tabBar.minItemWidth, 
+			defaultHeight = tabBar.minItemHeight
+		}
+		tabBar:AddChild(
+			newTabBarItem
+		)
+		finalizeAddTreeBarItem(tabs)
+	end
+end
+
+
   
 function finalizeAddTreeBarItem(tabs)
 	local item = getBarItemByName(tabs, "+")
@@ -511,6 +542,42 @@ function setUpTreeControlWindow()
 	
 end
 
+function setUpErroWindow()
+	errorWindow = 	Chili.Window:New{
+		parent = treeSelectionPanel,
+		x = 50,
+		y = 20,
+		width  = 200 ,
+		height = 80,--'10%',	
+		padding = {10,10,10,10},
+		draggable=false,
+		resizable=true,
+		skinName='DarkGlass',
+		backgroundColor = {1,1,1,1},
+	}
+
+	errorLabel = Chili.Label:New{
+		parent = errorWindow,
+		x = '3%',
+		y = 10,
+		width  = '80%',
+		height = 80,
+		caption = "BtController Error",
+		skinName='DarkGlass',
+	}
+	errorOkButton = Chili.Button:New{
+		parent = errorWindow,
+		x = 20,
+		y = 40,
+		width  = 60,
+		height = 20,
+		caption = "Ok",
+		skinName='DarkGlass',
+		OnClick = {listenerErrorOk},
+    }	
+	errorWindow:Hide()
+end
+
 function widget:Initialize()	
 	-- Get ready to use Chili
 	Chili = WG.ChiliClone
@@ -523,13 +590,8 @@ function widget:Initialize()
 	-- Create the window
    
 	setUpTreeControlWindow()
-	-- treeControlWindow:Hide()
   
-	--setUpTreeSelectionWindow()
-	--treeSelectionWindow:Show()
-  
- 
-  
+	setUpErroWindow()
 	Spring.Echo("BtController reports for duty!")
  
  	Dependency.fill(Dependency.BtController)
