@@ -55,8 +55,8 @@ end
 function BtEvaluator.requestNodeDefinitions()
 	return BtEvaluator.sendMessage("REQUEST_NODE_DEFINITIONS")
 end
-function BtEvaluator.assignUnits(units, instanceId, label)
-	return BtEvaluator.sendMessage("ASSIGN_UNITS", { units = units, instanceId = instanceId, label = label })
+function BtEvaluator.assignUnits(units, instanceId, role)
+	return BtEvaluator.sendMessage("ASSIGN_UNITS", { units = units, instanceId = instanceId, role = role })
 end
 function BtEvaluator.createTree(instanceId, treeDefinition)
 	return BtEvaluator.sendMessage("CREATE_TREE", { instanceId = instanceId, root = treeDefinition.root })

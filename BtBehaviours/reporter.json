@@ -1,0 +1,19 @@
+{
+	"additionalNodes": [],
+	"properties": {
+		"q2ASlSb0hKnbV8L1B5uEBY8MoxH1jeOf": {
+			"hasConnectionIn": true,
+			"hasConnectionOut": false,
+			"height": 60,
+			"width": 110,
+			"x": 226.5,
+			"y": 71
+		}
+	},
+	"root": {
+		"children": [],
+		"id": "q2ASlSb0hKnbV8L1B5uEBY8MoxH1jeOf",
+		"nodeType": "groupReporter",
+		"parameters": []
+	}
+}

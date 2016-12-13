@@ -246,6 +246,9 @@ function TreeHandle:New(obj)
 	}
 	table.insert(obj.ChiliComponents, labelAssignmentButton)
 	
+	-- create the tree immediately when the tab is created
+	BtEvaluator.createTree(obj.InstanceId, obj.Tree)
+	
 	return obj
 end
 
@@ -314,7 +317,7 @@ end
 function listenerCreateTreeMessageButton(self)	
 	-- self = button
 	Logger.log("communication", "TreeHandle send a messsage. " )
-	BtEvaluator.createTree(self.TreeHandle.InstanceId, self.TreeHandle.Tree)
+	BtEvaluator.assignUnits(nil, self.TreeHandle.InstanceId, self.Role)
 	BtEvaluator.reportTree(self.TreeHandle.InstanceId)
 end
 
