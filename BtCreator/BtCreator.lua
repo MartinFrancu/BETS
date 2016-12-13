@@ -111,7 +111,7 @@ function listenerEndCopyingNode(self, x , y)
 				draggable = true,
 				hasConnectionIn = copyTreeNode.hasConnectionIn,
 				hasConnectionOut = copyTreeNode.hasConnectionOut,
-				parameters = copyTreeNode.parameters,
+				parameters = copyTable(copyTreeNode.parameters),
 				-- OnMouseUp = { listenerEndSelectingNodes },
 			})
 		copyTreeNode = nil

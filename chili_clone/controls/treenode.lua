@@ -135,40 +135,39 @@ function TreeNode:New(obj)
 	obj.nodeWindow.minWidth = math.max(obj.nodeWindow.minWidth, obj.nameEditBox.font:GetTextWidth(obj.nameEditBox.text) + 33)
 	obj.nodeWindow.minHeight = obj.nodeWindow.height
 	
-	local parameters = copyTable(obj.parameters)
-	--Spring.Echo("parameters: "..dump(parameters))
-	-- obj.parameters = {}
-	for i=1,#parameters do
-		if(parameters[i]["defaultValue"]) then
-			parameters[i]["value"] = parameters[i]["defaultValue"]
-			parameters[i]["defaultValue"] = nil
+	for i=1,#obj.parameters do
+		if(obj.parameters[i]["defaultValue"]) then
+			obj.parameters[i]["value"] = obj.parameters[i]["defaultValue"]
 			obj.parameters[i]["defaultValue"] = nil
 		end
+		if(obj.parameters[i]["name"] == nil or obj.parameters[i]["value"] == nil or obj.parameters[i]["componentType"] == nil or obj.parameters[i]["variableType"] == nil) then
+			error("TreeNode expects following fields in parameters, name="..obj.parameters[i].name..", value"..obj.parameters[i].value..", componentType"..obj.parameters[i].componentType..", variableType: ="..obj.parameters[i].variableType.."\n"..debug.traceback())
+		end
 		
-		if (parameters[i]["componentType"] and parameters[i]["componentType"]:lower() == "editbox") then
+		if (obj.parameters[i]["componentType"] and obj.parameters[i]["componentType"]:lower() == "editbox") then
 			obj.parameterObjects[i] = {}
 			obj.parameterObjects[i]["label"] = Label:New{
 				parent = obj.nodeWindow,
 				x = 18,
 				y = 10 + i*20,
-				width  = obj.nodeWindow.font:GetTextWidth(parameters[i]["name"]),
+				width  = obj.nodeWindow.font:GetTextWidth(obj.parameters[i]["name"]),
 				height = '10%',
-				caption = parameters[i]["name"],
+				caption = obj.parameters[i]["name"],
 				--skinName='DarkGlass',
 			}
 			obj.parameterObjects[i]["editBox"] = EditBox:New{
 				parent = obj.nodeWindow,
-				text = tostring(parameters[i]["value"]),
-				validatedText = tostring(parameters[i]["value"]),
-				width = math.max(obj.nodeWindow.font:GetTextWidth(parameters[i]["value"])+10, 35),
-				x = obj.nodeWindow.font:GetTextWidth(parameters[i]["name"]) + 25,
+				text = tostring(obj.parameters[i]["value"]),
+				validatedText = tostring(obj.parameters[i]["value"]),
+				width = math.max(obj.nodeWindow.font:GetTextWidth(obj.parameters[i]["value"])+10, 35),
+				x = obj.nodeWindow.font:GetTextWidth(obj.parameters[i]["name"]) + 25,
 				y = 10 + i*20,
 				align = 'left',
 				--skinName = 'DarkGlass',
 				borderThickness = 0,
 				backgroundColor = {0,0,0,0},
 			}
-			obj.nodeWindow.minWidth = math.max(obj.nodeWindow.minWidth, obj.nodeWindow.font:GetTextWidth(parameters[i]["value"])+ 48 + obj.nodeWindow.font:GetTextWidth(parameters[i]["name"]))
+			obj.nodeWindow.minWidth = math.max(obj.nodeWindow.minWidth, obj.nodeWindow.font:GetTextWidth(obj.parameters[i]["value"])+ 48 + obj.nodeWindow.font:GetTextWidth(obj.parameters[i]["name"]))
 		end
 	end
 	
