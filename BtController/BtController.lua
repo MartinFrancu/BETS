@@ -48,6 +48,8 @@ local errorLabel
 local errorOkButton
 --------------------------------------------------------------------------------
 
+local unitsToTreesMap
+
 ------------------------------------------------------------------------------------- 
 function string.starts(String,Start)
    return string.sub(String,1,string.len(Start))==Start
@@ -176,6 +178,7 @@ TreeHandle = {
 			InstanceId = "default", 
 			Tree = "no_tree", 
 			ChiliComponents = {},
+			Roles = {},
 			} 
 
 function TreeHandle:New(obj)
@@ -200,10 +203,9 @@ function TreeHandle:New(obj)
 	}
 	-- Order of these childs is sort of IMPORTANT as other entities needs to access children
 	table.insert(obj.ChiliComponents, treeTypeLabel)
-	
 
 	--[[
-	showTreeButton = Chili.Button:New{
+	showAssignedUnitsButton = Chili.Button:New{
 		x = 150,
 		y = 10,
 		height = 30,
@@ -215,10 +217,10 @@ function TreeHandle:New(obj)
 		--TreeHandle = obj,
 	}
 
-	showTreeButton.TreeHandle = obj 
-	
-	table.insert(obj.ChiliComponents, showTreeButton)
-	--]]
+	showAssignedUnitsButton.TreeHandle = obj 
+
+	table.insert(obj.ChiliComponents, showAssignedUnitsButton)
+	--]]	
 		
 	labelNameTextBox = Chili.TextBox:New{
 		x = 5,
@@ -240,18 +242,26 @@ function TreeHandle:New(obj)
 		width = '25%',
 		minWidth = 150,
 		caption = "Default role",
-		OnClick = {listenerCreateTreeMessageButton}, 
+		OnClick = {listenerAssignUnitsButton}, 
 		skinName = "DarkGlass",
 		focusColor = {0.5,0.5,0.5,0.5},
 		TreeHandle = obj,
 	}
 	table.insert(obj.ChiliComponents, labelAssignmentButton)
 	
-	-- create the tree immediately when the tab is created
-	BtEvaluator.createTree(obj.InstanceId, obj.Tree)
-	
 	return obj
 end
+
+--[[function TreeHandle.listenerCreateTreeMessageButton(self)	
+	-- self = button
+	Logger.log("communication", "TreeHandle send a messsage. " )
+	--
+	
+	--
+	BtEvaluator.assignUnits(nil, self.TreeHandle.InstanceId, self.Role)
+	BtEvaluator.reportTree(self.TreeHandle.InstanceId)
+end
+--]]
 
 -------------------------------------------------------------------------------------
 --	Contains	.name = "name of tree"
@@ -290,6 +300,27 @@ function showErrorWindow(errorDecription)
 	errorLabel.caption = errorDecription
 	errorWindow:Show()
 end
+
+function unitsInTree(instanceId)
+	local unitsInThisTree = {}
+	for unitId, treeId in pairs(unitsToTreesMap) do
+		if(treeId == instanceId) then
+			table.insert(unitsInThisTree, unitId)
+		end
+	end
+	return unitsInThisTree
+end
+
+function removeUnitsFromTree(instanceId)
+	for unitId, treeId in pairs(unitsToTreesMap) do
+		if(treeId == instanceId) then
+			unitsToTreesMap[unitId] = nil
+		end
+	end
+end
+
+
+
 ---------------------------------------LISTENERS
 local function listenerRefreshTreeSelectionPanel(self)
 	names = getNamesInDirectory(BehavioursDirectory, ".json")
@@ -299,13 +330,18 @@ local function listenerRefreshTreeSelectionPanel(self)
 end
 
 
+
 function listenerBarItemClick(self, x, y, button)
 	if button == 1 then
-		--left click
+		-- select assigned units, if any
+		local unitsToSelect = unitsInTree(self.TreeHandle.InstanceId)
+		Spring.SelectUnitArray(unitsToSelect)
+
 		if(not BtCreator)then return end
 	
 		BtEvaluator.reportTree(self.TreeHandle.InstanceId)
-		BtCreator.show(self.TreeHandle.TreeType)
+		
+		BtCreator.show(self.TreeHandle.TreeType)	
 	end
 	if button == 2 then
 		--middle click
@@ -315,9 +351,14 @@ end
 
 
 
-function listenerCreateTreeMessageButton(self)	
+function listenerAssignUnitsButton(self)	
 	-- self = button
-	Logger.log("communication", "TreeHandle send a messsage. " )
+	-- make note of assigment in our notebook (this should be possible moved somewhere else:)
+	local selectedUnits = Spring.GetSelectedUnits()
+	for i,Id in pairs(selectedUnits) do
+		unitsToTreesMap[Id] = self.TreeHandle.InstanceId
+	end
+	
 	BtEvaluator.assignUnits(nil, self.TreeHandle.InstanceId, self.Role)
 	BtEvaluator.reportTree(self.TreeHandle.InstanceId)
 end
@@ -349,6 +390,9 @@ local function listenerClickOnSelectedTreeDoneButton(self, x, y, button)
 			-- show the tree
 	
 			addTreeToTreeTabPanel(newTreeHandle)
+			
+			-- create the tree immediately when the tab is created
+			BtEvaluator.createTree(newTreeHandle.InstanceId, newTreeHandle.Tree)
 	
 			listenerBarItemClick({TreeHandle = newTreeHandle},0,0,1)
 		else
@@ -592,6 +636,8 @@ function widget:Initialize()
 	Dependency.defer(function() BtCreator = WG.BtCreator end, Dependency.BtCreator)
   
 	-- Create the window
+	
+	unitsToTreesMap = {}
    
 	setUpTreeControlWindow()
   
