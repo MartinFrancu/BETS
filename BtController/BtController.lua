@@ -202,6 +202,7 @@ function TreeHandle:New(obj)
 	table.insert(obj.ChiliComponents, treeTypeLabel)
 	
 
+	--[[
 	showTreeButton = Chili.Button:New{
 		x = 150,
 		y = 10,
@@ -217,7 +218,7 @@ function TreeHandle:New(obj)
 	showTreeButton.TreeHandle = obj 
 	
 	table.insert(obj.ChiliComponents, showTreeButton)
-	
+	--]]
 		
 	labelNameTextBox = Chili.TextBox:New{
 		x = 5,
