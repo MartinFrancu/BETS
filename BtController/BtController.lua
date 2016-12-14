@@ -204,13 +204,13 @@ function TreeHandle:New(obj)
 	-- Order of these childs is sort of IMPORTANT as other entities needs to access children
 	table.insert(obj.ChiliComponents, treeTypeLabel)
 
-	--[[
+	----[[
 	showAssignedUnitsButton = Chili.Button:New{
 		x = 150,
 		y = 10,
 		height = 30,
 		width = 100,
-		caption = "Show units",
+		caption = "Show tree",
 		OnClick = {listenerBtCreatorShowTreeButton},
 		skinName = "DarkGlass",
 		focusColor = {0.5,0.5,0.5,0.5},
