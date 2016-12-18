@@ -316,8 +316,8 @@ end
 
 function unitsInTree(instanceId)
 	local unitsInThisTree = {}
-	for unitId, treeId in pairs(unitsToTreesMap) do
-		if(treeId == instanceId) then
+	for unitId, treeIdAndRole in pairs(unitsToTreesMap) do
+		if(treeIdAndRole.TreeId == instanceId) then
 			table.insert(unitsInThisTree, unitId)
 		end
 	end
@@ -325,8 +325,8 @@ function unitsInTree(instanceId)
 end
 
 function removeUnitsFromTree(instanceId)
-	for unitId, treeId in pairs(unitsToTreesMap) do
-		if(treeId == instanceId) then
+	for unitId, treeIdAndRole in pairs(unitsToTreesMap) do
+		if(treeIdAndRole.TreeId == instanceId) then
 			unitsToTreesMap[unitId] = nil
 		end
 	end
@@ -366,10 +366,17 @@ end
 
 function listenerAssignUnitsButton(self)	
 	-- self = button
+	-- deselect units in current role
+	for unitId,treeAndRole in pairs(unitsToTreesMap) do
+		if(treeAndRole.TreeId == self.TreeHandle.TreeId) and (treeAndRole.Role == self.Role) then
+			unitsToTreesMap[unitId] = nil
+		end
+	end
+	
 	-- make note of assigment in our notebook (this should be possible moved somewhere else:)
 	local selectedUnits = Spring.GetSelectedUnits()
-	for i,Id in pairs(selectedUnits) do
-		unitsToTreesMap[Id] = self.TreeHandle.InstanceId
+	for _,Id in pairs(selectedUnits) do
+		unitsToTreesMap[Id] = {TreeId = self.TreeHandle.InstanceId, Role = self.Role}
 	end
 	
 	BtEvaluator.assignUnits(nil, self.TreeHandle.InstanceId, self.Role)
