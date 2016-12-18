@@ -546,7 +546,6 @@ local function loadBehaviourNode(bt, btNode)
 	local params = {}
 	for k,v in pairs(nodeDefinitionInfo[btNode.nodeType]) do
 		if(type(v) == "table") then
-			Spring.Echo("table["..k.."]:"..dump(v[1],2))
 			params[k] = copyTable(v)
 		else
 			params[k] = v

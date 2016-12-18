@@ -164,6 +164,7 @@ function TreeNode:New(obj)
 				--skinName = 'DarkGlass',
 				borderThickness = 0,
 				backgroundColor = {0,0,0,0},
+				variableType = param["variableType"],
 			}
 			obj.nodeWindow.minWidth = math.max(obj.nodeWindow.minWidth, obj.nodeWindow.font:GetTextWidth(param["value"])+ 48 + obj.nodeWindow.font:GetTextWidth(param["name"]))
 		end
@@ -586,16 +587,25 @@ WG.selectedNodes = {}
 local ALPHA_OF_SELECTED_NODES = 1
 local ALPHA_OF_NOT_SELECTED_NODES = 0.6
 
-local function validateEditBox(editbox)
-	if(editbox.text == editbox.validatedText) then
+local function validateEditBox(editBox)
+	if(editBox.text == editBox.validatedText) then
 		return
 	end
-	local numberOld = tonumber(editbox.text)
-	local numberNew = tonumber(editbox.validatedText)
-	if((numberOld and numberNew) or ((not numberOld) and (not numberNew))) then
-		editbox.validatedText = editbox.text
-	else
-		editbox.text = editbox.validatedText
+	local variableType = editBox.variableType
+	-- Test for context variable
+	if(#editBox.text > 0 and editBox.text[1] == '$') then
+		editBox.validatedText = editBox.text
+		return
+	end
+	if(variableType == "number") then
+		local numberNew = tonumber(editBox.validatedText)
+		if(numberNew) then
+			editBox.validatedText = editBox.text
+		else
+			editBox.text = editBox.validatedText
+		end
+	elseif(variableType == "string") then
+		editBox.validatedText = editBox.text
 	end
 end
 
