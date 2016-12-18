@@ -246,6 +246,17 @@ function TreeHandle:New(obj)
 	visit(obj.Tree.root)
 	
 	for roleIndex = 0, roleCount - 1 do
+		local unitsCountLabel = Chili.Label:New{
+			x = 150+200 ,
+			y = 43 + 22 * roleIndex,
+			height = roleCount == 1 and 30 or 20,
+			width = '25%',
+			minWidth = 150,
+			caption = 0, 
+			skinName = "DarkGlass",
+			focusColor = {0.5,0.5,0.5,0.5},
+		}
+		table.insert(obj.ChiliComponents, unitsCountLabel)
 		local labelAssignmentButton = Chili.Button:New{
 			x = 150 ,
 			y = 40 + 22 * roleIndex,
@@ -258,6 +269,7 @@ function TreeHandle:New(obj)
 			focusColor = {0.5,0.5,0.5,0.5},
 			TreeHandle = obj,
 			Role = roleIndex,
+			unitsCountLabel = unitsCountLabel
 		}
 		table.insert(obj.ChiliComponents, labelAssignmentButton)
 	end
@@ -378,6 +390,9 @@ function listenerAssignUnitsButton(self)
 	for _,Id in pairs(selectedUnits) do
 		unitsToTreesMap[Id] = {TreeId = self.TreeHandle.InstanceId, Role = self.Role}
 	end
+	
+	-- UPDATE THE UNIT COUNT LABEL:
+	self.unitsCountLabel:SetCaption(#selectedUnits)
 	
 	BtEvaluator.assignUnits(nil, self.TreeHandle.InstanceId, self.Role)
 	BtEvaluator.reportTree(self.TreeHandle.InstanceId)
