@@ -234,20 +234,33 @@ function TreeHandle:New(obj)
 	}
 	table.insert(obj.ChiliComponents, labelNameTextBox)
 	
+	local roleCount = 1
+	local function visit(node)
+		if(node.nodeType == "switch" and roleCount < #node.children)then
+			roleCount = #node.children
+		end
+	  for _, child in ipairs(node.children) do
+			visit(child)
+		end
+	end
+	visit(obj.Tree.root)
 	
-	labelAssignmentButton = Chili.Button:New{
-		x = 150 ,
-		y = 40,
-		height = 30,
-		width = '25%',
-		minWidth = 150,
-		caption = "Default role",
-		OnClick = {listenerAssignUnitsButton}, 
-		skinName = "DarkGlass",
-		focusColor = {0.5,0.5,0.5,0.5},
-		TreeHandle = obj,
-	}
-	table.insert(obj.ChiliComponents, labelAssignmentButton)
+	for roleIndex = 0, roleCount - 1 do
+		local labelAssignmentButton = Chili.Button:New{
+			x = 150 ,
+			y = 40 + 22 * roleIndex,
+			height = roleCount == 1 and 30 or 20,
+			width = '25%',
+			minWidth = 150,
+			caption = roleCount == 1 and "Default role" or "Role " .. tostring(roleIndex),
+			OnClick = {listenerAssignUnitsButton}, 
+			skinName = "DarkGlass",
+			focusColor = {0.5,0.5,0.5,0.5},
+			TreeHandle = obj,
+			Role = roleIndex,
+		}
+		table.insert(obj.ChiliComponents, labelAssignmentButton)
+	end
 	
 	return obj
 end
