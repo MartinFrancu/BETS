@@ -1,0 +1,63 @@
+{
+	"additionalNodes": [],
+	"properties": {
+		"J6FFSgBE0Ya4WbxC8wvBfz43HoI3UMbD": {
+			"hasConnectionIn": true,
+			"hasConnectionOut": true,
+			"height": 70,
+			"width": 156.642868,
+			"x": 157.5,
+			"y": 151
+		},
+		"ZRHZLFkFWUiP2Y8hG1oB7qGAyQf9ZQx7": {
+			"hasConnectionIn": true,
+			"hasConnectionOut": false,
+			"height": 60,
+			"width": 110,
+			"x": 398.5,
+			"y": 125
+		},
+		"mMep5u50e0AKggpwaN5Rx0dXmwEFoJWI": {
+			"hasConnectionIn": true,
+			"hasConnectionOut": false,
+			"height": 60,
+			"width": 110,
+			"x": 389.5,
+			"y": 292
+		},
+		"sSgzuTISRRoEGCK2j2KOWotADrpbIhwp": {
+			"hasConnectionIn": true,
+			"hasConnectionOut": false,
+			"height": 60,
+			"width": 110,
+			"x": 399.5,
+			"y": 214
+		}
+	},
+	"root": {
+		"children": [ {
+			"children": [],
+			"id": "ZRHZLFkFWUiP2Y8hG1oB7qGAyQf9ZQx7",
+			"nodeType": "groupReporter",
+			"parameters": []
+		}, {
+			"children": [],
+			"id": "sSgzuTISRRoEGCK2j2KOWotADrpbIhwp",
+			"nodeType": "groupReporter",
+			"parameters": []
+		}, {
+			"children": [],
+			"id": "mMep5u50e0AKggpwaN5Rx0dXmwEFoJWI",
+			"nodeType": "groupReporter",
+			"parameters": []
+		} ],
+		"id": "J6FFSgBE0Ya4WbxC8wvBfz43HoI3UMbD",
+		"nodeType": "switch",
+		"parameters": [ {
+			"componentType": "editBox",
+			"name": "mode",
+			"value": "all-success",
+			"variableType": "string"
+		} ]
+	}
+}

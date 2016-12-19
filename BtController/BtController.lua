@@ -204,7 +204,7 @@ function TreeHandle:New(obj)
 	-- Order of these childs is sort of IMPORTANT as other entities needs to access children
 	table.insert(obj.ChiliComponents, treeTypeLabel)
 
-	----[[
+	--[[
 	showAssignedUnitsButton = Chili.Button:New{
 		x = 150,
 		y = 10,
@@ -234,20 +234,45 @@ function TreeHandle:New(obj)
 	}
 	table.insert(obj.ChiliComponents, labelNameTextBox)
 	
+	local roleCount = 1
+	local function visit(node)
+		if(node.nodeType == "switch" and roleCount < #node.children)then
+			roleCount = #node.children
+		end
+	  for _, child in ipairs(node.children) do
+			visit(child)
+		end
+	end
+	visit(obj.Tree.root)
 	
-	labelAssignmentButton = Chili.Button:New{
-		x = 150 ,
-		y = 40,
-		height = 30,
-		width = '25%',
-		minWidth = 150,
-		caption = "Default role",
-		OnClick = {listenerAssignUnitsButton}, 
-		skinName = "DarkGlass",
-		focusColor = {0.5,0.5,0.5,0.5},
-		TreeHandle = obj,
-	}
-	table.insert(obj.ChiliComponents, labelAssignmentButton)
+	for roleIndex = 0, roleCount - 1 do
+		local unitsCountLabel = Chili.Label:New{
+			x = 150+200 ,
+			y = 43 + 22 * roleIndex,
+			height = roleCount == 1 and 30 or 20,
+			width = '25%',
+			minWidth = 150,
+			caption = 0, 
+			skinName = "DarkGlass",
+			focusColor = {0.5,0.5,0.5,0.5},
+		}
+		table.insert(obj.ChiliComponents, unitsCountLabel)
+		local labelAssignmentButton = Chili.Button:New{
+			x = 150 ,
+			y = 40 + 22 * roleIndex,
+			height = roleCount == 1 and 30 or 20,
+			width = '25%',
+			minWidth = 150,
+			caption = roleCount == 1 and "Default role" or "Role " .. tostring(roleIndex),
+			OnClick = {listenerAssignUnitsButton}, 
+			skinName = "DarkGlass",
+			focusColor = {0.5,0.5,0.5,0.5},
+			TreeHandle = obj,
+			Role = roleIndex,
+			unitsCountLabel = unitsCountLabel
+		}
+		table.insert(obj.ChiliComponents, labelAssignmentButton)
+	end
 	
 	return obj
 end
@@ -303,8 +328,8 @@ end
 
 function unitsInTree(instanceId)
 	local unitsInThisTree = {}
-	for unitId, treeId in pairs(unitsToTreesMap) do
-		if(treeId == instanceId) then
+	for unitId, treeIdAndRole in pairs(unitsToTreesMap) do
+		if(treeIdAndRole.TreeId == instanceId) then
 			table.insert(unitsInThisTree, unitId)
 		end
 	end
@@ -312,8 +337,8 @@ function unitsInTree(instanceId)
 end
 
 function removeUnitsFromTree(instanceId)
-	for unitId, treeId in pairs(unitsToTreesMap) do
-		if(treeId == instanceId) then
+	for unitId, treeIdAndRole in pairs(unitsToTreesMap) do
+		if(treeIdAndRole.TreeId == instanceId) then
 			unitsToTreesMap[unitId] = nil
 		end
 	end
@@ -353,11 +378,21 @@ end
 
 function listenerAssignUnitsButton(self)	
 	-- self = button
+	-- deselect units in current role
+	for unitId,treeAndRole in pairs(unitsToTreesMap) do
+		if(treeAndRole.TreeId == self.TreeHandle.TreeId) and (treeAndRole.Role == self.Role) then
+			unitsToTreesMap[unitId] = nil
+		end
+	end
+	
 	-- make note of assigment in our notebook (this should be possible moved somewhere else:)
 	local selectedUnits = Spring.GetSelectedUnits()
-	for i,Id in pairs(selectedUnits) do
-		unitsToTreesMap[Id] = self.TreeHandle.InstanceId
+	for _,Id in pairs(selectedUnits) do
+		unitsToTreesMap[Id] = {TreeId = self.TreeHandle.InstanceId, Role = self.Role}
 	end
+	
+	-- UPDATE THE UNIT COUNT LABEL:
+	self.unitsCountLabel:SetCaption(#selectedUnits)
 	
 	BtEvaluator.assignUnits(nil, self.TreeHandle.InstanceId, self.Role)
 	BtEvaluator.reportTree(self.TreeHandle.InstanceId)

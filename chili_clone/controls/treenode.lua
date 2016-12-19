@@ -136,39 +136,41 @@ function TreeNode:New(obj)
 	obj.nodeWindow.minHeight = obj.nodeWindow.height
 	
 	for i=1,#obj.parameters do
-		if(obj.parameters[i]["defaultValue"]) then
-			obj.parameters[i]["value"] = obj.parameters[i]["defaultValue"]
-			obj.parameters[i]["defaultValue"] = nil
-		end
-		if(obj.parameters[i]["name"] == nil or obj.parameters[i]["value"] == nil or obj.parameters[i]["componentType"] == nil or obj.parameters[i]["variableType"] == nil) then
-			error("TreeNode expects following fields in parameters, name="..obj.parameters[i].name..", value"..obj.parameters[i].value..", componentType"..obj.parameters[i].componentType..", variableType: ="..obj.parameters[i].variableType.."\n"..debug.traceback())
+		local param = obj.parameters[i]
+		-- Every parameter expects four fields on creation: name, value, componentType, variableType. 
+		if(param["name"] == nil or param["value"] == nil or param["componentType"] == nil or param["variableType"] == nil) then
+			error("TreeNode expects following fields in parameters, got "..dump(param).."\n"..debug.traceback())
 		end
 		
-		if (obj.parameters[i]["componentType"] and obj.parameters[i]["componentType"]:lower() == "editbox") then
+		if (param["componentType"] and param["componentType"]:lower() == "editbox") then
 			obj.parameterObjects[i] = {}
 			obj.parameterObjects[i]["label"] = Label:New{
 				parent = obj.nodeWindow,
 				x = 18,
 				y = 10 + i*20,
-				width  = obj.nodeWindow.font:GetTextWidth(obj.parameters[i]["name"]),
+				width  = obj.nodeWindow.font:GetTextWidth(param["name"]),
 				height = '10%',
-				caption = obj.parameters[i]["name"],
+				caption = param["name"],
 				--skinName='DarkGlass',
 			}
 			obj.parameterObjects[i]["editBox"] = EditBox:New{
 				parent = obj.nodeWindow,
-				text = tostring(obj.parameters[i]["value"]),
-				validatedText = tostring(obj.parameters[i]["value"]),
-				width = math.max(obj.nodeWindow.font:GetTextWidth(obj.parameters[i]["value"])+10, 35),
-				x = obj.nodeWindow.font:GetTextWidth(obj.parameters[i]["name"]) + 25,
+				text = tostring(param["value"]),
+				validatedText = tostring(param["value"]),
+				width = math.max(obj.nodeWindow.font:GetTextWidth(param["value"])+10, 35),
+				x = obj.nodeWindow.font:GetTextWidth(param["name"]) + 25,
 				y = 10 + i*20,
 				align = 'left',
 				--skinName = 'DarkGlass',
 				borderThickness = 0,
 				backgroundColor = {0,0,0,0},
+				variableType = param["variableType"],
 			}
-			obj.nodeWindow.minWidth = math.max(obj.nodeWindow.minWidth, obj.nodeWindow.font:GetTextWidth(obj.parameters[i]["value"])+ 48 + obj.nodeWindow.font:GetTextWidth(obj.parameters[i]["name"]))
+			obj.nodeWindow.minWidth = math.max(obj.nodeWindow.minWidth, obj.nodeWindow.font:GetTextWidth(param["value"])+ 48 + obj.nodeWindow.font:GetTextWidth(param["name"]))
 		end
+		-- Do not serialize unnecessary(dependent on nodeType) parameter fields, those are stored in nodeDefinitionInfo
+		param["variableType"] = nil
+		param["componentType"] = nil
 	end
 	
   return obj
@@ -585,16 +587,25 @@ WG.selectedNodes = {}
 local ALPHA_OF_SELECTED_NODES = 1
 local ALPHA_OF_NOT_SELECTED_NODES = 0.6
 
-local function validateEditBox(editbox)
-	if(editbox.text == editbox.validatedText) then
+local function validateEditBox(editBox)
+	if(editBox.text == editBox.validatedText) then
 		return
 	end
-	local numberOld = tonumber(editbox.text)
-	local numberNew = tonumber(editbox.validatedText)
-	if((numberOld and numberNew) or ((not numberOld) and (not numberNew))) then
-		editbox.validatedText = editbox.text
-	else
-		editbox.text = editbox.validatedText
+	local variableType = editBox.variableType
+	-- Test for context variable
+	if(#editBox.text > 0 and editBox.text[1] == '$') then
+		editBox.validatedText = editBox.text
+		return
+	end
+	if(variableType == "number") then
+		local numberNew = tonumber(editBox.validatedText)
+		if(numberNew) then
+			editBox.validatedText = editBox.text
+		else
+			editBox.text = editBox.validatedText
+		end
+	elseif(variableType == "string") then
+		editBox.validatedText = editBox.text
 	end
 end
 

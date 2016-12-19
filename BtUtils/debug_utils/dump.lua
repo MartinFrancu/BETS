@@ -13,9 +13,9 @@ function dump(o, maxDepth)
 		if (maxDepth == 0) then 
 			return "..." 
 		end
-		if (o.name ~= nil) then -- For outputing chili objects
-			return o.name
-		end
+		--if (o.name ~= nil) then -- For outputing chili objects
+			--return o.name
+		--end
 		local s = '{ '
 		for k,v in (o.pairs or pairs)(o) do
 			 s = s .. '['..dump(k, 0)..'] = ' .. dump(v, maxDepth-1) .. ','

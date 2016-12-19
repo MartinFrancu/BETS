@@ -41,6 +41,7 @@ local Dependency = Utils.Dependency
 local Debug = Utils.Debug;
 local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyTable, Debug.fileTable
 
+local nodeDefinitionInfo = {}
 
 -- BtEvaluator interface definitions
 local BtCreator = {} -- if we need events, change to Sentry:New()
@@ -99,21 +100,20 @@ end
 function listenerEndCopyingNode(self, x , y)
 	--y = y + startCopyingLocation.y
 	if(copyTreeNode and x - nodePoolPanel.width - startCopyingLocation.x > -20) then
-		-- Spring.Echo("listener end Copy Object. x:"..x..", y="..y)
-		addNodeToCanvas(Chili.TreeNode:New{
-				parent = windowBtCreator,
-				nodeType = copyTreeNode.nodeType,
-				x = x - nodePoolPanel.width - startCopyingLocation.x,
-				y = y + startCopyingLocation.y - 70,
-				width = copyTreeNode.width,
-				height = copyTreeNode.height,
-				connectable = true,
-				draggable = true,
-				hasConnectionIn = copyTreeNode.hasConnectionIn,
-				hasConnectionOut = copyTreeNode.hasConnectionOut,
-				parameters = copyTable(copyTreeNode.parameters),
-				-- OnMouseUp = { listenerEndSelectingNodes },
-			})
+		local params = {
+			parent = windowBtCreator,
+			nodeType = copyTreeNode.nodeType,
+			x = x - nodePoolPanel.width - startCopyingLocation.x,
+			y = y + startCopyingLocation.y - 70,
+			width = copyTreeNode.width,
+			height = copyTreeNode.height,
+			connectable = true,
+			draggable = true,
+			hasConnectionIn = false,
+			hasConnectionOut = nodeDefinitionInfo[copyTreeNode.nodeType].hasConnectionOut,
+			parameters = copyTable(nodeDefinitionInfo[copyTreeNode.nodeType].parameters)
+		}
+		addNodeToCanvas(Chili.TreeNode:New(params))
 		copyTreeNode = nil
 	end
 end
@@ -134,7 +134,6 @@ function listenerClickOnLoadTree()
 	else
 		error("BehaviourTree " .. treeName.text .. " instance not found. " .. debug.traceback())
 	end
-	
 end
 
 function listenerClickOnMinimize()
@@ -185,7 +184,7 @@ end
 local function generateNodePoolNodes(nodes)
 	Logger.log("communication", "NODES DECODED:  ", nodes)
 	local heightSum = 30 -- skip NodePoolLabel
-	for i=1,#nodes do		
+	for i=1,#nodes do
 		local nodeParams = {
 			name = nodes[i].name,
 			hasConnectionOut = (nodes[i].children == null) or (type(nodes[i].children) == "table" and #nodes[i].children ~= 0),
@@ -200,11 +199,22 @@ local function generateNodePoolNodes(nodes)
 			onMouseUp = { listenerEndCopyingNode },
 			parameters = nodes[i]["parameters"],
 		}
+		-- Make value field from defaultValue. 
+		for i=1,#nodeParams.parameters do
+			if(nodeParams.parameters[i]["defaultValue"]) then
+				nodeParams.parameters[i]["value"] = nodeParams.parameters[i]["defaultValue"]
+				nodeParams.parameters[i]["defaultValue"] = nil
+			end
+		end
+		nodeDefinitionInfo[nodeParams.nodeType] = {}
+		nodeDefinitionInfo[nodeParams.nodeType]["parameters"] = copyTable(nodeParams.parameters)
+		nodeDefinitionInfo[nodeParams.nodeType]["hasConnectionIn"]  = nodeParams.hasConnectionIn
+		nodeDefinitionInfo[nodeParams.nodeType]["hasConnectionOut"] = nodeParams.hasConnectionOut
 		if(nodes[i].defaultWidth) then
 			local minWidth = 110
 			if(#nodes[i]["parameters"] > 0) then
 				for k=1,#nodes[i]["parameters"] do
-					minWidth = math.max(minWidth, nodePoolPanel.font:GetTextWidth(nodes[i]["parameters"][k]["defaultValue"]) + nodePoolPanel.font:GetTextWidth(nodes[i]["parameters"][k]["name"]) + 40)
+					minWidth = math.max(minWidth, nodePoolPanel.font:GetTextWidth(nodes[i]["parameters"][k]["value"]) + nodePoolPanel.font:GetTextWidth(nodes[i]["parameters"][k]["name"]) + 40)
 					--nodes[i]["parameters"][k]["defaultValue"]:len()
 				end
 				
@@ -218,6 +228,8 @@ local function generateNodePoolNodes(nodes)
 		table.insert(nodePoolList, Chili.TreeNode:New(nodeParams))
 	end
 	nodePoolPanel:RequestUpdate()
+	
+	Spring.Echo("nodeDefinitionInfo"..dump(nodeDefinitionInfo,4))
 end
 
 local scripts = {}
@@ -253,19 +265,46 @@ local function getCommand(name, id, treeId)
 	return cmd
 end
 
+local blackboardsForInstance = {}
 local commandsForUnits = {}-- map(unitId,command)
 
 local function executeScript(params)
 	command = getCommand(params.name, params.id, params.treeId)
+	local blackboard = blackboardsForInstance[params.treeId]
+	if(not blackboard)then
+		blackboard = {}
+		blackboardsForInstance[params.treeId] = blackboard
+	end
 
 	if (params.func == "RUN") then
 		for i = 1, #params.units do
 			commandsForUnits[params.units[i]] = command
 		end
 		
-		res = command:BaseRun(params.units, params.parameter)
-		Logger.log("luacommand", "Result: ", res)
-		return res
+		local parameters = {}
+		for k, v in pairs(params.parameter) do
+			local value = v
+			if(type(value) == "string" and value:match("^%$"))then
+				Logger.log("blackboard", "Extracting ", value, " from blackboard and inputting it into ", k, " parameter in node ", params.name)
+				value = blackboard[value]
+			end
+			parameters[k] = value
+		end
+		
+		local result, output = command:BaseRun(params.units, parameters)
+		if(output)then
+			for k, v in pairs(output) do
+				local originalValue = params.parameter[k]
+				if(type(originalValue) == "string" and originalValue:match("^%$"))then
+					Logger.log("blackboard", "Saving to ", value, " blackboard with value ", v, " in node ", params.name)
+					blackboard[originalValue] = v
+				else
+					Logger.log("blackboard", "A constant value '", originalValue, "' was given to an output or input-output parameter '", k, "' of a command '", params.name, "' in instance ", params.treeId, ".", params.id)
+				end
+			end
+		end
+		Logger.log("luacommand", "Result: ", result)
+		return result
 	elseif (params.func == "RESET") then
 		command:BaseReset()
 		return nil
@@ -457,8 +496,6 @@ local fieldsToSerialize = {
 	'y',
 	'width',
 	'height',
-	'hasConnectionIn',
-	'hasConnectionOut',
 	'parameters',
 }
 
@@ -473,8 +510,8 @@ function formBehaviourTree()
 			end
 			-- get the string value from editbox
 			for i=1,#node.parameters do
-				if(node.parameters[i]["componentType"]=="editBox") then
-					if(node.parameters[i]["variableType"] == "number") then
+				if(nodeDefinitionInfo[node.nodeType].parameters[i]["componentType"]=="editBox") then
+					if(nodeDefinitionInfo[node.nodeType].parameters[i]["variableType"] == "number" and not node.parameterObjects[i]["editBox"].text:match("^%$")) then
 						params.parameters[i].value = tonumber(node.parameterObjects[i]["editBox"].text)
 					else
 						params.parameters[i].value = node.parameterObjects[i]["editBox"].text
@@ -533,10 +570,22 @@ end
 
 local function loadBehaviourNode(bt, btNode)
 	if(not btNode)then return nil end
-
 	local params = {}
+	for k,v in pairs(nodeDefinitionInfo[btNode.nodeType]) do
+		if(type(v) == "table") then
+			params[k] = copyTable(v)
+		else
+			params[k] = v
+		end
+	end
 	for k, v in pairs(btNode) do
-		params[k] = v
+		if(k=="parameters") then
+			for i=1,#v do
+				params.parameters[i].value = v[i].value
+			end
+		else
+			params[k] = v
+		end
 	end
 	for k, v in pairs(bt.properties[btNode.id]) do
 		params[k] = v
