@@ -109,7 +109,7 @@ function listenerEndCopyingNode(self, x , y)
 			height = copyTreeNode.height,
 			connectable = true,
 			draggable = true,
-			hasConnectionIn = false,
+			hasConnectionIn = true,
 			hasConnectionOut = nodeDefinitionInfo[copyTreeNode.nodeType].hasConnectionOut,
 			parameters = copyTable(nodeDefinitionInfo[copyTreeNode.nodeType].parameters)
 		}
