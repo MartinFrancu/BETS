@@ -265,19 +265,46 @@ local function getCommand(name, id, treeId)
 	return cmd
 end
 
+local blackboardsForInstance = {}
 local commandsForUnits = {}-- map(unitId,command)
 
 local function executeScript(params)
 	command = getCommand(params.name, params.id, params.treeId)
+	local blackboard = blackboardsForInstance[params.treeId]
+	if(not blackboard)then
+		blackboard = {}
+		blackboardsForInstance[params.treeId] = blackboard
+	end
 
 	if (params.func == "RUN") then
 		for i = 1, #params.units do
 			commandsForUnits[params.units[i]] = command
 		end
 		
-		res = command:BaseRun(params.units, params.parameter)
-		Logger.log("luacommand", "Result: ", res)
-		return res
+		local parameters = {}
+		for k, v in pairs(params.parameter) do
+			local value = v
+			if(type(value) == "string" and value:match("^%$"))then
+				Logger.log("blackboard", "Extracting ", value, " from blackboard and inputting it into ", k, " parameter in node ", params.name)
+				value = blackboard[value]
+			end
+			parameters[k] = value
+		end
+		
+		local result, output = command:BaseRun(params.units, parameters)
+		if(output)then
+			for k, v in pairs(output) do
+				local originalValue = params.parameter[k]
+				if(type(originalValue) == "string" and originalValue:match("^%$"))then
+					Logger.log("blackboard", "Saving to ", value, " blackboard with value ", v, " in node ", params.name)
+					blackboard[originalValue] = v
+				else
+					Logger.log("blackboard", "A constant value '", originalValue, "' was given to an output or input-output parameter '", k, "' of a command '", params.name, "' in instance ", params.treeId, ".", params.id)
+				end
+			end
+		end
+		Logger.log("luacommand", "Result: ", result)
+		return result
 	elseif (params.func == "RESET") then
 		command:BaseReset()
 		return nil
@@ -483,8 +510,8 @@ function formBehaviourTree()
 			end
 			-- get the string value from editbox
 			for i=1,#node.parameters do
-				if(nodeDefinitionInfo[nodeType].parameters[i]["componentType"]=="editBox") then
-					if(nodeDefinitionInfo[nodeType].parameters[i]["variableType"] == "number") then
+				if(nodeDefinitionInfo[node.nodeType].parameters[i]["componentType"]=="editBox") then
+					if(nodeDefinitionInfo[node.nodeType].parameters[i]["variableType"] == "number" and not node.parameterObjects[i]["editBox"].text:match("^%$")) then
 						params.parameters[i].value = tonumber(node.parameterObjects[i]["editBox"].text)
 					else
 						params.parameters[i].value = node.parameterObjects[i]["editBox"].text
