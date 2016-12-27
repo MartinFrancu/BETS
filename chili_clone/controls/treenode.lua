@@ -46,10 +46,14 @@ local listenerEndConnection
 local listenerMouseOver
 local listenerMouseOut
 
---- Stores all connection lines for the tree, one connectionLine is composed from a table from: 
--- connectionOut, horizontalLine, verticalLine, horizontalLine, connectionIn - In this order. 
-WG.connectionLines = {}
-local connectionLines = WG.connectionLines
+-- connection line functions
+local connectionLine = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/connection_line.lua", nil, VFS.RAW_FIRST)
+
+-- Include debug functions, copyTable() and dump()
+--VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/debug_utils.lua", nil, VFS.RAW_FIRST)
+local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
+local Debug = Utils.Debug;
+local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyTable, Debug.fileTable
 
 local GenerateID
 
@@ -182,6 +186,7 @@ function TreeNode:GetChildren()
 		return {}
 	end
 	local connectionOutName = self.connectionOut.name
+	local connectionLines = connectionLine.getAll()
 	local children = {}
 	for i=1,#connectionLines do
 		if( connectionLines[i][1].name == connectionOutName ) then
@@ -218,238 +223,6 @@ function TreeNode:Dispose()
 	end
 end
 
---//=============================================================================
---// Connection lines
---//=============================================================================
-
-function computeConnectionLineCoordinates(connectionOut, connectionIn)
-	local transparentBorderWidth = 5
-	local lineOutx = connectionOut.parent.x + connectionOut.x + 2
-	local lineOuty = connectionOut.parent.y + connectionOut.y
-	local halfDistance = math.ceil(math.abs(connectionIn.parent.x - connectionOut.parent.x - connectionOut.x)*0.5)
-	local lineVx   = lineOutx+halfDistance - transparentBorderWidth
-	local lineInx  = connectionIn.parent.x - halfDistance + transparentBorderWidth - 2
-	local lineIny  = connectionIn.parent.y + connectionIn.y
-	if(connectionOut.x+connectionOut.parent.x > connectionIn.parent.x) then
-		lineOutx = connectionOut.parent.x + connectionOut.x + 1 - halfDistance
-		lineInx  = connectionIn.parent.x + transparentBorderWidth - 1
-		lineVx   = lineOutx - transparentBorderWidth + 1
-	end
-	return lineOutx, lineOuty, halfDistance, lineVx, lineInx, lineIny, transparentBorderWidth
-end
-
-local arrowWhite				 	= LUAUI_DIRNAME .. "Widgets/BtCreator/arrow_white.png"
-local arrowWhiteFlipped		= LUAUI_DIRNAME .. "Widgets/BtCreator/arrow_white_flipped.png"
-local arrowOrange				 	= LUAUI_DIRNAME .. "Widgets/BtCreator/arrow_orange.png"
-local arrowOrangeFlipped	= LUAUI_DIRNAME .. "Widgets/BtCreator/arrow_orange_flipped.png"
-
-function addConnectionLine(connectionOut, connectionIn)
-	if (connectionOut.treeNode.connectionIn and connectionOut.name == connectionOut.treeNode.connectionIn.name) then
-		addConnectionLine(connectionIn, connectionOut)
-		return
-	end
-	-- if root node is to be connected, then remove all the existing connections, so there is only one connectionLine going from root
-	if (connectionOut.treeNode.nodeType == "Root") then
-		for i=1,#connectionLines do
-			if (connectionLines[i][1].treeNode.nodeType == "Root") then
-				WG.removeConnectionLine(i)
-				break
-			end
-		end
-	end
-	
-	local lineIndex = (#connectionLines + 1)
-	local lineOutx,lineOuty,halfDistance,lineVx,lineInx,lineIny,transparentBorderWidth = computeConnectionLineCoordinates(connectionOut, connectionIn)
-	local lineOut = Line:New{ 
-		parent = connectionOut.parent.parent,
-		width = halfDistance,
-		height = 1,
-		x = lineOutx,
-		y = lineOuty,
-		skinName = 'default',
-		borderColor = {0.6,0.6,0.6,1},
-		borderColor2 = {0.4,0.4,0.4,1},
-		borderThickness = 2,
-		padding = {0, 0, 0, 0},
-		onMouseDown = { listenerClickOnConnectionLine },
-		onMouseOver = { listenerOverConnectionLine },
-		onMouseOut = { listenerOutOfConnectionLine },
-		lineIndex = lineIndex,
-	}
-	local lineIn = Line:New{
-		parent = connectionOut.parent.parent,
-		width = halfDistance,
-		height = 1,
-		x = lineInx,
-		y = lineIny,
-		skinName = 'default',
-		borderColor = {0.6,0.6,0.6,1},
-		borderColor2 = {0.4,0.4,0.4,1},
-		borderThickness = 2,
-		padding = {0, 0, 0, 0},
-		onMouseDown = { listenerClickOnConnectionLine },
-		onMouseOver = { listenerOverConnectionLine },
-		onMouseOut = { listenerOutOfConnectionLine },
-		lineIndex = lineIndex,
-	}
-	local lineV = Line:New{
-		parent = connectionOut.parent.parent,
-		width = 5,
-		height = math.abs(lineOuty-lineIny),
-		minHeight = 0,
-		x = lineVx,
-		y = math.min(lineOuty,lineIny)+transparentBorderWidth,
-		style = "vertical",
-		skinName = 'default',
-		borderColor = {0.6,0.6,0.6,1},
-		borderColor2 = {0.4,0.4,0.4,1},
-		borderThickness = 2,
-		padding = {0, 0, 0, 0},
-		onMouseDown = { listenerClickOnConnectionLine },
-		onMouseOver = { listenerOverConnectionLine },
-		onMouseOut = { listenerOutOfConnectionLine },
-		lineIndex = lineIndex,
-	}
-	local arrow = Image:New{
-		parent = connectionOut.parent.parent,
-		x = lineInx + halfDistance - 8,
-		y = lineIny + 1,
-		file = arrowWhite,
-		width = 5,
-		height = 8,
-		lineIndex = lineIndex,
-		onMouseDown = { listenerClickOnConnectionLine },
-		onMouseOver = { listenerOverConnectionLine },
-		onMouseOut = { listenerOutOfConnectionLine },
-	}
-	if(lineVx > lineInx) then
-		arrow.x = math.min(lineInx + 8, lineInx + halfDistance - 8)
-		arrow.file = arrowWhiteFlipped
-		arrow.flip = true
-	else
-		arrow.file = arrowWhite
-		arrow.x = lineInx + halfDistance - 8
-		arrow.flip = false
-	end
-	table.insert( connectionLines, {connectionOut, lineOut, lineV, lineIn, arrow, connectionIn} )
-	table.insert( connectionIn.treeNode.attachedLines,  lineIndex )
-	table.insert( connectionOut.treeNode.attachedLines, lineIndex )
-end
-
-WG.addConnectionLine = addConnectionLine
-
-function connectionLineExists(connection1, connection2)
-	for i=1,#connectionLines do
-		if(connectionLines[i][1].name == connection1.name and connectionLines[i][6].name == connection2.name) then
-			return true
-		end
-		if(connectionLines[i][6].name == connection1.name and connectionLines[i][1].name == connection2.name) then
-			return true
-		end
-	end
-	return false
-end
-
---- Updates location of connectionLine on given index. 
-function updateConnectionLine(index)
-	local connectionOut = connectionLines[index][1]
-	local connectionIn = connectionLines[index][#connectionLines[index]]
-	local lineOutx,lineOuty,halfDistance,lineVx,lineInx,lineIny,transparentBorderWidth = computeConnectionLineCoordinates(connectionOut, connectionIn)
-	local lineOut = connectionLines[index][2]
-	local lineV = connectionLines[index][3]
-	local lineIn = connectionLines[index][4]
-	local arrow = connectionLines[index][5]
-	lineOut.width = halfDistance
-	lineOut.x = lineOutx
-	lineOut.y = lineOuty
-	lineIn.width = halfDistance
-	lineIn.x = lineInx
-	lineIn.y = lineIny
-	lineV.height = math.abs(lineOuty-lineIny)
-	lineV.x = lineVx
-	lineV.y = math.min(lineOuty,lineIny)+transparentBorderWidth
-	if(lineVx > lineInx) then
-		arrow.x = math.min(lineInx + 8, lineInx + halfDistance - 8)
-		arrow.file = arrowWhiteFlipped
-		arrow.flip = true
-	else
-		arrow.file = arrowWhite
-		arrow.x = lineInx + halfDistance - 8
-		arrow.flip = false
-	end
-	arrow.y = lineIny + 1
-	for i=2,5 do
-		connectionLines[index][i]:RequestUpdate()
-	end
-end
-
---- Remove connectionLine with given index from global connectionLines table. All the connectionLines with larger
--- indexes decrements its index by one, so the indexes in attachedLines field and lineIndex are decremented by one. 
-function removeConnectionLine(index)
-	for i=2,5 do
-		connectionLines[index][i]:Dispose()
-	end
-	local found = false
-	local foundIndex
-	for j=1,#connectionLines[index][1].treeNode.attachedLines do
-		if (connectionLines[index][1].treeNode.attachedLines[j] == index) then
-			found = true
-			foundIndex = j
-			break
-		end
-	end
-	if (found) then
-		--Spring.Echo("attachedLines before delete: "..dump(connectionLines[index][1].treeNode.attachedLines))
-		--Spring.Echo("foundIndex: "..foundIndex)
-		table.remove(connectionLines[index][1].treeNode.attachedLines, foundIndex)
-		--Spring.Echo("attachedLines after delete: "..dump(connectionLines[index][1].treeNode.attachedLines))
-	else	
-		Spring.Echo("ERROR: Line index not found in connectionOut panel, in removeConnectionLine(). ")
-	end
-	
-	found = false
-	foundIndex = nil
-	for k=1,#connectionLines[index][6].treeNode.attachedLines do
-		if (connectionLines[index][6].treeNode.attachedLines[k] == index) then
-			found = true
-			foundIndex = k
-			break
-		end
-	end
-	if (found) then  
-		table.remove(connectionLines[index][6].treeNode.attachedLines, foundIndex)
-	else
-		Spring.Echo("ERROR: Line index not found in connectionIn panel, in removeConnectionLine(). ")
-	end
-	table.remove(connectionLines, index)
-	-- We deleted an entry from connectionLines. So all the indices which are after the lineIndex
-	-- needs to be decremented by one. Also the lineIndex field in Chili.Line needs to be updated. 
-	for i=index,#connectionLines do
-		local attachedLines1 = connectionLines[i][1].treeNode.attachedLines
-		local attachedLines2 = connectionLines[i][6].treeNode.attachedLines
-		for k=1,#attachedLines1 do
-			if (attachedLines1[k] == i+1) then 
-				attachedLines1[k] = i
-			end
-		end
-		for k=1,#attachedLines2 do
-			if (attachedLines2[k] == i+1) then 
-				attachedLines2[k] = i
-			end
-		end
-		-- Spring.Echo("connectionIn attachedLines: "..dump(attachedLines1))
-		-- Spring.Echo("connectionOut attachedLines: "..dump(attachedLines2))
-		for k=2,4 do
-			connectionLines[i][k].lineIndex = i
-		end
-	end
-	-- Spring.Echo("State after the connectionLine index"..index.." was deleted: "..dump(connectionLines))
-	
-	return true
-end
-
-WG.removeConnectionLine = removeConnectionLine
-
 local clickedConnection
 
 --- Returns whether creation of connectionLine between clickedConnection and obj is valid, both objects are connection panels. 
@@ -458,11 +231,12 @@ function connectionLineCanBeCreated(obj)
 	if (clickedConnection.treeNode.name == obj.treeNode.name) then 
 		return false
 	end
-	if(connectionLineExists(obj, clickedConnection)) then
+	if(connectionLine.exists(obj, clickedConnection)) then
 		return false
 	end
 	-- Check that connectionIn has no other connectionLine before Adding new one
 	-- when obj is connectionIn panel
+	local connectionLines = connectionLine.getAll()
 	if (obj.treeNode.connectionIn and obj.treeNode.connectionIn.name == obj.name) then
 		for i=1,#connectionLines do
 			if (obj.name == connectionLines[i][6].name) then
@@ -513,7 +287,6 @@ end
 --// Listeners
 --//=============================================================================
 
-
 local connectionPanelBackgroundColor = {0.1,0.1,0.1,0.7}
 local movingNodes = false
 
@@ -521,33 +294,37 @@ function listenerOverConnectionPanel(self)
 	if (clickedConnection ~= nil and connectionLineCanBeCreated(self)) then
 		self.backgroundColor = {1, 0.5, 0.0, 1}
 	end
+	self:RequestUpdate()
 end
 
 function listenerOutOfConnectionPanel(self)
 	if (clickedConnection ~= nil and clickedConnection.name ~= self.name) then
 		self.backgroundColor = connectionPanelBackgroundColor
 	end
+	self:RequestUpdate()
 end
 
 function listenerClickOnConnectionPanel(self)
-	Spring.Echo("clicked on Connection panel. ")
 	movingNodes = false
 	if (clickedConnection == nil) then
 		clickedConnection = self
 		self.backgroundColor = {1, 0.5, 0.0, 1}
+		self:RequestUpdate()
 		return self
 	end
 	if (clickedConnection.name == self.name) then 
 		self.backgroundColor = connectionPanelBackgroundColor
 		clickedConnection = nil
+		self:RequestUpdate()
 		return self
 	end
 	if( connectionLineCanBeCreated(self) ) then
 		clickedConnection.backgroundColor = connectionPanelBackgroundColor
 		self.backgroundColor = connectionPanelBackgroundColor
-		addConnectionLine(clickedConnection, self)
-		-- Spring.Echo("Connection line added: "..dump(connectionLines))
+		connectionLine.add(clickedConnection, self)
+		clickedConnection:RequestUpdate()
 		clickedConnection = nil
+		self:RequestUpdate()
 		return self
 	end
 	return false
@@ -567,7 +344,7 @@ function listenerNodeResize(self, x, y)
 		
 		for i=1,#self.treeNode.attachedLines do
 			lineIdx = self.treeNode.attachedLines[i]
-			updateConnectionLine(lineIdx)
+			connectionLine.update(lineIdx)
 		end
 	end
 	--return true
@@ -739,7 +516,7 @@ function listenerOnMouseUpMoveNode(self, x ,y)
 				node.nodeWindow:StopDragging(x, y)
 				node.nodeWindow:Invalidate()
 				for i=1,#node.attachedLines do
-					updateConnectionLine(node.attachedLines[i])
+					connectionLine.update(node.attachedLines[i])
 				end
 			end
 		end
@@ -747,82 +524,6 @@ function listenerOnMouseUpMoveNode(self, x ,y)
 	end
 	return self
 end
-
-
---//=============================================================================
---// Listeners on Connection lines
---//=============================================================================
-
-
-function listenerOverConnectionLine(self)	
-	local lineIndex = self.lineIndex
-	for i=2,4 do
-		connectionLines[lineIndex][i].borderColor = {1,0.6,0.2,0.8}
-		connectionLines[lineIndex][i].borderColor2 = {1,0.6,0.2,0.8}
-		connectionLines[lineIndex][i]:Invalidate()
-		connectionLines[lineIndex][i]:RequestUpdate()
-	end
-	local oldArrow = connectionLines[lineIndex][5]
-	local arrow = Image:New{
-		parent = oldArrow.parent,
-		x = oldArrow.x,
-		y = oldArrow.y,
-		flip = oldArrow.flip,
-		file = arrowOrange,
-		width = oldArrow.width,
-		height = oldArrow.height,
-		lineIndex = oldArrow.lineIndex,
-		onMouseDown = { listenerClickOnConnectionLine },
-		onMouseOver = { listenerOverConnectionLine },
-		onMouseOut = { listenerOutOfConnectionLine },
-	}
-	if(arrow.flip) then
-		arrow.file = arrowOrangeFlipped
-	end
-	connectionLines[lineIndex][5]:Dispose()
-	connectionLines[lineIndex][5] = arrow
-	return self
-end
-
-function listenerOutOfConnectionLine(self)
-	lineIndex = self.lineIndex
-	for i=2,4 do
-		connectionLines[lineIndex][i].borderColor = {0.6,0.6,0.6,1} 
-		connectionLines[lineIndex][i].borderColor2 = {0.4,0.4,0.4,1}
-		connectionLines[lineIndex][i]:Invalidate()
-		connectionLines[lineIndex][i]:RequestUpdate()
-	end
-	local oldArrow = connectionLines[lineIndex][5]
-	local arrow = Image:New{
-		parent = oldArrow.parent,
-		x = oldArrow.x,
-		y = oldArrow.y,
-		file = arrowWhite,
-		flip = oldArrow.flip,
-		width = oldArrow.width,
-		height = oldArrow.height,
-		lineIndex = oldArrow.lineIndex,
-		onMouseDown = { listenerClickOnConnectionLine },
-		onMouseOver = { listenerOverConnectionLine },
-		onMouseOut = { listenerOutOfConnectionLine },
-	}
-	if(arrow.flip) then
-		arrow.file = arrowWhiteFlipped
-	end
-	connectionLines[lineIndex][5]:Dispose()
-	connectionLines[lineIndex][5] = arrow
-end
-
-function listenerClickOnConnectionLine(self)
-	if(removeConnectionLine(self.lineIndex)) then
-		return self
-	end
-	return
-end
-
-
--- Include debug functions, copyTable() and dump()
-VFS.Include(LUAUI_DIRNAME .. "Widgets/chili_clone/controls/debug_utils.lua", nil, VFS.RAW_FIRST)
 
 --//=============================================================================
 -- ID generation functions

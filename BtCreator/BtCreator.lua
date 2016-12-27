@@ -30,8 +30,6 @@ local nodePoolList = {}
 --- Key into the nodeList. 
 local rootID = nil
 
--- Include debug functions, copyTable() and dump()
---VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/debug_utils.lua", nil, VFS.RAW_FIRST)
 local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
 
 local JSON = Utils.JSON
@@ -45,6 +43,9 @@ local nodeDefinitionInfo = {}
 
 -- BtEvaluator interface definitions
 local BtCreator = {} -- if we need events, change to Sentry:New()
+-- connection lines functions
+local connectionLine = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/connection_line.lua", nil, VFS.RAW_FIRST)
+
 
 function BtCreator.show(tree)
 	if(not windowBtCreator.visible) then
@@ -71,7 +72,7 @@ end
 local function removeNodeFromCanvas(id)
 	local node = WG.nodeList[id]
 	for i=#node.attachedLines,1,-1 do
-		WG.removeConnectionLine(node.attachedLines[i])
+		connectionLine.remove(node.attachedLines[i])
 	end
 	WG.selectedNodes[id] = nil
 	node:Dispose()
@@ -109,7 +110,7 @@ function listenerEndCopyingNode(self, x , y)
 			height = copyTreeNode.height,
 			connectable = true,
 			draggable = true,
-			hasConnectionIn = false,
+			hasConnectionIn = true,
 			hasConnectionOut = nodeDefinitionInfo[copyTreeNode.nodeType].hasConnectionOut,
 			parameters = copyTable(nodeDefinitionInfo[copyTreeNode.nodeType].parameters)
 		}
@@ -228,8 +229,6 @@ local function generateNodePoolNodes(nodes)
 		table.insert(nodePoolList, Chili.TreeNode:New(nodeParams))
 	end
 	nodePoolPanel:RequestUpdate()
-	
-	Spring.Echo("nodeDefinitionInfo"..dump(nodeDefinitionInfo,4))
 end
 
 local scripts = {}
@@ -353,7 +352,7 @@ function widget:Initialize()
 	Chili = WG.ChiliClone
 	Screen0 = Chili.Screen0	
 	
-	
+	connectionLine.initialize()
 	
 	nodePoolPanel = Chili.ScrollPanel:New{
 		parent = Screen0,
@@ -539,13 +538,7 @@ function formBehaviourTree()
 end
 
 function clearCanvas(omitRoot)
-	for i=#WG.connectionLines,1,-1 do
-		for k=2,5 do
-			WG.connectionLines[i][k]:Dispose()
-		end
-		table.remove(WG.connectionLines, i)
-	end
-	--WG.connectionLines = {}
+	connectionLine.clear()
 	for id,node in pairs(WG.nodeList) do
 		node:Dispose()
 	end
@@ -599,7 +592,7 @@ local function loadBehaviourNode(bt, btNode)
 	addNodeToCanvas(node)
 	for _, btChild in ipairs(btNode.children) do
 		local child = loadBehaviourNode(bt, btChild)
-		WG.addConnectionLine(node.connectionOut, child.connectionIn)
+		connectionLine.add(node.connectionOut, child.connectionIn)
 	end
 	return node
 end
@@ -607,7 +600,7 @@ end
 function loadBehaviourTree(bt)
 	local root = loadBehaviourNode(bt, bt.root)
 	if(root)then
-		WG.addConnectionLine(WG.nodeList[rootID].connectionOut, root.connectionIn)
+		connectionLine.add(WG.nodeList[rootID].connectionOut, root.connectionIn)
 	end
 	
 	for _, node in ipairs(bt.additionalNodes) do
