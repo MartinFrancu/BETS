@@ -43,6 +43,7 @@ local nodeDefinitionInfo = {}
 
 -- BtEvaluator interface definitions
 local BtCreator = {} -- if we need events, change to Sentry:New()
+
 -- connection lines functions
 local connectionLine = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/connection_line.lua", nil, VFS.RAW_FIRST)
 
@@ -50,12 +51,27 @@ local connectionLine = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/connectio
 function BtCreator.show(tree)
 	if(not windowBtCreator.visible) then
 		windowBtCreator:Show()
+	end
+	if(not nodePoolPanel.visible) then
 		nodePoolPanel:Show()
+	end
+	if(not buttonPanel.visible) then
 		buttonPanel:Show()
 	end
-	treeName.text = tree
-	treeName:RequestUpdate()
+	treeName:SetText(tree)
 	listenerClickOnLoadTree()
+end
+
+function BtCreator.hide()
+	if(windowBtCreator.visible) then
+		windowBtCreator:Hide()
+	end
+	if(nodePoolLabel.visible) then
+		nodePoolPanel:Hide()
+	end
+	if(buttonPanel.visible) then
+		buttonPanel:Hide()
+	end
 end
 
 --- Adds Treenode to canvas, and also selects it. 
@@ -139,9 +155,7 @@ end
 
 function listenerClickOnMinimize()
 	Logger.log("tree-editing", "Minimize BtCreator. ")
-	windowBtCreator:Hide()
-	nodePoolPanel:Hide()
-	buttonPanel:Hide()
+	BtCreator.hide()
 end
 
 -- //////////////////////////////////////////////////////////////////////
