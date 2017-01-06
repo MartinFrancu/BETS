@@ -59,9 +59,18 @@ WG.SensorManager = WG.SensorManager or (function()
 					return sensor
 				end,
 			})
-			managerForGroup[group] = manager
+			-- TODO: Once the group management gets resolved (as in the group is always represented by the same object), uncomment:
+			-- managerForGroup[group] = manager
 		end
 		return manager
+	end
+	
+	function SensorManager.getAvailableSensors()
+		local sensorFiles = Utils.dirList(SENSOR_DIRNAME, "*.lua")
+		for i, v in ipairs(sensorFiles) do
+			sensorFiles[i] = v:sub(1, v:len() - 4)
+		end
+		return sensorFiles
 	end
 	
 	return SensorManager
