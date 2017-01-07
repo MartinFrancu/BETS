@@ -49,13 +49,12 @@ local listenerMouseOut
 -- connection line functions
 local connectionLine = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/connection_line.lua", nil, VFS.RAW_FIRST)
 
--- Include debug functions, copyTable() and dump()
---VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/debug_utils.lua", nil, VFS.RAW_FIRST)
 local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
 local Debug = Utils.Debug;
 local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyTable, Debug.fileTable
 
-local GenerateID
+local generateID
+local usedIDs = {}
 
 -- ////////////////////////////////////////////////////////////////////////////
 -- Member functions
@@ -64,7 +63,10 @@ local GenerateID
 function TreeNode:New(obj)
   obj = inherited.New(self,obj)
 	if(not obj.id) then
-		obj.id = GenerateID()
+		obj.id = generateID()
+	else
+		-- to not generate the same ID twice, save loaded ID to usedIDs
+		usedIDs[obj.id] = true
 	end
 	local nodeWindowOptions = {
 		parent = obj.parent,
@@ -195,6 +197,10 @@ function TreeNode:GetChildren()
 	end
 	table.sort(children, function(lhs, rhs) return lhs.y < rhs.y end)
 	return children
+end
+
+function TreeNode:ReGenerateID()
+	self.id = generateID()
 end
 
 -- Dispose this treeNode without connection lines connected to it. 
@@ -535,16 +541,14 @@ local alphanum = {
 	"0","1","2","3","4","5","6","7","8","9"
 	}
 
-local usedIDs = {}
-	
-function GenerateID()
+function generateID()
 	local length = 32
 	local str = ""
 	for i = 1, length do
 		str = str..alphanum[math.random(#alphanum)]
 	end
 	if(usedIDs[str] ~= nil) then
-		return GenerateID()
+		return generateID()
 	end
 	usedIDs[str] = true
 	return str	

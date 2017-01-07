@@ -24,7 +24,7 @@ local minimizeButton
 
 local treeName
 
---- Contains all the TreeNodes on the editable area - windowBtCreator aka canvas. 
+--- Keys are node IDs, values are Treenode objects.  
 WG.nodeList = {}
 local nodePoolList = {}
 --- Key into the nodeList. 
@@ -141,6 +141,8 @@ function listenerClickOnSaveTree()
 	Logger.log("save-and-load", "Save Tree clicked on. ")
 	formBehaviourTree():Save(treeName.text)
 end
+
+local serializedTreeName
 
 function listenerClickOnLoadTree()
 	Logger.log("save-and-load", "Load Tree clicked on. ")
@@ -500,7 +502,6 @@ function widget:KeyPress(key)
 	
 end
 
-
 local fieldsToSerialize = {
 	'id',
 	'nodeType',
@@ -512,7 +513,41 @@ local fieldsToSerialize = {
 	'parameters',
 }
 
+--- Contains IDs of nodes as keys - stores IDs of serialized tree, the one with name serializedTree
+local serializedIDs = {}
+
+local function updateSerializedIDs()
+	serializedIDs = {}
+	for id,_ in pairs(WG.nodeList) do
+		serializedIDs[id] = true
+	end
+end
+
+--- Assumes that id is present in WG.nodeList
+local function reGenerateTreenodeID(id)
+	if(WG.nodeList[id]) then
+		WG.nodeList[id]:ReGenerateID()
+	end
+	local newID = WG.nodeList[id].id
+	if(id == rootID) then
+		rootID = newID
+	end
+	WG.nodeList[newID] = WG.nodeList[id]
+	WG.nodeList[id] = nil
+end
+
 function formBehaviourTree()
+	-- on tree Save() regenerate IDs of nodes already present in loaded tree
+	if(serializedTreeName and serializedTreeName ~= treeName.text) then
+		--regenerate all IDs from loaded Tree
+		for id,_ in pairs(serializedIDs) do			
+			if(WG.nodeList[id]) then
+				reGenerateTreenodeID(id)
+			end
+		end
+		updateSerializedIDs()
+	end
+
 	local bt = BehaviourTree:New()
 	local nodeMap = {}
 	for id,node in pairs(WG.nodeList) do
@@ -612,6 +647,7 @@ local function loadBehaviourNode(bt, btNode)
 end
 
 function loadBehaviourTree(bt)
+	serializedTreeName = treeName.text -- to be able to regenerate ids of deserialized nodes, when saved with different name
 	local root = loadBehaviourNode(bt, bt.root)
 	if(root)then
 		connectionLine.add(WG.nodeList[rootID].connectionOut, root.connectionIn)
@@ -621,6 +657,7 @@ function loadBehaviourTree(bt)
 		loadBehaviourNode(bt, node)
 	end
 	WG.clearSelection()
+	updateSerializedIDs()
 end
 
 Dependency.deferWidget(widget, Dependency.BtEvaluator)
