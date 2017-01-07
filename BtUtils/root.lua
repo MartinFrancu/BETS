@@ -11,6 +11,7 @@ WG.BtUtils = WG.BtUtils or (function()
 		JSON = "JSON", -- @{JSON}
 		Dependency = "dependency", -- @{Dependency}
 		BehaviourTree = "behaviour-tree", -- @{BehaviourTree}
+		dirList = "dir-list", -- @{dirList}
 		Debug = "debug_utils/", -- @{BtUtils.Debug}
 	}
 	
