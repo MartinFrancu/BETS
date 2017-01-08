@@ -70,6 +70,25 @@ function BtEvaluator.reportTree(insId)
 	return BtEvaluator.sendMessage("REPORT_TREE", { instanceId = insId })
 end
 
+function BtEvaluator.OnExpression(params)
+	if(params.func == "RESET")then
+		return "S"
+	end
+	
+	local f, msg = loadstring("return " .. params.expression)
+	if(not f)then
+		return "F"
+	end
+	setfenv(f, SensorManager.forGroup(params.units))
+	
+	local success, result = pcall(f)
+	if(success and result)then
+		return "S"
+	else
+		return "F"
+	end
+end
+
 
 function widget:Initialize()	
 	WG.BtEvaluator = BtEvaluator
@@ -119,6 +138,7 @@ function widget:RecvSkirmishAIMessage(aiTeam, message)
 				["UPDATE_STATES"] = BtEvaluator.OnUpdateStates,
 				["NODE_DEFINITIONS"] = BtEvaluator.OnNodeDefinitions,
 				["COMMAND"] = BtEvaluator.OnCommand,
+				["EXPRESSION"] = BtEvaluator.OnExpression
 			})[messageType]
 			
 			if(handler)then
