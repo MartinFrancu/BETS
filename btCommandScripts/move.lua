@@ -3,6 +3,24 @@ local Logger = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/debug_utils/logger.
 
 local cmdClass = VFS.Include(LUAUI_DIRNAME .. "Widgets/btCommandScripts/command.lua", nil, VFS.RAW_FIRST)
 
+function cmdClass.getParameterDefs()
+	return {
+		{ 
+			name = "x",
+			variableType = "number",
+			componentType = "editBox",
+			defaultValue = "0",
+		},
+		{ 
+			name = "y",
+			variableType = "number",
+			componentType = "editBox",
+			defaultValue = "0",
+		}
+	}
+end
+
+
 function cmdClass:New()
 	self.targets = {}
 	self.n = 0

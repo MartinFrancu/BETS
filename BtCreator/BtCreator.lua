@@ -40,6 +40,7 @@ local Debug = Utils.Debug;
 local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyTable, Debug.fileTable
 
 local nodeDefinitionInfo = {}
+local isScript = {}
 
 -- BtEvaluator interface definitions
 local BtCreator = {} -- if we need events, change to Sentry:New()
@@ -78,7 +79,7 @@ end
 local function addNodeToCanvas(node)
 	if next(WG.nodeList) == nil then
 		rootID = node.id
-		Logger.log("tree-editing", "BtCreator: Setting u of new of rootID: ", rootID)
+		Logger.log("tree-editing", "BtCreator: Setting u of new of rootID: ", rootID, " script: ", node.luaScript)
 	end
 	WG.nodeList[node.id] = node
 	WG.clearSelection()
@@ -198,23 +199,94 @@ local function updateStatesMessage(states)
 	end
 end
 
+local function generateNodePool(heightSum, nodes) 
+	for i=1,#nodes do
+		if (nodes[i].nodeType ~= "luaCommand") then
+			local nodeParams = {
+				name = nodes[i].name,
+				hasConnectionOut = (nodes[i].children == null) or (type(nodes[i].children) == "table" and #nodes[i].children ~= 0),
+				nodeType = nodes[i].name, -- TODO use name parameter instead of nodeType
+				parent = nodePoolPanel,
+				y = heightSum,
+				tooltip = nodes[i].tooltip or "",
+				draggable = false,
+				resizable = false,
+				connectable = false,
+				onMouseDown = { listenerStartCopyingNode },
+				onMouseUp = { listenerEndCopyingNode },
+				parameters = nodes[i]["parameters"],
+			}
+			-- Make value field from defaultValue. 
+			for i=1,#nodeParams.parameters do
+				if(nodeParams.parameters[i]["defaultValue"]) then
+					nodeParams.parameters[i]["value"] = nodeParams.parameters[i]["defaultValue"]
+					nodeParams.parameters[i]["defaultValue"] = nil
+				end
+			end
+			nodeDefinitionInfo[nodeParams.nodeType] = {}
+			nodeDefinitionInfo[nodeParams.nodeType]["parameters"] = copyTable(nodeParams.parameters)
+			nodeDefinitionInfo[nodeParams.nodeType]["hasConnectionIn"]  = nodeParams.hasConnectionIn
+			nodeDefinitionInfo[nodeParams.nodeType]["hasConnectionOut"] = nodeParams.hasConnectionOut
+			if(nodes[i].defaultWidth) then
+				local minWidth = 110
+				if(#nodes[i]["parameters"] > 0) then
+					for k=1,#nodes[i]["parameters"] do
+						minWidth = math.max(minWidth, nodePoolPanel.font:GetTextWidth(nodes[i]["parameters"][k]["value"]) + nodePoolPanel.font:GetTextWidth(nodes[i]["parameters"][k]["name"]) + 40)
+						--nodes[i]["parameters"][k]["defaultValue"]:len()
+					end
+					
+				end
+				nodeParams.width = math.max(minWidth, nodes[i].defaultWidth)
+			end
+			if(nodes[i].defaultHeight) then
+				nodeParams.height = math.max(50 + #nodes[i]["parameters"]*20, nodes[i].defaultHeight)
+			end
+			heightSum = heightSum + (nodeParams.height or 60)
+			table.insert(nodePoolList, Chili.TreeNode:New(nodeParams))
+		end
+	end
+	return heightSum
+end
+
+
+local function getParameterDefinitions()
+	local directoryName = LUAUI_DIRNAME .. "Widgets/btCommandScripts" 
+	local folderContent = VFS.DirList(directoryName)
+	local paramsDefs = {}
+	-- Remove the path prefix of folder:
+	for i,v in ipairs(folderContent)do
+		local scriptName = string.sub(v, string.len( directoryName)+2 ) --THIS WILL MAKE TROUBLES WHEN DIRECTORY IS DIFFERENT: the slashes are sometimes counted once, sometimes twice!!!\\
+		local script = VFS.Include(LUAUI_DIRNAME .. "Widgets/btCommandScripts/" .. scriptName, nil, VFS.RAW_FIRST)
+		if script.getParameterDefs ~= nil then
+			paramsDefs[scriptName] = script.getParameterDefs()
+		end
+	end
+	
+	return paramsDefs
+end
+
 local function generateNodePoolNodes(nodes)
 	Logger.log("communication", "NODES DECODED:  ", nodes)
 	local heightSum = 30 -- skip NodePoolLabel
-	for i=1,#nodes do
+    heightSum = generateNodePool(heightSum, nodes)
+	
+	-- load lua commands
+	local paramDefs = getParameterDefinitions()
+	
+	for scriptName, params in pairs(paramDefs) do
 		local nodeParams = {
-			name = nodes[i].name,
-			hasConnectionOut = (nodes[i].children == null) or (type(nodes[i].children) == "table" and #nodes[i].children ~= 0),
-			nodeType = nodes[i].name, -- TODO use name parameter instead of nodeType
+			name = scriptName,
+			hasConnectionOut = false,
+			nodeType = scriptName,
 			parent = nodePoolPanel,
 			y = heightSum,
-			tooltip = nodes[i].tooltip or "",
+			tooltip = "",
 			draggable = false,
 			resizable = false,
 			connectable = false,
 			onMouseDown = { listenerStartCopyingNode },
 			onMouseUp = { listenerEndCopyingNode },
-			parameters = nodes[i]["parameters"],
+			parameters = params,
 		}
 		-- Make value field from defaultValue. 
 		for i=1,#nodeParams.parameters do
@@ -223,27 +295,19 @@ local function generateNodePoolNodes(nodes)
 				nodeParams.parameters[i]["defaultValue"] = nil
 			end
 		end
-		nodeDefinitionInfo[nodeParams.nodeType] = {}
-		nodeDefinitionInfo[nodeParams.nodeType]["parameters"] = copyTable(nodeParams.parameters)
-		nodeDefinitionInfo[nodeParams.nodeType]["hasConnectionIn"]  = nodeParams.hasConnectionIn
-		nodeDefinitionInfo[nodeParams.nodeType]["hasConnectionOut"] = nodeParams.hasConnectionOut
-		if(nodes[i].defaultWidth) then
-			local minWidth = 110
-			if(#nodes[i]["parameters"] > 0) then
-				for k=1,#nodes[i]["parameters"] do
-					minWidth = math.max(minWidth, nodePoolPanel.font:GetTextWidth(nodes[i]["parameters"][k]["value"]) + nodePoolPanel.font:GetTextWidth(nodes[i]["parameters"][k]["name"]) + 40)
-					--nodes[i]["parameters"][k]["defaultValue"]:len()
-				end
-				
-			end
-			nodeParams.width = math.max(minWidth, nodes[i].defaultWidth)
-		end
-		if(nodes[i].defaultHeight) then
-			nodeParams.height = math.max(50 + #nodes[i]["parameters"]*20, nodes[i].defaultHeight)
-		end
+		nodeDefinitionInfo[scriptName] = {}
+		nodeDefinitionInfo[scriptName]["parameters"] = copyTable(nodeParams.parameters)
+		nodeDefinitionInfo[scriptName]["hasConnectionIn"]  = nodeParams.hasConnectionIn
+		nodeDefinitionInfo[scriptName]["hasConnectionOut"] = nodeParams.hasConnectionOut
+		
+		isScript[scriptName] = true
+
+		nodeParams.width = 110
+		nodeParams.height = 50 + #nodeParams.parameters * 20
 		heightSum = heightSum + (nodeParams.height or 60)
 		table.insert(nodePoolList, Chili.TreeNode:New(nodeParams))
 	end
+	
 	nodePoolPanel:RequestUpdate()
 end
 
@@ -360,9 +424,9 @@ function widget:Initialize()
 	
 	BtEvaluator = WG.BtEvaluator
 	
+	BtEvaluator.OnCommand = executeScript
 	BtEvaluator.OnNodeDefinitions = generateNodePoolNodes
 	BtEvaluator.OnUpdateStates = updateStatesMessage
-	BtEvaluator.OnCommand = executeScript
 	
 	-- Get ready to use Chili
 	Chili = WG.ChiliClone
@@ -505,6 +569,7 @@ end
 local fieldsToSerialize = {
 	'id',
 	'nodeType',
+	'scriptName',
 	'text',
 	'x',
 	'y',
@@ -553,19 +618,43 @@ function formBehaviourTree()
 	for id,node in pairs(WG.nodeList) do
 		if(node.id ~= rootID)then
 			local params = {}
-			for i, key in ipairs(fieldsToSerialize) do
+			for _, key in ipairs(fieldsToSerialize) do
 				params[key] = node[key]
 			end
+			
+			local info = nodeDefinitionInfo[node.nodeType]
+			
+			local hasScriptName = false
 			-- get the string value from editbox
 			for i=1,#node.parameters do
-				if(nodeDefinitionInfo[node.nodeType].parameters[i]["componentType"]=="editBox") then
-					if(nodeDefinitionInfo[node.nodeType].parameters[i]["variableType"] == "number" and not node.parameterObjects[i]["editBox"].text:match("^%$")) then
-						params.parameters[i].value = tonumber(node.parameterObjects[i]["editBox"].text)
-					else
-						params.parameters[i].value = node.parameterObjects[i]["editBox"].text
+				if (node.parameters[i].name == "scriptName") then
+					hasScriptName = true
+				else
+					Logger.log("save-and-load", "info params: " ,info.parameters[i], "")
+					if(info.parameters[i]["componentType"]=="editBox") then
+						if(info.parameters[i]["variableType"] == "number" and not node.parameterObjects[i]["editBox"].text:match("^%$")) then
+							params.parameters[i].value = tonumber(node.parameterObjects[i]["editBox"].text)
+						else
+							params.parameters[i].value = node.parameterObjects[i]["editBox"].text
+						end
 					end
 				end
 			end
+			
+			-- change luaScript node format to fit btEvaluator/controller
+			if (isScript[node.nodeType]) then
+				if (not hasScriptName) then
+					local scriptName = node.nodeType
+					scriptParam = {}
+					scriptParam.name = "scriptName"
+					scriptParam.value = scriptName
+					
+					params.parameters[#params.parameters + 1] = scriptParam
+				end
+				params.nodeType = "luaCommand"
+				params.scriptName = scriptName
+			end
+			
 			nodeMap[node] = bt:NewNode(params)
 		end
 	end
@@ -613,7 +702,17 @@ end
 local function loadBehaviourNode(bt, btNode)
 	if(not btNode)then return nil end
 	local params = {}
-	for k,v in pairs(nodeDefinitionInfo[btNode.nodeType]) do
+	local info
+	
+	Logger.log("save-and-load", "loadBehaviourNode - scriptName: ", btNode.scriptName, " info: ", nodeDefinitionInfo)
+	if (btNode.scriptName ~= nil) then
+		info = nodeDefinitionInfo[btNode.scriptName]
+		-- ASDASDADASFDAFASD 
+	else
+		info = nodeDefinitionInfo[btNode.nodeType]
+	end
+	
+	for k,v in pairs(info) do
 		if(type(v) == "table") then
 			params[k] = copyTable(v)
 		else
@@ -622,8 +721,13 @@ local function loadBehaviourNode(bt, btNode)
 	end
 	for k, v in pairs(btNode) do
 		if(k=="parameters") then
+		
+			Logger.log("save-and-load", "params: ", params, ", params.parameters: ", params.parameters, "v[3]: ", v[3])
 			for i=1,#v do
-				params.parameters[i].value = v[i].value
+				if (v[i].name ~= "scriptName") then
+					Logger.log("save-and-load", "params.parameters[i]: ", params.parameters[i], ", v[i]: ", v[i])
+					params.parameters[i].value = v[i].value
+				end
 			end
 		else
 			params[k] = v
@@ -637,6 +741,11 @@ local function loadBehaviourNode(bt, btNode)
 	params.parent = windowBtCreator
 	params.connectable = true
 	params.draggable = true
+	
+	if (btNode.scriptName ~= nil) then
+		params.nodeType = btNode.scriptName
+	end
+	
 	local node = Chili.TreeNode:New(params)
 	addNodeToCanvas(node)
 	for _, btChild in ipairs(btNode.children) do

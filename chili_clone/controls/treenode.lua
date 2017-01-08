@@ -145,7 +145,7 @@ function TreeNode:New(obj)
 		local param = obj.parameters[i]
 		-- Every parameter expects four fields on creation: name, value, componentType, variableType. 
 		if(param["name"] == nil or param["value"] == nil or param["componentType"] == nil or param["variableType"] == nil) then
-			error("TreeNode expects following fields in parameters, got "..dump(param).."\n"..debug.traceback())
+			error("TreeNode expects following fields in parameters: name, value, componentType, variableType, got "..dump(param).."\n"..debug.traceback())
 		end
 		
 		if (param["componentType"] and param["componentType"]:lower() == "editbox") then

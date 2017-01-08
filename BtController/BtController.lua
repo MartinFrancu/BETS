@@ -247,7 +247,7 @@ function TreeHandle:New(obj)
 	
 	local roleCount = 1
 	local function visit(node)
-		if(node.nodeType == "roleSplit" and roleCount < #node.children)then
+		if(node.nodeType == "switch" and roleCount < #node.children)then
 			roleCount = #node.children
 		end
 	  for _, child in ipairs(node.children) do

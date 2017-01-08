@@ -1,13 +1,30 @@
 local dump = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/debug_utils/root.lua", nil, VFS.RAW_FIRST).dump
 
-local cmd = {}
+local cmdClass = VFS.Include(LUAUI_DIRNAME .. "Widgets/btCommandScripts/command.lua", nil, VFS.RAW_FIRST)
 
-function cmd.runCommand(unitIds)
-	Spring.Echo("Lua command run, unitIds: " .. dump(unitIds))
+
+function cmdClass.getParameterDefs()
+	return {
+		{ 
+			name = "msg",
+			variableType = "string",
+			componentType = "editBox",
+			defaultValue = "0",
+		}
+	}
 end
 
-function cmd.resetCommand()
-	Spring.Echo("Lua command reset")
+
+function cmdClass:New()
 end
 
-return cmd
+
+function cmdClass:Run(unitIds, p)
+	Spring.Echo(p.msg)
+	return "S"
+end
+
+function cmdClass:Reset()
+end
+
+return cmdClass
