@@ -311,109 +311,6 @@ local function generateNodePoolNodes(nodes)
 	nodePoolPanel:RequestUpdate()
 end
 
-local scripts = {}
-local commands = {}
-
-local function getCommandClass(name) 
-	c = scripts[name] 
-	if not c then 
-		c = VFS.Include(LUAUI_DIRNAME .. "Widgets/btCommandScripts/" .. name, nil, VFS.RAW_FIRST)
-		scripts[name] = c
-	end
-	return c
-end
-
-local function getCommand(name, id, treeId)
-	commandMap = commands[name]
-	if not commandMap then
-		commandMap = {}
-		commands[name] = commandMap
-	end
-	
-	cmdsForInstance = commandMap[treeId]
-	if not cmdsForInstance then
-		cmdsForInstance = {}
-		commandMap[treeId] = cmdsForInstance
-	end
-	
-	cmd = cmdsForInstance[id]
-	if not cmd then
-		cmd = getCommandClass(name):BaseNew()
-		cmdsForInstance[id] = cmd
-	end
-	return cmd
-end
-
-local blackboardsForInstance = {}
-local commandsForUnits = {}-- map(unitId,command)
-
-local function executeScript(params)
-	command = getCommand(params.name, params.id, params.treeId)
-	local blackboard = blackboardsForInstance[params.treeId]
-	if(not blackboard)then
-		blackboard = {}
-		blackboardsForInstance[params.treeId] = blackboard
-	end
-
-	if (params.func == "RUN") then
-		for i = 1, #params.units do
-			commandsForUnits[params.units[i]] = command
-		end
-		
-		local parameters = {}
-		for k, v in pairs(params.parameter) do
-			local value = v
-			if(type(value) == "string" and value:match("^%$"))then
-				Logger.log("blackboard", "Extracting ", value, " from blackboard and inputting it into ", k, " parameter in node ", params.name)
-				value = blackboard[value]
-			end
-			parameters[k] = value
-		end
-		
-		local result, output = command:BaseRun(params.units, parameters)
-		if(output)then
-			for k, v in pairs(output) do
-				local originalValue = params.parameter[k]
-				if(type(originalValue) == "string" and originalValue:match("^%$"))then
-					Logger.log("blackboard", "Saving to ", value, " blackboard with value ", v, " in node ", params.name)
-					blackboard[originalValue] = v
-				else
-					Logger.log("blackboard", "A constant value '", originalValue, "' was given to an output or input-output parameter '", k, "' of a command '", params.name, "' in instance ", params.treeId, ".", params.id)
-				end
-			end
-		end
-		Logger.log("luacommand", "Result: ", result)
-		return result
-	elseif (params.func == "RESET") then
-		command:BaseReset()
-		return nil
-	end
-end
-
-function widget:UnitCommand(unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdOpts, cmdTag) 
-	Logger.log("command", "----UnitCommand---")
-	cmd = commandsForUnits[unitID]
-	if cmd  then
-		cmd:AddActiveCommand(unitID,cmdID,cmdTag)
-	end
-end
-
-function widget:UnitCmdDone(unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdOpts, cmdTag)
-	Logger.log("command", "----UnitCmdDone---")
-	cmd = commandsForUnits[unitID]
-	if cmd then
-		cmd:CommandDone(unitID,cmdID,cmdTag)
-	end
-end
-
-function widget:UnitIdle(unitID, unitDefID, unitTeam)
-	Logger.log("command", "----UnitIdle---")
-	cmd = commandsForUnits[unitID]
-	if cmd then
-		cmd:SetUnitIdle(unitID)
-	end
-end
-
 
 function widget:Initialize()	
 	if (not WG.ChiliClone) then
@@ -424,7 +321,6 @@ function widget:Initialize()
 	
 	BtEvaluator = WG.BtEvaluator
 	
-	BtEvaluator.OnCommand = executeScript
 	BtEvaluator.OnNodeDefinitions = generateNodePoolNodes
 	BtEvaluator.OnUpdateStates = updateStatesMessage
 	
@@ -642,9 +538,10 @@ function formBehaviourTree()
 			end
 			
 			-- change luaScript node format to fit btEvaluator/controller
-			if (isScript[node.nodeType]) then
+			local scriptName = node.nodeType
+			if (isScript[scriptName]) then
+				Logger.log("save-and-load", "scriptName: " ,scriptName)
 				if (not hasScriptName) then
-					local scriptName = node.nodeType
 					scriptParam = {}
 					scriptParam.name = "scriptName"
 					scriptParam.value = scriptName
@@ -707,7 +604,6 @@ local function loadBehaviourNode(bt, btNode)
 	Logger.log("save-and-load", "loadBehaviourNode - scriptName: ", btNode.scriptName, " info: ", nodeDefinitionInfo)
 	if (btNode.scriptName ~= nil) then
 		info = nodeDefinitionInfo[btNode.scriptName]
-		-- ASDASDADASFDAFASD 
 	else
 		info = nodeDefinitionInfo[btNode.nodeType]
 	end
