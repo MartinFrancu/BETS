@@ -56,6 +56,8 @@ local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyT
 local generateID
 local usedIDs = {}
 
+local createNextParameterObject
+
 -- ////////////////////////////////////////////////////////////////////////////
 -- Member functions
 -- ////////////////////////////////////////////////////////////////////////////
@@ -141,45 +143,69 @@ function TreeNode:New(obj)
 	obj.nodeWindow.minWidth = math.max(obj.nodeWindow.minWidth, obj.nameEditBox.font:GetTextWidth(obj.nameEditBox.text) + 33)
 	obj.nodeWindow.minHeight = obj.nodeWindow.height
 	
+	obj.parameterObjects = {}
 	for i=1,#obj.parameters do
-		local param = obj.parameters[i]
-		-- Every parameter expects four fields on creation: name, value, componentType, variableType. 
-		if(param["name"] == nil or param["value"] == nil or param["componentType"] == nil or param["variableType"] == nil) then
-			error("TreeNode expects following fields in parameters: name, value, componentType, variableType, got "..dump(param).."\n"..debug.traceback())
-		end
-		
-		if (param["componentType"] and param["componentType"]:lower() == "editbox") then
-			obj.parameterObjects[i] = {}
-			obj.parameterObjects[i]["label"] = Label:New{
-				parent = obj.nodeWindow,
-				x = 18,
-				y = 10 + i*20,
-				width  = obj.nodeWindow.font:GetTextWidth(param["name"]),
-				height = '10%',
-				caption = param["name"],
-				--skinName='DarkGlass',
-			}
-			obj.parameterObjects[i]["editBox"] = EditBox:New{
-				parent = obj.nodeWindow,
-				text = tostring(param["value"]),
-				validatedText = tostring(param["value"]),
-				width = math.max(obj.nodeWindow.font:GetTextWidth(param["value"])+10, 35),
-				x = obj.nodeWindow.font:GetTextWidth(param["name"]) + 25,
-				y = 10 + i*20,
-				align = 'left',
-				--skinName = 'DarkGlass',
-				borderThickness = 0,
-				backgroundColor = {0,0,0,0},
-				variableType = param["variableType"],
-			}
-			obj.nodeWindow.minWidth = math.max(obj.nodeWindow.minWidth, obj.nodeWindow.font:GetTextWidth(param["value"])+ 48 + obj.nodeWindow.font:GetTextWidth(param["name"]))
-		end
+		obj.parameterObjects[i] = createNextParameterObject(obj)
 		-- Do not serialize unnecessary(dependent on nodeType) parameter fields, those are stored in nodeDefinitionInfo
-		param["variableType"] = nil
-		param["componentType"] = nil
+		obj.parameters[i]["variableType"] = nil
+		obj.parameters[i]["componentType"] = nil
+	end
+	if(#obj.parameters ~= #obj.parameterObjects) then
+		error("#obj.parameters="..#obj.parameters.."  ~= #obj.parameterObjects="..#obj.parameterObjects)
 	end
 	
   return obj
+end
+
+--- Transforms obj.parameters[i] into obj.parametersObjects[i] -> adds label and editbox
+-- Expects param to be a table with four values: name, value, variableType, componentType. 
+function createNextParameterObject(obj)
+	local result = {}
+	local i = #obj.parameterObjects + 1
+	if(i > #obj.parameters) then
+		error("Trying to generate parameterObject[i] without needed parameters[i]. "..debug.traceback())
+	end
+	local param = obj.parameters[i]
+	if(param["name"] == nil or param["value"] == nil or param["componentType"] == nil or param["variableType"] == nil) then
+			error("TreeNode expects following fields in parameters: name, value, componentType, variableType, got "..dump(param).."\n"..debug.traceback())
+	end
+	if (param["componentType"] and param["componentType"]:lower() == "editbox") then
+		--result.index = i -- to be able to change parameter value in treenode.parameters table
+		result.componentType = "editBox"
+		result.label = Label:New{
+			parent = obj.nodeWindow,
+			x = 18,
+			y = 10 + i*20,
+			width  = obj.nodeWindow.font:GetTextWidth(param["name"]),
+			height = '10%',
+			caption = param["name"],
+			--skinName='DarkGlass',
+		}
+		result.editBox = EditBox:New{
+			parent = obj.nodeWindow,
+			text = tostring(param["value"]),
+			validatedText = tostring(param["value"]),
+			width = math.max(obj.nodeWindow.font:GetTextWidth(param["value"])+10, 35),
+			x = obj.nodeWindow.font:GetTextWidth(param["name"]) + 25,
+			y = 10 + i*20,
+			align = 'left',
+			--skinName = 'DarkGlass',
+			borderThickness = 0,
+			backgroundColor = {0,0,0,0},
+			variableType = param["variableType"],
+			index = i,
+		}
+		obj.nodeWindow.minWidth = math.max(obj.nodeWindow.minWidth, obj.nodeWindow.font:GetTextWidth(param["value"])+ 48 + obj.nodeWindow.font:GetTextWidth(param["name"]))
+	end
+	return result
+end
+
+function TreeNode:CreateNextParameterObject()
+	local i = #self.parameterObjects + 1
+	self.parameterObjects[i] = createNextParameterObject(self)
+	-- Do not serialize unnecessary(dependent on nodeType) parameter fields, those are stored in nodeDefinitionInfo
+	self.parameters[i]["variableType"] = nil
+	self.parameters[i]["componentType"] = nil
 end
 
 --- Returns a table of children in order of y-coordinate(first is the one with the smallest one)
@@ -217,13 +243,13 @@ function TreeNode:Dispose()
 	if(self.nameEditBox) then
 		self.nameEditBox:Dispose()
 	end
-	if(parameterObjects) then
-		for i=1,#parameterObjects do
-			if(parameterObjects[i]["label"]) then
-				parameterObjects[i]["label"]:Dispose()
+	if(self.parameterObjects) then
+		for i=1,#self.parameterObjects do
+			if(self.parameterObjects[i]["label"]) then
+				self.parameterObjects[i]["label"]:Dispose()
 			end
-			if(parameterObjects[i]["editBox"]) then
-				parameterObjects[i]["editBox"]:Dispose()
+			if(self.parameterObjects[i]["editBox"]) then
+				self.parameterObjects[i]["editBox"]:Dispose()
 			end
 		end
 	end
@@ -374,33 +400,41 @@ local function validateEditBox(editBox)
 	if(editBox.text == editBox.validatedText) then
 		return
 	end
-	local variableType = editBox.variableType
 	-- Test for context variable
 	if(#editBox.text > 0 and editBox.text[1] == '$') then
 		editBox.validatedText = editBox.text
+		editBox.parent.treeNode.parameters[editBox.index].value = editBox.text
 		return
 	end
+	local variableType = editBox.variableType
 	if(variableType == "number") then
 		local numberNew = tonumber(editBox.validatedText)
 		if(numberNew) then
 			editBox.validatedText = editBox.text
+			editBox.parent.treeNode.parameters[editBox.index].value = editBox.text
 		else
 			editBox.text = editBox.validatedText
 		end
 	elseif(variableType == "string") then
 		editBox.validatedText = editBox.text
+		editBox.parent.treeNode.parameters[editBox.index].value = editBox.text
 	end
+end
+
+
+local function validateAllEditBoxes(treeNode)
+	for i=1,#treeNode.parameterObjects do
+		local editbox = treeNode.parameterObjects[i]["editBox"]
+		if(editbox) then
+			validateEditBox(editbox)
+		end
+	end	
 end
 
 local function removeNodeFromSelection(nodeWindow)
 	nodeWindow.backgroundColor[4] = ALPHA_OF_NOT_SELECTED_NODES
 	WG.selectedNodes[nodeWindow.treeNode.id] = nil
-	for i=1,#nodeWindow.treeNode.parameterObjects do
-		local editbox = nodeWindow.treeNode.parameterObjects[i]["editBox"]
-		if(editbox) then
-			validateEditBox(editbox)
-		end
-	end	
+	validateAllEditBoxes(nodeWindow.treeNode)
 	nodeWindow:Invalidate()
 end
 
@@ -456,11 +490,9 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 		return
 	end
 	-- Check if the parameters editbox text hasnt changed
+	validateAllEditBoxes(self.treeNode)
 	for i=1,#self.treeNode.parameterObjects do
-		validateEditBox(self.treeNode.parameterObjects[i]["editBox"])
-	end
-	for i=1,#self.treeNode.parameterObjects do
-		if(childName == self.treeNode.parameterObjects[i]["editBox"].name) then
+		if(self.treeNode.parameterObjects[i]["editBox"] and childName == self.treeNode.parameterObjects[i]["editBox"].name) then
 			return
 		end
 	end

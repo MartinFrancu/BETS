@@ -21,6 +21,7 @@ local buttonPanel
 local loadTreeButton
 local saveTreeButton
 local minimizeButton
+local addRoleButton
 
 local treeName
 
@@ -154,6 +155,18 @@ function listenerClickOnLoadTree()
 	else
 		error("BehaviourTree " .. treeName.text .. " instance not found. " .. debug.traceback())
 	end
+end
+
+function listenerClickOnAddRole()
+	Logger.log("tree-editing", "Adding new role. ")
+	local rootNode = WG.nodeList[rootID]
+	table.insert(rootNode.parameters, {
+		name = "Role "..#rootNode.parameters + 1, 
+		value = "Role Name",
+		componentType = "editBox",
+		variableType = "string",
+	})
+	rootNode:CreateNextParameterObject()
 end
 
 function listenerClickOnMinimize()
@@ -418,7 +431,17 @@ function widget:Initialize()
 		focusColor = {0.5,0.5,0.5,0.5},
 		OnClick = { listenerClickOnLoadTree },
 	}
-	
+	addRoleButton = Chili.Button:New{
+		parent = buttonPanel,
+		x = loadTreeButton.x + loadTreeButton.width,
+		y = saveTreeButton.y,
+		width = 90,
+		height = 30,
+		caption = "Add Role",
+		skinName = "DarkGlass",
+		focusColor = {0.5,0.5,0.5,0.5},
+		OnClick = { listenerClickOnAddRole },
+	}
 	minimizeButton = Chili.Button:New{
 		parent = buttonPanel,
 		x = buttonPanel.width - 50,
@@ -501,7 +524,7 @@ function formBehaviourTree()
 	-- on tree Save() regenerate IDs of nodes already present in loaded tree
 	if(serializedTreeName and serializedTreeName ~= treeName.text) then
 		--regenerate all IDs from loaded Tree
-		for id,_ in pairs(serializedIDs) do			
+		for id,_ in pairs(serializedIDs) do
 			if(WG.nodeList[id]) then
 				reGenerateTreenodeID(id)
 			end
@@ -527,11 +550,14 @@ function formBehaviourTree()
 					hasScriptName = true
 				else
 					Logger.log("save-and-load", "info params: " ,info.parameters[i], "")
+				if(node.parameterObjects[i]["componentType"]=="editBox") then
+					local editbox = node.parameterObjects[i]["editBox"]
+					if(editbox["variableType"] == "number" and not editbox.text:match("^%$")) then
+						params.parameters[i].value = tonumber(editbox.text)
 					if(info.parameters[i]["componentType"]=="editBox") then
 						if(info.parameters[i]["variableType"] == "number" and not node.parameterObjects[i]["editBox"].text:match("^%$")) then
-							params.parameters[i].value = tonumber(node.parameterObjects[i]["editBox"].text)
 						else
-							params.parameters[i].value = node.parameterObjects[i]["editBox"].text
+						params.parameters[i].value = editbox.text
 						end
 					end
 				end
