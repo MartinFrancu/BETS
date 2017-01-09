@@ -1,6 +1,6 @@
 local Logger = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/debug_utils/logger.lua", nil, VFS.RAW_FIRST)
 
-local cmdClass = VFS.Include(LUAUI_DIRNAME .. "Widgets/btCommandScripts/command.lua", nil, VFS.RAW_FIRST)
+local cmdClass = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCommandScripts/command.lua", nil, VFS.RAW_FIRST)
 
 function cmdClass.getParameterDefs()
 	return {

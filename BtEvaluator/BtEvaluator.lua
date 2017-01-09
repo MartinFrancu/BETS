@@ -99,7 +99,7 @@ BtEvaluator.commands = {}
 function getCommandClass(name) 
 	c = BtEvaluator.scripts[name] 
 	if not c then 
-		c = VFS.Include(LUAUI_DIRNAME .. "Widgets/btCommandScripts/" .. name, nil, VFS.RAW_FIRST)
+		c = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCommandScripts/" .. name, nil, VFS.RAW_FIRST)
 		BtEvaluator.scripts[name] = c
 	end
 	return c

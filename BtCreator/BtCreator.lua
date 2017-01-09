@@ -264,13 +264,13 @@ end
 
 
 local function getParameterDefinitions()
-	local directoryName = LUAUI_DIRNAME .. "Widgets/btCommandScripts" 
+	local directoryName = LUAUI_DIRNAME .. "Widgets/BtCommandScripts" 
 	local folderContent = VFS.DirList(directoryName)
 	local paramsDefs = {}
 	-- Remove the path prefix of folder:
 	for i,v in ipairs(folderContent)do
 		local scriptName = string.sub(v, string.len( directoryName)+2 ) --THIS WILL MAKE TROUBLES WHEN DIRECTORY IS DIFFERENT: the slashes are sometimes counted once, sometimes twice!!!\\
-		local script = VFS.Include(LUAUI_DIRNAME .. "Widgets/btCommandScripts/" .. scriptName, nil, VFS.RAW_FIRST)
+		local script = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCommandScripts/" .. scriptName, nil, VFS.RAW_FIRST)
 		if script.getParameterDefs ~= nil then
 			paramsDefs[scriptName] = script.getParameterDefs()
 		end
