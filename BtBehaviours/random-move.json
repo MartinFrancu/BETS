@@ -25,29 +25,31 @@
 			"children": [],
 			"id": "ytVCQqVeUzO5Ip0vUXzz1JOpfXh6kNHj",
 			"nodeType": "luaCommand",
+			"scriptName": "randomVector.lua",
 			"parameters": [ {
-				"name": "scriptName",
-				"value": "randomVector.lua"
-			}, {
 				"name": "x",
 				"value": "$x"
 			}, {
 				"name": "y",
 				"value": "$y"
+			}, {
+				"name": "scriptName",
+				"value": "randomVector.lua"
 			} ]
 		}, {
 			"children": [],
 			"id": "dEHOrJf8Xf2wEBZXy6hd0kcL56tqEc8z",
 			"nodeType": "luaCommand",
+			"scriptName": "move.lua",
 			"parameters": [ {
-				"name": "scriptName",
-				"value": "move.lua"
-			}, {
 				"name": "x",
 				"value": "$x"
 			}, {
 				"name": "y",
 				"value": "$y"
+			}, {
+				"name": "scriptName",
+				"value": "move.lua"
 			} ]
 		} ],
 		"id": "gln4jU3MI4wh8mdRi69Voj0K5QkZRn1y",

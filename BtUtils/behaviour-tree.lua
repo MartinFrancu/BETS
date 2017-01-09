@@ -4,9 +4,13 @@
 -- @classmod BehaviourTree
 -- @alias treePrototype
 
-if(not BtUtils)then VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST) end
+if(not BtUtils)then VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST) end;
+
+
 
 local Utils = BtUtils
+local Logger = Utils.Debug.Logger
+
 return Utils:Assign("BehaviourTree", function()
 	local BehaviourTree = {}
 	
@@ -55,6 +59,7 @@ return Utils:Assign("BehaviourTree", function()
 		local node = setmetatable({
 			id = params.id,
 			nodeType = params.nodeType,
+			scriptName = params.scriptName,
 			parameters = params.parameters or {},
 			children = {},
 		}, makeNodeMetatable(self, properties))
@@ -95,6 +100,7 @@ return Utils:Assign("BehaviourTree", function()
 
 		node.parameters = node.parameters or {}
 		node.children = node.children or {}
+
 		local properties = tree.properties[node.id]
 		setmetatable(node, makeNodeMetatable(tree, properties))
 		

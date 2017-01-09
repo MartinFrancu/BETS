@@ -52,7 +52,7 @@
 			"parameters": []
 		} ],
 		"id": "J6FFSgBE0Ya4WbxC8wvBfz43HoI3UMbD",
-		"nodeType": "switch",
+		"nodeType": "roleSplit",
 		"parameters": [ {
 			"componentType": "editBox",
 			"name": "mode",

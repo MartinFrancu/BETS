@@ -136,16 +136,26 @@ function getBarItemByName(tabs, tabName)
 	end
 end
 
--- The following function will find tabBarItem witch such name and add to atributs under this name given data.
+
+-- The following function will find tabBarItem with such name and add to atributs under this name given data.
 function addFieldToBarItem(tabs, tabName, atributName, atribut)
 	item = getBarItemByName(tabs,tabName)
+	item[atributName] = atribut
+end
+-- The following function will find tabBarItem witch such name and add to atributs under this name given data. 
+-- It expects a list, so if it is empty it will add a list containing given value. 
+function addFieldToBarItemList(tabs, tabName, atributName, atribut)
+	item = getBarItemByName(tabs,tabName)
 	if item[atributName] == nil then
-				item[atributName] = atribut
+				item[atributName] = {atribut}
 			else
 				local currentAtt = item[atributName]
 				table.insert(currentAtt, atribut)
 			end
 end
+
+
+
 
 
 
@@ -160,7 +170,8 @@ function addTreeToTreeTabPanel(treeHandle)
 	
 	-- Now I should add a listener to show proper tree:
 	-- get tabBar		
-	addFieldToBarItem(treeTabPanel, newTab.name, "OnClick",listenerBarItemClick)
+	addFieldToBarItem(treeTabPanel, newTab.name, "MouseDown", tabBarItemMouseDownBETS)
+	addFieldToBarItemList(treeTabPanel, newTab.name, "OnClick", listenerBarItemClick )
 	addFieldToBarItem(treeTabPanel, newTab.name, "TreeHandle", treeHandle)
 	
 	moveToEndAddTab(treeTabPanel)
@@ -236,7 +247,7 @@ function TreeHandle:New(obj)
 	
 	local roleCount = 1
 	local function visit(node)
-		if(node.nodeType == "switch" and roleCount < #node.children)then
+		if(node.nodeType == "roleSplit" and roleCount < #node.children)then
 			roleCount = #node.children
 		end
 	  for _, child in ipairs(node.children) do
@@ -308,6 +319,11 @@ function removeTreeBtController(tabs,treeHandle)
 	local tabBarChildIndex = 1
 	-- get tabBar
 	local tabBar = tabs.children[tabBarChildIndex]
+	
+	if treeHandle.Name == tabBar.selected_obj.caption then
+		BtCreator.hide()
+	end
+	
 	tabBar:Remove(treeHandle.Name)
 	-- remove chili elements ?
 	local deleteFrame = tabs.tabIndexMapping[treeHandle.Name]
@@ -344,7 +360,13 @@ function removeUnitsFromTree(instanceId)
 	end
 end
 
-
+--------------------------------------------------
+---------REWRITTEN CHILI FUNCTIONS:
+function tabBarItemMouseDownBETS(self, ...)
+  self.inherited.MouseDown(self, ...)
+  return self
+end 
+--------------------------------------------------
 
 ---------------------------------------LISTENERS
 local function listenerRefreshTreeSelectionPanel(self)
@@ -356,7 +378,7 @@ end
 
 
 
-function listenerBarItemClick(self, x, y, button)
+function listenerBarItemClick(self, x, y, button, ...)
 	if button == 1 then
 		-- select assigned units, if any
 		local unitsToSelect = unitsInTree(self.TreeHandle.InstanceId)
@@ -366,7 +388,13 @@ function listenerBarItemClick(self, x, y, button)
 	
 		BtEvaluator.reportTree(self.TreeHandle.InstanceId)
 		
-		BtCreator.show(self.TreeHandle.TreeType)	
+		BtCreator.show(self.TreeHandle.TreeType)
+		
+		-- ORIGINAL LISTENER FORM BarItem:
+		if not self.parent then return end
+		self.parent:Select(self.caption)
+		return self
+		-- END OF ORIG. LISTENER
 	end
 	if button == 2 then
 		--middle click
@@ -511,7 +539,7 @@ end
 
 function setUpTreeSelectionTab()
  
-   treeSelectionLabel = Chili.Label:New{
+	treeSelectionLabel = Chili.Label:New{
 		--parent = treeSelectionWindow,
 		x = 5,
 		y = 5,
@@ -625,7 +653,7 @@ function setUpTreeControlWindow()
 	
 end
 
-function setUpErroWindow()
+function setUpErrorWindow()
 	errorWindow = 	Chili.Window:New{
 		parent = treeSelectionPanel,
 		x = 50,
@@ -676,7 +704,7 @@ function widget:Initialize()
    
 	setUpTreeControlWindow()
   
-	setUpErroWindow()
+	setUpErrorWindow()
 	Spring.Echo("BtController reports for duty!")
  
  	Dependency.fill(Dependency.BtController)

@@ -2,26 +2,19 @@
 	"additionalNodes": [],
 	"properties": {
 		"IAJmvJllm9Z6xrfy9dGScdwV7LvGY9C8": {
-			"hasConnectionIn": true,
-			"hasConnectionOut": true,
 			"height": 60,
 			"text": "condition",
 			"width": 110,
 			"x": 200,
 			"y": 116
 		},
-		"bhe4CIIU5yRiWFJBMhRYvBCQrS53CfEu": {
-			"hasConnectionIn": true,
-			"hasConnectionOut": false,
-			"height": 60,
-			"text": "echo",
+		"Vp2wPnyl1pZtjDLAlsdCPYHPCZyOHTD4": {
+			"height": 70,
 			"width": 110,
-			"x": 305,
-			"y": 202
+			"x": 441.5,
+			"y": 221
 		},
 		"h3TFuH8QAxvyFKf3tfMeisip6ISCl9T4": {
-			"hasConnectionIn": true,
-			"hasConnectionOut": false,
 			"height": 60,
 			"text": "flipSensor",
 			"width": 110,
@@ -29,8 +22,6 @@
 			"y": 49
 		},
 		"yPJ8cNc1qll8vxpYQQEpB9OgmTtB4pGT": {
-			"hasConnectionIn": true,
-			"hasConnectionOut": false,
 			"height": 60,
 			"text": "echo",
 			"width": 110,
@@ -48,15 +39,28 @@
 			"children": [],
 			"id": "yPJ8cNc1qll8vxpYQQEpB9OgmTtB4pGT",
 			"nodeType": "echo",
-			"parameters": []
+			"parameters": [ {
+				"name": "message",
+				"value": "Echo message"
+			} ]
 		}, {
 			"children": [],
-			"id": "bhe4CIIU5yRiWFJBMhRYvBCQrS53CfEu",
-			"nodeType": "echo",
-			"parameters": []
+			"id": "Vp2wPnyl1pZtjDLAlsdCPYHPCZyOHTD4",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "msg",
+				"value": "asd"
+			}, {
+				"name": "scriptName",
+				"value": "luaecho.lua"
+			} ],
+			"scriptName": "luaecho.lua"
 		} ],
 		"id": "IAJmvJllm9Z6xrfy9dGScdwV7LvGY9C8",
 		"nodeType": "condition",
-		"parameters": []
+		"parameters": [ {
+			"name": "repeat",
+			"value": "false"
+		} ]
 	}
 }

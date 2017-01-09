@@ -21,17 +21,16 @@ local buttonPanel
 local loadTreeButton
 local saveTreeButton
 local minimizeButton
+local addRoleButton
 
 local treeName
 
---- Contains all the TreeNodes on the editable area - windowBtCreator aka canvas. 
+--- Keys are node IDs, values are Treenode objects.  
 WG.nodeList = {}
 local nodePoolList = {}
 --- Key into the nodeList. 
 local rootID = nil
 
--- Include debug functions, copyTable() and dump()
---VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/debug_utils.lua", nil, VFS.RAW_FIRST)
 local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
 
 local JSON = Utils.JSON
@@ -42,26 +41,46 @@ local Debug = Utils.Debug;
 local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyTable, Debug.fileTable
 
 local nodeDefinitionInfo = {}
+local isScript = {}
 
 -- BtEvaluator interface definitions
 local BtCreator = {} -- if we need events, change to Sentry:New()
 
+-- connection lines functions
+local connectionLine = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/connection_line.lua", nil, VFS.RAW_FIRST)
+
+
 function BtCreator.show(tree)
 	if(not windowBtCreator.visible) then
 		windowBtCreator:Show()
+	end
+	if(not nodePoolPanel.visible) then
 		nodePoolPanel:Show()
+	end
+	if(not buttonPanel.visible) then
 		buttonPanel:Show()
 	end
-	treeName.text = tree
-	treeName:RequestUpdate()
+	treeName:SetText(tree)
 	listenerClickOnLoadTree()
+end
+
+function BtCreator.hide()
+	if(windowBtCreator.visible) then
+		windowBtCreator:Hide()
+	end
+	if(nodePoolLabel.visible) then
+		nodePoolPanel:Hide()
+	end
+	if(buttonPanel.visible) then
+		buttonPanel:Hide()
+	end
 end
 
 --- Adds Treenode to canvas, and also selects it. 
 local function addNodeToCanvas(node)
 	if next(WG.nodeList) == nil then
 		rootID = node.id
-		Logger.log("tree-editing", "BtCreator: Setting u of new of rootID: ", rootID)
+		Logger.log("tree-editing", "BtCreator: Setting u of new of rootID: ", rootID, " script: ", node.luaScript)
 	end
 	WG.nodeList[node.id] = node
 	WG.clearSelection()
@@ -71,7 +90,7 @@ end
 local function removeNodeFromCanvas(id)
 	local node = WG.nodeList[id]
 	for i=#node.attachedLines,1,-1 do
-		WG.removeConnectionLine(node.attachedLines[i])
+		connectionLine.remove(node.attachedLines[i])
 	end
 	WG.selectedNodes[id] = nil
 	node:Dispose()
@@ -123,7 +142,10 @@ local clearCanvas, loadBehaviourTree, formBehaviourTree
 function listenerClickOnSaveTree()
 	Logger.log("save-and-load", "Save Tree clicked on. ")
 	formBehaviourTree():Save(treeName.text)
+	WG.clearSelection()
 end
+
+local serializedTreeName
 
 function listenerClickOnLoadTree()
 	Logger.log("save-and-load", "Load Tree clicked on. ")
@@ -136,11 +158,21 @@ function listenerClickOnLoadTree()
 	end
 end
 
+function listenerClickOnAddRole()
+	Logger.log("tree-editing", "Adding new role. ")
+	local rootNode = WG.nodeList[rootID]
+	table.insert(rootNode.parameters, {
+		name = "Role "..#rootNode.parameters + 1, 
+		value = "Role Name",
+		componentType = "editBox",
+		variableType = "string",
+	})
+	rootNode:CreateNextParameterObject()
+end
+
 function listenerClickOnMinimize()
 	Logger.log("tree-editing", "Minimize BtCreator. ")
-	windowBtCreator:Hide()
-	nodePoolPanel:Hide()
-	buttonPanel:Hide()
+	BtCreator.hide()
 end
 
 -- //////////////////////////////////////////////////////////////////////
@@ -181,23 +213,94 @@ local function updateStatesMessage(states)
 	end
 end
 
+local function generateNodePool(heightSum, nodes) 
+	for i=1,#nodes do
+		if (nodes[i].nodeType ~= "luaCommand") then
+			local nodeParams = {
+				name = nodes[i].name,
+				hasConnectionOut = (nodes[i].children == null) or (type(nodes[i].children) == "table" and #nodes[i].children ~= 0),
+				nodeType = nodes[i].name, -- TODO use name parameter instead of nodeType
+				parent = nodePoolPanel,
+				y = heightSum,
+				tooltip = nodes[i].tooltip or "",
+				draggable = false,
+				resizable = false,
+				connectable = false,
+				onMouseDown = { listenerStartCopyingNode },
+				onMouseUp = { listenerEndCopyingNode },
+				parameters = nodes[i]["parameters"],
+			}
+			-- Make value field from defaultValue. 
+			for i=1,#nodeParams.parameters do
+				if(nodeParams.parameters[i]["defaultValue"]) then
+					nodeParams.parameters[i]["value"] = nodeParams.parameters[i]["defaultValue"]
+					nodeParams.parameters[i]["defaultValue"] = nil
+				end
+			end
+			nodeDefinitionInfo[nodeParams.nodeType] = {}
+			nodeDefinitionInfo[nodeParams.nodeType]["parameters"] = copyTable(nodeParams.parameters)
+			nodeDefinitionInfo[nodeParams.nodeType]["hasConnectionIn"]  = nodeParams.hasConnectionIn
+			nodeDefinitionInfo[nodeParams.nodeType]["hasConnectionOut"] = nodeParams.hasConnectionOut
+			if(nodes[i].defaultWidth) then
+				local minWidth = 110
+				if(#nodes[i]["parameters"] > 0) then
+					for k=1,#nodes[i]["parameters"] do
+						minWidth = math.max(minWidth, nodePoolPanel.font:GetTextWidth(nodes[i]["parameters"][k]["value"]) + nodePoolPanel.font:GetTextWidth(nodes[i]["parameters"][k]["name"]) + 40)
+						--nodes[i]["parameters"][k]["defaultValue"]:len()
+					end
+					
+				end
+				nodeParams.width = math.max(minWidth, nodes[i].defaultWidth)
+			end
+			if(nodes[i].defaultHeight) then
+				nodeParams.height = math.max(50 + #nodes[i]["parameters"]*20, nodes[i].defaultHeight)
+			end
+			heightSum = heightSum + (nodeParams.height or 60)
+			table.insert(nodePoolList, Chili.TreeNode:New(nodeParams))
+		end
+	end
+	return heightSum
+end
+
+
+local function getParameterDefinitions()
+	local directoryName = LUAUI_DIRNAME .. "Widgets/btCommandScripts" 
+	local folderContent = VFS.DirList(directoryName)
+	local paramsDefs = {}
+	-- Remove the path prefix of folder:
+	for i,v in ipairs(folderContent)do
+		local scriptName = string.sub(v, string.len( directoryName)+2 ) --THIS WILL MAKE TROUBLES WHEN DIRECTORY IS DIFFERENT: the slashes are sometimes counted once, sometimes twice!!!\\
+		local script = VFS.Include(LUAUI_DIRNAME .. "Widgets/btCommandScripts/" .. scriptName, nil, VFS.RAW_FIRST)
+		if script.getParameterDefs ~= nil then
+			paramsDefs[scriptName] = script.getParameterDefs()
+		end
+	end
+	
+	return paramsDefs
+end
+
 local function generateNodePoolNodes(nodes)
 	Logger.log("communication", "NODES DECODED:  ", nodes)
 	local heightSum = 30 -- skip NodePoolLabel
-	for i=1,#nodes do
+    heightSum = generateNodePool(heightSum, nodes)
+	
+	-- load lua commands
+	local paramDefs = getParameterDefinitions()
+	
+	for scriptName, params in pairs(paramDefs) do
 		local nodeParams = {
-			name = nodes[i].name,
-			hasConnectionOut = (nodes[i].children == null) or (type(nodes[i].children) == "table" and #nodes[i].children ~= 0),
-			nodeType = nodes[i].name, -- TODO use name parameter instead of nodeType
+			name = scriptName,
+			hasConnectionOut = false,
+			nodeType = scriptName,
 			parent = nodePoolPanel,
 			y = heightSum,
-			tooltip = nodes[i].tooltip or "",
+			tooltip = "",
 			draggable = false,
 			resizable = false,
 			connectable = false,
 			onMouseDown = { listenerStartCopyingNode },
 			onMouseUp = { listenerEndCopyingNode },
-			parameters = nodes[i]["parameters"],
+			parameters = params,
 		}
 		-- Make value field from defaultValue. 
 		for i=1,#nodeParams.parameters do
@@ -206,133 +309,20 @@ local function generateNodePoolNodes(nodes)
 				nodeParams.parameters[i]["defaultValue"] = nil
 			end
 		end
-		nodeDefinitionInfo[nodeParams.nodeType] = {}
-		nodeDefinitionInfo[nodeParams.nodeType]["parameters"] = copyTable(nodeParams.parameters)
-		nodeDefinitionInfo[nodeParams.nodeType]["hasConnectionIn"]  = nodeParams.hasConnectionIn
-		nodeDefinitionInfo[nodeParams.nodeType]["hasConnectionOut"] = nodeParams.hasConnectionOut
-		if(nodes[i].defaultWidth) then
-			local minWidth = 110
-			if(#nodes[i]["parameters"] > 0) then
-				for k=1,#nodes[i]["parameters"] do
-					minWidth = math.max(minWidth, nodePoolPanel.font:GetTextWidth(nodes[i]["parameters"][k]["value"]) + nodePoolPanel.font:GetTextWidth(nodes[i]["parameters"][k]["name"]) + 40)
-					--nodes[i]["parameters"][k]["defaultValue"]:len()
-				end
-				
-			end
-			nodeParams.width = math.max(minWidth, nodes[i].defaultWidth)
-		end
-		if(nodes[i].defaultHeight) then
-			nodeParams.height = math.max(50 + #nodes[i]["parameters"]*20, nodes[i].defaultHeight)
-		end
+		nodeDefinitionInfo[scriptName] = {}
+		nodeDefinitionInfo[scriptName]["parameters"] = copyTable(nodeParams.parameters)
+		nodeDefinitionInfo[scriptName]["hasConnectionIn"]  = nodeParams.hasConnectionIn
+		nodeDefinitionInfo[scriptName]["hasConnectionOut"] = nodeParams.hasConnectionOut
+		
+		isScript[scriptName] = true
+
+		nodeParams.width = 110
+		nodeParams.height = 50 + #nodeParams.parameters * 20
 		heightSum = heightSum + (nodeParams.height or 60)
 		table.insert(nodePoolList, Chili.TreeNode:New(nodeParams))
 	end
+	
 	nodePoolPanel:RequestUpdate()
-	
-	Spring.Echo("nodeDefinitionInfo"..dump(nodeDefinitionInfo,4))
-end
-
-local scripts = {}
-local commands = {}
-
-local function getCommandClass(name) 
-	c = scripts[name] 
-	if not c then 
-		c = VFS.Include(LUAUI_DIRNAME .. "Widgets/btCommandScripts/" .. name, nil, VFS.RAW_FIRST)
-		scripts[name] = c
-	end
-	return c
-end
-
-local function getCommand(name, id, treeId)
-	commandMap = commands[name]
-	if not commandMap then
-		commandMap = {}
-		commands[name] = commandMap
-	end
-	
-	cmdsForInstance = commandMap[treeId]
-	if not cmdsForInstance then
-		cmdsForInstance = {}
-		commandMap[treeId] = cmdsForInstance
-	end
-	
-	cmd = cmdsForInstance[id]
-	if not cmd then
-		cmd = getCommandClass(name):BaseNew()
-		cmdsForInstance[id] = cmd
-	end
-	return cmd
-end
-
-local blackboardsForInstance = {}
-local commandsForUnits = {}-- map(unitId,command)
-
-local function executeScript(params)
-	command = getCommand(params.name, params.id, params.treeId)
-	local blackboard = blackboardsForInstance[params.treeId]
-	if(not blackboard)then
-		blackboard = {}
-		blackboardsForInstance[params.treeId] = blackboard
-	end
-
-	if (params.func == "RUN") then
-		for i = 1, #params.units do
-			commandsForUnits[params.units[i]] = command
-		end
-		
-		local parameters = {}
-		for k, v in pairs(params.parameter) do
-			local value = v
-			if(type(value) == "string" and value:match("^%$"))then
-				Logger.log("blackboard", "Extracting ", value, " from blackboard and inputting it into ", k, " parameter in node ", params.name)
-				value = blackboard[value]
-			end
-			parameters[k] = value
-		end
-		
-		local result, output = command:BaseRun(params.units, parameters)
-		if(output)then
-			for k, v in pairs(output) do
-				local originalValue = params.parameter[k]
-				if(type(originalValue) == "string" and originalValue:match("^%$"))then
-					Logger.log("blackboard", "Saving to ", value, " blackboard with value ", v, " in node ", params.name)
-					blackboard[originalValue] = v
-				else
-					Logger.log("blackboard", "A constant value '", originalValue, "' was given to an output or input-output parameter '", k, "' of a command '", params.name, "' in instance ", params.treeId, ".", params.id)
-				end
-			end
-		end
-		Logger.log("luacommand", "Result: ", result)
-		return result
-	elseif (params.func == "RESET") then
-		command:BaseReset()
-		return nil
-	end
-end
-
-function widget:UnitCommand(unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdOpts, cmdTag) 
-	Logger.log("command", "----UnitCommand---")
-	cmd = commandsForUnits[unitID]
-	if cmd  then
-		cmd:AddActiveCommand(unitID,cmdID,cmdTag)
-	end
-end
-
-function widget:UnitCmdDone(unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdOpts, cmdTag)
-	Logger.log("command", "----UnitCmdDone---")
-	cmd = commandsForUnits[unitID]
-	if cmd then
-		cmd:CommandDone(unitID,cmdID,cmdTag)
-	end
-end
-
-function widget:UnitIdle(unitID, unitDefID, unitTeam)
-	Logger.log("command", "----UnitIdle---")
-	cmd = commandsForUnits[unitID]
-	if cmd then
-		cmd:SetUnitIdle(unitID)
-	end
 end
 
 
@@ -347,13 +337,12 @@ function widget:Initialize()
 	
 	BtEvaluator.OnNodeDefinitions = generateNodePoolNodes
 	BtEvaluator.OnUpdateStates = updateStatesMessage
-	BtEvaluator.OnCommand = executeScript
 	
 	-- Get ready to use Chili
 	Chili = WG.ChiliClone
 	Screen0 = Chili.Screen0	
 	
-	
+	connectionLine.initialize()
 	
 	nodePoolPanel = Chili.ScrollPanel:New{
 		parent = Screen0,
@@ -443,7 +432,17 @@ function widget:Initialize()
 		focusColor = {0.5,0.5,0.5,0.5},
 		OnClick = { listenerClickOnLoadTree },
 	}
-	
+	addRoleButton = Chili.Button:New{
+		parent = buttonPanel,
+		x = loadTreeButton.x + loadTreeButton.width,
+		y = saveTreeButton.y,
+		width = 90,
+		height = 30,
+		caption = "Add Role",
+		skinName = "DarkGlass",
+		focusColor = {0.5,0.5,0.5,0.5},
+		OnClick = { listenerClickOnAddRole },
+	}
 	minimizeButton = Chili.Button:New{
 		parent = buttonPanel,
 		x = buttonPanel.width - 50,
@@ -487,10 +486,10 @@ function widget:KeyPress(key)
 	
 end
 
-
 local fieldsToSerialize = {
 	'id',
 	'nodeType',
+	'scriptName',
 	'text',
 	'x',
 	'y',
@@ -499,25 +498,85 @@ local fieldsToSerialize = {
 	'parameters',
 }
 
+--- Contains IDs of nodes as keys - stores IDs of serialized tree, the one with name serializedTree
+local serializedIDs = {}
+
+local function updateSerializedIDs()
+	serializedIDs = {}
+	for id,_ in pairs(WG.nodeList) do
+		serializedIDs[id] = true
+	end
+end
+
+--- Assumes that id is present in WG.nodeList
+local function reGenerateTreenodeID(id)
+	if(WG.nodeList[id]) then
+		WG.nodeList[id]:ReGenerateID()
+	end
+	local newID = WG.nodeList[id].id
+	if(id == rootID) then
+		rootID = newID
+	end
+	WG.nodeList[newID] = WG.nodeList[id]
+	WG.nodeList[id] = nil
+end
+
 function formBehaviourTree()
+	-- on tree Save() regenerate IDs of nodes already present in loaded tree
+	if(serializedTreeName and serializedTreeName ~= treeName.text) then
+		--regenerate all IDs from loaded Tree
+		for id,_ in pairs(serializedIDs) do
+			if(WG.nodeList[id]) then
+				reGenerateTreenodeID(id)
+			end
+		end
+		updateSerializedIDs()
+	end
+
 	local bt = BehaviourTree:New()
 	local nodeMap = {}
 	for id,node in pairs(WG.nodeList) do
 		if(node.id ~= rootID)then
 			local params = {}
-			for i, key in ipairs(fieldsToSerialize) do
+			for _, key in ipairs(fieldsToSerialize) do
 				params[key] = node[key]
 			end
+			
+			local info = nodeDefinitionInfo[node.nodeType]
+			
+			local hasScriptName = false
 			-- get the string value from editbox
 			for i=1,#node.parameters do
-				if(nodeDefinitionInfo[node.nodeType].parameters[i]["componentType"]=="editBox") then
-					if(nodeDefinitionInfo[node.nodeType].parameters[i]["variableType"] == "number" and not node.parameterObjects[i]["editBox"].text:match("^%$")) then
-						params.parameters[i].value = tonumber(node.parameterObjects[i]["editBox"].text)
-					else
-						params.parameters[i].value = node.parameterObjects[i]["editBox"].text
+				if (node.parameters[i].name == "scriptName") then
+					hasScriptName = true
+				else
+					Logger.log("save-and-load", "info params: " ,info.parameters[i], "")
+					-- TODO Conversion of parameter to number - is this really needed?
+					if(node.parameterObjects[i]["componentType"]=="editBox") then
+						local editbox = node.parameterObjects[i]["editBox"]
+						if(editbox["variableType"] == "number" and not editbox.text:match("^%$")) then
+							params.parameters[i].value = tonumber(editbox.text)
+						else
+							params.parameters[i].value = editbox.text
+						end
 					end
 				end
 			end
+			-- change luaScript node format to fit btEvaluator/controller
+			local scriptName = node.nodeType
+			if (isScript[scriptName]) then
+				Logger.log("save-and-load", "scriptName: " ,scriptName)
+				if (not hasScriptName) then
+					scriptParam = {}
+					scriptParam.name = "scriptName"
+					scriptParam.value = scriptName
+					
+					params.parameters[#params.parameters + 1] = scriptParam
+				end
+				params.nodeType = "luaCommand"
+				params.scriptName = scriptName
+			end
+			
 			nodeMap[node] = bt:NewNode(params)
 		end
 	end
@@ -539,13 +598,7 @@ function formBehaviourTree()
 end
 
 function clearCanvas(omitRoot)
-	for i=#WG.connectionLines,1,-1 do
-		for k=2,5 do
-			WG.connectionLines[i][k]:Dispose()
-		end
-		table.remove(WG.connectionLines, i)
-	end
-	--WG.connectionLines = {}
+	connectionLine.clear()
 	for id,node in pairs(WG.nodeList) do
 		node:Dispose()
 	end
@@ -571,7 +624,16 @@ end
 local function loadBehaviourNode(bt, btNode)
 	if(not btNode)then return nil end
 	local params = {}
-	for k,v in pairs(nodeDefinitionInfo[btNode.nodeType]) do
+	local info
+	
+	Logger.log("save-and-load", "loadBehaviourNode - scriptName: ", btNode.scriptName, " info: ", nodeDefinitionInfo)
+	if (btNode.scriptName ~= nil) then
+		info = nodeDefinitionInfo[btNode.scriptName]
+	else
+		info = nodeDefinitionInfo[btNode.nodeType]
+	end
+	
+	for k,v in pairs(info) do
 		if(type(v) == "table") then
 			params[k] = copyTable(v)
 		else
@@ -580,8 +642,13 @@ local function loadBehaviourNode(bt, btNode)
 	end
 	for k, v in pairs(btNode) do
 		if(k=="parameters") then
+		
+			Logger.log("save-and-load", "params: ", params, ", params.parameters: ", params.parameters, "v[3]: ", v[3])
 			for i=1,#v do
-				params.parameters[i].value = v[i].value
+				if (v[i].name ~= "scriptName") then
+					Logger.log("save-and-load", "params.parameters[i]: ", params.parameters[i], ", v[i]: ", v[i])
+					params.parameters[i].value = v[i].value
+				end
 			end
 		else
 			params[k] = v
@@ -595,25 +662,32 @@ local function loadBehaviourNode(bt, btNode)
 	params.parent = windowBtCreator
 	params.connectable = true
 	params.draggable = true
+	
+	if (btNode.scriptName ~= nil) then
+		params.nodeType = btNode.scriptName
+	end
+	
 	local node = Chili.TreeNode:New(params)
 	addNodeToCanvas(node)
 	for _, btChild in ipairs(btNode.children) do
 		local child = loadBehaviourNode(bt, btChild)
-		WG.addConnectionLine(node.connectionOut, child.connectionIn)
+		connectionLine.add(node.connectionOut, child.connectionIn)
 	end
 	return node
 end
 
 function loadBehaviourTree(bt)
+	serializedTreeName = treeName.text -- to be able to regenerate ids of deserialized nodes, when saved with different name
 	local root = loadBehaviourNode(bt, bt.root)
 	if(root)then
-		WG.addConnectionLine(WG.nodeList[rootID].connectionOut, root.connectionIn)
+		connectionLine.add(WG.nodeList[rootID].connectionOut, root.connectionIn)
 	end
 	
 	for _, node in ipairs(bt.additionalNodes) do
 		loadBehaviourNode(bt, node)
 	end
 	WG.clearSelection()
+	updateSerializedIDs()
 end
 
 Dependency.deferWidget(widget, Dependency.BtEvaluator)

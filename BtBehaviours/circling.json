@@ -1,130 +1,100 @@
 {
 	"additionalNodes": [],
 	"properties": {
-		"7tLdkVYX7AObKd3Mp6Q1UDXjnWVoKYgw": {
-			"hasConnectionIn": true,
-			"hasConnectionOut": false,
-			"height": 110,
-			"width": 175.000015,
-			"x": 375,
-			"y": 242
+		"FDpus7cSm0m70J9cguYrrirBO7XWF6h3": {
+			"height": 90,
+			"width": 110,
+			"x": 335,
+			"y": 309
 		},
-		"QTnWPUhrB8TZJnCwFQxbgO1MScE2pRUH": {
-			"hasConnectionIn": true,
-			"hasConnectionOut": false,
-			"height": 110,
-			"width": 175.000015,
-			"x": 238,
-			"y": 328
+		"Gxo2uBsXAW4UIzJVBJrDKJVg43FYpeqe": {
+			"height": 90,
+			"width": 110,
+			"x": 322,
+			"y": 218
 		},
-		"dEHOrJf8Xf2wEBZXy6hd0kcL56tqEc8z": {
-			"hasConnectionIn": true,
-			"hasConnectionOut": false,
-			"height": 110,
-			"width": 175.000015,
-			"x": 415,
-			"y": 134
-		},
-		"gln4jU3MI4wh8mdRi69Voj0K5QkZRn1y": {
-			"hasConnectionIn": true,
-			"hasConnectionOut": true,
+		"Mdoai1yfNkBoBedl8uUGuywIG7hu8MmZ": {
 			"height": 60,
 			"width": 110,
-			"x": 112,
-			"y": 227
+			"x": 166,
+			"y": 144
 		},
-		"ytVCQqVeUzO5Ip0vUXzz1JOpfXh6kNHj": {
-			"hasConnectionIn": true,
-			"hasConnectionOut": false,
-			"height": 110,
-			"width": 175.000015,
-			"x": 260,
-			"y": 29
+		"Rvxuq8fh7dqxy9PJP6lAHSmRZJE30shr": {
+			"height": 90,
+			"width": 110,
+			"x": 327,
+			"y": 119
+		},
+		"fPx8tP4IiEWnBEJ6E1oXfV6SokM2wAHp": {
+			"height": 90,
+			"width": 110,
+			"x": 341,
+			"y": 28
 		}
 	},
 	"root": {
 		"children": [ {
 			"children": [],
-			"id": "ytVCQqVeUzO5Ip0vUXzz1JOpfXh6kNHj",
+			"id": "fPx8tP4IiEWnBEJ6E1oXfV6SokM2wAHp",
 			"nodeType": "luaCommand",
 			"parameters": [ {
-				"componentType": "editBox",
-				"name": "scriptName",
-				"value": "move.lua",
-				"variableType": "string"
-			}, {
-				"componentType": "editBox",
 				"name": "x",
-				"value": 100,
-				"variableType": "number"
+				"value": 100
 			}, {
-				"componentType": "editBox",
 				"name": "y",
-				"value": 0,
-				"variableType": "number"
-			} ]
+				"value": 0
+			}, {
+				"name": "scriptName",
+				"value": "move.lua"
+			} ],
+			"scriptName": "move.lua"
 		}, {
 			"children": [],
-			"id": "dEHOrJf8Xf2wEBZXy6hd0kcL56tqEc8z",
+			"id": "Rvxuq8fh7dqxy9PJP6lAHSmRZJE30shr",
 			"nodeType": "luaCommand",
 			"parameters": [ {
-				"componentType": "editBox",
-				"name": "scriptName",
-				"value": "move.lua",
-				"variableType": "string"
-			}, {
-				"componentType": "editBox",
 				"name": "x",
-				"value": 0,
-				"variableType": "number"
+				"value": 0
 			}, {
-				"componentType": "editBox",
 				"name": "y",
-				"value": -100,
-				"variableType": "number"
-			} ]
+				"value": 100
+			}, {
+				"name": "scriptName",
+				"value": "move.lua"
+			} ],
+			"scriptName": "move.lua"
 		}, {
 			"children": [],
-			"id": "7tLdkVYX7AObKd3Mp6Q1UDXjnWVoKYgw",
+			"id": "Gxo2uBsXAW4UIzJVBJrDKJVg43FYpeqe",
 			"nodeType": "luaCommand",
 			"parameters": [ {
-				"componentType": "editBox",
-				"name": "scriptName",
-				"value": "move.lua",
-				"variableType": "string"
-			}, {
-				"componentType": "editBox",
 				"name": "x",
-				"value": -100,
-				"variableType": "number"
+				"value": -100
 			}, {
-				"componentType": "editBox",
 				"name": "y",
-				"value": 0,
-				"variableType": "number"
-			} ]
+				"value": 0
+			}, {
+				"name": "scriptName",
+				"value": "move.lua"
+			} ],
+			"scriptName": "move.lua"
 		}, {
 			"children": [],
-			"id": "QTnWPUhrB8TZJnCwFQxbgO1MScE2pRUH",
+			"id": "FDpus7cSm0m70J9cguYrrirBO7XWF6h3",
 			"nodeType": "luaCommand",
 			"parameters": [ {
-				"componentType": "editBox",
-				"name": "scriptName",
-				"value": "move.lua",
-				"variableType": "string"
-			}, {
-				"componentType": "editBox",
 				"name": "x",
-				"value": 0,
-				"variableType": "number"
+				"value": 0
 			}, {
-				"componentType": "editBox",
 				"name": "y",
-				"value": 100,
-				"variableType": "number"
-			} ]
+				"value": -100
+			}, {
+				"name": "scriptName",
+				"value": "move.lua"
+			} ],
+			"scriptName": "move.lua"
 		} ],
-		"id": "gln4jU3MI4wh8mdRi69Voj0K5QkZRn1y",
+		"id": "Mdoai1yfNkBoBedl8uUGuywIG7hu8MmZ",
 		"nodeType": "sequence",
 		"parameters": []
 	}
