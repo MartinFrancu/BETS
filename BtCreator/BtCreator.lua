@@ -142,6 +142,7 @@ local clearCanvas, loadBehaviourTree, formBehaviourTree
 function listenerClickOnSaveTree()
 	Logger.log("save-and-load", "Save Tree clicked on. ")
 	formBehaviourTree():Save(treeName.text)
+	WG.clearSelection()
 end
 
 local serializedTreeName
@@ -550,19 +551,17 @@ function formBehaviourTree()
 					hasScriptName = true
 				else
 					Logger.log("save-and-load", "info params: " ,info.parameters[i], "")
-				if(node.parameterObjects[i]["componentType"]=="editBox") then
-					local editbox = node.parameterObjects[i]["editBox"]
-					if(editbox["variableType"] == "number" and not editbox.text:match("^%$")) then
-						params.parameters[i].value = tonumber(editbox.text)
-					if(info.parameters[i]["componentType"]=="editBox") then
-						if(info.parameters[i]["variableType"] == "number" and not node.parameterObjects[i]["editBox"].text:match("^%$")) then
+					-- TODO Conversion of parameter to number - is this really needed?
+					if(node.parameterObjects[i]["componentType"]=="editBox") then
+						local editbox = node.parameterObjects[i]["editBox"]
+						if(editbox["variableType"] == "number" and not editbox.text:match("^%$")) then
+							params.parameters[i].value = tonumber(editbox.text)
 						else
-						params.parameters[i].value = editbox.text
+							params.parameters[i].value = editbox.text
 						end
 					end
 				end
 			end
-			
 			-- change luaScript node format to fit btEvaluator/controller
 			local scriptName = node.nodeType
 			if (isScript[scriptName]) then

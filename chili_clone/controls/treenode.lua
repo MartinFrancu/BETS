@@ -444,9 +444,12 @@ local function addNodeToSelection(nodeWindow)
 	nodeWindow:Invalidate()
 end
 
+--- Removes all the nodes from WG.selectedNodes, but only if they still exist
 local function clearSelection()
 	for id,_ in pairs(WG.selectedNodes) do
-		removeNodeFromSelection(WG.nodeList[id].nodeWindow)
+		if(WG.nodeList[id]) then
+			removeNodeFromSelection(WG.nodeList[id].nodeWindow)
+		end
 	end
 end
 
