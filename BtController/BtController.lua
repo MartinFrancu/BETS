@@ -342,6 +342,10 @@ function removeTreeBtController(tabs,treeHandle)
 	tabs.tabIndexMapping[treeHandle.Name] = nil
 	-- make sure addtab is in right place
 	moveToEndAddTab(tabs)
+	
+	-- remove records of unit assignment:
+	removeUnitsFromTree(treeHandle.InstanceId)
+	
 	-- remove send message to BtEvaluator
 	BtEvaluator.removeTree(treeHandle.InstanceId)
 end
