@@ -753,9 +753,9 @@ end
 
 function widget:UnitDestroyed(unitId)
 	if(unitsToTreesMap[unitId] ~= nil) then
-		Spring.Echo(unitId)
-		Spring.Echo(unitsToTreesMap[unitId].Role)
-		Spring.Echo("removingUnit")
+		Logger.log("units-removal", unitId)
+		Logger.log("units-removal", unitsToTreesMap[unitId].Role)
+		Logger.log("units-removal", "removingUnit")
 		removeUnitFromCurrentTree(unitId)
 	end
 end
