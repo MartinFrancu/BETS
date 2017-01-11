@@ -282,6 +282,7 @@ function TreeHandle:New(obj)
 			focusColor = {0.5,0.5,0.5,0.5},
 			TreeHandle = obj,
 			Role = roleName,
+			RoleIndex = roleIndex,
 			unitsCountLabel = unitsCountLabel
 		}
 		table.insert(obj.ChiliComponents, roleAssignmentButton)
@@ -458,7 +459,7 @@ function listenerAssignUnitsButton(self)
 	for _,Id in pairs(selectedUnits) do
 		assignUnitToTree(Id, self.TreeHandle, self.Role)
 	end
-	BtEvaluator.assignUnits(nil, self.TreeHandle.InstanceId, self.Role)
+	BtEvaluator.assignUnits(nil, self.TreeHandle.InstanceId, self.RoleIndex)
 	BtEvaluator.reportTree(self.TreeHandle.InstanceId)
 end
 
