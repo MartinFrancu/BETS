@@ -757,9 +757,6 @@ end
 
 function widget:UnitDestroyed(unitId)
 	if(unitsToTreesMap[unitId] ~= nil) then
-		Logger.log("units-removal", unitId)
-		Logger.log("units-removal", unitsToTreesMap[unitId].Role)
-		Logger.log("units-removal", "removingUnit")
 		removeUnitFromCurrentTree(unitId)
 	end
 end
