@@ -35,7 +35,6 @@ local treeControlWindow
 local controllerLabel
 local selectTreeButton
 local treeTabPanel
-local treeHandles = {}
 -------------------------------------------------------------------------------------
 local treeSelectionPanel
 local treeSelectionLabel
@@ -47,7 +46,8 @@ local errorWindow
 local errorLabel
 local errorOkButton
 --------------------------------------------------------------------------------
-
+-- This table is indexed by unitId and contains structures:
+-- {InstanceId = "", Role = "", TreeHandle = treehandle} 
 local unitsToTreesMap
 
 ------------------------------------------------------------------------------------- 
@@ -114,7 +114,7 @@ end
 
 
 -- To show in treeTabPanel tab with given name:
--- Here should be probably moved also a 
+ 
 function highlightTab(tabName)
 	-- first child should be the TabBar:
 	local tabBarChildIndex = 1
@@ -154,14 +154,6 @@ function addFieldToBarItemList(tabs, tabName, atributName, atribut)
 			end
 end
 
-
-
-
-
-
-
-
-
 function addTreeToTreeTabPanel(treeHandle)
 	local newTab =  {name = treeHandle.Name, children = treeHandle.ChiliComponents }
 	-- if TabPanel is not inialized I have to initalize it:
@@ -191,6 +183,15 @@ TreeHandle = {
 			ChiliComponents = {},
 			Roles = {},
 			} 
+			
+-------------------------------------------------------------------------------------
+--	Contains	.Name = "name of tree"
+--				.TreeType = loaded tree into table
+-- 				.InstanceId = id of this given instance 
+--				chiliComponents = array ofchili components corresponding to this tree
+--				Roles = table indexed by roleName containing reference to 
+--					chili components|: {AssignButton = , UnitCountLabel = }
+-------------------------------------------------------------------------------------
 
 function TreeHandle:New(obj)
 	obj = obj or TreeHandle
@@ -257,6 +258,7 @@ function TreeHandle:New(obj)
 	visit(obj.Tree.root)
 	
 	for roleIndex = 0, roleCount - 1 do
+		roleName = roleCount == 1 and "Default role" or "Role " .. tostring(roleIndex)
 		local unitsCountLabel = Chili.Label:New{
 			x = 150+200 ,
 			y = 43 + 22 * roleIndex,
@@ -268,46 +270,53 @@ function TreeHandle:New(obj)
 			focusColor = {0.5,0.5,0.5,0.5},
 		}
 		table.insert(obj.ChiliComponents, unitsCountLabel)
-		local labelAssignmentButton = Chili.Button:New{
+		local roleAssignmentButton = Chili.Button:New{
 			x = 150 ,
 			y = 40 + 22 * roleIndex,
 			height = roleCount == 1 and 30 or 20,
 			width = '25%',
 			minWidth = 150,
-			caption = roleCount == 1 and "Default role" or "Role " .. tostring(roleIndex),
+			caption = roleName,
 			OnClick = {listenerAssignUnitsButton}, 
 			skinName = "DarkGlass",
 			focusColor = {0.5,0.5,0.5,0.5},
 			TreeHandle = obj,
-			Role = roleIndex,
+			Role = roleName,
 			unitsCountLabel = unitsCountLabel
 		}
-		table.insert(obj.ChiliComponents, labelAssignmentButton)
+		table.insert(obj.ChiliComponents, roleAssignmentButton)
+		obj.Roles[roleName]={
+				AssignButton = roleAssignmentButton,
+				UnitCountLabel = unitsCountLabel
+			}
 	end
 	
 	return obj
 end
 
---[[function TreeHandle.listenerCreateTreeMessageButton(self)	
-	-- self = button
-	Logger.log("communication", "TreeHandle send a messsage. " )
-	--
+-- Following three methods are shortcut for increasing and decreassing role counts.
+function TreeHandle:DecreaseUnitCount(whichRole)
+	roleData = self.Roles[whichRole]
+	-- this is the current role and tree
+	currentCount = tonumber(roleData.UnitCountLabel.caption)
+	currentCount = currentCount - 1
 	
-	--
-	BtEvaluator.assignUnits(nil, self.TreeHandle.InstanceId, self.Role)
-	BtEvaluator.reportTree(self.TreeHandle.InstanceId)
+	-- test for <0 ?
+	roleData.UnitCountLabel:SetCaption(currentCount)
 end
---]]
-
--------------------------------------------------------------------------------------
---	Contains	.name = "name of tree"
---				.tree = loaded tree into table
--- 				chiliComponents.labelAssignemntButton = button to assign currently selected units to this label
---				chiliComponents.labelNameTextBox = text box for assignment:
--- 				chiliComponents.showBtCreatorButton = button to show current tree in bt creator
--------------------------------------------------------------------------------------
-
-
+function TreeHandle:IncreaseUnitCount(whichRole)
+	
+	roleData = self.Roles[whichRole]
+	-- this is the current role and tree
+	currentCount = tonumber(roleData.UnitCountLabel.caption)
+	currentCount = currentCount + 1
+	-- test for <0 ?
+	roleData.UnitCountLabel:SetCaption(currentCount)
+end
+function TreeHandle:SetUnitCount(whichRole, number)
+	roleData = self.Roles[whichRole]
+	roleData.UnitCountLabel:SetCaption(number)
+end
 
 function SendStringToBtEvaluator(message)
 	Spring.SendSkirmishAIMessage(Spring.GetLocalPlayerID(), "BETS " .. message)
@@ -342,31 +351,61 @@ function showErrorWindow(errorDecription)
 	errorWindow:Show()
 end
 
+
+
+
+
+-- this will remove given unit from its current tree and adjust the gui componnets
+function removeUnitFromCurrentTree(unitId)
+	if(unitsToTreesMap[unitId] == nil) then return end
+	-- unit is assigned to some tree:
+	-- decrease count of given tree:
+	treeHandle = unitsToTreesMap[unitId].TreeHandle
+	role = unitsToTreesMap[unitId].Role
+	treeHandle:DecreaseUnitCount(role)
+	unitsToTreesMap[unitId] = nil
+end
+-- this will remove all units from given tree and adjust gui componnets
+function removeUnitsFromTree(instanceId)
+	for unitId, unitData in pairs(unitsToTreesMap) do
+		if(unitData.InstanceId == instanceId) then
+			unitData.TreeHandle:DecreaseUnitCount(unitData.Role)
+			unitsToTreesMap[unitId] = nil
+		end
+	end
+end
+-- this will take note of assignment of a unit to given tree and adjust gui componnets
+function assignUnitToTree(unitId, treeHandle, roleName)
+	if(unitsToTreesMap[unitId] ~= nill) then
+		-- unit is currently assigned elsewhere, need to remove it first
+		removeUnitFromCurrentTree(unitId)
+	end
+	unitsToTreesMap[unitId] = {
+		InstanceId = treeHandle.InstanceId, 
+		Role = roleName,
+		TreeHandle = treeHandle
+		}
+	
+	treeHandle:IncreaseUnitCount(roleName)
+end
+-- This will return name id of all units in given tree
 function unitsInTree(instanceId)
 	local unitsInThisTree = {}
-	for unitId, treeIdAndRole in pairs(unitsToTreesMap) do
-		if(treeIdAndRole.TreeId == instanceId) then
+	for unitId, unitEntry in pairs(unitsToTreesMap) do
+		if(unitEntry.InstanceId == instanceId) then
 			table.insert(unitsInThisTree, unitId)
 		end
 	end
 	return unitsInThisTree
 end
 
-function removeUnitsFromTree(instanceId)
-	for unitId, treeIdAndRole in pairs(unitsToTreesMap) do
-		if(treeIdAndRole.TreeId == instanceId) then
-			unitsToTreesMap[unitId] = nil
-		end
-	end
-end
-
---------------------------------------------------
+--//////////////////////////////////////////////////////////////////////////////
 ---------REWRITTEN CHILI FUNCTIONS:
 function tabBarItemMouseDownBETS(self, ...)
   self.inherited.MouseDown(self, ...)
   return self
 end 
---------------------------------------------------
+--//////////////////////////////////////////////////////////////////////////////
 
 ---------------------------------------LISTENERS
 local function listenerRefreshTreeSelectionPanel(self)
@@ -404,24 +443,21 @@ end
 
 
 
-function listenerAssignUnitsButton(self)	
+
+function listenerAssignUnitsButton(self)
 	-- self = button
 	-- deselect units in current role
-	for unitId,treeAndRole in pairs(unitsToTreesMap) do
-		if(treeAndRole.TreeId == self.TreeHandle.TreeId) and (treeAndRole.Role == self.Role) then
-			unitsToTreesMap[unitId] = nil
+	for unitId,treeAndRole in pairs(unitsToTreesMap) do		
+		if(treeAndRole.InstanceId == self.TreeHandle.InstanceId) and (treeAndRole.Role == self.Role) then
+			removeUnitFromCurrentTree(unitId)
 		end
 	end
 	
 	-- make note of assigment in our notebook (this should be possible moved somewhere else:)
 	local selectedUnits = Spring.GetSelectedUnits()
 	for _,Id in pairs(selectedUnits) do
-		unitsToTreesMap[Id] = {TreeId = self.TreeHandle.InstanceId, Role = self.Role}
+		assignUnitToTree(Id, self.TreeHandle, self.Role)
 	end
-	
-	-- UPDATE THE UNIT COUNT LABEL:
-	self.unitsCountLabel:SetCaption(#selectedUnits)
-	
 	BtEvaluator.assignUnits(nil, self.TreeHandle.InstanceId, self.Role)
 	BtEvaluator.reportTree(self.TreeHandle.InstanceId)
 end
@@ -465,7 +501,8 @@ local function listenerClickOnSelectedTreeDoneButton(self, x, y, button)
 	end
 end
 
----------------------------------------LISTENERS
+---------------------------------------LISTENERS END
+
 function moveTabItemToEndWithListeners(tabs,tabName)
 	-- Trouble is that we add listeners on barItems, now I have to move them with me. 
 	-- do we have such tab
@@ -708,6 +745,18 @@ function widget:Initialize()
 	Spring.Echo("BtController reports for duty!")
  
  	Dependency.fill(Dependency.BtController)
+end
+
+--//////////////////////////////////////////////////////////////////////////////
+-- Callins
+
+function widget:UnitDestroyed(unitId)
+	if(unitsToTreesMap[unitId] ~= nil) then
+		Spring.Echo(unitId)
+		Spring.Echo(unitsToTreesMap[unitId].Role)
+		Spring.Echo("removingUnit")
+		removeUnitFromCurrentTree(unitId)
+	end
 end
   
 Dependency.deferWidget(widget, Dependency.BtEvaluator)
