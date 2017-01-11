@@ -20,7 +20,7 @@ end
 
 
 function cmdClass:Run(unitIds, p)
-	Spring.Echo(p.msg)
+	Spring.Echo(dump(p.msg))
 	return "S"
 end
 

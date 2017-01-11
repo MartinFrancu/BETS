@@ -1,0 +1,24 @@
+{
+	"additionalNodes": [],
+	"properties": {
+		"ZhphjnXyoMT8bCjBTZ7hcxOM55eajfnu": {
+			"height": 70,
+			"width": 110,
+			"x": 191,
+			"y": 146
+		}
+	},
+	"root": {
+		"children": [],
+		"id": "ZhphjnXyoMT8bCjBTZ7hcxOM55eajfnu",
+		"nodeType": "luaCommand",
+		"parameters": [ {
+			"name": "msg",
+			"value": "groupExtents().center"
+		}, {
+			"name": "scriptName",
+			"value": "luaecho.lua"
+		} ],
+		"scriptName": "luaecho.lua"
+	}
+}

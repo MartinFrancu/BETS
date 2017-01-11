@@ -19,7 +19,12 @@ WG.SensorManager = WG.SensorManager or (function()
 
 	local SensorManager = {}
 	function SensorManager.loadSensor(name)
-		local sensorCode = "--[[" .. name .. "]] " .. VFS.LoadFile(SENSOR_DIRNAME .. name .. ".lua")
+		local file = SENSOR_DIRNAME .. name .. ".lua"
+		if(not VFS.FileExists(file))then
+			return nil
+		end
+		
+		local sensorCode = "--[[" .. name .. "]] " .. VFS.LoadFile(file)
 		local sensorFunction = assert(loadstring(sensorCode))
 		local function sensorConstructor(groupSensorManager, group)
 			group.length = #group
@@ -58,6 +63,9 @@ WG.SensorManager = WG.SensorManager or (function()
 					local sensorConstructor = sensors[key]
 					if(not sensorConstructor)then
 						sensorConstructor = SensorManager.loadSensor(key)
+						if(not sensorConstructor)then
+							return nil
+						end
 						sensors[key] = sensorConstructor
 					end
 					local sensor = sensorConstructor(manager, group);

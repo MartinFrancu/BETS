@@ -28,10 +28,10 @@
 			"scriptName": "randomVector.lua",
 			"parameters": [ {
 				"name": "x",
-				"value": "$x"
+				"value": "x"
 			}, {
 				"name": "y",
-				"value": "$y"
+				"value": "y"
 			}, {
 				"name": "scriptName",
 				"value": "randomVector.lua"
@@ -43,10 +43,10 @@
 			"scriptName": "move.lua",
 			"parameters": [ {
 				"name": "x",
-				"value": "$x"
+				"value": "x"
 			}, {
 				"name": "y",
-				"value": "$y"
+				"value": "y"
 			}, {
 				"name": "scriptName",
 				"value": "move.lua"

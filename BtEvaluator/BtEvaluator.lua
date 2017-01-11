@@ -71,26 +71,6 @@ function BtEvaluator.reportTree(insId)
 end
 
 
-function BtEvaluator.OnExpression(params)
-	if(params.func == "RESET")then
-		return "S"
-	end
-	
-	local f, msg = loadstring("return " .. params.expression)
-	if(not f)then
-		return "F"
-	end
-	setfenv(f, SensorManager.forGroup(params.units))
-	
-	local success, result = pcall(f)
-	if(success and result)then
-		return "S"
-	else
-		return "F"
-	end
-end
-
-
 -- ==== luaCommand handling ====
 
 BtEvaluator.scripts = {}
@@ -129,46 +109,121 @@ end
 BtEvaluator.blackboardsForInstance = {}
 BtEvaluator.commandsForUnits = {}-- map(unitId,command)
 
-function BtEvaluator.OnCommand(params)
-	command = getCommand(params.name, params.id, params.treeId)
-	local blackboard = BtEvaluator.blackboardsForInstance[params.treeId]
+local function getBlackboardForInstance(treeId)
+	local blackboard = BtEvaluator.blackboardsForInstance[treeId]
 	if(not blackboard)then
 		blackboard = {}
-		BtEvaluator.blackboardsForInstance[params.treeId] = blackboard
+		BtEvaluator.blackboardsForInstance[treeId] = blackboard
 	end
+	return blackboard
+end
 
+local function createExpression(expression)
+	local getter, getErrMsg = loadstring("return (" .. expression .. ")")
+	local setter, setErrMsg = loadstring(expression .. " = ...");
+	local group;
+	local blackboard, sensorManager = {}, {}
+	local metatable = {
+		__index = function(self, key)
+			local result = sensorManager[key]
+			if(result)then
+				return result
+			end
+			
+			return blackboard[key]
+		end,
+		__newindex = function(self, key, value)
+			if(sensorManager[key])then
+				Logger.log("expression", "Attempt to overwrite a sensor.")
+			end
+			blackboard[key] = value
+		end
+	};
+	local environment = setmetatable({}, metatable)
+	if(getter)then
+		setfenv(getter, environment)
+	else
+		getter = function() Logger.log("expression", "Expression ", expression, " could not be compiled into a GETTER: ", getErrMsg) end
+	end
+	if(setter)then
+		setfenv(setter, environment)
+	else
+		setter = function() Logger.log("expression", "Expression ", expression, " could not be compiled into a SETTER: ", setErrMsg) end
+	end
+	
+	return {
+		get = getter,
+		set = setter,
+		setBlackboard = function(b)
+			blackboard = b;
+		end,
+		setGroup = function(g)
+			if(group == g)then return end
+			group = g
+			sensorManager = SensorManager.forGroup(g)
+		end,
+	}
+end
+
+
+function BtEvaluator.OnCommand(params)
+	local command = getCommand(params.name, params.id, params.treeId)
+	local blackboard = getBlackboardForInstance(params.treeId)
 	if (params.func == "RUN") then
 		for i = 1, #params.units do
 			BtEvaluator.commandsForUnits[params.units[i]] = command
 		end
 		
-		local parameters = {}
+		local parameterExpressions, parameters = {}, {}
 		for k, v in pairs(params.parameter) do
-			local value = v
-			if(type(value) == "string" and value:match("^%$"))then
-				Logger.log("blackboard", "Extracting ", value, " from blackboard and inputting it into ", k, " parameter in node ", params.name)
-				value = blackboard[value]
+			local expr = createExpression(tostring(v))
+			expr.setBlackboard(blackboard)
+			expr.setGroup(params.units)
+			parameterExpressions[k] = expr;
+			local success, value = pcall(expr.get)
+			if(success)then
+				parameters[k] = value
+			else	
+				Logger.log("expression", "Evaluating parameter '", k, "' threw an exception: ", value);
 			end
-			parameters[k] = value
 		end
 		
 		local result, output = command:BaseRun(params.units, parameters)
+		
 		if(output)then
 			for k, v in pairs(output) do
-				local originalValue = params.parameter[k]
-				if(type(originalValue) == "string" and originalValue:match("^%$"))then
-					Logger.log("blackboard", "Saving to ", value, " blackboard with value ", v, " in node ", params.name)
-					blackboard[originalValue] = v
+				local expr = parameterExpressions[k]
+				if(expr)then
+					pcall(expr.set, v)
 				else
-					Logger.log("blackboard", "A constant value '", originalValue, "' was given to an output or input-output parameter '", k, "' of a command '", params.name, "' in instance ", params.treeId, ".", params.id)
+					Logger.log("expression", "No parameter available for output '", k, "'");
 				end
 			end
 		end
+		
 		Logger.log("luacommand", "Result: ", result)
 		return result
 	elseif (params.func == "RESET") then
 		command:BaseReset()
 		return nil
+	end
+end
+
+function BtEvaluator.OnExpression(params)
+	if(params.func == "RESET")then
+		return "S"
+	end
+	
+	local blackboard = getBlackboardForInstance(params.treeId)
+	local expr = createExpression(params.expression);
+	expr.setBlackboard(blackboard)
+	expr.setGroup(params.units)
+	
+	local success, result = pcall(expr.get)
+	if(success and result)then
+		return "S"
+	else
+		return "F"
 	end
 end
 

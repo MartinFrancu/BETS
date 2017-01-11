@@ -33,10 +33,10 @@
 			"nodeType": "luaCommand",
 			"parameters": [ {
 				"name": "x",
-				"value": "$x"
+				"value": "x"
 			}, {
 				"name": "y",
-				"value": "$y"
+				"value": "y"
 			}, {
 				"name": "scriptName",
 				"value": "randomVector.lua"
@@ -48,10 +48,10 @@
 			"nodeType": "luaCommand",
 			"parameters": [ {
 				"name": "x",
-				"value": "$x"
+				"value": "x"
 			}, {
 				"name": "y",
-				"value": "$y"
+				"value": "y"
 			}, {
 				"name": "scriptName",
 				"value": "move.lua"
