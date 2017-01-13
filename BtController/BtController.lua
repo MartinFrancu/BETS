@@ -35,6 +35,7 @@ local treeControlWindow
 local controllerLabel
 local selectTreeButton
 local treeTabPanel
+local showTreeCheckbox
 -------------------------------------------------------------------------------------
 local treeSelectionPanel
 local treeSelectionLabel
@@ -421,7 +422,6 @@ local function listenerRefreshTreeSelectionPanel(self)
 end
 
 
-
 function listenerBarItemClick(self, x, y, button, ...)
 	if button == 1 then
 		-- select assigned units, if any
@@ -430,9 +430,10 @@ function listenerBarItemClick(self, x, y, button, ...)
 
 		if(not BtCreator)then return end
 	
-		BtEvaluator.reportTree(self.TreeHandle.InstanceId)
-		
-		BtCreator.show(self.TreeHandle.TreeType)
+		if(showTreeCheckbox.checked) then
+			BtEvaluator.reportTree(self.TreeHandle.InstanceId)	
+			BtCreator.show(self.TreeHandle.TreeType)
+		end
 		
 		-- ORIGINAL LISTENER FORM BarItem:
 		if not self.parent then return end
@@ -445,8 +446,6 @@ function listenerBarItemClick(self, x, y, button, ...)
 		removeTreeBtController(treeTabPanel, self.TreeHandle)
 	end
 end 
-
-
 
 
 function listenerAssignUnitsButton(self)
@@ -677,6 +676,15 @@ function setUpTreeControlWindow()
     caption = "BtController",
 		skinName='DarkGlass',
 	}
+	showTreeCheckbox = Chili.Checkbox:New{
+	parent = treeControlWindow,
+	caption = "show tree",
+	checked = true,
+	x = '80%',
+	y = 0,
+	width = 80,
+		skinName='DarkGlass'
+	}
 
 	setUpTreeSelectionTab()
 	
@@ -692,6 +700,8 @@ function setUpTreeControlWindow()
 	}
 	
 	finalizeAddTreeBarItem(treeTabPanel)
+	
+
 	
 end
 
