@@ -218,8 +218,6 @@ function EditBox:Select(startIndex, endIndex)
 end
 
 function EditBox:ClearSelected()
-	Spring.Echo("EditBox Clear Selection.")
-	self.editingText = false
 	local left = self.selStart
 	local right = self.selEnd
 	if left > right then

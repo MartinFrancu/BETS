@@ -325,6 +325,12 @@ local function generateNodePoolNodes(nodes)
 	nodePoolPanel:RequestUpdate()
 end
 
+function listenerOnClickOnCanvas()
+	WG.clearSelection()
+	for _,node in pairs(WG.nodeList) do
+		node:ValidateEditBoxes()
+	end
+end
 
 function widget:Initialize()	
 	if (not WG.ChiliClone) then
@@ -384,7 +390,7 @@ function widget:Initialize()
 		resizable=true,
 		skinName='DarkGlass',
 		backgroundColor = {1,1,1,1},
-		OnClick = { WG.clearSelection },
+		OnClick = { listenerOnClickOnCanvas }
 		-- OnMouseDown = { listenerStartSelectingNodes },
 		-- OnMouseUp = { listenerEndSelectingNodes },
 	}	
@@ -532,7 +538,12 @@ function formBehaviourTree()
 		end
 		updateSerializedIDs()
 	end
-
+	-- Validate every treenode - when editing editBox parameter and immediately serialize, 
+	-- the last edited parameter doesnt have to be updated
+	for _,node in pairs(WG.nodeList) do
+		node:ValidateEditBoxes()
+	end
+	
 	local bt = BehaviourTree:New()
 	local nodeMap = {}
 	for id,node in pairs(WG.nodeList) do
@@ -541,25 +552,11 @@ function formBehaviourTree()
 			for _, key in ipairs(fieldsToSerialize) do
 				params[key] = node[key]
 			end
-			
 			local info = nodeDefinitionInfo[node.nodeType]
-			
 			local hasScriptName = false
-			-- get the string value from editbox
 			for i=1,#node.parameters do
 				if (node.parameters[i].name == "scriptName") then
 					hasScriptName = true
-				else
-					Logger.log("save-and-load", "info params: " ,info.parameters[i], "")
-					-- TODO Conversion of parameter to number - is this really needed?
-					if(node.parameterObjects[i]["componentType"]=="editBox") then
-						local editbox = node.parameterObjects[i]["editBox"]
-						if(editbox["variableType"] == "number" and not editbox.text:match("^%$")) then
-							params.parameters[i].value = tonumber(editbox.text)
-						else
-							params.parameters[i].value = editbox.text
-						end
-					end
 				end
 			end
 			-- change luaScript node format to fit btEvaluator/controller
@@ -567,10 +564,10 @@ function formBehaviourTree()
 			if (isScript[scriptName]) then
 				Logger.log("save-and-load", "scriptName: " ,scriptName)
 				if (not hasScriptName) then
-					scriptParam = {}
-					scriptParam.name = "scriptName"
-					scriptParam.value = scriptName
-					
+					local scriptParam = {
+						name = "scriptName",
+						value = scriptName,
+					}
 					params.parameters[#params.parameters + 1] = scriptParam
 				end
 				params.nodeType = "luaCommand"

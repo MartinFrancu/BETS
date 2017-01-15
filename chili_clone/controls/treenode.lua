@@ -169,6 +169,20 @@ function createNextParameterObject(obj)
 	if(param["name"] == nil or param["value"] == nil or param["componentType"] == nil or param["variableType"] == nil) then
 			error("TreeNode expects following fields in parameters: name, value, componentType, variableType, got "..dump(param).."\n"..debug.traceback())
 	end
+	-- Initialize parameters[i].value with correct type - check for unquoted string, save number as number
+	if(param["variableType"] == "number") then
+		local number = tonumber(param["value"]) or 0
+		param["value"] = number
+	elseif(param["variableType"] == "string") then
+		local text = param.value
+		if(param.value:sub(1,1) ~= '"' and param.value:sub(1,1) ~= "'") then
+			param.value = "\"" .. param.value
+		end
+		local length = #param.value
+		if(param.value:sub(length, length) ~= '"' and param.value:sub(length, length) ~= "'") then
+			param.value = param.value .. "\""
+		end
+	end
 	if (param["componentType"] and param["componentType"]:lower() == "editbox") then
 		--result.index = i -- to be able to change parameter value in treenode.parameters table
 		result.componentType = "editBox"
@@ -184,7 +198,7 @@ function createNextParameterObject(obj)
 		result.editBox = EditBox:New{
 			parent = obj.nodeWindow,
 			text = tostring(param["value"]),
-			validatedText = tostring(param["value"]),
+			validatedValue = tostring(param["value"]),
 			width = math.max(obj.nodeWindow.font:GetTextWidth(param["value"])+10, 35),
 			x = obj.nodeWindow.font:GetTextWidth(param["name"]) + 25,
 			y = 10 + i*20,
@@ -396,37 +410,51 @@ WG.selectedNodes = {}
 local ALPHA_OF_SELECTED_NODES = 1
 local ALPHA_OF_NOT_SELECTED_NODES = 0.6
 
-local function validateEditBox(editBox)
-	if(editBox.text == editBox.validatedText) then
-		return
-	end
-	-- Test for context variable
-	if(#editBox.text > 0 and editBox.text[1] == '$') then
-		editBox.validatedText = editBox.text
-		editBox.parent.treeNode.parameters[editBox.index].value = editBox.text
-		return
-	end
+local function validateEditBox(editBox)		
 	local variableType = editBox.variableType
+	if(variableType == "expression") then
+		-- TODO Perform lua validation/compilation check?
+		return
+	end
 	if(variableType == "number") then
-		local numberNew = tonumber(editBox.validatedText)
+		local numberNew = tonumber(editBox.text)
 		if(numberNew) then
-			editBox.validatedText = editBox.text
-			editBox.parent.treeNode.parameters[editBox.index].value = editBox.text
-		else
-			editBox.text = editBox.validatedText
+			-- valid number parameter
+			editBox.validatedValue = numberNew
+			editBox.parent.treeNode.parameters[editBox.index].value = numberNew
+			return
+		end
+		local newText = editBox.text
+		local length = #newText
+		if(length >= 2 and ((newText:sub(1,1) == '"' and newText:sub(length,length) == '"') or (newText:sub(1,1)=="'" and newText:sub(length,length)=="'"))) then
+			editBox:SetText(tostring(editBox.validatedValue))
+			return
 		end
 	elseif(variableType == "string") then
-		editBox.validatedText = editBox.text
-		editBox.parent.treeNode.parameters[editBox.index].value = editBox.text
+		local newText = editBox.text
+		local length = #newText
+		if(length >= 2 and ((newText:sub(1,1) == '"' and newText:sub(length,length) == '"') or (newText:sub(1,1)=="'" and newText:sub(length,length)=="'"))) then
+		 -- valid quoted text parameter
+			editBox.validatedValue = newText
+			editBox.parent.treeNode.parameters[editBox.index].value = newText
+			return
+		end
+		if(tonumber(editBox.text)) then
+			editBox:SetText(tostring(editBox.validatedValue))
+			return
+		end
 	end
+	-- context variable name
+	editBox.validatedValue = editBox.text
+	editBox.parent.treeNode.parameters[editBox.index].value = editBox.text
 end
 
 
-local function validateAllEditBoxes(treeNode)
-	for i=1,#treeNode.parameterObjects do
-		local editbox = treeNode.parameterObjects[i]["editBox"]
-		if(editbox) then
-			validateEditBox(editbox)
+function TreeNode:ValidateEditBoxes()
+	for i=1,#self.parameterObjects do
+		local editBox = self.parameterObjects[i]["editBox"]
+		if(editBox) then
+			validateEditBox(editBox)
 		end
 	end	
 end
@@ -434,7 +462,7 @@ end
 local function removeNodeFromSelection(nodeWindow)
 	nodeWindow.backgroundColor[4] = ALPHA_OF_NOT_SELECTED_NODES
 	WG.selectedNodes[nodeWindow.treeNode.id] = nil
-	validateAllEditBoxes(nodeWindow.treeNode)
+	nodeWindow.treeNode:ValidateEditBoxes()
 	nodeWindow:Invalidate()
 end
 
@@ -493,7 +521,7 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 		return
 	end
 	-- Check if the parameters editbox text hasnt changed
-	validateAllEditBoxes(self.treeNode)
+	self.treeNode:ValidateEditBoxes()
 	for i=1,#self.treeNode.parameterObjects do
 		if(self.treeNode.parameterObjects[i]["editBox"] and childName == self.treeNode.parameterObjects[i]["editBox"].name) then
 			return
