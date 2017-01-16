@@ -414,6 +414,7 @@ local function validateEditBox(editBox)
 	local variableType = editBox.variableType
 	if(variableType == "expression") then
 		-- TODO Perform lua validation/compilation check?
+		editBox.parent.treeNode.parameters[editBox.index].value = editBox.text
 		return
 	end
 	if(variableType == "number") then
