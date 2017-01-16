@@ -30,6 +30,7 @@ WG.SensorManager = WG.SensorManager or (function()
 			group.length = #group
 			local sensorEnvironment = setmetatable({
 				units = group,
+				UnitDefs = UnitDefs,
 				Sensors = groupSensorManager, --SensorManager.forGroup(group),
 			}, sensorEnvironmentMetatable)
 			setfenv(sensorFunction, sensorEnvironment)
