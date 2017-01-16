@@ -170,7 +170,7 @@ function createNextParameterObject(obj)
 			error("TreeNode expects following fields in parameters: name, value, componentType, variableType, got "..dump(param).."\n"..debug.traceback())
 	end
 	-- Initialize parameters[i].value with correct type - check for unquoted string, save number as number
-	if(param["variableType"] == "number") then
+	--[[if(param["variableType"] == "number") then
 		local number = tonumber(param["value"]) or 0
 		param["value"] = number
 	elseif(param["variableType"] == "string") then
@@ -182,7 +182,7 @@ function createNextParameterObject(obj)
 		if(param.value:sub(length, length) ~= '"' and param.value:sub(length, length) ~= "'") then
 			param.value = param.value .. "\""
 		end
-	end
+	end]]--
 	if (param["componentType"] and param["componentType"]:lower() == "editbox") then
 		--result.index = i -- to be able to change parameter value in treenode.parameters table
 		result.componentType = "editBox"
