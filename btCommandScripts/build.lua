@@ -1,11 +1,9 @@
-local Logger = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/debug_utils/logger.lua", nil, VFS.RAW_FIRST)
 
-local cmdClass = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCommandScripts/command.lua", nil, VFS.RAW_FIRST)
 
-local testBuildOrder = Spring.TestBuildOrder
-local giveOrderToUnit = Spring.GiveOrderToUnit
+--local testBuildOrder = Spring.TestBuildOrder
+--local giveOrderToUnit = Spring.GiveOrderToUnit
 
-function cmdClass.getParameterDefs()
+function getParameterDefs()
 	return {
 		{ 
 			name = "pos",
@@ -22,58 +20,56 @@ function cmdClass.getParameterDefs()
 	}
 end
 
-local buildingIds = {
-	["arm"] = {
-		["mex"] = "armmex",
-	},
-	["core"] = {
-		["mex"] = "cormex",
-	},
-}
-
-function cmdClass:New()
+function New(self)
+	self.buildingIds = {
+		["arm"] = {
+			["mex"] = "armmex",
+		},
+		["core"] = {
+			["mex"] = "cormex",
+		},
+	}
 	self.kind = select(5, Spring.GetTeamInfo(Spring.GetLocalTeamID()))
 end
 
-function cmdClass:Run(unitIds, parameter)
-	local buildingName = (buildingIds[self.kind] or {})[parameter.building]
+function Run(self, unitIds, parameter)
+	local buildingName = (self.buildingIds[self.kind] or {})[parameter.building]
 	if(not buildingName)then
 		Logger.error("build", "Unknown building identifier: '", parameter.building, "'")
-		return "F"
+		return FAILURE
 	end
 	local buildingId = (UnitDefNames[buildingName] or {}).id
 	if(not buildingId)then
 		Logger.error("build", "Couldn't translate building name '", buildingName , "' to id.")
-		return "F"
+		return FAILURE
 	end
 	
 	if(not self.inProgress)then
 		local pos = parameter.pos
-		if(testBuildOrder(buildingId, pos.posX, pos.height, pos.posZ, 2) ~= 0)then
+		if(Spring.TestBuildOrder(buildingId, pos.posX, pos.height, pos.posZ, 2) ~= 0)then
 			for i = 1, #unitIds do
 				local unitID = unitIds[i]
-				giveOrderToUnit(unitID, -buildingId, { pos.posX, pos.height, pos.posZ }, {})
+				Spring.GiveOrderToUnit(unitID, -buildingId, { pos.posX, pos.height, pos.posZ }, {})
 			end
 			self.inProgress = true
-			return "R"
+			return RUNNING
 		else
 			Logger.error("build", "Couldn't build in position: ", pos)
-			return "F"
+			return FAILURE
 		end
 	else
 		for i = 1, #unitIds do
 			local unitID = unitIds[i]
 			if not self:UnitIdle(unitID) then
-				return "R"
+				return RUNNING
 			end
 		end
 		self.inProgress = nil
-		return "S"
+		Logger.log("command", "======== Run - Success")
+		return SUCCESS
 	end
 end
 
-function cmdClass:Reset()
+function Reset(self)
 	self.inProgress = nil
 end
-
-return cmdClass

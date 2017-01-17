@@ -221,7 +221,7 @@ local function updateStatesMessage(states)
 	end
 end
 
-local function generateNodePool(heightSum, nodes) 
+local function generateScriptNodes(heightSum, nodes) 
 	for i=1,#nodes do
 		if (nodes[i].nodeType ~= "luaCommand") then
 			local nodeParams = {
@@ -270,27 +270,44 @@ local function generateNodePool(heightSum, nodes)
 	return heightSum
 end
 
-
 local function getParameterDefinitions()
 	local directoryName = LUAUI_DIRNAME .. "Widgets/BtCommandScripts" 
 	local folderContent = VFS.DirList(directoryName)
 	local paramsDefs = {}
-	-- Remove the path prefix of folder:
-	for i,v in ipairs(folderContent)do
-		local scriptName = string.sub(v, string.len( directoryName)+2 ) --THIS WILL MAKE TROUBLES WHEN DIRECTORY IS DIFFERENT: the slashes are sometimes counted once, sometimes twice!!!\\
-		local script = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCommandScripts/" .. scriptName, nil, VFS.RAW_FIRST)
-		if script.getParameterDefs ~= nil then
-			paramsDefs[scriptName] = script.getParameterDefs()
+
+	for i,scriptName in ipairs(folderContent)do
+		Logger.log("script-load", "Loading file: ", scriptName)
+		local nameComment = "--[[" .. scriptName .. "]] "
+		local code = nameComment .. VFS.LoadFile(scriptName) .. "; return getParameterDefs"
+		
+		local ok
+		local paramFunction
+		local shortName = string.sub(scriptName, string.len(directoryName) + 2)
+		local res
+		ok, res = pcall(loadstring(code))
+		if ok then
+			paramFunction = res
+			setfenv(paramFunction, {})
+		else
+			error("Error in : " ..  shortName ..  ": " .. res)
+		end
+		
+		local success, defs = pcall(paramFunction)
+
+		if success then
+			Logger.log("script-load", "Script: ", shortName, ", Definitions loaded: ", defs)
+			paramsDefs[shortName] = defs
+		else
+			error("script-load".. "Script ".. scriptName.. " is missing the getParameterDefs() function or it contains an error: ".. defs)
 		end
 	end
-	
 	return paramsDefs
 end
 
 local function generateNodePoolNodes(nodes)
 	Logger.log("communication", "NODES DECODED:  ", nodes)
 	local heightSum = 30 -- skip NodePoolLabel
-    heightSum = generateNodePool(heightSum, nodes)
+    heightSum = generateScriptNodes(heightSum, nodes)
 	
 	-- load lua commands
 	local paramDefs = getParameterDefinitions()
@@ -631,7 +648,7 @@ local function loadBehaviourNode(bt, btNode)
 	local params = {}
 	local info
 	
-	Logger.log("save-and-load", "loadBehaviourNode - scriptName: ", btNode.scriptName, " info: ", nodeDefinitionInfo)
+	Logger.log("save-and-load", "loadBehaviourNode - nodeType: ", btNode.nodeType, " scriptName: ", btNode.scriptName, " info: ", nodeDefinitionInfo)
 	if (btNode.scriptName ~= nil) then
 		info = nodeDefinitionInfo[btNode.scriptName]
 	else
@@ -771,6 +788,7 @@ function showRoleManagementWindow(tree)
 			text = "Role ".. tostring(roleIndex),
 			width = 150
 		}
+
 		if(rolesOfCurrentTree[roleIndex+1]) then
 			nameEditBox:SetText(rolesOfCurrentTree[roleIndex+1].name)
 		end

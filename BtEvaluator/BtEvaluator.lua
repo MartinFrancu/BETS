@@ -76,10 +76,12 @@ end
 BtEvaluator.scripts = {}
 BtEvaluator.commands = {}
 
+local baseCommandClass = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtEvaluator/command.lua", nil, VFS.RAW_FIRST)
+
 function getCommandClass(name) 
 	c = BtEvaluator.scripts[name] 
 	if not c then 
-		c = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCommandScripts/" .. name, nil, VFS.RAW_FIRST)
+		c = baseCommandClass:Extend(name)
 		BtEvaluator.scripts[name] = c
 	end
 	return c

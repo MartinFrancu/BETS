@@ -2,8 +2,6 @@
 	"additionalNodes": [],
 	"properties": {
 		"ytVCQqVeUzO5Ip0vUXzzjjOpfXh6kNHj": {
-			"hasConnectionIn": true,
-			"hasConnectionOut": false,
 			"height": 110,
 			"width": 177.071442,
 			"x": 192,
@@ -14,16 +12,16 @@
 		"children": [],
 		"id": "ytVCQqVeUzO5Ip0vUXzzjjOpfXh6kNHj",
 		"nodeType": "luaCommand",
-		"scriptName": "move.lua",
 		"parameters": [ {
 			"name": "x",
-			"value": "100"
+			"value": 300
 		}, {
 			"name": "y",
-			"value": "0"
+			"value": 0
 		}, {
 			"name": "scriptName",
 			"value": "move.lua"
-		} ]
+		} ],
+		"scriptName": "move.lua"
 	}
 }

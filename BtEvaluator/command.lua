@@ -2,28 +2,78 @@ local Logger = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/debug_utils/logger.
 
 local dump = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST).Debug.dump
 
-Command = {}
+Command = {
+	Spring = Spring,
+	CMD = CMD,
+	Logger = Logger,
+	dump = dump,
+	math = math,
+	select = select,
+	UnitDefNames = UnitDefNames,
+	
+	SUCCESS = "S",
+	FAILURE = "F",
+	RUNNING = "R"
+}
 Command_mt = { __index = Command }
 
+local COMMAND_DIRNAME = LUAUI_DIRNAME .. "Widgets/BtCommandScripts/"
+
+local methodSignatures = {
+	New = "New(self)",
+	Run = "Run(self, unitIds, parameters)",
+	Reset = "Reset(self)"
+}
+
+function Command:Extend(scriptName)
 
 
-function Command:Extend()
-    local new_class = {}
+	Logger.log("script-load", "Loading command from file " .. scriptName)
+	function Command:loadMethods()
+		--Logger.log("script-load", "Loading method ", methodName, " into ", scriptName)
+		
+		local nameComment = "--[[" .. scriptName .. "]] "
+		local scriptStr = nameComment .. VFS.LoadFile(COMMAND_DIRNAME .. scriptName)
+
+		for methodName,sig in pairs(methodSignatures) do
+			local codeStr = scriptStr .. " ; return " .. methodName
+			local methodGetter = assert(loadstring(codeStr))
+			local method = methodGetter()
+			if not method then
+				Logger.log("script-load",  scriptName, " doesn't contain method ", sig)
+				method = function() end
+			else
+				setfenv(method, self)
+			end
+			self[methodName] = method
+			Logger.log("script-load", "Loaded method ", methodName, " into ", scriptName)
+		end
+	end
+
+	Logger.log("script-load", "scriptName: ", scriptName)
+    local new_class = {	}
     local class_mt = { __index = new_class }
-
+	
     function new_class:BaseNew()
         local newinst = {}
         setmetatable( newinst, class_mt )
-		
 		newinst.unitsAssigned = {}
-
 		newinst.activeCommands = {} -- map(unitID, setOfCmdTags)
-
 		newinst.idleUnits = {}
-		newinst:New()
+		newinst.scriptName = scriptName -- for debugging purposes
+
+
+		success,res = pcall(newinst.New, newinst)
+		if not success then
+			Logger.log("command", "Error in script ", scriptName, ", method " .. methodSignatures.New, ": ", res)
+		end
         return newinst
     end
     setmetatable( new_class, { __index = self } )
+
+	
+	new_class:loadMethods()
+
     return new_class
 end
 
@@ -31,11 +81,20 @@ function Command:BaseRun(unitIDs, parameters)
 	if #unitIDs == 0 then
 		return "F"
 	end
+
 	self.unitsAssigned = unitIDs
-	return self:Run(unitIDs, parameters)
+
+
+	success,res,retVal = pcall(self.Run, self, unitIDs, parameters)
+	if success then
+		return res, retVal
+	else
+		Logger.log("command", "Error in script ", self.scriptName, ", method ", methodSignatures.Run, ": ", res)
+	end
 end
 
 function Command:BaseReset()
+	Logger.log("command", self.scriptName, " Reset()")
 	-- TODO may mark units as idle in other commands, which break them
 	--[[
 	for i = 1, #self.unitsAssigned do
@@ -47,8 +106,12 @@ function Command:BaseReset()
 	self.unitsAssigned = {}
 	
 	self.idleUnits = {}
-	self:Reset()
 	
+
+	success,res = pcall(self.Reset, self)
+	if not success then
+		Logger.log("command", "Error in script ", self.scriptName, ", method ", methodSignatures.Reset, ": ", res)
+	end
 end
 
 -- TODO not working
@@ -92,4 +155,4 @@ function Command:UnitIdle(unitID)
 	return self.idleUnits[unitID]
 end
 
-return Command:Extend()
+return Command

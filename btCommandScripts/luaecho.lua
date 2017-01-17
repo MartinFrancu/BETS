@@ -1,9 +1,4 @@
-local dump = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/debug_utils/root.lua", nil, VFS.RAW_FIRST).dump
-
-local cmdClass = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCommandScripts/command.lua", nil, VFS.RAW_FIRST)
-
-
-function cmdClass.getParameterDefs()
+function getParameterDefs()
 	return {
 		{ 
 			name = "msg",
@@ -14,17 +9,7 @@ function cmdClass.getParameterDefs()
 	}
 end
 
-
-function cmdClass:New()
-end
-
-
-function cmdClass:Run(unitIds, p)
+function Run(self, unitIds, p)
 	Spring.Echo(dump(p.msg))
-	return "S"
+	return SUCCESS
 end
-
-function cmdClass:Reset()
-end
-
-return cmdClass
