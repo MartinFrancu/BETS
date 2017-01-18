@@ -1,33 +1,45 @@
 {
 	"additionalNodes": [],
 	"properties": {
-		"RMaCTs2FKK675UqNDz3qoWsGtCgHOllv": {
+		"72UZuYfIHh3i1NxPJ7MucelOVHB0NRjR": {
 			"height": 70,
 			"width": 110,
-			"x": 454,
-			"y": 44
+			"x": 341,
+			"y": 122
 		},
-		"fZ8vMPuidPnuqOxSnlo3l7QZz937XRYq": {
-			"height": 77,
-			"width": 256,
-			"x": 145,
-			"y": 91
-		},
-		"j0e9hu2ArzjvzoGggF8gKNxY5YJccJNZ": {
+		"S2xZqlAF2hA1zYq77OB9xmqrABJWFogE": {
 			"height": 70,
 			"width": 110,
-			"x": 440,
-			"y": 139
+			"x": 311,
+			"y": 38
+		},
+		"b0zjKa59UXHMV1KbvA1R67acEKphy0tk": {
+			"height": 70,
+			"width": 110,
+			"x": 270,
+			"y": 312
+		},
+		"lomjSj7qNyC9NqC71BUAXm3g3cFQc1EQ": {
+			"height": 70,
+			"width": 110,
+			"x": 365,
+			"y": 226
+		},
+		"yI75MQQRtaxpnCehiUblmaIPHJeRmWMx": {
+			"height": 60,
+			"width": 110,
+			"x": 114,
+			"y": 219
 		}
 	},
 	"root": {
 		"children": [ {
 			"children": [],
-			"id": "RMaCTs2FKK675UqNDz3qoWsGtCgHOllv",
+			"id": "S2xZqlAF2hA1zYq77OB9xmqrABJWFogE",
 			"nodeType": "luaCommand",
 			"parameters": [ {
 				"name": "msg",
-				"value": "\"See an enemy!\""
+				"value": "visibleEnemies().north"
 			}, {
 				"name": "scriptName",
 				"value": "luaecho.lua"
@@ -35,22 +47,43 @@
 			"scriptName": "luaecho.lua"
 		}, {
 			"children": [],
-			"id": "j0e9hu2ArzjvzoGggF8gKNxY5YJccJNZ",
+			"id": "72UZuYfIHh3i1NxPJ7MucelOVHB0NRjR",
 			"nodeType": "luaCommand",
 			"parameters": [ {
 				"name": "msg",
-				"value": "\"Dont see enemy..\""
+				"value": "visibleEnemies().west"
+			}, {
+				"name": "scriptName",
+				"value": "luaecho.lua"
+			} ],
+			"scriptName": "luaecho.lua"
+		}, {
+			"children": [],
+			"id": "lomjSj7qNyC9NqC71BUAXm3g3cFQc1EQ",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "msg",
+				"value": "visibleEnemies().south"
+			}, {
+				"name": "scriptName",
+				"value": "luaecho.lua"
+			} ],
+			"scriptName": "luaecho.lua"
+		}, {
+			"children": [],
+			"id": "b0zjKa59UXHMV1KbvA1R67acEKphy0tk",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "msg",
+				"value": "visibleEnemies().east"
 			}, {
 				"name": "scriptName",
 				"value": "luaecho.lua"
 			} ],
 			"scriptName": "luaecho.lua"
 		} ],
-		"id": "fZ8vMPuidPnuqOxSnlo3l7QZz937XRYq",
-		"nodeType": "luaExpression",
-		"parameters": [ {
-			"name": "expression",
-			"value": "visibleEnemies().any"
-		} ]
+		"id": "yI75MQQRtaxpnCehiUblmaIPHJeRmWMx",
+		"nodeType": "sequence",
+		"parameters": []
 	}
 }
