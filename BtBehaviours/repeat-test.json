@@ -1,0 +1,84 @@
+{
+	"additionalNodes": [],
+	"properties": {
+		"1XEXOKpAudfyJiGFxo1dJjmLQpyzXtpU": {
+			"height": 70,
+			"width": 110,
+			"x": 393,
+			"y": 266
+		},
+		"2G515WxVRb4ORVxzzKHMPFir2iIaaeXa": {
+			"height": 70,
+			"width": 189.500015,
+			"x": 554,
+			"y": 37
+		},
+		"W7lMDsuqn5hsgtwU0aZ1EokdyKoybmOD": {
+			"height": 70,
+			"width": 155.714294,
+			"x": 174,
+			"y": 175
+		},
+		"YYsCvGoZXme5bUipTkQLm2rLbiwOz45L": {
+			"height": 60,
+			"width": 110,
+			"x": 399,
+			"y": 123
+		},
+		"g1089v965FB7SFOZppJfqvGPR7yB9uFK": {
+			"height": 70,
+			"width": 189.500015,
+			"x": 763,
+			"y": 141.851074
+		},
+		"g9bzRnOBvRiR7qTN3klnFc0UYN1IJbuE": {
+			"height": 60,
+			"width": 110,
+			"x": 588,
+			"y": 152
+		}
+	},
+	"root": {
+		"children": [ {
+			"children": [ {
+				"children": [],
+				"id": "2G515WxVRb4ORVxzzKHMPFir2iIaaeXa",
+				"nodeType": "echo",
+				"parameters": [ {
+					"name": "message",
+					"value": "Start"
+				} ]
+			}, {
+				"children": [ {
+					"children": [],
+					"id": "g1089v965FB7SFOZppJfqvGPR7yB9uFK",
+					"nodeType": "echo",
+					"parameters": [ {
+						"name": "message",
+						"value": "Repeated"
+					} ]
+				} ],
+				"id": "g9bzRnOBvRiR7qTN3klnFc0UYN1IJbuE",
+				"nodeType": "repeat",
+				"parameters": []
+			} ],
+			"id": "YYsCvGoZXme5bUipTkQLm2rLbiwOz45L",
+			"nodeType": "sequence",
+			"parameters": []
+		}, {
+			"children": [],
+			"id": "1XEXOKpAudfyJiGFxo1dJjmLQpyzXtpU",
+			"nodeType": "wait",
+			"parameters": [ {
+				"name": "time",
+				"value": 10
+			} ]
+		} ],
+		"id": "W7lMDsuqn5hsgtwU0aZ1EokdyKoybmOD",
+		"nodeType": "roleSplit",
+		"parameters": [ {
+			"name": "mode",
+			"value": "any-result"
+		} ]
+	}
+}
