@@ -169,6 +169,8 @@ function addTreeToTreeTabPanel(treeHandle)
 	addFieldToBarItem(treeTabPanel, newTab.name, "TreeHandle", treeHandle)
 	
 	moveToEndAddTab(treeTabPanel)
+	
+	-- Automatic selection:
 end
 
 
@@ -359,8 +361,31 @@ function showErrorWindow(errorDecription)
 end
 
 
-
-
+-- this function assigns currently selected units to preset roles in newly created tree. 
+function automaticRoleAssignment(treeHandle, selectedUnits)
+	-- Spring.Echo("units count: ".. tostring(table.getn(selectedUnits) ) )
+	------------------------------------------
+	-- Placeholder version: give all units to DefaultRole:
+	Spring.SelectUnitArray(selectedUnits)
+	local button 
+	-- decide if you should put i into Default role or role 0 ..
+	if(treeHandle.Roles["Default role"] == nil) then
+		button =  treeHandle.Roles["Role 0"].AssignButton
+	else
+		button = treeHandle.Roles["Default role"].AssignButton
+	end
+	listenerAssignUnitsButton(button)
+	
+	------------------------------------------
+	-- first I should detect if this tree has 
+	-- then go over selected units and find first role which require given unit type
+	
+	
+	
+	-- then go over roles and
+		-- select units in this role
+		-- send BtEvaluator instruction to assign these units to role..
+end
 
 -- this will remove given unit from its current tree and adjust the gui componnets
 function removeUnitFromCurrentTree(unitId)
@@ -491,12 +516,17 @@ local function listenerClickOnSelectedTreeDoneButton(self, x, y, button)
 				Name = treeNameEditBox.text,
 				TreeType = selectedTreeType,
 			}
-			-- show the tree
-	
+			
+			local selectedUnits = Spring.GetSelectedUnits()
+			
+			-- create tab
 			addTreeToTreeTabPanel(newTreeHandle)
 			
 			-- create the tree immediately when the tab is created
 			BtEvaluator.createTree(newTreeHandle.InstanceId, newTreeHandle.Tree)
+			
+			-- now, assign units to tree
+			automaticRoleAssignment(newTreeHandle, selectedUnits)
 	
 			listenerBarItemClick({TreeHandle = newTreeHandle},0,0,1)
 		else
