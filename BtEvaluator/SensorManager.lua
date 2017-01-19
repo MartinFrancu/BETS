@@ -4,17 +4,16 @@
 WG.SensorManager = WG.SensorManager or (function()
 	local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
 
+	local System = loadstring("return _G")().System
+	
 	local getGameFrame = Spring.GetGameFrame;
 	
 	local SENSOR_DIRNAME = LUAUI_DIRNAME .. "Widgets/BtSensors/"
 	local sensors = {}
 	local sensorEnvironmentMetatable = {
 		__metatable = false,
-		__index = {}
+		__index = System
 	};
-	for k, v in pairs(widget) do
-		sensorEnvironmentMetatable.__index[k] = v
-	end
 	local managerForGroup = {}
 
 	local SensorManager = {}
@@ -30,7 +29,6 @@ WG.SensorManager = WG.SensorManager or (function()
 			group.length = #group
 			local sensorEnvironment = setmetatable({
 				units = group,
-				UnitDefs = UnitDefs,
 				Sensors = groupSensorManager, --SensorManager.forGroup(group),
 			}, sensorEnvironmentMetatable)
 			setfenv(sensorFunction, sensorEnvironment)
@@ -90,5 +88,5 @@ WG.SensorManager = WG.SensorManager or (function()
 	
 	return SensorManager
 end)()
-
+	
 return WG.SensorManager
