@@ -12,6 +12,7 @@ return BtUtils:Assign("Debug", function()
 		Logger = "logger", -- @{Logger}
 		dump = "dump", -- @{dump}
 		copyTable = "copyTable", -- @{copyTable}
+		clone = "clone", -- @{clone}
 		FileTable = "fileTable", -- @{FileTable}
 	}
 

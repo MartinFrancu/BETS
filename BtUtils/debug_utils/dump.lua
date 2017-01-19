@@ -22,7 +22,7 @@ function dump(o, maxDepth)
 		end
 		return s .. '} '
 	elseif type(o) == 'string' then
-		return string.format("%q", o)
+		return string.format("%q", o):gsub("\\\n", "\\n")
 	else
 		return tostring(o)
 	end

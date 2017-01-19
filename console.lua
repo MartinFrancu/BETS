@@ -44,7 +44,7 @@ if (widget and not widget.GetInfo) then
 			return k, v
 		else
 			local mt = getmetatable(state.current)
-			if(not mt or type(mt.__index) ~= "table")then
+			if(not mt or type(mt) ~= "table" or type(mt.__index) ~= "table")then
 				return nil
 			end
 			state.current = mt.__index;
@@ -271,6 +271,21 @@ if (widget and not widget.GetInfo) then
 		storeSettings()
 		commandInput:SetText("")
 		consoleContext.history = history
+	end
+	consoleContext.Units = {
+		armpw = "armpw",
+		Peewee = "armpw",
+		armrock = "armrock",
+		Rocko = "armrock",
+		avtr = "avtr",
+		Avatar = "avtr",
+	}
+	consoleContext.spawn = function(unit, count)
+		count = count or 1
+		Spring.SendCommands("give " .. tostring(count) .. " " .. unit .. " " .. tostring(Spring.GetLocalPlayerID()))
+	end
+	if(not Spring.IsCheatingEnabled())then
+		Spring.SendCommands("cheat")
 	end
 	setmetatable(consoleContext, { __index = function(t, key)
 			local value = WG[key]

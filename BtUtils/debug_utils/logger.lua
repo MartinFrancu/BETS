@@ -18,6 +18,7 @@ return Debug:Assign("Logger", function()
 	
 	local dump = Debug.dump
 	local FileTable = Debug.FileTable
+	local getGameFrame = Spring.GetGameFrame;
 	
 	--- Stores the settings with regard to how to log different log-groups.
 	--
@@ -28,6 +29,15 @@ return Debug:Assign("Logger", function()
 	local FUNNEL = "funnel"
 	local SEPARATE = "separate"
 	local IGNORE = "ignore"
+
+	local LOGTYPE_DEFAULT = 1
+	local LOGTYPE_WARNING = 2
+	local LOGTYPE_ERROR = 3
+	local DEFAULTS_FOR_LOGTYPE = {
+		[LOGTYPE_DEFAULT] = FUNNEL,
+		[LOGTYPE_WARNING] = SPRING_ECHO,
+		[LOGTYPE_ERROR] = SPRING_ECHO,
+	}
 	
 	local funnelFile = io.open(LOG_PATH .. "funnel-log.txt", "w")
 	for k,v in Logger.settings:Pairs() do
@@ -44,28 +54,36 @@ Each log-group can have one of the following values:
 	"]] .. FUNNEL ..      [[" - logs the message into funnel-log.txt
 	"]] .. SEPARATE ..    [[" - logs the message into a sepearate file log_[log-group name].txt
 	"]] .. IGNORE ..      [[" (or any other string) - ignore the message completely
+	the values can be combined by putting "+" between them, eg.: "]] .. SPRING_ECHO .. [[+]] .. FUNNEL .. [[ "
+	
+Additionally, the log-group can be an array of values that determine how to treat different types of log messages:
+	{ [default], [warning], [error] } 
+If the array is not large enough (or log-group is missing entirely), the default values are:
+	{ "]] .. FUNNEL .. [[", ]] .. SPRING_ECHO .. [[, ]] .. SPRING_ECHO .. [[ }
+This default can be overriden by giving the new default values as settings for log-group "default".
+If it is not an array, it is equivalent to an array with a single value.
 ]]
 	
 	local handlers = {
-		[ SPRING_ECHO ] = function(logGroup, msg)
-			Spring.Echo("Log " .. logGroup .. ": " .. msg)
+		[ SPRING_ECHO ] = function(logGroup, logType, msg)
+			Spring.Echo((({
+				[LOGTYPE_DEFAULT] = "Log",
+				[LOGTYPE_WARNING] = "Warning",
+				[LOGTYPE_ERROR] = "ERROR",
+			})[logType] or "Log") .. " " .. logGroup .. ": " .. msg)
 		end,
-		[ FUNNEL ] = function(logGroup, msg)
-			funnelFile:write("[" .. logGroup .. "]: " .. msg .. "\n")
+		[ FUNNEL ] = function(logGroup, logType, msg)
+			funnelFile:write("[f=" .. string.format("%07d", getGameFrame()) .. ",g=" .. logGroup .. "] " .. (logType == LOGTYPE_ERROR and "ERROR: " or "") .. msg .. "\n")
 			funnelFile:flush()
 		end,
-		[ SEPARATE ] = function(logGroup, msg)
+		[ SEPARATE ] = function(logGroup, logType, msg)
 			local file = io.open(LOG_PATH .. "log_" .. logGroup .. ".txt", "a") 
-			file:write(msg .. "\n")
+			file:write("[f=" .. string.format("%07d", getGameFrame()) .. "] " .. (logType == LOGTYPE_ERROR and "ERROR: " or "") .. msg .. "\n")
 			file:close()
 		end,
 	}
-	
-	--- Logs the message under the supplied log-group.
-	function Logger.log(
-			logGroup, -- specifies the log-group under which the message belongs
-			... -- the rest of the arguments forms the message after their conversion to string
-		)
+
+	function internalLog(logGroup, logType, ...)
 		local message = ""
 		for i,v in ipairs({ ... }) do
 			message = message .. (type(v) == "string" and v or dump(v))
@@ -74,11 +92,43 @@ Each log-group can have one of the following values:
 		if(not Logger.settings[logGroup])then
 			Logger.settings[logGroup] = FUNNEL
 		end
-			
-		local handler = handlers[Logger.settings[logGroup]]
-		if(handler)then
-			handler(logGroup, message)
+		local settingForGroup = Logger.settings[logGroup]
+		if(type(settingForGroup) ~= "table")then
+			settingForGroup = { settingForGroup }
 		end
+		local defaultSetting = Logger.settings["default"] or {};
+		if(type(defaultSetting) ~= "table")then
+			defaultSetting = { defaultSetting }
+		end
+		local handlerNames = settingForGroup[logType] or defaultSetting[logType] or DEFAULTS_FOR_LOGTYPE[logType] or SPRING_ECHO
+		for name in handlerNames:gmatch("[^+]+") do
+			local handler = handlers[name:match "^%s*(.-)%s*$"]
+			if(handler)then
+				handler(logGroup, logType, message)
+			end
+		end
+	end
+	
+	--- Logs the message under the supplied log-group.
+	function Logger.log(
+			logGroup, -- specifies the log-group under which the message belongs
+			... -- the rest of the arguments forms the message after their conversion to string
+		)
+		internalLog(logGroup, LOGTYPE_DEFAULT, ...)
+	end
+	--- Logs the warning message under the supplied log-group.
+	function Logger.warn (
+			logGroup, -- specifies the log-group under which the message belongs
+			... -- the rest of the arguments forms the warning message after their conversion to string
+		)
+		internalLog(logGroup, LOGTYPE_WARNING, ...)
+	end
+	--- Logs the error message under the supplied log-group.
+	function Logger.error(
+			logGroup, -- specifies the log-group under which the message belongs
+			... -- the rest of the arguments forms the error message after their conversion to string
+		)
+		internalLog(logGroup, LOGTYPE_ERROR, ...)
 	end
 	
 	--- Disables the logging of the specified log-group.
