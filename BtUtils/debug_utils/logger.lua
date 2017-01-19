@@ -29,14 +29,15 @@ return Debug:Assign("Logger", function()
 	local FUNNEL = "funnel"
 	local SEPARATE = "separate"
 	local IGNORE = "ignore"
+	local ECHO_AND_FUNNEL = SPRING_ECHO .. "+" .. FUNNEL
 
 	local LOGTYPE_DEFAULT = 1
 	local LOGTYPE_WARNING = 2
 	local LOGTYPE_ERROR = 3
 	local DEFAULTS_FOR_LOGTYPE = {
 		[LOGTYPE_DEFAULT] = FUNNEL,
-		[LOGTYPE_WARNING] = SPRING_ECHO,
-		[LOGTYPE_ERROR] = SPRING_ECHO,
+		[LOGTYPE_WARNING] = ECHO_AND_FUNNEL,
+		[LOGTYPE_ERROR] = ECHO_AND_FUNNEL,
 	}
 	
 	local funnelFile = io.open(LOG_PATH .. "funnel-log.txt", "w")
@@ -59,7 +60,7 @@ Each log-group can have one of the following values:
 Additionally, the log-group can be an array of values that determine how to treat different types of log messages:
 	{ [default], [warning], [error] } 
 If the array is not large enough (or log-group is missing entirely), the default values are:
-	{ "]] .. FUNNEL .. [[", ]] .. SPRING_ECHO .. [[, ]] .. SPRING_ECHO .. [[ }
+	{ "]] .. FUNNEL .. [[", "]] .. SPRING_ECHO .. [[+]] .. FUNNEL .. [[", "]] .. SPRING_ECHO .. [[+]] .. FUNNEL .. [[" }
 This default can be overriden by giving the new default values as settings for log-group "default".
 If it is not an array, it is equivalent to an array with a single value.
 ]]
@@ -100,7 +101,7 @@ If it is not an array, it is equivalent to an array with a single value.
 		if(type(defaultSetting) ~= "table")then
 			defaultSetting = { defaultSetting }
 		end
-		local handlerNames = settingForGroup[logType] or defaultSetting[logType] or DEFAULTS_FOR_LOGTYPE[logType] or SPRING_ECHO
+		local handlerNames = settingForGroup[logType] or defaultSetting[logType] or DEFAULTS_FOR_LOGTYPE[logType] or ECHO_AND_FUNNEL
 		for name in handlerNames:gmatch("[^+]+") do
 			local handler = handlers[name:match "^%s*(.-)%s*$"]
 			if(handler)then
