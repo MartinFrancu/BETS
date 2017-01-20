@@ -309,8 +309,7 @@ function TreeHandle:DecreaseUnitCount(whichRole)
 	-- test for <0 ?
 	roleData.UnitCountLabel:SetCaption(currentCount)
 end
-function TreeHandle:IncreaseUnitCount(whichRole)
-	
+function TreeHandle:IncreaseUnitCount(whichRole)	
 	roleData = self.Roles[whichRole]
 	-- this is the current role and tree
 	currentCount = tonumber(roleData.UnitCountLabel.caption)
@@ -417,7 +416,6 @@ function assignUnitToTree(unitId, treeHandle, roleName)
 		Role = roleName,
 		TreeHandle = treeHandle
 		}
-	
 	treeHandle:IncreaseUnitCount(roleName)
 end
 -- This will return name id of all units in given tree
@@ -477,11 +475,13 @@ end
 function listenerAssignUnitsButton(self)
 	-- self = button
 	-- deselect units in current role
-	for unitId,treeAndRole in pairs(unitsToTreesMap) do		
+	--[[for unitId,treeAndRole in pairs(unitsToTreesMap) do	
 		if(treeAndRole.InstanceId == self.TreeHandle.InstanceId) and (treeAndRole.Role == self.Role) then
+			Spring.Echo("removing:")
+			Spring.Echo(unitId)
 			removeUnitFromCurrentTree(unitId)
 		end
-	end
+	end --]]
 	
 	-- make note of assigment in our notebook (this should be possible moved somewhere else:)
 	local selectedUnits = Spring.GetSelectedUnits()
@@ -528,7 +528,7 @@ local function listenerClickOnSelectedTreeDoneButton(self, x, y, button)
 			-- now, assign units to tree
 			automaticRoleAssignment(newTreeHandle, selectedUnits)
 	
-			listenerBarItemClick({TreeHandle = newTreeHandle},0,0,1)
+			--listenerBarItemClick({TreeHandle = newTreeHandle},x,y,button)
 		else
 			-- if such instance name exits show error window
 			showErrorWindow("Duplicate instance name.")
