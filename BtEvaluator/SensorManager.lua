@@ -3,12 +3,13 @@
 
 WG.SensorManager = WG.SensorManager or (function()
 	local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
-
+	local Logger = Utils.Debug.Logger
+	
 	local System = Utils.Debug.clone(loadstring("return _G")().System)
 	setmetatable(System, {
 		-- enumerate all tables from Utils or other sources beside System that should be available in sensors
 		__index = {
-			Logger = Utils.Debug.Logger,
+			Logger = Logger,
 		}
 	})
 	
@@ -30,7 +31,12 @@ WG.SensorManager = WG.SensorManager or (function()
 		end
 		
 		local sensorCode = "--[[" .. name .. "]] " .. VFS.LoadFile(file)
-		local sensorFunction = assert(loadstring(sensorCode))
+		local sensorFunction, msg = loadstring(sensorCode)
+		if(not sensorFunction)then
+			Logger.error("sensors", "Failed to compile sensor '", name, "' due to error: ", msg)
+			return nil
+		end
+		
 		local function sensorConstructor(groupSensorManager, group)
 			group.length = #group
 			local sensorEnvironment = setmetatable({
@@ -38,7 +44,11 @@ WG.SensorManager = WG.SensorManager or (function()
 				Sensors = groupSensorManager,
 			}, sensorEnvironmentMetatable)
 			setfenv(sensorFunction, sensorEnvironment)
-			local evaluator = sensorFunction()
+			local success, evaluator = pcall(sensorFunction)
+			if(not success)then
+				Logger.error("sensors", "Creation of sensor '", name ,"' instance failed: ", evaluator)
+				return nil
+			end
 			
 			local info = {}
 			if(sensorEnvironment.getInfo)then
@@ -51,7 +61,12 @@ WG.SensorManager = WG.SensorManager or (function()
 			return function(...)
 				local currentFrame = getGameFrame()
 				if(lastExecutionFrame == nil or currentFrame - lastExecutionFrame >= info.period)then
-					lastResult = { evaluator(...) }
+					lastResult = { pcall(evaluator, ...) }
+					if(not lastResult[1])then
+						Logger.error("sensors", "Evaluation of sensor '", name ,"' failed: ", lastResult[2])
+						return
+					end
+					table.remove(lastResult, 1)
 					lastExecutionFrame = currentFrame
 				end
 				return unpack(lastResult)
@@ -74,6 +89,10 @@ WG.SensorManager = WG.SensorManager or (function()
 						sensors[key] = sensorConstructor
 					end
 					local sensor = sensorConstructor(manager, group);
+					if(not sensor)then
+						sensors[key] = nil
+						return nil
+					end
 					rawset(self, key, sensor)
 					return sensor
 				end,

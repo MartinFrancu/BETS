@@ -134,7 +134,7 @@ local function createExpression(expression)
 		end,
 		__newindex = function(self, key, value)
 			if(sensorManager[key])then
-				Logger.log("expression", "Attempt to overwrite a sensor.")
+				Logger.error("expression", "Attempt to overwrite a sensor.")
 			end
 			blackboard[key] = value
 		end
@@ -143,12 +143,12 @@ local function createExpression(expression)
 	if(getter)then
 		setfenv(getter, environment)
 	else
-		getter = function() Logger.log("expression", "Expression ", expression, " could not be compiled into a GETTER: ", getErrMsg) end
+		getter = function() Logger.error("expression", "Expression ", expression, " could not be compiled into a GETTER: ", getErrMsg) end
 	end
 	if(setter)then
 		setfenv(setter, environment)
 	else
-		setter = function() Logger.log("expression", "Expression ", expression, " could not be compiled into a SETTER: ", setErrMsg) end
+		setter = function() Logger.error("expression", "Expression ", expression, " could not be compiled into a SETTER: ", setErrMsg) end
 	end
 	
 	return {
@@ -184,7 +184,7 @@ function BtEvaluator.OnCommand(params)
 			if(success)then
 				parameters[k] = value
 			else	
-				Logger.log("expression", "Evaluating parameter '", k, "' threw an exception: ", value);
+				Logger.error("expression", "Evaluating parameter '", k, "' threw an exception: ", value);
 			end
 		end
 		
@@ -196,7 +196,7 @@ function BtEvaluator.OnCommand(params)
 				if(expr)then
 					pcall(expr.set, v)
 				else
-					Logger.log("expression", "No parameter available for output '", k, "'");
+					Logger.warn("expression", "No parameter available for output '", k, "'");
 				end
 			end
 		end

@@ -171,10 +171,10 @@ if (widget and not widget.GetInfo) then
 								keyAccess = ".".. _G.YellowStr .. k
 							else
 								text = "[" .. dump(k) .. "] = " .. text
-								keyAccess = _G.YellowStr .. "[" .. k .. "]"
+								keyAccess = _G.YellowStr .. "[" .. dump(k) .. "]"
 							end
 						else
-							keyAccess = _G.YellowStr .. "[" .. k .. "]"
+							keyAccess = _G.YellowStr .. "[" .. dump(k) .. "]"
 						end
 						
 						local valueLine = makeLine("", text, 1,
@@ -418,6 +418,153 @@ if (widget and not widget.GetInfo) then
 		end
 	end
 
+	-- ============ Error reporting
+	
+	local function injectErrorReporter()
+		local padding = 10
+		local currentLogType
+		local currentMessage
+		local errorPanel = Chili.Panel:New{
+			parent = ChiliRoot,
+			x = '100%',
+			y = '50%',
+			width = 500,
+			skinName = 'DarkGlass',
+		}
+		_G.errorPanel = errorPanel
+		local messageLabel = Chili.Label:New{
+			parent = errorPanel,
+			x = padding,
+			y = padding,
+			valign = "top",
+			width = errorPanel.width - 2 * padding,
+			autosize = false,
+		}
+		local additionalErrorsLabel = Chili.Label:New{
+			parent = errorPanel,
+			x = padding * 2,
+			caption = "Additional errors:",
+		}
+		local additionalWarningsLabel = Chili.Label:New{
+			parent = errorPanel,
+			x = padding * 2,
+			caption = "Additional warnings:",
+		}
+		local additionalErrors = {}
+		local additionalWarnings = {}
+		local confirmButton = Chili.Button:New{
+			parent = errorPanel,
+			caption = "OK",
+			OnClick = { function()
+				currentLogType = nil
+				for _, d in ipairs(additionalErrors) do
+					local l = d.label
+					errorPanel:RemoveChild(l)
+					l:Dispose()
+				end
+				for _, d in ipairs(additionalWarnings) do
+					local l = d.label
+					errorPanel:RemoveChild(l)
+					l:Dispose()
+				end
+				additionalErrors = {}
+				additionalWarnings = {}
+				if(additionalErrorsLabel.visible)then
+					additionalErrorsLabel:Hide()
+				end
+				if(additionalErrorsLabel.visible)then
+					additionalWarningsLabel:Hide()
+				end
+				errorPanel:Hide()
+			end },
+		}
+		local disabled = false;
+		local disableButton = Chili.Button:New{
+			parent = errorPanel,
+			caption = "Disable reporting",
+			width = confirmButton.font:GetTextWidth("Disable reporting") + 20,
+			OnClick = { function()
+				disabled = true
+			end }
+		}
+		additionalErrorsLabel:Hide()
+		additionalWarningsLabel:Hide()
+		errorPanel:Hide()
+		
+		local function handler(logGroup, logType, message)
+			if(disabled or logType == Logger.LOGTYPE_DEFAULT)then
+				return
+			end
+			
+			if(not errorPanel.visible or logType > (currentLogType or 0))then
+				local lastLogType = currentLogType
+				local lastLogGroup = currentLogGroup
+				currentLogType = logType
+				currentLogGroup = logGroup
+				local screenWidth, screenHeight = gl.GetViewSizes()
+				local color = logType == Logger.LOGTYPE_WARNING and {0.75, 0.5, 0, 1} or { 0.75, 0, 0, 1 }
+				errorPanel.backgroundColor = color
+				messageLabel:SetPos(messageLabel.x, messageLabel.y, messageLabel.width, 1000000)
+				messageLabel:SetCaption(debug.traceback("[" .. logGroup .. "] " .. message .. "\n", 3))
+				local h, d = messageLabel.font:GetTextHeight(messageLabel._caption)
+				local height = h - d
+				local y = padding
+				messageLabel:SetPos(messageLabel.x, messageLabel.y, messageLabel.width, height + padding)
+				y = y + padding + height
+				confirmButton:SetPos(padding * 3, y)
+				disableButton:SetPos(errorPanel.width - 3 * padding - disableButton.width, y)
+				y = y + padding + confirmButton.height + padding
+				errorPanel:SetPos(screenWidth - errorPanel.width, (screenHeight - y) / 2, errorPanel.width, y)
+				errorPanel:Show()
+				
+				if(lastLogType)then
+					handler(lastLogGroup, lastLogType, "")
+				end
+			else
+				local additionalLabel, additionals
+				if(logType == Logger.LOGTYPE_ERROR)then
+					additionalLabel = additionalErrorsLabel
+					additionals = additionalErrors
+				else
+					additionalLabel = additionalWarningsLabel
+					additionals = additionalWarnings
+				end
+				for _, d in ipairs(additionals) do
+					if(d.logGroup == logGroup)then
+						d.count = d.count + 1
+						d.label:SetCaption(logGroup .. (d.count > 1 and (" x" .. tostring(d.count))))
+						return
+					end
+				end
+				
+				local heightIncrease = 0
+				if(not additionalLabel.visible)then
+					additionalLabel:SetPos(padding * 2, confirmButton.y)
+					additionalLabel:Show()
+					heightIncrease = heightIncrease + additionalLabel.height + padding
+				end
+				local follow = additionals[#additionals] and additionals[#additionals].label or additionalLabel
+				local newLabel = Chili.Label:New{
+					parent = errorPanel,
+					x = padding * 5,
+					y = follow.y + follow.height,
+					caption = logGroup
+				}
+				table.insert(additionals, { logGroup = logGroup, count = 1, label = newLabel })
+				heightIncrease = heightIncrease + newLabel.height
+				confirmButton:SetPos(confirmButton.x, confirmButton.y + heightIncrease)
+				disableButton:SetPos(disableButton.x, disableButton.y + heightIncrease)
+				errorPanel:SetPos(errorPanel.x, errorPanel.y - heightIncrease, errorPanel.width, errorPanel.height + heightIncrease)
+			end
+			errorPanel:BringToFront()
+		end
+		
+		Logger.registerHandler(handler)
+	end
+	
+	-- ============ /Error reporting
+	
+	
 	local function injectConsole()
 	end
 	
@@ -436,6 +583,8 @@ if (widget and not widget.GetInfo) then
 		-- Get ready to use Chili
 		Chili = WG.ChiliClone
 		ChiliRoot = Chili.Screen0	
+		
+		injectErrorReporter()
 
 		consolePanel = Chili.Panel:New{
 			parent = ChiliRoot,
