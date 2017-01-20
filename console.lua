@@ -98,14 +98,18 @@ if (widget and not widget.GetInfo) then
 			return
 		end
 	
-		local commandLabel = Chili.Label:New{
-			autosize = true,
-			x = 0, y = 0,
-			font = { size = 16, color = {1,1,1,1} },
-			caption = _G.YellowStr .. "> " .. command
-		}
-		local y = commandLabel.height
-		local children = { commandLabel }
+		local y = 0
+		local children = {}
+		if(command)then
+			local commandLabel = Chili.Label:New{
+				autosize = true,
+				x = 0, y = 0,
+				font = { size = 16, color = {1,1,1,1} },
+				caption = _G.YellowStr .. "> " .. command
+			}
+			y = commandLabel.height
+			children = { commandLabel }
+		end
 		
 		if(value or resultType ~= "command")then
 			local function makeLine(color, text, indentation, onClick)
@@ -154,7 +158,7 @@ if (widget and not widget.GetInfo) then
 				else
 					makeLine("", (type(value) == "userdata") and "<userdata> {" or (resultType == "multiresult") and "results:" or "{")
 					
-					local oldCommand = command:gsub(_G.YellowStr, "")
+					local oldCommand = (command or ""):gsub(_G.YellowStr, "")
 					if(resultType == "multiresult")then
 						oldCommand = "{" .. oldCommand .. "}"
 					end
@@ -262,6 +266,14 @@ if (widget and not widget.GetInfo) then
 	consoleContext.history = history
 	consoleContext.Logger = Logger
 	consoleContext.widget = widget
+	consoleContext.write = function(...)
+		local data = { ... }
+		if(next(data, next(data, nil)))then
+			addResult(nil, "multiresult", data)
+		else
+			addResult(nil, "result", data[1])
+		end
+	end
 	consoleContext.clear = function()
 		consoleLog:ClearChildren()
 		consoleLog.justCleared = true
