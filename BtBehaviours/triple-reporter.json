@@ -1,4 +1,10 @@
 {
+	"roles":{ 
+		"Default role" : [],
+		"artillery" : [ "Hammer", "Luger", "Avatar", "Morty", "Oddity", "Galacticus", "Pillager", "Demolisher", "Diplomat", "Merl" ],
+		"scouts" : ["Flea", "Jeffy", "Peeper", "Sprinterus", "Weasel", "Fink"]
+	},
+	"defaultRole": "Default role",
 	"additionalNodes": [],
 	"properties": {
 		"J6FFSgBE0Ya4WbxC8wvBfz43HoI3UMbD": {
