@@ -169,8 +169,6 @@ function addTreeToTreeTabPanel(treeHandle)
 	addFieldToBarItem(treeTabPanel, newTab.name, "TreeHandle", treeHandle)
 	
 	moveToEndAddTab(treeTabPanel)
-	
-	-- Automatic selection:
 end
 
 
@@ -373,10 +371,9 @@ end
 
 -- this function assigns currently selected units to preset roles in newly created tree. 
 function automaticRoleAssignment(treeHandle, selectedUnits)
-	-- Spring.Echo("units count: ".. tostring(table.getn(selectedUnits) ) )
 	------------------------------------------
 	-- Placeholder version: give all units to DefaultRole:
-	Spring.SelectUnitArray(selectedUnits)
+	--[[Spring.SelectUnitArray(selectedUnits)
 	local button 
 	-- decide if you should put i into Default role or role 0 ..
 	if(treeHandle.Roles["Default role"] == nil) then
@@ -385,9 +382,21 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 		button = treeHandle.Roles["Default role"].AssignButton
 	end
 	listenerAssignUnitsButton(button)
-	
+	--]]
 	------------------------------------------
-	-- first I should detect if this tree has 
+	-- we can start by sorting units into catheogries:
+	local unitsInRoles = assignUnitsToRoles(selectedUnits, {"artillery", "other", "builder", "antitank", "transport", "scouts", "antiair"}, "other")
+	Logger.log("roles", "artillery: ".. dump(unitsInRoles["artillery"]))
+	Logger.log("roles", "other: ".. dump(unitsInRoles["other"]))
+	Logger.log("roles", "builder: ".. dump(unitsInRoles["builder"]))
+	Logger.log("roles", "antitank: ".. dump(unitsInRoles["antitank"]))
+	Logger.log("roles", "transport: ".. dump(unitsInRoles["transport"]))
+	Logger.log("roles", "scouts: ".. dump(unitsInRoles["scouts"]))
+	Logger.log("roles", "antiair: ".. dump(unitsInRoles["antiair"]))
+	
+	-- ??? first I should detect if this tree has roles assigned
+
+	
 	-- then go over selected units and find first role which require given unit type
 	
 	
@@ -450,6 +459,8 @@ end
 --//////////////////////////////////////////////////////////////////////////////
 
 ---------------------------------------LISTENERS
+-- This listener is called when AddTreeTab becomes active to update directory 
+-- content and default instance name.
 local function listenerRefreshTreeSelectionPanel(self)
 	names = getNamesInDirectory(BehavioursDirectory, ".json")
 	treeSelectionComboBox.items = names 
@@ -457,7 +468,8 @@ local function listenerRefreshTreeSelectionPanel(self)
 	treeNameEditBox.text = "Instance"..instanceIdCount
 end
 
-
+-- This listener is called when user clicks on tabBar item in BtController. The 
+-- original listener is replaced by this one.
 function listenerBarItemClick(self, x, y, button, ...)
 	if button == 1 then
 		-- select assigned units, if any
@@ -483,11 +495,11 @@ function listenerBarItemClick(self, x, y, button, ...)
 	end
 end 
 
-
+-- This is listener for AssignUnits buttons of given tree instance. 
+-- The button should has TreeHandle and Role data. 
 function listenerAssignUnitsButton(self)
 	-- self = button
 	-- deselect units in current role
-
 	for unitId,treeAndRole in pairs(unitsToTreesMap) do	
 		if(treeAndRole.InstanceId == self.TreeHandle.InstanceId) and (treeAndRole.Role == self.Role) then
 			removeUnitFromCurrentTree(unitId)
@@ -503,7 +515,7 @@ function listenerAssignUnitsButton(self)
 	BtEvaluator.reportTree(self.TreeHandle.InstanceId)
 end
 
-
+-- Listener for closing error window.
 function listenerErrorOk(self)
 	errorWindow:Hide()
 end
@@ -511,7 +523,7 @@ end
 
 
 
-
+-- Listener for button in treeSelectionTab which creates new tree.
 local function listenerClickOnSelectedTreeDoneButton(self, x, y, button)
 	if button == 1 then
 		-- we react only on leftclicks
@@ -535,7 +547,7 @@ local function listenerClickOnSelectedTreeDoneButton(self, x, y, button)
 			BtEvaluator.createTree(newTreeHandle.InstanceId, newTreeHandle.Tree)
 			
 			-- now, assign units to tree
-			--automaticRoleAssignment(newTreeHandle, selectedUnits)
+			automaticRoleAssignment(newTreeHandle, selectedUnits)
 	
 			--listenerBarItemClick({TreeHandle = newTreeHandle},x,y,button)
 		else
