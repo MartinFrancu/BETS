@@ -292,9 +292,10 @@ if (widget and not widget.GetInfo) then
 		avtr = "avtr",
 		Avatar = "avtr",
 	}
-	consoleContext.spawn = function(unit, count)
+	consoleContext.spawn = function(unit, count, playerId)
 		count = count or 1
-		Spring.SendCommands("give " .. tostring(count) .. " " .. unit .. " " .. tostring(Spring.GetLocalPlayerID()))
+		playerId = playerId or Spring.GetLocalPlayerID()
+		Spring.SendCommands("give " .. tostring(count) .. " " .. unit .. " " .. tostring(playerId))
 	end
 	if(not Spring.IsCheatingEnabled())then
 		Spring.SendCommands("cheat")

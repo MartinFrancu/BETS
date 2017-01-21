@@ -1,0 +1,56 @@
+{
+	"additionalNodes": [],
+	"properties": {
+		"TlXFjAQRMSxOfk0MPz5FUoYH1rSyMbyP": {
+			"height": 90,
+			"width": 110,
+			"x": 346,
+			"y": 180
+		},
+		"ZLceru75PLrn0lk0SuCXATo8ecjcAury": {
+			"height": 70,
+			"width": 110,
+			"x": 406,
+			"y": 63
+		},
+		"gb3FdT6DkLcjqVMc9z8w7wE3J2BnhgMM": {
+			"height": 60,
+			"width": 110,
+			"x": 165,
+			"y": 99
+		}
+	},
+	"root": {
+		"children": [ {
+			"children": [],
+			"id": "ZLceru75PLrn0lk0SuCXATo8ecjcAury",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "msg",
+				"value": "closestMetal()"
+			}, {
+				"name": "scriptName",
+				"value": "luaecho.lua"
+			} ],
+			"scriptName": "luaecho.lua"
+		}, {
+			"children": [],
+			"id": "TlXFjAQRMSxOfk0MPz5FUoYH1rSyMbyP",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "pos",
+				"value": "closestMetal()"
+			}, {
+				"name": "building",
+				"value": "\"mex\""
+			}, {
+				"name": "scriptName",
+				"value": "build.lua"
+			} ],
+			"scriptName": "build.lua"
+		} ],
+		"id": "gb3FdT6DkLcjqVMc9z8w7wE3J2BnhgMM",
+		"nodeType": "sequence",
+		"parameters": []
+	}
+}

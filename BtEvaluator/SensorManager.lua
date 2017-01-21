@@ -5,11 +5,15 @@ WG.SensorManager = WG.SensorManager or (function()
 	local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
 	local Logger = Utils.Debug.Logger
 	
+	local globalData = {} -- table that is persistent among all sensors (and all groups) and can be used to store persistent data
+	
 	local System = Utils.Debug.clone(loadstring("return _G")().System)
 	setmetatable(System, {
 		-- enumerate all tables from Utils or other sources beside System that should be available in sensors
 		__index = {
+			Global = globalData,
 			Logger = Logger,
+			System = System,
 		}
 	})
 	
@@ -78,7 +82,20 @@ WG.SensorManager = WG.SensorManager or (function()
 	function SensorManager.forGroup(group)
 		local manager = managerForGroup[group];
 		if(not manager)then
-			manager = setmetatable({}, {
+			manager = setmetatable({
+				Reload = function(self)
+					local keys = {}
+					for k, _ in pairs(self) do
+						if(k ~= "Reload")then
+							table.insert(keys, k)
+						end
+					end
+					for _, k in ipairs(keys) do
+						rawset(self, k, nil)
+					end
+					SensorManager.reload()
+				end
+			}, {
 				__index = function(self, key)
 					local sensorConstructor = sensors[key]
 					if(not sensorConstructor)then
@@ -109,6 +126,13 @@ WG.SensorManager = WG.SensorManager or (function()
 			sensorFiles[i] = v:sub(1, v:len() - 4)
 		end
 		return sensorFiles
+	end
+	
+	function SensorManager.reload()
+		globalData = {}
+		getmetatable(System).__index.Global = globalData
+		sensors = {}
+		managerForGroup = {}
 	end
 	
 	return SensorManager
