@@ -198,7 +198,7 @@ TreeHandle = {
 -------------------------------------------------------------------------------------
 
 function TreeHandle:New(obj)
-	obj = obj or TreeHandle
+	obj = obj -- or TreeHandle
 	setmetatable(obj, self)
 	self.__index = self
 	obj.InstanceId = GenerateID()
@@ -260,7 +260,7 @@ function TreeHandle:New(obj)
 		end
 	end
 	visit(obj.Tree.root)
-	
+	obj.Roles = {}
 	for roleIndex = 0, roleCount - 1 do
 		roleName = roleCount == 1 and "Default role" or "Role " .. tostring(roleIndex)
 		local unitsCountLabel = Chili.Label:New{
@@ -272,6 +272,7 @@ function TreeHandle:New(obj)
 			caption = 0, 
 			skinName = "DarkGlass",
 			focusColor = {0.5,0.5,0.5,0.5},
+			instanceId = obj.InstanceId
 		}
 		table.insert(obj.ChiliComponents, unitsCountLabel)
 		local roleAssignmentButton = Chili.Button:New{
@@ -287,8 +288,10 @@ function TreeHandle:New(obj)
 			TreeHandle = obj,
 			Role = roleName,
 			RoleIndex = roleIndex,
-			unitsCountLabel = unitsCountLabel
+			unitsCountLabel = unitsCountLabel,
+			instanceId = obj.InstanceId
 		}
+		
 		table.insert(obj.ChiliComponents, roleAssignmentButton)
 		obj.Roles[roleName]={
 				AssignButton = roleAssignmentButton,
@@ -297,6 +300,7 @@ function TreeHandle:New(obj)
 	end
 	
 	return obj
+
 end
 
 -- Following three methods are shortcut for increasing and decreassing role counts.
@@ -305,7 +309,6 @@ function TreeHandle:DecreaseUnitCount(whichRole)
 	-- this is the current role and tree
 	currentCount = tonumber(roleData.UnitCountLabel.caption)
 	currentCount = currentCount - 1
-	
 	-- test for <0 ?
 	roleData.UnitCountLabel:SetCaption(currentCount)
 end
@@ -360,6 +363,14 @@ function showErrorWindow(errorDecription)
 end
 
 
+function logUnitsToTreesMap(cathegory)
+	Logger.log(cathegory, "************************************************unitsToTreesMapLog:" )
+	for unitId, unitData in pairs(unitsToTreesMap) do
+		Logger.log(cathegory, "unitId ", unitId, " instId ", unitData.InstanceId, " label inst: ", unitData.TreeHandle.Roles[unitData.Role].UnitCountLabel.instanceId, " treeHandleId: ", unitData.TreeHandle.InstanceId, " button insId: ", unitData.TreeHandle.Roles[unitData.Role].AssignButton.instanceId, " treeHandleName ", unitData.TreeHandle.Name )
+	end
+	Logger.log(cathegory, "************************************************" )
+end
+
 -- this function assigns currently selected units to preset roles in newly created tree. 
 function automaticRoleAssignment(treeHandle, selectedUnits)
 	-- Spring.Echo("units count: ".. tostring(table.getn(selectedUnits) ) )
@@ -387,10 +398,11 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 end
 
 -- this will remove given unit from its current tree and adjust the gui componnets
-function removeUnitFromCurrentTree(unitId)
+function removeUnitFromCurrentTree(unitId)	
 	if(unitsToTreesMap[unitId] == nil) then return end
 	-- unit is assigned to some tree:
 	-- decrease count of given tree:
+	
 	treeHandle = unitsToTreesMap[unitId].TreeHandle
 	role = unitsToTreesMap[unitId].Role
 	treeHandle:DecreaseUnitCount(role)
@@ -475,19 +487,18 @@ end
 function listenerAssignUnitsButton(self)
 	-- self = button
 	-- deselect units in current role
-	--[[for unitId,treeAndRole in pairs(unitsToTreesMap) do	
+
+	for unitId,treeAndRole in pairs(unitsToTreesMap) do	
 		if(treeAndRole.InstanceId == self.TreeHandle.InstanceId) and (treeAndRole.Role == self.Role) then
-			Spring.Echo("removing:")
-			Spring.Echo(unitId)
 			removeUnitFromCurrentTree(unitId)
 		end
 	end --]]
-	
 	-- make note of assigment in our notebook (this should be possible moved somewhere else:)
 	local selectedUnits = Spring.GetSelectedUnits()
 	for _,Id in pairs(selectedUnits) do
 		assignUnitToTree(Id, self.TreeHandle, self.Role)
 	end
+	
 	BtEvaluator.assignUnits(nil, self.TreeHandle.InstanceId, self.RoleIndex)
 	BtEvaluator.reportTree(self.TreeHandle.InstanceId)
 end
@@ -504,19 +515,17 @@ end
 local function listenerClickOnSelectedTreeDoneButton(self, x, y, button)
 	if button == 1 then
 		-- we react only on leftclicks
-		
 		-- check if instance name is not being used:
-		
 		if(treeTabPanel.tabIndexMapping[treeNameEditBox.text] == nil ) then
 			-- instance with such name is not used
 			local selectedTreeType = treeSelectionComboBox.items[treeSelectionComboBox.selected]
 			--should not be needed anymore: name = name:sub(1,name:len()-5)
+				
 			--reloadTree(name)
 			local newTreeHandle = TreeHandle:New{
 				Name = treeNameEditBox.text,
 				TreeType = selectedTreeType,
 			}
-			
 			local selectedUnits = Spring.GetSelectedUnits()
 			
 			-- create tab
@@ -526,7 +535,7 @@ local function listenerClickOnSelectedTreeDoneButton(self, x, y, button)
 			BtEvaluator.createTree(newTreeHandle.InstanceId, newTreeHandle.Tree)
 			
 			-- now, assign units to tree
-			automaticRoleAssignment(newTreeHandle, selectedUnits)
+			--automaticRoleAssignment(newTreeHandle, selectedUnits)
 	
 			--listenerBarItemClick({TreeHandle = newTreeHandle},x,y,button)
 		else
