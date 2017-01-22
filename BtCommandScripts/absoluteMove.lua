@@ -11,7 +11,7 @@ function getParameterDefs()
 			name = "pos",
 			variableType = "expression",
 			componentType = "editBox",
-			defaultValue = "{posX = 0, posZ = 0}",
+			defaultValue = "{x = 0, z = 0}",
 		},
 	}
 end
