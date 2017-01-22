@@ -7,6 +7,7 @@ local COMMAND_DIRNAME = LUAUI_DIRNAME .. "Widgets/BtCommandScripts/"
 Command = {
 	Spring = Spring,
 	CMD = CMD,
+	VFS = VFS, -- to be removed
 	Logger = Logger,
 	dump = dump,
 	math = math,
