@@ -1,7 +1,5 @@
-
-
---local testBuildOrder = Spring.TestBuildOrder
---local giveOrderToUnit = Spring.GiveOrderToUnit
+local testBuildOrder = Spring.TestBuildOrder
+local giveOrderToUnit = Spring.GiveOrderToUnit
 
 function getParameterDefs()
 	return {
@@ -20,20 +18,21 @@ function getParameterDefs()
 	}
 end
 
+local buildingIds = {
+	["arm"] = {
+		["mex"] = "armmex",
+	},
+	["core"] = {
+		["mex"] = "cormex",
+	},
+}
+
 function New(self)
-	self.buildingIds = {
-		["arm"] = {
-			["mex"] = "armmex",
-		},
-		["core"] = {
-			["mex"] = "cormex",
-		},
-	}
 	self.kind = select(5, Spring.GetTeamInfo(Spring.GetLocalTeamID()))
 end
 
 function Run(self, unitIds, parameter)
-	local buildingName = (self.buildingIds[self.kind] or {})[parameter.building]
+	local buildingName = (buildingIds[self.kind] or {})[parameter.building]
 	if(not buildingName)then
 		Logger.error("build", "Unknown building identifier: '", parameter.building, "'")
 		return FAILURE
@@ -46,10 +45,10 @@ function Run(self, unitIds, parameter)
 	
 	if(not self.inProgress)then
 		local pos = parameter.pos
-		if(Spring.TestBuildOrder(buildingId, pos.posX, pos.height, pos.posZ, 2) ~= 0)then
+		if(testBuildOrder(buildingId, pos.posX, pos.height, pos.posZ, 2) ~= 0)then
 			for i = 1, #unitIds do
 				local unitID = unitIds[i]
-				Spring.GiveOrderToUnit(unitID, -buildingId, { pos.posX, pos.height, pos.posZ }, {})
+				giveOrderToUnit(unitID, -buildingId, { pos.posX, pos.height, pos.posZ }, {})
 			end
 			self.inProgress = true
 			return RUNNING
@@ -65,7 +64,6 @@ function Run(self, unitIds, parameter)
 			end
 		end
 		self.inProgress = nil
-		Logger.log("command", "======== Run - Success")
 		return SUCCESS
 	end
 end

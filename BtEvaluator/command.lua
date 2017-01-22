@@ -26,28 +26,29 @@ local methodSignatures = {
 }
 
 function Command:Extend(scriptName)
-
-
 	Logger.log("script-load", "Loading command from file " .. scriptName)
 	function Command:loadMethods()
 		--Logger.log("script-load", "Loading method ", methodName, " into ", scriptName)
 		
 		local nameComment = "--[[" .. scriptName .. "]] "
 		local scriptStr = nameComment .. VFS.LoadFile(COMMAND_DIRNAME .. scriptName)
-
-		for methodName,sig in pairs(methodSignatures) do
-			local codeStr = scriptStr .. " ; return " .. methodName
-			--Logger.log("script-load",  scriptName, " - code: ", codeStr)
-			local methodGetter = assert(loadstring(codeStr))
-			local method = methodGetter()
-			if not method then
-				Logger.log("script-load",  scriptName, " doesn't contain method ", sig)
-				method = function() end
-			else
-				setfenv(method, self)
-			end
-			self[methodName] = method
-			Logger.log("script-load", "Loaded method ", sig, " into ", scriptName)
+		local scriptChunk = assert(loadstring(scriptStr))
+		setfenv(scriptChunk, self)
+		scriptChunk()
+		
+		if not self.New then
+			Logger.log("script-load", "Warning - scriptName: ", scriptName, ", Method ", methodSignatures.New, "  missing (note that this might be intentional)")
+			self.New = function() end
+		end
+		
+		if not self.Reset then
+			Logger.log("script-load", "Warning - scriptName: ", scriptName, ", Method ", methodSignatures.Reset, "  missing (note that this might be intentional)")
+			self.Reset = function() end
+		end
+		
+		if not self.Run then
+			Logger.error("script-load", "scriptName: ", scriptName, ", Method ", methodSignatures.Run, "  missing")
+			self.Run = function() return FAILURE end
 		end
 	end
 

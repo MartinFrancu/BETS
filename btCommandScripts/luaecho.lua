@@ -10,6 +10,6 @@ function getParameterDefs()
 end
 
 function Run(self, unitIds, p)
-	Spring.Echo(dump(p.msg))
+	Spring.Echo(p.msg)
 	return SUCCESS
 end

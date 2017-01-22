@@ -15,29 +15,31 @@ function getParameterDefs()
 	}
 end
 
+local getUnitPos = Spring.GetUnitPosition
+
+local function UnitMoved(self, unitID)
+	x, _, z = getUnitPos(unitID)
+	lastPos = self.lastPositions[unitID]
+	
+	if not lastPos then
+		lastPos = {x,z}
+		self.lastPositions[unitID] = lastPos
+		Logger.log("move-command","unit:", unitID, "x: ", x ,", z: ", z)
+		return true
+	end
+	
+	Logger.log("move-command", "unit:", unitID, " x: ", x ,", lastX: ", lastPos[1], ", z: ", z, ", lastZ: ", lastPos[2])
+	moved = x ~= lastPos[1] or z ~= lastPos[2]
+	self.lastPositions[unitID] = {x,z}
+	return moved
+end
 
 function New(self)
 	Logger.log("command", "Running New in move")
 	self.targets = {}
 	self.n = 0
 	self.lastPositions = {}
-	
-	self.UnitMoved = function(self, unitID)
-		x, _, z = Spring.GetUnitPosition(unitID)
-		lastPos = self.lastPositions[unitID]
-		
-		if not lastPos then
-			lastPos = {x,z}
-			self.lastPositions[unitID] = lastPos
-			Logger.log("move-command","unit:", unitID, "x: ", x ,", z: ", z)
-			return true
-		end
-		
-		Logger.log("move-command", "unit:", unitID, " x: ", x ,", lastX: ", lastPos[1], ", z: ", z, ", lastZ: ", lastPos[2])
-		moved = x ~= lastPos[1] or z ~= lastPos[2]
-		self.lastPositions[unitID] = {x,z}
-		return moved
-	end
+
 end
 
 function Run(self, unitIds, parameter)
@@ -52,7 +54,7 @@ function Run(self, unitIds, parameter)
 	x,y,z = 0,0,0
 	for i = 1, #unitIds do
 		unitID = unitIds[i]
-		x, y, z = Spring.GetUnitPosition(unitID)
+		x, y, z = getUnitPos(unitID)
 		
 		tarX = x + dx
 		tarZ = z + dz
@@ -67,7 +69,7 @@ function Run(self, unitIds, parameter)
 			if not self:UnitIdle(unitID) then
 				done = false
 			end
-			if self:UnitMoved(unitID) then -- cannot get to target location
+			if UnitMoved(self, unitID) then -- cannot get to target location
 				noneMoved = false
 			end
 		end
