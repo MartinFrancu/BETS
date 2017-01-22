@@ -19,9 +19,13 @@ end
 function Run(self, unitIds, parameter)
 	units = unitIds
 	units.length = #unitIds
-	local center = groupExtents().center
+	local center = (groupExtents() or {}).center
+	if(not center)then
+		return FAILURE
+	end
+	
 	return oldRun(self, unitIds, {
-		x = parameter.pos.posX - center.x,
-		y = parameter.pos.posZ - center.z,
+		x = parameter.pos.x - center.x,
+		y = parameter.pos.z - center.z,
 	})
 end

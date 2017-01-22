@@ -22,5 +22,9 @@ return function(toWhat)
 			end
 		end
 	end
+	if(selectedMetal)then
+		selectedMetal.x = selectedMetal.posX
+		selectedMetal.z = selectedMetal.posZ
+	end
 	return selectedMetal
 end
