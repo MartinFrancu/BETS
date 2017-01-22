@@ -1,17 +1,30 @@
 {
 	"additionalNodes": [],
+	"defaultRole": "Defenders",
 	"properties": {
+		"M9I330VCgtMsXx8asdaUJTzskQdWbDKx": {
+			"height": 50,
+			"width": 110,
+			"x": 590,
+			"y": 154
+		},
 		"TlXFjAQRMSxOfk0MPz5FUoYH1rSyMbyP": {
 			"height": 90,
 			"width": 110,
-			"x": 346,
-			"y": 180
+			"x": 582,
+			"y": 252
+		},
+		"Z4prghjNNr8JF8TwvKlxI6g9MiaVWkt1": {
+			"height": 70,
+			"width": 152.000015,
+			"x": 332,
+			"y": 194
 		},
 		"ZLceru75PLrn0lk0SuCXATo8ecjcAury": {
 			"height": 70,
 			"width": 110,
-			"x": 406,
-			"y": 63
+			"x": 568,
+			"y": 53
 		},
 		"gb3FdT6DkLcjqVMc9z8w7wE3J2BnhgMM": {
 			"height": 60,
@@ -20,6 +33,13 @@
 			"y": 99
 		}
 	},
+	"roles": [ {
+		"name": "Defenders",
+		"types": []
+	}, {
+		"name": "Builders",
+		"types": []
+	} ],
 	"root": {
 		"children": [ {
 			"children": [],
@@ -34,20 +54,33 @@
 			} ],
 			"scriptName": "luaecho.lua"
 		}, {
-			"children": [],
-			"id": "TlXFjAQRMSxOfk0MPz5FUoYH1rSyMbyP",
-			"nodeType": "luaCommand",
-			"parameters": [ {
-				"name": "pos",
-				"value": "closestMetal()"
+			"children": [ {
+				"children": [],
+				"id": "M9I330VCgtMsXx8asdaUJTzskQdWbDKx",
+				"nodeType": "success",
+				"parameters": []
 			}, {
-				"name": "building",
-				"value": "\"mex\""
-			}, {
-				"name": "scriptName",
-				"value": "build.lua"
+				"children": [],
+				"id": "TlXFjAQRMSxOfk0MPz5FUoYH1rSyMbyP",
+				"nodeType": "luaCommand",
+				"parameters": [ {
+					"name": "pos",
+					"value": "closestMetal()"
+				}, {
+					"name": "building",
+					"value": "\"mex\""
+				}, {
+					"name": "scriptName",
+					"value": "build.lua"
+				} ],
+				"scriptName": "build.lua"
 			} ],
-			"scriptName": "build.lua"
+			"id": "Z4prghjNNr8JF8TwvKlxI6g9MiaVWkt1",
+			"nodeType": "roleSplit",
+			"parameters": [ {
+				"name": "mode",
+				"value": "all-success"
+			} ]
 		} ],
 		"id": "gb3FdT6DkLcjqVMc9z8w7wE3J2BnhgMM",
 		"nodeType": "sequence",

@@ -160,7 +160,7 @@ function listenerClickOnLoadTree()
 	if(bt)then
 		clearCanvas()
 		loadBehaviourTree(bt)
-		rolesOfCurrentTree = bt.roles
+		rolesOfCurrentTree = bt.roles or {}
 	else
 		error("BehaviourTree " .. treeName.text .. " instance not found. " .. debug.traceback())
 	end
@@ -771,7 +771,7 @@ function showRoleManagementWindow(tree)
 			text = "Role ".. tostring(roleIndex),
 			width = 150
 		}
-		if(roleIndex < #rolesOfCurrentTree-1) then
+		if(rolesOfCurrentTree[roleIndex+1]) then
 			nameEditBox:SetText(rolesOfCurrentTree[roleIndex+1].name)
 		end
 		local typesCheckboxes = {}
@@ -786,7 +786,7 @@ function showRoleManagementWindow(tree)
 				width = 200,
 			}
 			
-			if ((roleIndex < #rolesOfCurrentTree-1) and isInTable(typeCheckBox.caption, rolesOfCurrentTree[roleIndex+1].types)) then
+			if (rolesOfCurrentTree[roleIndex+1] and isInTable(typeCheckBox.caption, rolesOfCurrentTree[roleIndex+1].types)) then
 				typeCheckBox:Toggle()
 			end
 			xLocalOffSet = xLocalOffSet + 1
