@@ -23,24 +23,22 @@ function New(self)
 	self.lastPositions = {}
 	
 	self.UnitMoved = function(self, unitID)
-	x, _, z = Spring.GetUnitPosition(unitID)
-	lastPos = self.lastPositions[unitID]
-	
-	if not lastPos then
-		lastPos = {x,z}
-		self.lastPositions[unitID] = lastPos
-		Logger.log("move-command","unit:", unitID, "x: ", x ,", z: ", z)
-		return true
+		x, _, z = Spring.GetUnitPosition(unitID)
+		lastPos = self.lastPositions[unitID]
+		
+		if not lastPos then
+			lastPos = {x,z}
+			self.lastPositions[unitID] = lastPos
+			Logger.log("move-command","unit:", unitID, "x: ", x ,", z: ", z)
+			return true
+		end
+		
+		Logger.log("move-command", "unit:", unitID, " x: ", x ,", lastX: ", lastPos[1], ", z: ", z, ", lastZ: ", lastPos[2])
+		moved = x ~= lastPos[1] or z ~= lastPos[2]
+		self.lastPositions[unitID] = {x,z}
+		return moved
 	end
-	
-	Logger.log("move-command", "unit:", unitID, " x: ", x ,", lastX: ", lastPos[1], ", z: ", z, ", lastZ: ", lastPos[2])
-	moved = x ~= lastPos[1] or z ~= lastPos[2]
-	self.lastPositions[unitID] = {x,z}
-	return moved
 end
-end
-
-
 
 function Run(self, unitIds, parameter)
 	dx = parameter.x
