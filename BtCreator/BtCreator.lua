@@ -25,6 +25,11 @@ local addRoleButton
 
 local treeName
 
+local rolesWindow
+local showRoleManagementWindow
+local roleManagementButton
+local rolesOfCurrentTree
+
 --- Keys are node IDs, values are Treenode objects.  
 WG.nodeList = {}
 local nodePoolList = {}
@@ -141,7 +146,9 @@ local clearCanvas, loadBehaviourTree, formBehaviourTree
 
 function listenerClickOnSaveTree()
 	Logger.log("save-and-load", "Save Tree clicked on. ")
-	formBehaviourTree():Save(treeName.text)
+	local resultTree = formBehaviourTree()
+	showRoleManagementWindow(resultTree)
+	--resultTree:Save(treeName.text)
 	WG.clearSelection()
 end
 
@@ -153,6 +160,7 @@ function listenerClickOnLoadTree()
 	if(bt)then
 		clearCanvas()
 		loadBehaviourTree(bt)
+		rolesOfCurrentTree = bt.roles
 	else
 		error("BehaviourTree " .. treeName.text .. " instance not found. " .. debug.traceback())
 	end
@@ -685,6 +693,130 @@ function loadBehaviourTree(bt)
 	end
 	WG.clearSelection()
 	updateSerializedIDs()
+end                
+
+--------------------------------------------------------------------------------------------------------------------------
+--- ROLE MANAGEMENT ------------------------------------------------------------------------------------------------------
+local function isInTable(value, t)
+	for i=1,#t do
+		if(t[i] == value) then
+			return true
+		end
+	end
+	return false
 end
+
+function doneRoleManagerWindow(self)
+	self.Window:Hide()
+	local result = {}
+	cb = self.Checkboxes  
+	for i = 1,  #cb do
+		local types = {}
+		for _,box in pairs(cb[i].checkBoxes) do
+			if(box.checked) then
+				table.insert(types, box.caption)
+			end
+		end
+		local record = {}
+		record["name"] = cb[i].nameEditBox.text
+		record["types"] = types
+		result[i] = record
+	end
+	self.Tree.roles = result
+	rolesOfCurrentTree = result
+	self.Tree.defaultRole = result[1].name
+	self.Tree:Save(treeName.text)
+end
+
+function showRoleManagementWindow(tree) 
+	-- find out how many roles we need:
+	local roleCount = 1
+	local function visit(node)
+		if(node.nodeType == "roleSplit" and roleCount < #node.children)then
+				roleCount = #node.children
+		end
+		for _, child in ipairs(node.children) do
+				visit(child)
+		end
+	end
+	visit(tree.root)
+	
+	rolesWindow = Chili.Window:New{
+		parent = Screen0,
+		x = 150,
+		y = 300,
+		width = 1200,
+		height = 600,
+		skinName = 'DarkGlass'
+	}
+	
+	local rolesScrollPanel = Chili.ScrollPanel:New{
+		parent = rolesWindow,
+		y = 0,
+		x = 0,
+		width  = '100%',
+		height = '100&',
+		skinName='DarkGlass'
+	}
+	local rolesCB = {}
+	local xOffSet = 10
+	local yOffSet = 10
+	local xCheckBoxOffSet = 180
+	-- set up array for all
+	for roleIndex=0, roleCount -1 do
+		local nameEditBox = Chili.EditBox:New{
+			parent = rolesScrollPanel,
+			x = xOffSet,
+			y = yOffSet,
+			text = "Role ".. tostring(roleIndex),
+			width = 150
+		}
+		if(roleIndex < #rolesOfCurrentTree-1) then
+			nameEditBox:SetText(rolesOfCurrentTree[roleIndex+1].name)
+		end
+		local typesCheckboxes = {}
+		local xLocalOffSet = 0
+		for _,unitDef in pairs(UnitDefs) do
+			local typeCheckBox = Chili.Checkbox:New{
+				parent = rolesScrollPanel,
+				x = xOffSet + xCheckBoxOffSet + (xLocalOffSet * 250),
+				y = yOffSet,
+				caption = unitDef.humanName,
+				checked = false,
+				width = 200,
+			}
+			
+			if ((roleIndex < #rolesOfCurrentTree-1) and isInTable(typeCheckBox.caption, rolesOfCurrentTree[roleIndex+1].types)) then
+				typeCheckBox:Toggle()
+			end
+			xLocalOffSet = xLocalOffSet + 1
+			if(xLocalOffSet == 4) then 
+				xLocalOffSet = 0
+				yOffSet = yOffSet + 20
+			end
+			table.insert(typesCheckboxes, typeCheckBox)
+		end
+		yOffSet = yOffSet + 20
+		-- check old checked checkboxes:
+		local cbRec = {}
+		cbRec["nameEditBox"] = nameEditBox
+		cbRec[ "checkBoxes"] = typesCheckboxes
+		table.insert(rolesCB,cbRec)
+	end
+	-- now I just need to save it
+	roleManagementButton = Chili.Button:New{
+		parent = rolesScrollPanel,
+		x = xOffSet,
+		y = yOffSet,
+		caption = "DONE",
+		OnClick = {doneRoleManagerWindow}, 
+	}
+	roleManagementButton.Checkboxes = rolesCB
+	roleManagementButton.Tree = tree
+	roleManagementButton.Window = rolesWindow
+end
+
+--------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------
 
 Dependency.deferWidget(widget, Dependency.BtEvaluator)

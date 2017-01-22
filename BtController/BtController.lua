@@ -243,8 +243,8 @@ function TreeHandle:New(obj)
 		-- THERE ARE ROLE DATA ASSIGNED:
 		local roleIndex = 0 
 		roleCount = #obj.Tree.roles
-		for name,unitTypes in pairs(obj.Tree.roles) do
-			roleName = name
+		for _,roleData in pairs(obj.Tree.roles) do
+			roleName = roleData.name
 			local unitsCountLabel = Chili.Label:New{
 				x = 150+200 ,
 				y = 43 + 22 * roleIndex,
@@ -336,7 +336,6 @@ function TreeHandle:New(obj)
 		end
 	end
 	return obj
-
 end
 
 -- Following three methods are shortcut for increasing and decreassing role counts.
@@ -443,10 +442,12 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 		local unitDefId = Spring.GetUnitDefID(unitId)
 		if(UnitDefs[unitDefId] ~= nil)then  
 			hn = UnitDefs[unitDefId].humanName
-			for roleName, roleData in pairs(treeHandle.Tree.roles) do
-				if (isInTable(hn, roleData)) then
+			for _,roleData in pairs(treeHandle.Tree.roles) do
+				Logger.log("roles", " hn ", hn , " role name ", roleData.name, " role types ", roleData.types)
+				if (isInTable(hn, roleData.types)) then
+					Logger.log("roles", "assigned")
 					unitAssigned = true
-					assignUnitToTree(unitId, treeHandle, roleName)
+					assignUnitToTree(unitId, treeHandle, roleData.name)
 				end
 			end	
 		else
@@ -545,7 +546,7 @@ function listenerBarItemClick(self, x, y, button, ...)
 end 
 
 -- This is listener for AssignUnits buttons of given tree instance. 
--- The button should has TreeHandle and Role data. 
+-- The button should have TreeHandle and Role attached on it. 
 function listenerAssignUnitsButton(self)
 	-- self = button
 	-- deselect units in current role
@@ -598,7 +599,7 @@ local function listenerClickOnSelectedTreeDoneButton(self, x, y, button)
 			-- now, assign units to tree
 			automaticRoleAssignment(newTreeHandle, selectedUnits)
 	
-			--listenerBarItemClick({TreeHandle = newTreeHandle},x,y,button)
+			listenerBarItemClick({TreeHandle = newTreeHandle},x,y,button)
 		else
 			-- if such instance name exits show error window
 			showErrorWindow("Duplicate instance name.")
@@ -780,7 +781,7 @@ function setUpTreeControlWindow()
 	showTreeCheckbox = Chili.Checkbox:New{
 	parent = treeControlWindow,
 	caption = "show tree",
-	checked = true,
+	checked = false,
 	x = '80%',
 	y = 0,
 	width = 80,
