@@ -296,7 +296,7 @@ local function getParameterDefinitions()
 		success, defs = pcall(paramFunction)
 
 		if success then
-			Logger.error("script-load", "Script: ", shortName, ", Definitions loaded: ", defs)
+			Logger.log("script-load", "Script: ", shortName, ", Definitions loaded: ", defs)
 			paramsDefs[shortName] = defs
 		else
 			error("script-load".. "Script ".. scriptName.. " is missing the getParameterDefs() function or it contains an error: ".. defs)
