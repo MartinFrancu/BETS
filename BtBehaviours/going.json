@@ -1,5 +1,6 @@
 {
 	"additionalNodes": [],
+	"defaultRole": "Default role",
 	"properties": {
 		"ytVCQqVeUzO5Ip0vUXzzjjOpfXh6kNHj": {
 			"height": 110,
@@ -8,6 +9,10 @@
 			"y": 119
 		}
 	},
+	"roles": [ {
+		"name": "Default role",
+		"types": []
+	} ],
 	"root": {
 		"children": [],
 		"id": "ytVCQqVeUzO5Ip0vUXzzjjOpfXh6kNHj",
