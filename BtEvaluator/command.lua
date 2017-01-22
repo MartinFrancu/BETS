@@ -37,6 +37,7 @@ function Command:Extend(scriptName)
 
 		for methodName,sig in pairs(methodSignatures) do
 			local codeStr = scriptStr .. " ; return " .. methodName
+			--Logger.log("script-load",  scriptName, " - code: ", codeStr)
 			local methodGetter = assert(loadstring(codeStr))
 			local method = methodGetter()
 			if not method then
@@ -46,7 +47,7 @@ function Command:Extend(scriptName)
 				setfenv(method, self)
 			end
 			self[methodName] = method
-			Logger.log("script-load", "Loaded method ", methodName, " into ", scriptName)
+			Logger.log("script-load", "Loaded method ", sig, " into ", scriptName)
 		end
 	end
 

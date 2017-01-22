@@ -275,8 +275,8 @@ local function getParameterDefinitions()
 	local folderContent = VFS.DirList(directoryName)
 	local paramsDefs = {}
 
-	for i,scriptName in ipairs(folderContent)do
-		Logger.log("script-load", "Loading file: ", scriptName)
+	for _,scriptName in ipairs(folderContent)do
+		Logger.log("script-load", "Loading definition from file: ", scriptName)
 		local nameComment = "--[[" .. scriptName .. "]] "
 		local code = nameComment .. VFS.LoadFile(scriptName) .. "; return getParameterDefs"
 		
@@ -284,18 +284,19 @@ local function getParameterDefinitions()
 		local paramFunction
 		local shortName = string.sub(scriptName, string.len(directoryName) + 2)
 		local res
-		ok, res = pcall(loadstring(code))
+		ok, res = assert(pcall(loadstring(code)))
 		if ok then
 			paramFunction = res
 			setfenv(paramFunction, {})
 		else
-			error("Error in : " ..  shortName ..  ": " .. res)
+			Logger.error("script-load", "Error in : " ..  shortName ..  ": " .. res)
 		end
-		
-		local success, defs = pcall(paramFunction)
+		local success
+		local defs
+		success, defs = pcall(paramFunction)
 
 		if success then
-			Logger.log("script-load", "Script: ", shortName, ", Definitions loaded: ", defs)
+			Logger.error("script-load", "Script: ", shortName, ", Definitions loaded: ", defs)
 			paramsDefs[shortName] = defs
 		else
 			error("script-load".. "Script ".. scriptName.. " is missing the getParameterDefs() function or it contains an error: ".. defs)
