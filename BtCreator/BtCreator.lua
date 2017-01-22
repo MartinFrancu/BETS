@@ -284,7 +284,11 @@ local function getParameterDefinitions()
 		local paramFunction
 		local shortName = string.sub(scriptName, string.len(directoryName) + 2)
 		local res
-		ok, res = assert(pcall(loadstring(code)))
+		ok, res = loadstring(code)
+		if(ok)then
+			ok, res = pcall(ok)
+		end
+		
 		if ok then
 			paramFunction = res
 			setfenv(paramFunction, {})

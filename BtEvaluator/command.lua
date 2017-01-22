@@ -2,6 +2,8 @@ local Logger = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/debug_utils/logger.
 
 local dump = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST).Debug.dump
 
+local COMMAND_DIRNAME = LUAUI_DIRNAME .. "Widgets/BtCommandScripts/"
+
 Command = {
 	Spring = Spring,
 	CMD = CMD,
@@ -10,14 +12,13 @@ Command = {
 	math = math,
 	select = select,
 	UnitDefNames = UnitDefNames,
+	COMMAND_DIRNAME = COMMAND_DIRNAME,
 	
 	SUCCESS = "S",
 	FAILURE = "F",
 	RUNNING = "R"
 }
 Command_mt = { __index = Command }
-
-local COMMAND_DIRNAME = LUAUI_DIRNAME .. "Widgets/BtCommandScripts/"
 
 local methodSignatures = {
 	New = "New(self)",
