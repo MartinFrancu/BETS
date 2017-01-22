@@ -284,14 +284,14 @@ if (widget and not widget.GetInfo) then
 		commandInput:SetText("")
 		consoleContext.history = history
 	end
-	consoleContext.Units = {
-		armpw = "armpw",
-		Peewee = "armpw",
-		armrock = "armrock",
-		Rocko = "armrock",
-		avtr = "avtr",
-		Avatar = "avtr",
-	}
+	local Units = {}
+	for k, v in pairs(UnitDefs) do
+		local name = v.name
+		Units[name] = name
+		Units[v.humanName] = name
+	end
+	consoleContext.Units = Units;
+
 	consoleContext.spawn = function(unit, count, playerId)
 		count = count or 1
 		playerId = playerId or Spring.GetLocalPlayerID()
