@@ -232,7 +232,7 @@
 								"value": "defLoc"
 							}, {
 								"name": "value",
-								"value": "groupExtents().center"
+								"value": "(groupExtents() or { center = target}).center"
 							}, {
 								"name": "scriptName",
 								"value": "store.lua"

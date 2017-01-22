@@ -82,8 +82,8 @@ function Command:Extend(scriptName)
 end
 
 function Command:BaseRun(unitIDs, parameters)
-	if #unitIDs == 0 then
-		return "F"
+	if #unitIDs == 0 and self.scriptName ~= "store.lua" then -- hack as store.lua does not need access to units and can be run even when there are none
+		return "S" -- succeeding when no units are available
 	end
 
 	self.unitsAssigned = unitIDs

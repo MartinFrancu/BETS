@@ -1,5 +1,6 @@
 {
 	"additionalNodes": [],
+	"defaultRole": "Default role",
 	"properties": {
 		"dEHOrJf8Xf2wEBZXy6hd0kcL56tqEc8z": {
 			"height": 110,
@@ -20,12 +21,15 @@
 			"y": 29
 		}
 	},
+	"roles": [ {
+		"name": "Default role",
+		"types": []
+	} ],
 	"root": {
 		"children": [ {
 			"children": [],
 			"id": "ytVCQqVeUzO5Ip0vUXzz1JOpfXh6kNHj",
 			"nodeType": "luaCommand",
-			"scriptName": "randomVector.lua",
 			"parameters": [ {
 				"name": "x",
 				"value": "x"
@@ -35,12 +39,12 @@
 			}, {
 				"name": "scriptName",
 				"value": "randomVector.lua"
-			} ]
+			} ],
+			"scriptName": "randomVector.lua"
 		}, {
 			"children": [],
 			"id": "dEHOrJf8Xf2wEBZXy6hd0kcL56tqEc8z",
 			"nodeType": "luaCommand",
-			"scriptName": "move.lua",
 			"parameters": [ {
 				"name": "x",
 				"value": "x"
@@ -50,7 +54,8 @@
 			}, {
 				"name": "scriptName",
 				"value": "move.lua"
-			} ]
+			} ],
+			"scriptName": "move.lua"
 		} ],
 		"id": "gln4jU3MI4wh8mdRi69Voj0K5QkZRn1y",
 		"nodeType": "sequence",
