@@ -65,7 +65,7 @@ function Command:Extend(scriptName)
 		newinst.activeCommands = {} -- map(unitID, setOfCmdTags)
 		newinst.idleUnits = {}
 		newinst.scriptName = scriptName -- for debugging purposes
-
+		newinst.onNoUnits = self.getInfo().onNoUnits or "S"
 
 		success,res = pcall(newinst.New, newinst)
 		if not success then
@@ -82,12 +82,14 @@ function Command:Extend(scriptName)
 end
 
 function Command:BaseRun(unitIDs, parameters)
-	if #unitIDs == 0 and self.scriptName ~= "store.lua" then -- hack as store.lua does not need access to units and can be run even when there are none
-		return "S" -- succeeding when no units are available
+	if #unitIDs == 0 and self.onNoUnits ~= RUNNING then
+		return self.onNoUnits
 	end
+	--if #unitIDs == 0 and self.scriptName ~= "store.lua" then -- hack as store.lua does not need access to units and can be run even when there are none
+	--	return "S" -- succeeding when no units are available
+	--end
 
 	self.unitsAssigned = unitIDs
-
 
 	success,res,retVal = pcall(self.Run, self, unitIDs, parameters)
 	if success then

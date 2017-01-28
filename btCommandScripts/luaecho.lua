@@ -1,10 +1,13 @@
-function getParameterDefs()
+function getInfo()
 	return {
-		{ 
-			name = "msg",
-			variableType = "string",
-			componentType = "editBox",
-			defaultValue = "0",
+		onNoUnits = RUNNING,
+		parameterDefs = {
+			{ 
+				name = "msg",
+				variableType = "string",
+				componentType = "editBox",
+				defaultValue = "0",
+			}
 		}
 	}
 end

@@ -1,16 +1,19 @@
-function getParameterDefs()
+function getInfo()
 	return {
-		{ 
-			name = "var",
-			variableType = "expression",
-			componentType = "editBox",
-			defaultValue = "0",
-		},
-		{ 
-			name = "value",
-			variableType = "expression",
-			componentType = "editBox",
-			defaultValue = "0",
+		onNoUnits = RUNNING,
+		parameterDefs = {
+			{ 
+				name = "var",
+				variableType = "expression",
+				componentType = "editBox",
+				defaultValue = "0",
+			},
+			{ 
+				name = "value",
+				variableType = "expression",
+				componentType = "editBox",
+				defaultValue = "0",
+			}
 		}
 	}
 end

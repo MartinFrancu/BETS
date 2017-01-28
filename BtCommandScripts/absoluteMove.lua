@@ -5,14 +5,17 @@ if(COMMAND_DIRNAME)then
 end
 
 local oldRun = Run
-function getParameterDefs()
+function getInfo()
 	return {
-		{ 
-			name = "pos",
-			variableType = "expression",
-			componentType = "editBox",
-			defaultValue = "{x = 0, z = 0}",
-		},
+		onNoUnits = SUCCESS,
+		parameterDefs = {
+			{ 
+				name = "pos",
+				variableType = "expression",
+				componentType = "editBox",
+				defaultValue = "{x = 0, z = 0}",
+			}
+		}
 	}
 end
 

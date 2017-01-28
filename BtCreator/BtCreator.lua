@@ -278,32 +278,17 @@ local function getParameterDefinitions()
 	for _,scriptName in ipairs(folderContent)do
 		Logger.log("script-load", "Loading definition from file: ", scriptName)
 		local nameComment = "--[[" .. scriptName .. "]] "
-		local code = nameComment .. VFS.LoadFile(scriptName) .. "; return getParameterDefs"
-		
-		local ok
-		local paramFunction
+		local code = nameComment .. VFS.LoadFile(scriptName) .. "; return getInfo()"
 		local shortName = string.sub(scriptName, string.len(directoryName) + 2)
-		local res
-		ok, res = loadstring(code)
-		if(ok)then
-			ok, res = pcall(ok)
-		end
-		
-		if ok then
-			paramFunction = res
-			setfenv(paramFunction, {})
-		else
-			Logger.error("script-load", "Error in : " ..  shortName ..  ": " .. res)
-		end
-		local success
-		local defs
-		success, defs = pcall(paramFunction)
+		local script = assert(loadstring(code))
+	
+		local success, info = pcall(script)
 
 		if success then
-			Logger.log("script-load", "Script: ", shortName, ", Definitions loaded: ", defs)
-			paramsDefs[shortName] = defs
+			Logger.log("script-load", "Script: ", shortName, ", Definitions loaded: ", info.parameterDefs)
+			paramsDefs[shortName] = info.parameterDefs or {}
 		else
-			error("script-load".. "Script ".. scriptName.. " is missing the getParameterDefs() function or it contains an error: ".. defs)
+			error("script-load".. "Script ".. scriptName.. " is missing the getParameterDefs() function or it contains an error: ".. info)
 		end
 	end
 	return paramsDefs
