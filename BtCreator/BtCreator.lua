@@ -168,13 +168,13 @@ local serializedTreeName
 
 function listenerClickOnLoadTree()
 	Logger.log("save-and-load", "Load Tree clicked on. ")
-	local bt = BehaviourTree.load(treeName.text)
+	local bt = BehaviourTree.load(treeNameEditbox.text)
 	if(bt)then
 		clearCanvas()
 		loadBehaviourTree(bt)
 		rolesOfCurrentTree = bt.roles or {}
 	else
-		error("BehaviourTree " .. treeName.text .. " instance not found. " .. debug.traceback())
+		error("BehaviourTree " .. treeNameEditbox.text .. " instance not found. " .. debug.traceback())
 	end
 end
 
