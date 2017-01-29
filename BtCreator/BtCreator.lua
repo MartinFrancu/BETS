@@ -763,6 +763,9 @@ function showRoleManagementWindow(tree)
 	-- find out how many roles we need:
 	local roleCount = 1
 	local function visit(node)
+		if(not node) then
+			return
+		end
 		if(node.nodeType == "roleSplit" and roleCount < #node.children)then
 				roleCount = #node.children
 		end
