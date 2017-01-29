@@ -22,8 +22,9 @@ local loadTreeButton
 local saveTreeButton
 local minimizeButton
 local addRoleButton
+local newTreeButton
 
-local treeName
+local treeNameEditbox
 
 local rolesWindow
 local showRoleManagementWindow
@@ -65,7 +66,7 @@ function BtCreator.show(tree)
 	if(not buttonPanel.visible) then
 		buttonPanel:Show()
 	end
-	treeName:SetText(tree)
+	treeNameEditbox:SetText(tree)
 	listenerClickOnLoadTree()
 end
 
@@ -148,8 +149,19 @@ function listenerClickOnSaveTree()
 	Logger.log("save-and-load", "Save Tree clicked on. ")
 	local resultTree = formBehaviourTree()
 	showRoleManagementWindow(resultTree)
-	--resultTree:Save(treeName.text)
+	--resultTree:Save(treeNameEditbox.text)
 	WG.clearSelection()
+end
+
+function listenerClickOnNewTree()
+	local i = 0
+	local newTreeName = "New Tree " .. i
+	while(VFS.FileExists(LUAUI_DIRNAME .. "Widgets/BtBehaviours/" .. newTreeName .. ".json")) do
+		i = i + 1
+		newTreeName = "New Tree " .. i
+	end
+	treeNameEditbox:SetText(newTreeName)
+	clearCanvas()
 end
 
 local serializedTreeName
@@ -431,10 +443,21 @@ function widget:Initialize()
 		height = '100%',
 	}
 	
-	saveTreeButton = Chili.Button:New{
+	newTreeButton = Chili.Button:New{
 		parent = buttonPanel,
 		x = windowBtCreator.x,
 		y = windowBtCreator.y - 30,
+		width = 90,
+		height = 30,
+		caption = "New Tree",
+		skinName = "DarkGlass",
+		focusColor = {0.5,0.5,0.5,0.5},
+		OnClick = { listenerClickOnNewTree },
+	}
+	saveTreeButton = Chili.Button:New{
+		parent = buttonPanel,
+		x = newTreeButton.x + newTreeButton.width,
+		y = newTreeButton.y,
 		width = 90,
 		height = 30,
 		caption = "Save Tree",
@@ -464,6 +487,7 @@ function widget:Initialize()
 		focusColor = {0.5,0.5,0.5,0.5},
 		OnClick = { listenerClickOnAddRole },
 	}
+	
 	minimizeButton = Chili.Button:New{
 		parent = buttonPanel,
 		x = buttonPanel.width - 50,
@@ -476,7 +500,7 @@ function widget:Initialize()
 		OnClick = { listenerClickOnMinimize },
 	}
 	
-	treeName = Chili.EditBox:New{
+	treeNameEditbox = Chili.EditBox:New{
 		parent = windowBtCreator,
 		text = "02-flipEcho",
 		width = '33%',
@@ -488,7 +512,7 @@ function widget:Initialize()
 		backgroundColor = {0,0,0,0},
 		editingText = true,
 	}
-	-- treeName.font.size = 16
+	-- treeNameEditbox.font.size = 16
 	listenerClickOnMinimize()
 	
 	WG.BtCreator = BtCreator
@@ -544,7 +568,7 @@ end
 
 function formBehaviourTree()
 	-- on tree Save() regenerate IDs of nodes already present in loaded tree
-	if(serializedTreeName and serializedTreeName ~= treeName.text) then
+	if(serializedTreeName and serializedTreeName ~= treeNameEditbox.text) then
 		--regenerate all IDs from loaded Tree
 		for id,_ in pairs(serializedIDs) do
 			if(WG.nodeList[id]) then
@@ -689,7 +713,7 @@ local function loadBehaviourNode(bt, btNode)
 end
 
 function loadBehaviourTree(bt)
-	serializedTreeName = treeName.text -- to be able to regenerate ids of deserialized nodes, when saved with different name
+	serializedTreeName = treeNameEditbox.text -- to be able to regenerate ids of deserialized nodes, when saved with different name
 	local root = loadBehaviourNode(bt, bt.root)
 	if(root)then
 		connectionLine.add(WG.nodeList[rootID].connectionOut, root.connectionIn)
@@ -732,7 +756,7 @@ function doneRoleManagerWindow(self)
 	self.Tree.roles = result
 	rolesOfCurrentTree = result
 	self.Tree.defaultRole = result[1].name
-	self.Tree:Save(treeName.text)
+	self.Tree:Save(treeNameEditbox.text)
 end
 
 function showRoleManagementWindow(tree) 
