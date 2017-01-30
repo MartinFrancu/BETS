@@ -499,6 +499,31 @@ function assignUnitToTree(unitId, treeHandle, roleName)
 	treeHandle:IncreaseUnitCount(roleName)
 end
 
+-- This is the method to create new tree instance, 
+	--it will create the instance,
+	--create new tree tab
+	-- notify BtEvaluator
+-- it return the new treeHandle
+function instantiateTree(treeType, instanceName)
+	--reloadTree(name)
+	local newTreeHandle = TreeHandle:New{
+		Name = instanceName,
+		TreeType = treeType,
+	}
+	local selectedUnits = Spring.GetSelectedUnits()
+			
+	-- create tab
+	addTreeToTreeTabPanel(newTreeHandle)
+			
+	-- create the tree immediately when the tab is created
+	BtEvaluator.createTree(newTreeHandle.InstanceId, newTreeHandle.Tree)
+			
+	-- now, assign units to tree
+	automaticRoleAssignment(newTreeHandle, selectedUnits)
+	-- tree tab 
+	--listenerBarItemClick({TreeHandle = newTreeHandle},0,0,1)
+	return newTreeHandle
+end
 
 --//////////////////////////////////////////////////////////////////////////////
 ---------REWRITTEN CHILI FUNCTIONS:
@@ -579,6 +604,10 @@ local function listenerClickOnSelectedTreeDoneButton(self, x, y, button)
 		-- we react only on leftclicks
 		-- check if instance name is not being used:
 		if(treeTabPanel.tabIndexMapping[treeNameEditBox.text] == nil ) then
+			local selectedTreeType = treeSelectionComboBox.items[treeSelectionComboBox.selected]
+			local instanceName = treeNameEditBox.text
+			local newTreeHandle = instantiateTree(selectedTreeType, instanceName)
+			--[[
 			-- instance with such name is not used
 			local selectedTreeType = treeSelectionComboBox.items[treeSelectionComboBox.selected]
 			--should not be needed anymore: name = name:sub(1,name:len()-5)
@@ -598,8 +627,11 @@ local function listenerClickOnSelectedTreeDoneButton(self, x, y, button)
 			
 			-- now, assign units to tree
 			automaticRoleAssignment(newTreeHandle, selectedUnits)
-	
-			listenerBarItemClick({TreeHandle = newTreeHandle},x,y,button)
+			
+			
+			--]]
+			
+			listenerBarItemClick({TreeHandle = newTreeHandle},x ,y ,button)	
 		else
 			-- if such instance name exits show error window
 			showErrorWindow("Duplicate instance name.")
