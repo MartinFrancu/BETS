@@ -536,7 +536,7 @@ end
 ---------------------------------------LISTENERS
 -- This listener is called when AddTreeTab becomes active to update directory 
 -- content and default instance name.
-local function listenerRefreshTreeSelectionPanel(self)
+local function refreshTreeSelectionPanel(self)
 	names = getNamesInDirectory(BehavioursDirectory, ".json")
 	treeSelectionComboBox.items = names 
 	treeSelectionComboBox:RequestUpdate()
@@ -683,7 +683,7 @@ function moveToEndAddTab(tabs)
 	end
 	--]]
 	
-	listenerRefreshTreeSelectionPanel()
+	refreshTreeSelectionPanel()
 	
 	local tabBarChildIndex = 1
 	-- get tabBar
@@ -709,7 +709,7 @@ function finalizeAddTreeBarItem(tabs)
 	local item = getBarItemByName(tabs, "+")
 	item.focusColor = {0.2, 1.0, 0.2, 0.6}
 	local listeners = item.OnMouseDown
-	table.insert(listeners,listenerRefreshTreeSelectionPanel)
+	table.insert(listeners,refreshTreeSelectionPanel)
 end
 
 function setUpTreeSelectionTab()
@@ -925,6 +925,20 @@ function widget:UnitDestroyed(unitId)
 		removeUnitFromCurrentTree(unitId)
 	end
 end
+
+function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
+	local CONVOY_num = 34901	
+	if(cmdID == CONVOY_num) then
+		local treeType = "mex-builders"
+		local instanceName= "Instance"..instanceIdCount
+		instantiateTree(treeType, instanceName)
+	end
+	--[[Logger.log("command" ,"command cmdID:" .. dump(cmdID) )
+	Logger.log("command" ,"command cmdParams:" .. dump(cmdParams) )
+	Logger.log("command" ,"command cmdOptions:" .. dump(cmdOptions) )
+	--Logger.log("command" ,"command notify:" .. CONVOY_num)
+	--]]
+end 
   
 -- this function saves UnitDefs tables into UnitDefs folder - to be able to see what can be used.
 function saveAllUnitDefs()
