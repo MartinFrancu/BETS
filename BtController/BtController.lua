@@ -863,7 +863,7 @@ function widget:Initialize()
 	setUpErrorWindow()
 	Spring.Echo("BtController reports for duty!")
 	
-	local configPath = LUAUI_DIRNAME .. "Widgets/BtController/config.lua"
+	local configPath = LUAUI_DIRNAME .. "Config/btcontroller_config.lua"
 	if(VFS.FileExists(configPath)) then
 		local f = assert(VFS.LoadFile(configPath))
 		local config = loadstring(f)()
