@@ -20,6 +20,7 @@ local nodePoolPanel
 local buttonPanel
 local loadTreeButton
 local saveTreeButton
+local showSensorsButton
 local minimizeButton
 local addRoleButton
 local newTreeButton
@@ -151,6 +152,52 @@ function listenerClickOnSaveTree()
 	showRoleManagementWindow(resultTree)
 	--resultTree:Save(treeNameEditbox.text)
 	WG.clearSelection()
+end
+
+local sensorsWindow
+local bgrColor = {0.8,0.5,0.2,0.6}
+local focusColor = {0.8,0.5,0.2,0.3}
+
+function listenerClickOnShowSensors()
+	showSensorsButton.backgroundColor , bgrColor = bgrColor, showSensorsButton.backgroundColor
+	showSensorsButton.focusColor, focusColor = focusColor, showSensorsButton.focusColor
+	local sensors = WG.SensorManager.getAvailableSensors()
+	if(sensorsWindow) then
+		sensorsWindow:Dispose()
+		sensorsWindow = nil
+		return
+	end
+	sensorsWindow = Chili.Window:New{
+		parent = Screen0,
+		name = "SensorsWindow",
+		x = showSensorsButton.x - 5,
+		y = showSensorsButton.y - (#sensors*20 + 60) + 5,
+		width = 200,
+		height = #sensors*20 + 60,
+		skinName='DarkGlass',
+	}
+	Chili.Label:New{
+			parent = sensorsWindow,
+			x = 10,
+			y = 0,
+			width = 50,
+			height = 20,
+			caption = "Available Sensors: ",
+			skinName='DarkGlass',
+		}
+	for i=1,#sensors do
+		Chili.Label:New{
+			parent = sensorsWindow,
+			x = 10,
+			y = i*20,
+			width = 50,
+			height = 20,
+			caption = sensors[i] .. "()",
+			skinName='DarkGlass',
+			name = "Sensor"..i,
+		}
+		sensorsWindow:GetChildByName("Sensor"..i).font.color = {0.7,0.7,0.7,1}
+	end
 end
 
 function listenerClickOnNewTree()
@@ -486,6 +533,17 @@ function widget:Initialize()
 		skinName = "DarkGlass",
 		focusColor = {0.5,0.5,0.5,0.5},
 		OnClick = { listenerClickOnAddRole },
+	}
+	showSensorsButton = Chili.Button:New{
+		parent = buttonPanel,
+		x = addRoleButton.x + addRoleButton.width,
+		y = saveTreeButton.y,
+		width = 90,
+		height = 30,
+		caption = "Sensors",
+		skinName = "DarkGlass",
+		focusColor = {0.5,0.5,0.5,0.5},
+		OnClick = { listenerClickOnShowSensors },
 	}
 	
 	minimizeButton = Chili.Button:New{
