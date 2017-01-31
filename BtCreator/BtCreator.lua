@@ -891,8 +891,13 @@ local function saveUnitCathegories()
 	file:close()	
 	return true
 end
-
-function createOldCathegoryCheckbox(roleName)
+-- This method returns unitTypes in given role in  rolesOfCurrentTree.
+function getRoleData(roleName)
+	for _,roleData in pairs(rolesOfCurrentTree) do 
+			if(roleData.name == roleName) then
+				return roleData
+			end
+	end
 end
 
 
@@ -1018,7 +1023,11 @@ function doneRoleManagerWindow(self)
 	for _,roleRecord in pairs(self.RolesData) do
 		local roleName = roleRecord.NameEditBox.text
 		local usedTypes = {}
-		Logger.log("roles", "roleRecord", roleRecord.CheckBoxes)
+		if(self.OldUnitTypes ~= nil) and (self.OldUnitTypes.checked == true) then
+			for _,unitType in pairs(OldUnitTypes.Types) do
+				usedTypes[unitType.humanName] = true
+			end
+		end
 		for _, cathegoryCB in pairs(roleRecord.CheckBoxes) do
 			if(cathegoryCB.checked) then
 				local catData = findCathegoryData(cathegoryCB.caption)
@@ -1042,27 +1051,9 @@ function doneRoleManagerWindow(self)
 	end
 	
 	rolesOfCurrentTree = result
-	
-	--[[cb = self.Checkboxes  
-	for i = 1,  #cb do
-		local types = {}
-		for _,box in pairs(cb[i].checkBoxes) do
-			if(box.checked) then
-				table.insert(types, box.caption)
-			end
-		end
-		local record = {}
-		record["name"] = cb[i].nameEditBox.text
-		record["types"] = types
-		result[i] = record
-	end
-	rolesOfCurrentTree = result	
-	--]]
-
 end
 
-function showRoleManagementWindow() 
-	
+function showRoleManagementWindow() 	
 	local tree = formBehaviourTree()
 	-- find out how many roles we need:
 	local roleCount = 1
@@ -1127,6 +1118,7 @@ function showRoleManagementWindow()
 	local yOffSet = 10
 	local xCheckBoxOffSet = 180
 	-- set up array for all
+	
 	for roleIndex=0, roleCount -1 do
 		local nameEditBox = Chili.EditBox:New{
 			parent = rolesScrollPanel,
@@ -1135,9 +1127,19 @@ function showRoleManagementWindow()
 			text = "Role ".. tostring(roleIndex),
 			width = 150
 		}
-
+		local keepOldAssingment
 		if(rolesOfCurrentTree[roleIndex+1]) then
 			nameEditBox:SetText(rolesOfCurrentTree[roleIndex+1].name)
+			-- also add a checkbox:
+			keepOldAssignment = Chili.Checkbox:New{
+				parent = rolesScrollPanel,
+				x = xOffSet,
+				y = yOffSet + 20,
+				caption= "Old unit types",
+				checked = true,
+				width = 150
+			}
+			keepOldAssignment.Types = rolesOfCurrentTree[roleIndex+1].types
 		end
 		
 		local cathegoryCheckBoxes = {}
@@ -1151,12 +1153,6 @@ function showRoleManagementWindow()
 				checked = false,
 				width = 200,
 			}
-			
-			--[[
-			if (rolesOfCurrentTree[roleIndex+1] and isInTable(typeCheckBox.caption, rolesOfCurrentTree[roleIndex+1].types)) then
-				typeCheckBox:Toggle()
-			end
-			--]]
 			xLocalOffSet = xLocalOffSet + 1
 			if(xLocalOffSet == 4) then 
 				xLocalOffSet = 0
@@ -1164,44 +1160,15 @@ function showRoleManagementWindow()
 			end
 			table.insert(cathegoryCheckBoxes, cathegoryCheckBox)
 		end
-		yOffSet = yOffSet + 20
-		-- check old checked checkboxes:
+		yOffSet = yOffSet + 50
 		local roleCathegories = {}
 		roleCathegories["NameEditBox"] = nameEditBox
-		roleCathegories["CheckBoxes"] = cathegoryCheckBoxes)
-		table.insert(rolesCathegoriesCB,roleCathegories)
-		--[[
-		local typesCheckboxes = {}
-		local xLocalOffSet = 0
-		for _,unitDef in pairs(UnitDefs) do
-			local typeCheckBox = Chili.Checkbox:New{
-				parent = rolesScrollPanel,
-				x = xOffSet + xCheckBoxOffSet + (xLocalOffSet * 250),
-				y = yOffSet,
-				caption = unitDef.humanName,
-				checked = false,
-				width = 200,
-			}
-			
-			if (rolesOfCurrentTree[roleIndex+1] and isInTable(typeCheckBox.caption, rolesOfCurrentTree[roleIndex+1].types)) then
-				typeCheckBox:Toggle()
-			end
-			xLocalOffSet = xLocalOffSet + 1
-			if(xLocalOffSet == 4) then 
-				xLocalOffSet = 0
-				yOffSet = yOffSet + 20
-			end
-			table.insert(typesCheckboxes, typeCheckBox)
+		roleCathegories["CheckBoxes"] = cathegoryCheckBoxes
+		if(keepOldAssignment ~= nil) then
+			roleCathegories["OldUnitTypes"] = keepOldAssignment
 		end
-		yOffSet = yOffSet + 20
-		-- check old checked checkboxes:
-		local cbRec = {}
-		cbRec["nameEditBox"] = nameEditBox
-		cbRec[ "checkBoxes"] = typesCheckboxes
-		table.insert(rolesCB,cbRec)
-		--]]
-	end
-	
+		table.insert(rolesCathegoriesCB,roleCathegories)
+	end	
 	roleManagementDoneButton.RolesData = rolesCathegoriesCB
 	roleManagementDoneButton.Window = rolesWindow	
 end
