@@ -4,6 +4,8 @@
 local BehavioursDirectory = "LuaUI/Widgets/BtBehaviours"
 --------------------------------------------------------------------------------
 
+
+
 function widget:GetInfo()
   return {
     name    = "BtController",
@@ -31,7 +33,11 @@ local Debug = Utils.Debug;
 local Logger = Debug.Logger
 local dump = Debug.dump
 
--------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+VFS.Include("LuaRules/Configs/customcmds.h.lua")
+--------------------------------------------------------------------------------
+
+
 local treeControlWindow
 local controllerLabel
 local selectTreeButton
@@ -927,17 +933,11 @@ function widget:UnitDestroyed(unitId)
 end
 
 function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
-	local CONVOY_num = 34901	
-	if(cmdID == CONVOY_num) then
+	if(cmdID == CMD_CONVOY) then
 		local treeType = "mex-builders"
 		local instanceName= "Instance"..instanceIdCount
 		instantiateTree(treeType, instanceName)
 	end
-	--[[Logger.log("command" ,"command cmdID:" .. dump(cmdID) )
-	Logger.log("command" ,"command cmdParams:" .. dump(cmdParams) )
-	Logger.log("command" ,"command cmdOptions:" .. dump(cmdOptions) )
-	--Logger.log("command" ,"command notify:" .. CONVOY_num)
-	--]]
 end 
   
 -- this function saves UnitDefs tables into UnitDefs folder - to be able to see what can be used.
