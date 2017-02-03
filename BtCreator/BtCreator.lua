@@ -44,8 +44,8 @@ local cancelCathegoryDefinition
 -- Format is an array of records of style:
 	-- {}
 local unitsCathegories
-local UNIT_CATHEGORIES_DIRNAME = LUAUI_DIRNAME .. "Widgets/BtBehaviours/"
-local UNIT_CATHEGORIES_FILE = "BtUnitCathegories"
+local UNIT_CATHEGORIES_DIRNAME = LUAUI_DIRNAME .. "Widgets/BtCreator/"
+local UNIT_CATHEGORIES_FILE = "BtUnitCathegories.json"
 
 --- Keys are node IDs, values are Treenode objects.  
 WG.nodeList = {}
