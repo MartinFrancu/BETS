@@ -1023,6 +1023,7 @@ function doneRoleManagerWindow(self)
 	for _,roleRecord in pairs(self.RolesData) do
 		local roleName = roleRecord.NameEditBox.text
 		local usedTypes = {}
+		local checkedCathegories = {}
 		if(self.OldUnitTypes ~= nil) and (self.OldUnitTypes.checked == true) then
 			for _,unitType in pairs(OldUnitTypes.Types) do
 				usedTypes[unitType.humanName] = true
@@ -1030,7 +1031,8 @@ function doneRoleManagerWindow(self)
 		end
 		for _, cathegoryCB in pairs(roleRecord.CheckBoxes) do
 			if(cathegoryCB.checked) then
-				local catData = findCathegoryData(cathegoryCB.caption)
+				local catName = cathegoryCB.caption
+				local catData = findCathegoryData(catName)
 				if(catData == nil) then
 					Logger.log("error", "RoleManager, doneRoleManagerWindow: unknown cathegory encountered.")
 				else
@@ -1038,6 +1040,7 @@ function doneRoleManagerWindow(self)
 						usedTypes[unitType.humanName] = true
 					end
 				end
+				table.insert(checkedCathegories, catName)
 			end
 		end
 		local typesData = {}
@@ -1046,7 +1049,7 @@ function doneRoleManagerWindow(self)
 				table.insert(typesData, humanName)
 			end
 		end
-		local roleResult = {name = roleName, types = typesData}
+		local roleResult = {name = roleName, types = typesData, cathegories = checkedCathegories}
 		table.insert(result, roleResult)
 	end
 	
