@@ -849,15 +849,15 @@ local function loadStandardCathegories()
 			table.insert(airBombers, { id = unitDef.id, name = unitDef.name, humanName = unitDef.humanName})
 		end
 	end
-	table.insert(unitCathegories, {Name = "transports", Types = transports})
-	table.insert(unitCathegories, {Name = "immobile", Types = immobile})
-	table.insert(unitCathegories, {Name = "buildings", Types = buildings})
-	table.insert(unitCathegories, {Name = "builders", Types = builders})
-	table.insert(unitCathegories, {Name = "mobileBuilders", Types = mobileBuilders})
-	table.insert(unitCathegories, {Name = "groundUnits", Types = groundUnits})
-	table.insert(unitCathegories, {Name = "airUnits", Types = airUnits})
-	table.insert(unitCathegories, {Name = "fighterAirUnits", Types = airFighters})
-	table.insert(unitCathegories, {Name = "bomberAirUnits", Types = airBombers})
+	table.insert(unitCathegories, {name = "transports", types = transports})
+	table.insert(unitCathegories, {name = "immobile", types = immobile})
+	table.insert(unitCathegories, {name = "buildings", types = buildings})
+	table.insert(unitCathegories, {name = "builders", types = builders})
+	table.insert(unitCathegories, {name = "mobileBuilders", types = mobileBuilders})
+	table.insert(unitCathegories, {name = "groundUnits", types = groundUnits})
+	table.insert(unitCathegories, {name = "airUnits", types = airUnits})
+	table.insert(unitCathegories, {name = "fighterAirUnits", types = airFighters})
+	table.insert(unitCathegories, {name = "bomberAirUnits", types = airBombers})
 end
 
 
@@ -986,8 +986,8 @@ function doneCathegoryDefinition(self)
 	end
 	-- add check for cathegory name?
 	local newCathegory = {
-		Name = self.CathegoryNameEditBox.text,
-		Types = unitTypes,
+		name = self.CathegoryNameEditBox.text,
+		types = unitTypes,
 	}
 	table.insert(unitCathegories, newCathegory)
 	saveUnitCathegories()
@@ -1001,7 +1001,7 @@ end
 
 local function findCathegoryData(cathegoryName)
 	for _,catData in pairs(unitCathegories) do 
-		if(catData.Name == cathegoryName) then
+		if(catData.name == cathegoryName) then
 			return catData
 		end
 	end
@@ -1036,7 +1036,7 @@ function doneRoleManagerWindow(self)
 				if(catData == nil) then
 					Logger.log("error", "RoleManager, doneRoleManagerWindow: unknown cathegory encountered.")
 				else
-					for _,unitType in pairs(catData.Types) do
+					for _,unitType in pairs(catData.types) do
 						usedTypes[unitType.humanName] = true
 					end
 				end
@@ -1078,9 +1078,8 @@ function showRoleManagementWindow()
 	loadStandardCathegories()
 	saveUnitCathegories()
 	--]]
-	--loadUnitCathegories()
 	
-	unitCathegories = BtUtils.UnitCathegories.cathegories
+	unitCathegories = BtUtils.UnitCathegories.getCathegories()
 
 	
 	rolesWindow = Chili.Window:New{
@@ -1155,7 +1154,7 @@ function showRoleManagementWindow()
 				parent = rolesScrollPanel,
 				x = xOffSet + xCheckBoxOffSet + (xLocalOffSet * 250),
 				y = yOffSet,
-				caption = cathegory.Name,
+				caption = cathegory.name,
 				checked = false,
 				width = 200,
 			}

@@ -15,8 +15,8 @@ return Utils:Assign("UnitCathegories", function()
 	local JSON = Utils.JSON
 	
 	-- This function load cathegories from given file and returns them as a table
-	function UnitCathegories.load()
-		unitCathegories = {}
+	local function loadCathegories()
+		local unitCathegories = {}
 		local file = io.open(UNIT_CATHEGORIES_DIRNAME .. UNIT_CATHEGORIES_FILE , "r")
 		if(not file)then
 			unitCathegories = {}
@@ -27,7 +27,7 @@ return Utils:Assign("UnitCathegories", function()
 		return unitCathegories
 	end
 	-- This function saves given table into file fo unit cathegories
-	function UnitCathegories.save(cathegories)
+	local function saveCatheogires(cathegories)
 		if(unitCathegories == nil) then
 			Logger.log("roles", "BtUtils:SaveUnitCathegories: cathegories = nill")
 			unitCathegories = {}
@@ -43,9 +43,26 @@ return Utils:Assign("UnitCathegories", function()
 		file:close()	
 		return true
 	end
-	 UnitCathegories.cathegories = UnitCathegories.load()
-
 	
+	local function initCathegories()
+		if(UnitCathegories.cathegories == nil) then
+			UnitCathegories.cathegories = loadCathegories()
+		end 
+	end
+	-- Returns table of cathegories
+	function UnitCathegories.getCathegories()
+		initCathegories()
+		return UnitCathegories.cathegories
+	end 
+	-- Returns entry corresponding to given cathegory:
+	function UnitCathegories.getCathegoryTypes(cathegoryName)
+		initCathegories()
+		for _,catData in pairs(UnitCathegories.cathegories) do
+			if(catData.name == cathegoryName) then
+				return catData.types
+			end
+		end
+	end
 	
 	return UnitCathegories
 end)
