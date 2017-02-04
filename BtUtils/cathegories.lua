@@ -63,6 +63,14 @@ return Utils:Assign("UnitCathegories", function()
 			end
 		end
 	end
-	
+	-- returns array of names of availible cathegories.
+	function UnitCathegories.getAllCathegoryNames() 
+		initCathegories()
+		local result = {}
+		for _,catData in pairs(UnitCathegories.cathegories) do
+			table.insert(result, catData.name)
+		end
+		return result
+	end
 	return UnitCathegories
 end)

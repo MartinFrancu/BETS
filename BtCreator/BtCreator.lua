@@ -1122,7 +1122,7 @@ function showRoleManagementWindow()
 	local xOffSet = 10
 	local yOffSet = 10
 	local xCheckBoxOffSet = 180
-	-- set up array for all
+	-- set up checkboxes for all roles and cathegories 
 	
 	for roleIndex=0, roleCount -1 do
 		local nameEditBox = Chili.EditBox:New{
@@ -1132,46 +1132,46 @@ function showRoleManagementWindow()
 			text = "Role ".. tostring(roleIndex),
 			width = 150
 		}
-		local keepOldAssingment
+		local checkedCathegories = {}
 		if(rolesOfCurrentTree[roleIndex+1]) then
-			nameEditBox:SetText(rolesOfCurrentTree[roleIndex+1].name)
-			-- also add a checkbox:
-			keepOldAssignment = Chili.Checkbox:New{
-				parent = rolesScrollPanel,
-				x = xOffSet,
-				y = yOffSet + 20,
-				caption= "Old unit types",
-				checked = true,
-				width = 150
-			}
-			keepOldAssignment.Types = rolesOfCurrentTree[roleIndex+1].types
+			nameEditBox:SetText(rolesOfCurrentTree[roleIndex+1].name)	
+			for _,catName in pairs(rolesOfCurrentTree[roleIndex+1].cathegories) do
+				checkedCathegories[catName] = 1
+			end
 		end
 		
+		local cathegoryNames = Utils.UnitCathegories.getAllCathegoryNames()
 		local cathegoryCheckBoxes = {}
 		local xLocalOffSet = 0
-		for _,cathegory in pairs(unitCathegories) do
+		for _,cathegoryName in pairs(cathegoryNames) do
 			local cathegoryCheckBox = Chili.Checkbox:New{
 				parent = rolesScrollPanel,
 				x = xOffSet + xCheckBoxOffSet + (xLocalOffSet * 250),
 				y = yOffSet,
-				caption = cathegory.name,
+				caption = cathegoryName,
 				checked = false,
 				width = 200,
 			}
+			if(checkedCathegories[cathegoryName] ~= nil) then
+				cathegoryCheckBox:Toggle()
+			end
 			xLocalOffSet = xLocalOffSet + 1
 			if(xLocalOffSet == 4) then 
 				xLocalOffSet = 0
 				yOffSet = yOffSet + 20
 			end
+			
 			table.insert(cathegoryCheckBoxes, cathegoryCheckBox)
 		end
+		
+		
 		yOffSet = yOffSet + 50
 		local roleCathegories = {}
 		roleCathegories["NameEditBox"] = nameEditBox
 		roleCathegories["CheckBoxes"] = cathegoryCheckBoxes
-		if(keepOldAssignment ~= nil) then
-			roleCathegories["OldUnitTypes"] = keepOldAssignment
-		end
+		--if(keepOldAssignment ~= nil) then
+		--	roleCathegories["OldUnitTypes"] = keepOldAssignment
+		--end
 		table.insert(rolesCathegoriesCB,roleCathegories)
 	end	
 	roleManagementDoneButton.RolesData = rolesCathegoriesCB
