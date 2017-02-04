@@ -246,113 +246,57 @@ function TreeHandle:New(obj)
 	}
 	table.insert(obj.ChiliComponents, labelNameTextBox)	
 	
-	if (obj.Tree.roles ~= nil) then
-		-- THERE ARE ROLE DATA ASSIGNED:
-		local roleInd = 0 
-		roleCount = #obj.Tree.roles
-		for _,roleData in pairs(obj.Tree.roles) do
-			roleName = roleData.name
-			local unitsCountLabel = Chili.Label:New{
-				x = 150+200 ,
-				y = 43 + 22 * roleInd,
-				height = roleCount == 1 and 30 or 20,
-				width = '25%',
-				minWidth = 150,
-				caption = 0, 
-				skinName = "DarkGlass",
-				focusColor = {0.5,0.5,0.5,0.5},
-				instanceId = obj.InstanceId
-			}
-			table.insert(obj.ChiliComponents, unitsCountLabel)
-			local roleAssignmentButton = Chili.Button:New{
-				x = 150 ,
-				y = 40 + 22 * roleInd,
-				height = roleCount == 1 and 30 or 20,
-				width = '25%',
-				minWidth = 150,
-				caption = roleName,
-				OnClick = {listenerAssignUnitsButton}, 
-				skinName = "DarkGlass",
-				focusColor = {0.5,0.5,0.5,0.5},
-				TreeHandle = obj,
-				Role = roleName,
+	local roleInd = 0 
+	roleCount = #obj.Tree.roles
+	for _,roleData in pairs(obj.Tree.roles) do
+		roleName = roleData.name
+		local unitsCountLabel = Chili.Label:New{
+			x = 150+200 ,
+			y = 43 + 22 * roleInd,
+			height = roleCount == 1 and 30 or 20,
+			width = '25%',
+			minWidth = 150,
+			caption = 0, 
+			skinName = "DarkGlass",
+			focusColor = {0.5,0.5,0.5,0.5},
+			instanceId = obj.InstanceId
+		}
+		table.insert(obj.ChiliComponents, unitsCountLabel)
+		local roleAssignmentButton = Chili.Button:New{
+			x = 150 ,
+			y = 40 + 22 * roleInd,
+			height = roleCount == 1 and 30 or 20,
+			width = '25%',
+			minWidth = 150,
+			caption = roleName,
+			OnClick = {listenerAssignUnitsButton}, 
+			skinName = "DarkGlass",
+			focusColor = {0.5,0.5,0.5,0.5},
+			TreeHandle = obj,
+			Role = roleName,
+			roleIndex = roleInd,
+			unitsCountLabel = unitsCountLabel,
+			instanceId = obj.InstanceId
+		}
+		table.insert(obj.ChiliComponents, roleAssignmentButton)
+		-- get the role unit types:
+		local roleUnitTypes = {}
+		for _,catName in pairs(roleData.cathegories) do
+			local unitTypes = BtUtils.UnitCathegories.getCathegoryTypes(catName)		
+			for _,unitType in pairs(unitTypes) do
+				roleUnitTypes[unitType.name] = 1
+			end
+		end
+		
+		obj.Roles[roleName]={
+				assignButton = roleAssignmentButton,
+				unitCountLabel = unitsCountLabel,
 				roleIndex = roleInd,
-				unitsCountLabel = unitsCountLabel,
-				instanceId = obj.InstanceId
+				unitTypes = roleUnitTypes
 			}
-			table.insert(obj.ChiliComponents, roleAssignmentButton)
-			-- get the role unit types:
-			local roleUnitTypes = {}
-			for _,catName in pairs(roleData.cathegories) do
-				 local unitTypes = BtUtils.UnitCathegories.getCathegoryTypes(catName)
-				 for _,unitType in pairs(unitTypes) do
-					roleUnitTypes[unitType] = 1
-				 end
-			end
-			Logger.log("roles", "unitTypes ", roleUnitTypes)
-			obj.Roles[roleName]={
-					assignButton = roleAssignmentButton,
-					unitCountLabel = unitsCountLabel,
-					roleIndex = roleInd,
-					unitTypes = roleUnitTypes
-				}
-			roleInd = roleInd +1
-		end
-	else -- no role data, doing the default roles:
-	-- this should be removed later
-		
-		local roleCount = 1
-		local function visit(node)
-			if(node.nodeType == "roleSplit" and roleCount < #node.children)then
-				roleCount = #node.children
-			end
-			for _, child in ipairs(node.children) do
-				visit(child)
-			end
-		end
-		visit(obj.Tree.root)
-	
-	
-		for roleIndex = 0, roleCount - 1 do
-			roleName = roleCount == 1 and "Default role" or "Role " .. tostring(roleIndex)
-			local unitsCountLabel = Chili.Label:New{
-				x = 150+200 ,
-				y = 43 + 22 * roleIndex,
-				height = roleCount == 1 and 30 or 20,
-				width = '25%',
-				minWidth = 150,
-				caption = 0, 
-				skinName = "DarkGlass",
-				focusColor = {0.5,0.5,0.5,0.5},
-				instanceId = obj.InstanceId
-			}
-			table.insert(obj.ChiliComponents, unitsCountLabel)
-			local roleAssignmentButton = Chili.Button:New{
-				x = 150 ,
-				y = 40 + 22 * roleIndex,
-				height = roleCount == 1 and 30 or 20,
-				width = '25%',
-				minWidth = 150,
-				caption = roleName,
-				OnClick = {listenerAssignUnitsButton}, 
-				skinName = "DarkGlass",
-				focusColor = {0.5,0.5,0.5,0.5},
-				TreeHandle = obj,
-				Role = roleName,
-				roleIndex = roleIndex,
-				unitsCountLabel = unitsCountLabel,
-				instanceId = obj.InstanceId
-			}
-		
-			table.insert(obj.ChiliComponents, roleAssignmentButton)
-			obj.Roles[roleName]={
-					assignButton = roleAssignmentButton,
-					unitCountLabel = unitsCountLabel,
-					roleIndex = roleInd,
-					unitTypes = {}
-				}
-		end
+		roleInd = roleInd +1
 	end
+
 	return obj
 end
 
@@ -459,12 +403,11 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 		local unitAssigned  = false
 		local unitDefId = Spring.GetUnitDefID(unitId)
 		if(UnitDefs[unitDefId] ~= nil)then  
-			hn = UnitDefs[unitDefId].humanName
+			local name = UnitDefs[unitDefId].name
 			for _,roleData in pairs(treeHandle.Roles) do
-				if (roleData.unitTypes[hn] ~= nil) then
-					--Logger.log("roles", "assigned")
+				if (roleData.unitTypes[name] ~= nil) then
 					unitAssigned = true
-					assignUnitToTree(unitId, treeHandle, roleData.roleAssignmentButton.caption)
+					assignUnitToTree(unitId, treeHandle, roleData.assignButton.caption)
 				end
 			end	
 		else
