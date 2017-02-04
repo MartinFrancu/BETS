@@ -1078,7 +1078,10 @@ function showRoleManagementWindow()
 	loadStandardCathegories()
 	saveUnitCathegories()
 	--]]
-	loadUnitCathegories()
+	--loadUnitCathegories()
+	
+	unitCathegories = BtUtils.UnitCathegories.cathegories
+
 	
 	rolesWindow = Chili.Window:New{
 		parent = Screen0,
