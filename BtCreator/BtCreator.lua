@@ -40,10 +40,7 @@ local showCathegoryDefinitionWindow
 local doneCathegoryDefinition
 local cancelCathegoryDefinition
 
--- This table takes record of defined cathegories and saves them in file.
--- Format is an array of records of style:
-	-- {}
-local unitsCathegories
+
 local UNIT_CATHEGORIES_DIRNAME = LUAUI_DIRNAME .. "Widgets/BtCreator/"
 local UNIT_CATHEGORIES_FILE = "BtUnitCathegories.json"
 
@@ -162,15 +159,18 @@ end
 local clearCanvas, loadBehaviourTree, formBehaviourTree
 
 function listenerClickOnSaveTree()
-	Logger.log("save-and-load", "Save Tree clicked on. ")
-	local resultTree = formBehaviourTree()
-	--showRoleManagementWindow(resultTree)
-	if( (rolesOfCurrentTree ~= nil ) ) then
+	if( next(rolesOfCurrentTree) ~= nil ) then
+		Logger.log("save-and-load", "Save Tree clicked on. ")
+		local resultTree = formBehaviourTree()
 		resultTree.roles = rolesOfCurrentTree
 		resultTree.defaultRole = rolesOfCurrentTree[1].name
+	
+		resultTree:Save(treeNameEditbox.text)
+		WG.clearSelection()
+	else
+		-- we need to get user to define roles first: 
+		showRoleManagementWindow("save")
 	end
-	resultTree:Save(treeNameEditbox.text)
-	WG.clearSelection()
 end
 
 local sensorsWindow
@@ -227,6 +227,7 @@ function listenerClickOnNewTree()
 		newTreeName = "New Tree " .. i
 	end
 	treeNameEditbox:SetText(newTreeName)
+	rolesOfCurrentTree = {}
 	clearCanvas()
 end
 
@@ -246,16 +247,6 @@ end
 
 function listenerClickOnRoleManager()
 	showRoleManagementWindow()
-	--[[Logger.log("tree-editing", "Adding new role. ")
-	local rootNode = WG.nodeList[rootID]
-	table.insert(rootNode.parameters, {
-		name = "Role "..#rootNode.parameters + 1, 
-		value = "Role Name",
-		componentType = "editBox",
-		variableType = "string",
-	})
-	rootNode:CreateNextParameterObject()
-	--]]
 end
 
 function listenerClickOnMinimize()
@@ -531,7 +522,7 @@ function widget:Initialize()
 		caption = "Save Tree",
 		skinName = "DarkGlass",
 		focusColor = {0.5,0.5,0.5,0.5},
-		OnClick = { listenerClickOnSaveTree },
+		OnClick = { listenerClickOnSaveTree},
 	}
 	loadTreeButton = Chili.Button:New{
 		parent = buttonPanel,
@@ -548,7 +539,7 @@ function widget:Initialize()
 		parent = buttonPanel,
 		x = loadTreeButton.x + loadTreeButton.width,
 		y = saveTreeButton.y,
-		width = 90,
+		width = 150,
 		height = 30,
 		caption = "Role manager",
 		skinName = "DarkGlass",
@@ -1022,41 +1013,24 @@ function doneRoleManagerWindow(self)
 	local result = {}
 	for _,roleRecord in pairs(self.RolesData) do
 		local roleName = roleRecord.NameEditBox.text
-		local usedTypes = {}
 		local checkedCathegories = {}
-		if(self.OldUnitTypes ~= nil) and (self.OldUnitTypes.checked == true) then
-			for _,unitType in pairs(OldUnitTypes.Types) do
-				usedTypes[unitType.humanName] = true
-			end
-		end
 		for _, cathegoryCB in pairs(roleRecord.CheckBoxes) do
 			if(cathegoryCB.checked) then
 				local catName = cathegoryCB.caption
-				local catData = findCathegoryData(catName)
-				if(catData == nil) then
-					Logger.log("error", "RoleManager, doneRoleManagerWindow: unknown cathegory encountered.")
-				else
-					for _,unitType in pairs(catData.types) do
-						usedTypes[unitType.humanName] = true
-					end
-				end
 				table.insert(checkedCathegories, catName)
 			end
 		end
-		local typesData = {}
-		for humanName,used in pairs(usedTypes) do
-			if(used == true) then
-				table.insert(typesData, humanName)
-			end
-		end
-		local roleResult = {name = roleName, types = typesData, cathegories = checkedCathegories}
+		local roleResult = {name = roleName, cathegories = checkedCathegories}
 		table.insert(result, roleResult)
 	end
-	
 	rolesOfCurrentTree = result
+	
+	if((self.Mode ~= nil)  and (self.Mode == "save")) then 
+		listenerClickOnSaveTree()
+	end
 end
-
-function showRoleManagementWindow() 	
+-- This shows the role manager window, mode is used to determine if tree should be saved on clicking "done" 
+function showRoleManagementWindow(mode) 	
 	local tree = formBehaviourTree()
 	-- find out how many roles we need:
 	local roleCount = 1
@@ -1079,7 +1053,7 @@ function showRoleManagementWindow()
 	saveUnitCathegories()
 	--]]
 	
-	unitCathegories = BtUtils.UnitCathegories.getCathegories()
+	--unitCathegories = BtUtils.UnitCathegories.getCathegories()
 
 	
 	rolesWindow = Chili.Window:New{
@@ -1099,6 +1073,7 @@ function showRoleManagementWindow()
 		caption = "DONE",
 		OnClick = {doneRoleManagerWindow}, 
 	}
+	roleManagementDoneButton.Mode = mode
 	
 	newCathegoryButton = Chili.Button:New{
 		parent = rolesWindow,

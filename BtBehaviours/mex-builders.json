@@ -155,12 +155,10 @@
 	},
 	"roles": [ {
 		"cathegories": [],
-		"name": "Defenders",
-		"types": []
+		"name": "Defenders"
 	}, {
 		"cathegories": [ "builders" ],
-		"name": "Builders",
-		"types": [ "Level 1 Base Constructor", "Adv. Vehicle Plant", "Wasp", "Kbot Lab", "Truck", "Hovercraft Platform", "Arm Command Center", "Valkyrie Factory", "Aircraft Plant", "Level 2 Constructor (Kbot)", "Construction Sub", "Level 2 Constructor (Defense)", "Pod Factory", "targeting", "Shamshir", "Construction Hovercraft", "Skybus Factory", "If attacked", "Seaplane Platform", "Emper Unit", "Adv. Kbot Lab", "Construction Seaplane", "Dark Swarm Unit", "Adv Kbot Center", "Weather Snow Storm", "Necro", "Krogoth Gantry", "Construction Kbot", "Moho Engineer", "Air Support Pad", "Scramer Unit", "Anti-gravity hangar", "Warp Gate", "Adv. Aircraft Plant", "Longreach", "Adv. Construction Kbot", "Advanced Constructor", "Vehicle Plant", "Construction Vehicle", "Underwater Seaplane Support Station", "Construction Aircraft", "Core Central Consciousness", "Alpha Montro", "Commander", "Level 2 Constructor (Aircraft)", "Covert Ops Center", "FARCK", "MARS", "Level 2 Constructor (Vehicle)", "Shipyard" ]
+		"name": "Builders"
 	} ],
 	"root": {
 		"children": [ {

@@ -27,7 +27,7 @@ return Utils:Assign("UnitCathegories", function()
 		return unitCathegories
 	end
 	-- This function saves given table into file fo unit cathegories
-	local function saveCatheogires(cathegories)
+	local function saveCathegories(cathegories)
 		if(unitCathegories == nil) then
 			Logger.log("roles", "BtUtils:SaveUnitCathegories: cathegories = nill")
 			unitCathegories = {}
@@ -71,6 +71,13 @@ return Utils:Assign("UnitCathegories", function()
 			table.insert(result, catData.name)
 		end
 		return result
+	end
+	
+	function UnitCathegories.redefineCathegories(newCathegory) 
+		initCathegories()
+		-- here would be a good moment for check if it makes sense?
+		table.insert(UnitCatheogires.cathegories, newCathegory)
+		saveCathegories()
 	end
 	return UnitCathegories
 end)
