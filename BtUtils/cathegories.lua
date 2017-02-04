@@ -58,7 +58,7 @@ return Utils:Assign("UnitCathegories", function()
 	function UnitCathegories.getCathegoryTypes(cathegoryName)
 		initCathegories()
 		for _,catData in pairs(UnitCathegories.cathegories) do
-			if(catData.name == cathegoryName) then
+			if (catData.name == cathegoryName) then
 				return catData.types
 			end
 		end

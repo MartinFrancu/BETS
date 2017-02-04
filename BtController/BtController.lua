@@ -207,7 +207,8 @@ TreeHandle = {
 -- 				.InstanceId = id of this given instance 
 --				chiliComponents = array ofchili components corresponding to this tree
 --				Roles = table indexed by roleName containing reference to 
---					chili components|: {AssignButton = , UnitCountLabel = }
+--					chili components and other stuff: {assignButton = , unitCountLabel =, roleIndex =, unitTypes  }
+	
 -------------------------------------------------------------------------------------
 
 function TreeHandle:New(obj)
@@ -247,13 +248,13 @@ function TreeHandle:New(obj)
 	
 	if (obj.Tree.roles ~= nil) then
 		-- THERE ARE ROLE DATA ASSIGNED:
-		local roleIndex = 0 
+		local roleInd = 0 
 		roleCount = #obj.Tree.roles
 		for _,roleData in pairs(obj.Tree.roles) do
 			roleName = roleData.name
 			local unitsCountLabel = Chili.Label:New{
 				x = 150+200 ,
-				y = 43 + 22 * roleIndex,
+				y = 43 + 22 * roleInd,
 				height = roleCount == 1 and 30 or 20,
 				width = '25%',
 				minWidth = 150,
@@ -265,7 +266,7 @@ function TreeHandle:New(obj)
 			table.insert(obj.ChiliComponents, unitsCountLabel)
 			local roleAssignmentButton = Chili.Button:New{
 				x = 150 ,
-				y = 40 + 22 * roleIndex,
+				y = 40 + 22 * roleInd,
 				height = roleCount == 1 and 30 or 20,
 				width = '25%',
 				minWidth = 150,
@@ -275,17 +276,27 @@ function TreeHandle:New(obj)
 				focusColor = {0.5,0.5,0.5,0.5},
 				TreeHandle = obj,
 				Role = roleName,
-				RoleIndex = roleIndex,
+				roleIndex = roleInd,
 				unitsCountLabel = unitsCountLabel,
 				instanceId = obj.InstanceId
 			}
 			table.insert(obj.ChiliComponents, roleAssignmentButton)
+			-- get the role unit types:
+			local roleUnitTypes = {}
+			for _,catName in pairs(roleData.cathegories) do
+				 local unitTypes = BtUtils.UnitCathegories.getCathegoryTypes(catName)
+				 for _,unitType in pairs(unitTypes) do
+					roleUnitTypes[unitType] = 1
+				 end
+			end
+			Logger.log("roles", "unitTypes ", roleUnitTypes)
 			obj.Roles[roleName]={
-					AssignButton = roleAssignmentButton,
-					UnitCountLabel = unitsCountLabel,
-					RoleIndex = roleIndex
+					assignButton = roleAssignmentButton,
+					unitCountLabel = unitsCountLabel,
+					roleIndex = roleInd,
+					unitTypes = roleUnitTypes
 				}
-			roleIndex = roleIndex +1
+			roleInd = roleInd +1
 		end
 	else -- no role data, doing the default roles:
 	-- this should be removed later
@@ -328,16 +339,17 @@ function TreeHandle:New(obj)
 				focusColor = {0.5,0.5,0.5,0.5},
 				TreeHandle = obj,
 				Role = roleName,
-				RoleIndex = roleIndex,
+				roleIndex = roleIndex,
 				unitsCountLabel = unitsCountLabel,
 				instanceId = obj.InstanceId
 			}
 		
 			table.insert(obj.ChiliComponents, roleAssignmentButton)
 			obj.Roles[roleName]={
-					AssignButton = roleAssignmentButton,
-					UnitCountLabel = unitsCountLabel,
-					RoleIndex = roleIndex
+					assignButton = roleAssignmentButton,
+					unitCountLabel = unitsCountLabel,
+					roleIndex = roleInd,
+					unitTypes = {}
 				}
 		end
 	end
@@ -348,22 +360,22 @@ end
 function TreeHandle:DecreaseUnitCount(whichRole)
 	roleData = self.Roles[whichRole]
 	-- this is the current role and tree
-	currentCount = tonumber(roleData.UnitCountLabel.caption)
+	currentCount = tonumber(roleData.unitCountLabel.caption)
 	currentCount = currentCount - 1
 	-- test for <0 ?
-	roleData.UnitCountLabel:SetCaption(currentCount)
+	roleData.unitCountLabel:SetCaption(currentCount)
 end
 function TreeHandle:IncreaseUnitCount(whichRole)	
 	roleData = self.Roles[whichRole]
 	-- this is the current role and tree
-	currentCount = tonumber(roleData.UnitCountLabel.caption)
+	currentCount = tonumber(roleData.unitCountLabel.caption)
 	currentCount = currentCount + 1
 	-- test for <0 ?
-	roleData.UnitCountLabel:SetCaption(currentCount)
+	roleData.unitCountLabel:SetCaption(currentCount)
 end
 function TreeHandle:SetUnitCount(whichRole, number)
 	roleData = self.Roles[whichRole]
-	roleData.UnitCountLabel:SetCaption(number)
+	roleData.unitCountLabel:SetCaption(number)
 end
 
 function SendStringToBtEvaluator(message)
@@ -407,7 +419,7 @@ end
 function logUnitsToTreesMap(cathegory)
 	Logger.log(cathegory, " ***** unitsToTreesMapLog: *****" )
 	for unitId, unitData in pairs(unitsToTreesMap) do
-		Logger.log(cathegory, "unitId ", unitId, " instId ", unitData.InstanceId, " label inst: ", unitData.TreeHandle.Roles[unitData.Role].UnitCountLabel.instanceId, " treeHandleId: ", unitData.TreeHandle.InstanceId, " button insId: ", unitData.TreeHandle.Roles[unitData.Role].AssignButton.instanceId, " treeHandleName ", unitData.TreeHandle.Name )
+		Logger.log(cathegory, "unitId ", unitId, " instId ", unitData.InstanceId, " label inst: ", unitData.TreeHandle.Roles[unitData.Role].unitCountLabel.instanceId, " treeHandleId: ", unitData.TreeHandle.InstanceId, " button insId: ", unitData.TreeHandle.Roles[unitData.Role].assignButton.instanceId, " treeHandleName ", unitData.TreeHandle.Name )
 	end
 	Logger.log(cathegory, "***** end *****" )
 end
@@ -436,7 +448,7 @@ end
 -- this function assigns currently selected units to preset roles in newly created tree. 
 function automaticRoleAssignment(treeHandle, selectedUnits)
 	------------------------------------------
-	if treeHandle.Tree.roles == nil then 
+	if treeHandle.Roles == nil then 
 		Logger.log("roles", "no roles data, no autoassignment.")
 		return
 	end
@@ -448,12 +460,11 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 		local unitDefId = Spring.GetUnitDefID(unitId)
 		if(UnitDefs[unitDefId] ~= nil)then  
 			hn = UnitDefs[unitDefId].humanName
-			for _,roleData in pairs(treeHandle.Tree.roles) do
-				Logger.log("roles", " hn ", hn , " role name ", roleData.name, " role types ", roleData.types)
-				if (isInTable(hn, roleData.types)) then
-					Logger.log("roles", "assigned")
+			for _,roleData in pairs(treeHandle.Roles) do
+				if (roleData.unitTypes[hn] ~= nil) then
+					--Logger.log("roles", "assigned")
 					unitAssigned = true
-					assignUnitToTree(unitId, treeHandle, roleData.name)
+					assignUnitToTree(unitId, treeHandle, roleData.roleAssignmentButton.caption)
 				end
 			end	
 		else
@@ -467,7 +478,7 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 	-- now I need to share information with the BtEvaluator
 		local unitsInThisRole = unitsInTreeRole(treeHandle.InstanceId, name)
 		Spring.SelectUnitArray(unitsInThisRole)
-		BtEvaluator.assignUnits(nil, treeHandle.InstanceId,roleData.RoleIndex)
+		BtEvaluator.assignUnits(nil, treeHandle.InstanceId,roleData.roleIndex)
 	end
 end
 
@@ -592,7 +603,7 @@ function listenerAssignUnitsButton(self)
 		assignUnitToTree(Id, self.TreeHandle, self.Role)
 	end
 	
-	BtEvaluator.assignUnits(nil, self.TreeHandle.InstanceId, self.RoleIndex)
+	BtEvaluator.assignUnits(nil, self.TreeHandle.InstanceId, self.roleIndex)
 	--BtEvaluator.reportTree(self.TreeHandle.InstanceId)
 end
 

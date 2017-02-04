@@ -154,11 +154,13 @@
 		}
 	},
 	"roles": [ {
+		"cathegories": [],
 		"name": "Defenders",
 		"types": []
 	}, {
+		"cathegories": [ "mobileBuilders" ],
 		"name": "Builders",
-		"types": [ "Arm Command Center", "FARCK", "Core Central Consciousness", "Necro" ]
+		"types": [ "Construction Aircraft", "Shamshir", "Construction Seaplane", "Wasp", "Truck", "Commander", "Moho Engineer", "Longreach", "Adv. Construction Kbot", "Construction Sub", "Construction Vehicle", "Alpha Montro", "Necro", "Construction Kbot", "Construction Hovercraft", "FARCK", "MARS" ]
 	} ],
 	"root": {
 		"children": [ {
