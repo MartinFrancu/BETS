@@ -68,7 +68,6 @@ function Command:Extend(scriptName)
 		newinst.idleUnits = {}
 		newinst.scriptName = scriptName -- for debugging purposes
 		newinst.onNoUnits = self.getInfo().onNoUnits or "S"
-		newinst.isActive = false
 
 		success,res = pcall(newinst.New, newinst)
 		if not success then
@@ -86,7 +85,6 @@ end
 
 function Command:BaseRun(unitIDs, parameters)
 	if #unitIDs == 0 and self.onNoUnits ~= self.RUNNING then
-		self.isActive = false
 		return self.onNoUnits
 	end
 	--if #unitIDs == 0 and self.scriptName ~= "store.lua" then -- hack as store.lua does not need access to units and can be run even when there are none
@@ -95,10 +93,8 @@ function Command:BaseRun(unitIDs, parameters)
 
 	self.unitsAssigned = unitIDs
 
-	self.isActive = true
 	success,res,retVal = pcall(self.Run, self, unitIDs, parameters)
 	if success then
-		self.isActive = res == self.RUNNING
 		return res, retVal
 	else
 		Logger.log("command", "Error in script ", self.scriptName, ", method ", methodSignatures.Run, ": ", res)
@@ -127,7 +123,6 @@ function Command:BaseReset()
 end
 
 -- TODO not working
---[[
 function Command:GetActiveCommands(unitID)
 	active = self.activeCommands[unitID]
 	if not active then
@@ -156,7 +151,6 @@ function Command:CommandDone(unitID, cmdID, cmdTag)
 	active.cmdTag = nil
 	Logger.log("command", "CommandDone - Unit: ", unitID, " doneCmd: ", dump(cmdTag), " QueueLen: ", #active)
 end
---]]
 
 function Command:SetUnitIdle(unitID)
 	Logger.log("command", "SetUnitIdle - Unit: ", unitID)
