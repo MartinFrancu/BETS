@@ -1,19 +1,22 @@
 local testBuildOrder = Spring.TestBuildOrder
 local giveOrderToUnit = Spring.GiveOrderToUnit
 
-function getParameterDefs()
+function getInfo()
 	return {
-		{ 
-			name = "pos",
-			variableType = "expression",
-			componentType = "editBox",
-			defaultValue = "nil",
-		},
-		{
-			name = "building",
-			variableType = "string",
-			componentType = "editBox",
-			defaultValue = "\"mex\"",
+		onNoUnits = SUCCESS,
+		parameterDefs = {
+			{ 
+				name = "pos",
+				variableType = "expression",
+				componentType = "editBox",
+				defaultValue = "nil",
+			},
+			{
+				name = "building",
+				variableType = "string",
+				componentType = "editBox",
+				defaultValue = "\"mex\"",
+			}
 		}
 	}
 end

@@ -81,7 +81,7 @@ function Sentry:New(t, events)
 				if(handlers)then
 					-- merge the two tables
 					for i, v in ipairs(value) do
-						handlers:insert(v)
+						table.insert(handlers, v)
 					end
 				else
 					-- extend the supplied value into an eventHandler

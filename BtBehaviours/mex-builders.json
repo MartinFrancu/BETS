@@ -154,11 +154,11 @@
 		}
 	},
 	"roles": [ {
-		"name": "Defenders",
-		"types": []
+		"cathegories": [],
+		"name": "Defenders"
 	}, {
-		"name": "Builders",
-		"types": [ "Arm Command Center", "FARCK", "Core Central Consciousness", "Necro" ]
+		"cathegories": [ "builders" ],
+		"name": "Builders"
 	} ],
 	"root": {
 		"children": [ {
