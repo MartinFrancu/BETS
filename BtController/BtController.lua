@@ -281,8 +281,8 @@ function TreeHandle:New(obj)
 		table.insert(obj.ChiliComponents, roleAssignmentButton)
 		-- get the role unit types:
 		local roleUnitTypes = {}
-		for _,catName in pairs(roleData.cathegories) do
-			local unitTypes = BtUtils.UnitCathegories.getCathegoryTypes(catName)		
+		for _,catName in pairs(roleData.categories) do
+			local unitTypes = BtUtils.UnitCategories.getCategoryTypes(catName)		
 			for _,unitType in pairs(unitTypes) do
 				roleUnitTypes[unitType.name] = 1
 			end
@@ -361,12 +361,12 @@ function showErrorWindow(errorDecription)
 end
 
 
-function logUnitsToTreesMap(cathegory)
-	Logger.log(cathegory, " ***** unitsToTreesMapLog: *****" )
+function logUnitsToTreesMap(category)
+	Logger.log(category, " ***** unitsToTreesMapLog: *****" )
 	for unitId, unitData in pairs(unitsToTreesMap) do
-		Logger.log(cathegory, "unitId ", unitId, " instId ", unitData.InstanceId, " label inst: ", unitData.TreeHandle.Roles[unitData.Role].unitCountLabel.instanceId, " treeHandleId: ", unitData.TreeHandle.InstanceId, " button insId: ", unitData.TreeHandle.Roles[unitData.Role].assignButton.instanceId, " treeHandleName ", unitData.TreeHandle.Name )
+		Logger.log(category, "unitId ", unitId, " instId ", unitData.InstanceId, " label inst: ", unitData.TreeHandle.Roles[unitData.Role].unitCountLabel.instanceId, " treeHandleId: ", unitData.TreeHandle.InstanceId, " button insId: ", unitData.TreeHandle.Roles[unitData.Role].assignButton.instanceId, " treeHandleName ", unitData.TreeHandle.Name )
 	end
-	Logger.log(cathegory, "***** end *****" )
+	Logger.log(category, "***** end *****" )
 end
 
 -- This will return name id of all units in given tree

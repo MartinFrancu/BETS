@@ -13,7 +13,7 @@ WG.BtUtils = WG.BtUtils or (function()
 		BehaviourTree = "behaviour-tree", -- @{BehaviourTree}
 		dirList = "dir-list", -- @{dirList}
 		Debug = "debug_utils/", -- @{BtUtils.Debug}
-		UnitCathegories = "cathegories" 
+		UnitCategories = "categories" 
 	}
 	
 	local LOCAL_PATH = LUAUI_DIRNAME .. "Widgets/BtUtils/"
