@@ -22,7 +22,7 @@
 		}
 	},
 	"roles": [ {
-		"cathegories": [],
+		"categories": [],
 		"name": "Default role",
 		"types": []
 	} ],

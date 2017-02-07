@@ -26,6 +26,9 @@ return Utils:Assign("UnitCategories", function()
 		file:close()
 		return unitCategories
 	end
+	
+	UnitCategories.categories = loadCategories()
+	
 	-- This function saves given table into file fo unit categories
 	local function saveCategories(categories)
 		if(unitCategories == nil) then
@@ -44,19 +47,19 @@ return Utils:Assign("UnitCategories", function()
 		return true
 	end
 	
+	--[[
 	local function initCategories()
 		if(UnitCategories.categories == nil) then
 			UnitCategories.categories = loadCategories()
 		end 
 	end
+	--]]
 	-- Returns table of categories
 	function UnitCategories.getCategories()
-		initCategories()
 		return UnitCategories.categories
 	end 
 	-- Returns entry corresponding to given category:
 	function UnitCategories.getCategoryTypes(categoryName)
-		initCategories()
 		for _,catData in pairs(UnitCategories.categories) do
 			if (catData.name == categoryName) then
 				return catData.types
@@ -65,7 +68,6 @@ return Utils:Assign("UnitCategories", function()
 	end
 	-- returns array of names of availible categories.
 	function UnitCategories.getAllCategoryNames() 
-		initCategories()
 		local result = {}
 		for _,catData in pairs(UnitCategories.categories) do
 			table.insert(result, catData.name)
@@ -74,7 +76,6 @@ return Utils:Assign("UnitCategories", function()
 	end
 	
 	function UnitCategories.redefineCategories(newCategory) 
-		initCategories()
 		-- here would be a good moment for check if it makes sense?
 		table.insert(UnitCatheogires.categories, newCategory)
 		saveCategories()

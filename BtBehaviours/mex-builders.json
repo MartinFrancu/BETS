@@ -154,7 +154,7 @@
 		}
 	},
 	"roles": [ {
-		"cathegories": [],
+		"categories": [],
 		"name": "Defenders"
 	}, {
 		"cathegories": [ "builders" ],
