@@ -455,7 +455,8 @@ function widget:Initialize()
 		skinName='DarkGlass',
 	} 
 	
-	BtEvaluator.requestNodeDefinitions()
+	Logger.loggedCall("Errors", "BtCreator", "requesting node definitions", 
+			BtEvaluator.requestNodeDefinitions)
 	local maxNodeWidth = 125
 	for i=1,#nodePoolList do
 		if(nodePoolList[i].width + 21 > maxNodeWidth) then
