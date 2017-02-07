@@ -515,7 +515,10 @@ function listenerBarItemClick(self, x, y, button, ...)
 	
 		if(showTreeCheckbox.checked) then
 			BtEvaluator.reportTree(self.TreeHandle.InstanceId)	
-			BtCreator.show(self.TreeHandle.TreeType)
+			Logger.loggedCall("Error", "BtController", 
+				"making BtCreator show selected tree",
+				BtCreator.show, self.TreeHandle.TreeType )
+			--BtCreator.show(self.TreeHandle.TreeType)
 		end
 		
 		-- ORIGINAL LISTENER FORM BarItem:

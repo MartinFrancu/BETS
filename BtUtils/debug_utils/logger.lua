@@ -163,6 +163,19 @@ If it is not an array, it is equivalent to an array with a single value.
 		)
 		return internalLog(logGroup, Logger.LOGTYPE_ERROR, ...)
 	end
+	--- Calls given function in proctected mode and logs possible 
+	-- Example of usage: Logger.loggedCall("errors", "BtTester", "tried problematic code", BtDummy.problematicCode, arg1, arg2 )
+	function Logger.loggedCall(logGroup,  source, comment,functionToCall, ...)
+		--Spring.Echo("LOGGED CALL_____")
+		local status, result = pcall(functionToCall,... )
+		if status then
+			-- everyting went right, nothing to log
+			return result
+		else
+			-- something went wrong:
+			Logger.error(logGroup, source, ": ", comment, " error: ", result )
+		end
+	end
 	
 	--- Disables the logging of the specified log-group.
 	function Logger.disable(logGroup)
