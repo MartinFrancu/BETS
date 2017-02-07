@@ -334,7 +334,7 @@ function removeTreeBtController(tabs,treeHandle)
 	local tabBar = tabs.children[tabBarChildIndex]
 	
 	if treeHandle.Name == tabBar.selected_obj.caption then
-		BtCreator.hide()
+		Logger.loggedCall("Call", "BtController", "hiding BtController which is showing removed tree", BtCreator.hide)
 	end
 	
 	tabBar:Remove(treeHandle.Name)
@@ -350,7 +350,8 @@ function removeTreeBtController(tabs,treeHandle)
 	removeUnitsFromTree(treeHandle.InstanceId)
 	
 	-- remove send message to BtEvaluator
-	BtEvaluator.removeTree(treeHandle.InstanceId)
+	Logger.loggedCall("Errors", "BtController", "removing tree fromBbtEvaluator", 
+		BtEvaluator.removeTree, treeHandle.InstanceId)
 end
 
 
@@ -421,7 +422,8 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 	-- now I need to share information with the BtEvaluator
 		local unitsInThisRole = unitsInTreeRole(treeHandle.InstanceId, name)
 		Spring.SelectUnitArray(unitsInThisRole)
-		BtEvaluator.assignUnits(nil, treeHandle.InstanceId,roleData.roleIndex)
+		Logger.loggedCall("Errors", "BtController", "reporting automatic role assignment to BtEvaluator", 
+			BtEvaluator.assignUnits, nil, treeHandle.InstanceId, roleData.roleIndex)
 	end
 end
 
@@ -476,7 +478,8 @@ function instantiateTree(treeType, instanceName)
 	addTreeToTreeTabPanel(newTreeHandle)
 			
 	-- create the tree immediately when the tab is created
-	BtEvaluator.createTree(newTreeHandle.InstanceId, newTreeHandle.Tree)
+	Logger.loggedCall("Errors", "BtController", "instantiating new tree in BtEvaluator", 
+		BtEvaluator.createTree, newTreeHandle.InstanceId, newTreeHandle.Tree)
 			
 	-- now, assign units to tree
 	automaticRoleAssignment(newTreeHandle, selectedUnits)
@@ -514,11 +517,13 @@ function listenerBarItemClick(self, x, y, button, ...)
 		if(not BtCreator)then return end
 	
 		if(showTreeCheckbox.checked) then
-			BtEvaluator.reportTree(self.TreeHandle.InstanceId)	
+			Logger.loggedCall("Error", "BtController", 
+				"reporting tree to BtEvaluator",
+				BtEvaluator.reportTree, self.TreeHandle.InstanceId
+			)
 			Logger.loggedCall("Error", "BtController", 
 				"making BtCreator show selected tree",
 				BtCreator.show, self.TreeHandle.TreeType )
-			--BtCreator.show(self.TreeHandle.TreeType)
 		end
 		
 		-- ORIGINAL LISTENER FORM BarItem:
@@ -549,8 +554,9 @@ function listenerAssignUnitsButton(self)
 		assignUnitToTree(Id, self.TreeHandle, self.Role)
 	end
 	
-	BtEvaluator.assignUnits(nil, self.TreeHandle.InstanceId, self.roleIndex)
-	--BtEvaluator.reportTree(self.TreeHandle.InstanceId)
+	Logger.loggedCall("Errors", "BtController", "assigning units to tree", 
+		BtEvaluator.assignUnits, nil, self.TreeHandle.InstanceId, self.roleIndex)
+
 end
 
 -- Listener for closing error window.

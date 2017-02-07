@@ -166,7 +166,6 @@ If it is not an array, it is equivalent to an array with a single value.
 	--- Calls given function in proctected mode and logs possible 
 	-- Example of usage: Logger.loggedCall("errors", "BtTester", "tried problematic code", BtDummy.problematicCode, arg1, arg2 )
 	function Logger.loggedCall(logGroup,  source, comment,functionToCall, ...)
-		--Spring.Echo("LOGGED CALL_____")
 		local status, result = pcall(functionToCall,... )
 		if status then
 			-- everyting went right, nothing to log
