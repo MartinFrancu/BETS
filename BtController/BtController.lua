@@ -199,6 +199,8 @@ TreeHandle = {
 			Tree = "no_tree", 
 			ChiliComponents = {},
 			Roles = {},
+			RequireUnits = true,
+			AssignedUnitsCount = 0,
 			} 
 			
 -------------------------------------------------------------------------------------
@@ -208,6 +210,8 @@ TreeHandle = {
 --				chiliComponents = array ofchili components corresponding to this tree
 --				Roles = table indexed by roleName containing reference to 
 --					chili components and other stuff: {assignButton = , unitCountLabel =, roleIndex =, unitTypes  }
+-- 				RequireUnits - should this tree be removed when it does not have any unit assigned?
+--				AssignedUnits = table of records of a following shape: {name = unit ID, 
 	
 -------------------------------------------------------------------------------------
 
@@ -220,6 +224,8 @@ function TreeHandle:New(obj)
 	
 	obj.ChiliComponents = {}
 	obj.Roles = {}
+	obj.RequireUnits = true
+	obj.AssignedUnitsCount = 0
 	
 	treeTypeLabel = Chili.Label:New{
 	x = 50,
@@ -296,30 +302,34 @@ function TreeHandle:New(obj)
 			}
 		roleInd = roleInd +1
 	end
-
 	return obj
 end
 
 -- Following three methods are shortcut for increasing and decreassing role counts.
 function TreeHandle:DecreaseUnitCount(whichRole)
-	roleData = self.Roles[whichRole]
+	local roleData = self.Roles[whichRole]
 	-- this is the current role and tree
-	currentCount = tonumber(roleData.unitCountLabel.caption)
+	local currentCount = tonumber(roleData.unitCountLabel.caption)
 	currentCount = currentCount - 1
 	-- test for <0 ?
 	roleData.unitCountLabel:SetCaption(currentCount)
+	self.AssignedUnitsCount = self.AssignedUnitsCount -1
 end
 function TreeHandle:IncreaseUnitCount(whichRole)	
-	roleData = self.Roles[whichRole]
+	local roleData = self.Roles[whichRole]
 	-- this is the current role and tree
 	currentCount = tonumber(roleData.unitCountLabel.caption)
 	currentCount = currentCount + 1
 	-- test for <0 ?
 	roleData.unitCountLabel:SetCaption(currentCount)
+	self.AssignedUnitsCount = self.AssignedUnitsCount +1
 end
 function TreeHandle:SetUnitCount(whichRole, number)
-	roleData = self.Roles[whichRole]
+	local roleData = self.Roles[whichRole]
+	local previouslyAssigned = tonumber(roleData.unitCountLabel.caption) 
+	self.AssignedUnitsCount = self.AssignedUnitsCount  - previouslyAssigned
 	roleData.unitCountLabel:SetCaption(number)
+	self.AssignedUnitsCount = self.AssignedUnitsCount + number
 end
 
 function SendStringToBtEvaluator(message)
@@ -370,7 +380,7 @@ function logUnitsToTreesMap(category)
 end
 
 -- This will return name id of all units in given tree
-function unitsInTree(instanceId)
+local function unitsInTree(instanceId)
 	local unitsInThisTree = {}
 	for unitId, unitEntry in pairs(unitsToTreesMap) do
 		if(unitEntry.InstanceId == instanceId) then
@@ -433,10 +443,16 @@ function removeUnitFromCurrentTree(unitId)
 	-- unit is assigned to some tree:
 	-- decrease count of given tree:
 	
-	treeHandle = unitsToTreesMap[unitId].TreeHandle
+	local treeHandle = unitsToTreesMap[unitId].TreeHandle
 	role = unitsToTreesMap[unitId].Role
 	treeHandle:DecreaseUnitCount(role)
 	unitsToTreesMap[unitId] = nil
+	
+	-- if the tree has no more units:
+	if (treeHandle.AssignedUnitsCount < 1) and (treeHandle.RequireUnits) then
+		-- remove this tree
+		removeTreeBtController(treeTabPanel, treeHandle)
+	end
 end
 -- this will remove all units from given tree and adjust gui componnets
 function removeUnitsFromTree(instanceId)
@@ -462,18 +478,23 @@ function assignUnitToTree(unitId, treeHandle, roleName)
 end
 
 -- This is the method to create new tree instance, 
-	--it will create the instance,
-	--create new tree tab
+	-- it will create the instance,
+	-- create new tree tab
 	-- notify BtEvaluator
 -- it return the new treeHandle
-function instantiateTree(treeType, instanceName)
-	--reloadTree(name)
+function instantiateTree(treeType, instanceName, requireUnits)
+	
 	local newTreeHandle = TreeHandle:New{
 		Name = instanceName,
 		TreeType = treeType,
-	}
+	}	
+	
 	local selectedUnits = Spring.GetSelectedUnits()
-			
+	if ((table.getn(selectedUnits) < 1 ) and requireUnits) then
+		Logger.log("Errors", "BtController: instantiateTree: tree is requiring units and no unit is selected.")
+		return newTreeHandle
+	end
+	
 	-- create tab
 	addTreeToTreeTabPanel(newTreeHandle)
 			
@@ -483,8 +504,9 @@ function instantiateTree(treeType, instanceName)
 			
 	-- now, assign units to tree
 	automaticRoleAssignment(newTreeHandle, selectedUnits)
-	-- tree tab 
-	--listenerBarItemClick({TreeHandle = newTreeHandle},0,0,1)
+	
+	newTreeHandle.RequireUnits = requireUnits
+	 
 	return newTreeHandle
 end
 
@@ -547,7 +569,7 @@ function listenerAssignUnitsButton(self)
 		if(treeAndRole.InstanceId == self.TreeHandle.InstanceId) and (treeAndRole.Role == self.Role) then
 			removeUnitFromCurrentTree(unitId)
 		end
-	end --]]
+	end
 	-- make note of assigment in our notebook (this should be possible moved somewhere else:)
 	local selectedUnits = Spring.GetSelectedUnits()
 	for _,Id in pairs(selectedUnits) do
@@ -575,7 +597,7 @@ local function listenerClickOnSelectedTreeDoneButton(self, x, y, button)
 		if(treeTabPanel.tabIndexMapping[treeNameEditBox.text] == nil ) then
 			local selectedTreeType = treeSelectionComboBox.items[treeSelectionComboBox.selected]
 			local instanceName = treeNameEditBox.text
-			local newTreeHandle = instantiateTree(selectedTreeType, instanceName)
+			local newTreeHandle = instantiateTree(selectedTreeType, instanceName, false)
 			--[[
 			-- instance with such name is not used
 			local selectedTreeType = treeSelectionComboBox.items[treeSelectionComboBox.selected]
@@ -899,7 +921,11 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 	if(cmdID == CMD_CONVOY) then
 		local treeType = "mex-builders"
 		local instanceName= "Instance"..instanceIdCount
-		instantiateTree(treeType, instanceName)
+		local selectedUnits = Spring.GetSelectedUnits()
+		if(table.getn(selectedUnits) > 0) then
+			-- do not create tree if there is no units selected
+			instantiateTree(treeType, instanceName, true)
+		end
 	end
 end 
   
