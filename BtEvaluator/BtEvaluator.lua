@@ -2,7 +2,7 @@ function widget:GetInfo()
 	return {
 		name      = "BtEvaluator loader",
 		desc      = "BtEvaluator loader and message test to this AI.",
-		author    = "JakubStasta",
+		author    = "BETS Team",
 		date      = "Sep 20, 2016",
 		license   = "BY-NC-SA",
 		layer     = 0,

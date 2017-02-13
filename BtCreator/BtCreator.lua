@@ -1,9 +1,9 @@
 function widget:GetInfo()
 	return {
-		name    = "Behaviour Tree Editor",
+		name    = "BtCreator",
 		desc    = "Behaviour Tree Editor for creating complex behaviours of groups of units. ",
-		author  = "Jakub Stasta",
-		date    = "today",
+		author  = "BETS Team",
+		date    = "2016-09-01",
 		license = "GNU GPL v2",
 		layer   = 0,
 		enabled = true
@@ -285,10 +285,11 @@ local function updateStatesMessage(states)
 	end
 	local children = WG.nodeList[rootID]:GetChildren()
 	if(#children > 0) then
-		local alpha = WG.nodeList[rootID].nodeWindow.backgroundColor[4]
-		WG.nodeList[rootID].nodeWindow.backgroundColor = copyTable(children[1].nodeWindow.backgroundColor)
-		WG.nodeList[rootID].nodeWindow.backgroundColor[4] = alpha
-		WG.nodeList[rootID].nodeWindow:Invalidate()
+		local nodeWindow = WG.nodeList[rootID].nodeWindow
+		local alpha = nodeWindow.backgroundColor[4]
+		nodeWindow.backgroundColor = copyTable(children[1].nodeWindow.backgroundColor)
+		nodeWindow.backgroundColor[4] = alpha
+		nodeWindow:Invalidate()
 	end
 end
 
@@ -368,11 +369,9 @@ end
 local function generateNodePoolNodes(nodes)
 	Logger.log("communication", "NODES DECODED:  ", nodes)
 	local heightSum = 30 -- skip NodePoolLabel
-    heightSum = generateScriptNodes(heightSum, nodes)
-	
+  heightSum = generateScriptNodes(heightSum, nodes)
 	-- load lua commands
 	local paramDefs = getParameterDefinitions()
-	
 	for scriptName, params in pairs(paramDefs) do
 		local nodeParams = {
 			name = scriptName,
@@ -414,7 +413,7 @@ end
 function listenerOnClickOnCanvas()
 	WG.clearSelection()
 	for _,node in pairs(WG.nodeList) do
-		node:ValidateEditBoxes()
+		node:UpdateParameterValues()
 	end
 end
 
@@ -495,16 +494,7 @@ function widget:Initialize()
 		id = false,
 	})
 	
-	buttonPanel = Chili.Control:New{
-		parent = Screen0,
-		x = 0,
-		y = 0,
-		width = '100%',
-		height = '100%',
-	}
-	
 	newTreeButton = Chili.Button:New{
-		parent = buttonPanel,
 		x = windowBtCreator.x,
 		y = windowBtCreator.y - 30,
 		width = 90,
@@ -515,7 +505,6 @@ function widget:Initialize()
 		OnClick = { listenerClickOnNewTree },
 	}
 	saveTreeButton = Chili.Button:New{
-		parent = buttonPanel,
 		x = newTreeButton.x + newTreeButton.width,
 		y = newTreeButton.y,
 		width = 90,
@@ -526,7 +515,6 @@ function widget:Initialize()
 		OnClick = { listenerClickOnSaveTree},
 	}
 	loadTreeButton = Chili.Button:New{
-		parent = buttonPanel,
 		x = saveTreeButton.x + saveTreeButton.width,
 		y = saveTreeButton.y,
 		width = 90,
@@ -537,7 +525,6 @@ function widget:Initialize()
 		OnClick = { listenerClickOnLoadTree },
 	}
 	roleManagerButton = Chili.Button:New{
-		parent = buttonPanel,
 		x = loadTreeButton.x + loadTreeButton.width,
 		y = saveTreeButton.y,
 		width = 150,
@@ -548,7 +535,6 @@ function widget:Initialize()
 		OnClick = { listenerClickOnRoleManager },
 	}
 	showSensorsButton = Chili.Button:New{
-		parent = buttonPanel,
 		x = roleManagerButton.x + roleManagerButton.width,
 		y = saveTreeButton.y,
 		width = 90,
@@ -558,6 +544,15 @@ function widget:Initialize()
 		focusColor = {0.5,0.5,0.5,0.5},
 		OnClick = { listenerClickOnShowSensors },
 	}
+	buttonPanel = Chili.Control:New{
+		parent = Screen0,
+		x = 0,
+		y = 0,
+		width = '100%',
+		height = '100%',
+		children = { newTreeButton, saveTreeButton, loadTreeButton, roleManagerButton, showSensorsButton }
+	}
+	
 	
 	minimizeButton = Chili.Button:New{
 		parent = buttonPanel,
@@ -581,7 +576,6 @@ function widget:Initialize()
 		skinName = 'DarkGlass',
 		borderThickness = 0,
 		backgroundColor = {0,0,0,0},
-		editingText = true,
 	}
 	-- treeNameEditbox.font.size = 16
 	listenerClickOnMinimize()
@@ -651,7 +645,7 @@ function formBehaviourTree()
 	-- Validate every treenode - when editing editBox parameter and immediately serialize, 
 	-- the last edited parameter doesnt have to be updated
 	for _,node in pairs(WG.nodeList) do
-		node:ValidateEditBoxes()
+		node:UpdateParameterValues()
 	end
 	
 	local bt = BehaviourTree:New()
