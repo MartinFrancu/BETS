@@ -68,8 +68,10 @@ local inputCommandDesc = {
 	},
 }
 -- HERE WILL BE STORED CMD IDS ONCE THEY ARE ISSUED:
-local inputCommandID
-local treeCommandID
+local inputCommandNameToID
+--local treeCommandNameToID
+-- commandIDToName is used to identify command in command notify>
+local commandIDToName
 --- COMMANDS end ---------------------------------------------------------------
 
 --------------------------------------------------------------------------------
@@ -674,14 +676,15 @@ local function registerInputCommands()
 	end
 end
 
-local function retCommnadIDInputCommands()
+local function getCommnadIDInputCommands()
 	local rawCommandsNameToID = Spring.GetGameRulesParam("customCommandsNameToID")
 	if (rawCommandsNameToID ~= nil) then
-		inputCommandID = {}
+		inputCommandNameToID = {}
 		local commandsNameToID = message.Decode(rawCommandsNameToID)
 		for name, record in pairs(inputCommandDesc) do 
 			if (commandsNameToID[name] ~= nil) then
-				inputCommandID[name] = commandsNameToID[name]
+				inputCommandNameToID[name] = commandsNameToID[name]
+				
 			else
 				Logger.log("commands", tostring(name) .. "command ID is not available")
 			end
@@ -714,14 +717,14 @@ end
 local function getCommandIDForReleasedTrees()
 	local rawCommandsNameToID = Spring.GetGameRulesParam("customCommandsNameToID")
 	if (rawCommandsNameToID ~= nil) then
-		treeCommandID = {}
+		treeCommandNameToID = {}
 		local commandsNameToID = message.Decode(rawCommandsNameToID)
 		local fileNames = BtUtils.dirList(ReleaseBehavioursDirectory, "*.json")--".+%.json$")
 		for i,fileName in pairs(fileNames) do
 			local treeName = fileName:gsub("%.json","")
 			local commandName =  "BETS_TREE_" ..  treeName 
 			if (commandsNameToID[commandName] ~= nil) then
-				treeCommandID[commandName] = commandsNameToID[commandName]
+				treeCommandNameToID[commandName] = commandsNameToID[commandName]
 			else
 				Logger.log("commands", tostring(commandName) .. "command ID is not available")
 			end
@@ -731,7 +734,39 @@ local function getCommandIDForReleasedTrees()
 	end
 end
 
-
+local function getCommandIDToName()
+	-- do input commands: 
+	local rawCommandsNameToID = Spring.GetGameRulesParam("customCommandsNameToID")
+	if (rawCommandsNameToID ~= nil) then
+		commandIDToName = {}
+		local commandsNameToID = message.Decode(rawCommandsNameToID)
+		-- input commands
+		for name, record in pairs(inputCommandDesc) do 
+			if (commandsNameToID[name] ~= nil) then
+				commandIDToName[commandsNameToID[name] ] = {cmdName = name
+				}				
+			else
+				Logger.log("commands", tostring(name) .. "command ID is not available")
+			end
+		end
+		-- tree commands
+		local fileNames = BtUtils.dirList(ReleaseBehavioursDirectory, "*.json")--".+%.json$")
+		for i,fileName in pairs(fileNames) do
+			local treeName = fileName:gsub("%.json","")
+			local commandName =  "BETS_TREE_" ..  treeName 
+			if (commandsNameToID[commandName] ~= nil) then
+				commandIDToName[commandsNameToID[commandName] ] = {
+					cmdName = commandName,
+					name = treeName,
+					}
+			else
+				Logger.log("commands", tostring(commandName) .. "command ID is not available")
+			end
+		end
+	else	
+		Logger.log("commands", "customCommandsNameToID is not available.")
+	end
+end
 
 ---------------------------------------COMMANDS-END-
 
@@ -1026,29 +1061,39 @@ function widget:UnitDestroyed(unitId)
 end
 
 function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
-	if(inputCommandID == nil) then
-		retCommnadIDInputCommands()
-	end
 	
-	if(treeCommandID == nil) then
+	if(inputCommandNameToID == nil) then
+		getCommnadIDInputCommands()
+	end
+	--[[
+	if(treeCommandNameToID == nil) then
 		getCommandIDForReleasedTrees()
 	end
-
-	-- I should check 
-	local rawCommandsIDToName = Spring.GetGameRulesParam("customCommandsIDToName")
+	--]]
 	
-	
-	if(cmdID == CMD_CONVOY) then
-		local treeType = "mex-builders"
-		local instanceName= "Instance"..instanceIdCount
-		local selectedUnits = Spring.GetSelectedUnits()
-		if(table.getn(selectedUnits) > 0) then
-			-- do not create tree if there is no units selected
-			instantiateTree(treeType, instanceName, true)
-		end
+	if(commandIDToName == nil) then
+		 getCommandIDToName()
 	end
+
 	
-	
+	if(commandIDToName[cmdID]~= nil) then
+		-- recognized command:
+		if(inputCommandNameToID[commandIDToName[cmdID]] == nil) then 
+			-- this means it is a tree command, since it is not in input commands.
+			local treeType = commandIDToName[cmdID].name
+			local instanceName= "Instance"..instanceIdCount
+			local selectedUnits = Spring.GetSelectedUnits()
+			if(table.getn(selectedUnits) > 0) then
+				-- do not create tree if there is no units selected
+				instantiateTree(treeType, instanceName, true)
+			end
+		else
+			Logger.log("commands", "Recognized input command: " .. commandIDToName[cmdID].cmdName)
+		end
+		return true
+	else
+		-- I gues nothing
+	end
 end 
   
 -- this function saves UnitDefs tables into UnitDefs folder - to be able to see what can be used.
