@@ -46,7 +46,7 @@ attach.File("LuaRules/modules/customCommands/data/api/messageSender.lua") -- her
 --------------------------------------------------------------------------------
 ---COMMANDS:--------------------------------------------------------------------
 --- COMMAND FOR TAKING PLAYER INPUT:
-local cmdDescriptions = {
+local inputCommandDesc = {
 	["BETS_POSITION"] = {
 		type = CMDTYPE.ICON_MAP,
 		name = 'BETS_POSITION',
@@ -68,7 +68,8 @@ local cmdDescriptions = {
 	},
 }
 -- HERE WILL BE STORED CMD IDS ONCE THEY ARE ISSUED:
-local cmdIDs
+local inputCommandID
+local treeCommandID
 --- COMMANDS end ---------------------------------------------------------------
 
 --------------------------------------------------------------------------------
@@ -237,7 +238,7 @@ TreeHandle = {
 			AssignedUnitsCount = 0,
 			} 
 			
--------------------------------------------------------------------------------------
+--[[-----------------------------------------------------------------------------------
 --	Contains	.Name = "name of tree"
 --				.TreeType = loaded tree into table
 -- 				.InstanceId = id of this given instance 
@@ -245,9 +246,8 @@ TreeHandle = {
 --				Roles = table indexed by roleName containing reference to 
 --					chili components and other stuff: {assignButton = , unitCountLabel =, roleIndex =, unitTypes  }
 -- 				RequireUnits - should this tree be removed when it does not have any unit assigned?
---				AssignedUnits = table of records of a following shape: {name = unit ID, 
-	
--------------------------------------------------------------------------------------
+--				AssignedUnits = table of records of a following shape: {name = unit ID, 	
+-----------------------------------------------------------------------------------]]--
 
 function TreeHandle:New(obj)
 	obj = obj -- or TreeHandle
@@ -667,16 +667,36 @@ end
 ---------------------------------------LISTENERS END
 
 ---------------------------------------COMMANDS-----
-local function registerCommandsForReleasedTrees()
-	Logger.log("commands", "registering" )
-	local fileNames = BtUtils.dirList(ReleaseBehavioursDirectory, "*.json")--".+%.json$")
-	for i,n in pairs(fileNames) do
-		Logger.log("commands", "name: ".. tostring(n) .. " index: " .. tostring(i) )
+local function registerInputCommands()
+	-- we need to register our custom commands
+	for name, cmdDesc in pairs(inputCommandDesc) do
+		sendCustomMessage.registerCustomCommand(cmdDesc)
 	end
+end
+
+local function retCommnadIDInputCommands()
+	local rawCommandsNameToID = Spring.GetGameRulesParam("customCommandsNameToID")
+	if (rawCommandsNameToID ~= nil) then
+		inputCommandID = {}
+		local commandsNameToID = message.Decode(rawCommandsNameToID)
+		for name, record in pairs(inputCommandDesc) do 
+			if (commandsNameToID[name] ~= nil) then
+				inputCommandID[name] = commandsNameToID[name]
+			else
+				Logger.log("commands", tostring(name) .. "command ID is not available")
+			end
+		end
+	else	
+		Logger.log("commands", "rawCommandsNameToID is not availible.")
+	end
+end
+
+
+local function registerCommandsForReleasedTrees()
+	local fileNames = BtUtils.dirList(ReleaseBehavioursDirectory, "*.json")--".+%.json$")
 	for i,fileName in pairs(fileNames) do
 		local treeName = fileName:gsub("%.json","")
-		local commandName =  "BETS_TREE_" ..  fileName
-		Logger.log("commands", "registering: " .. commandName)
+		local commandName =  "BETS_TREE_" ..  treeName
 		local description = {
 			type = CMDTYPE.ICON,
 			name = commandName,
@@ -684,10 +704,30 @@ local function registerCommandsForReleasedTrees()
 			action = 'Attack',
 			tooltip = fileName,
 			hidden = true,
-			UIoverride = {caption = fileName, texture = 'LuaUI/Images/commands/guard.png' }
+			UIoverride = {caption = treeName, texture = 'LuaUI/Images/commands/guard.png' }
 			--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
 		}
 		sendCustomMessage.registerCustomCommand(description)
+	end
+end
+
+local function getCommandIDForReleasedTrees()
+	local rawCommandsNameToID = Spring.GetGameRulesParam("customCommandsNameToID")
+	if (rawCommandsNameToID ~= nil) then
+		treeCommandID = {}
+		local commandsNameToID = message.Decode(rawCommandsNameToID)
+		local fileNames = BtUtils.dirList(ReleaseBehavioursDirectory, "*.json")--".+%.json$")
+		for i,fileName in pairs(fileNames) do
+			local treeName = fileName:gsub("%.json","")
+			local commandName =  "BETS_TREE_" ..  treeName 
+			if (commandsNameToID[commandName] ~= nil) then
+				treeCommandID[commandName] = commandsNameToID[commandName]
+			else
+				Logger.log("commands", tostring(commandName) .. "command ID is not available")
+			end
+		end
+	else	
+		Logger.log("commands", "customCommandsNameToID is not available.")
 	end
 end
 
@@ -940,10 +980,7 @@ function widget:Initialize()
 	-- extract BtCreator into a local variable once available
 	Dependency.defer(function() BtCreator = WG.BtCreator end, Dependency.BtCreator)
 	
-	-- we need to register our custom commands
-	for name, cmdDesc in pairs(cmdDescriptions) do
-		sendCustomMessage.registerCustomCommand(cmdDesc)
-	end
+	registerInputCommands()
 	
 	-- register release commands !note: maybe move them into another refreshTreeSelectionPanel?
 	registerCommandsForReleasedTrees()
@@ -989,24 +1026,17 @@ function widget:UnitDestroyed(unitId)
 end
 
 function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
-	if(cmdIDs == nil) then
-		-- ARE COMMANDS THERE YET?
-		local rawCommandsNameToID = Spring.GetGameRulesParam("customCommandsNameToID")
-		if (rawCommandsNameToID ~= nil) then
-			cmdIDs = {}
-			local commandsNameToID = message.Decode(rawCommandsNameToID)
-			for name, record in pairs(cmdDescriptions) do 
-				if (commandsNameToID[name] ~= nil) then
-					Logger.log("commands", "New " .. tostring(name) .. " Command ID is ".. tostring(commandsNameToID[name]) )
-					cmdIDs[name] = commandsNameToID[name]
-				else
-					Logger.log("commands", tostring(name) .. "command ID is not available")
-				end
-			end
-		else	
-			Logger.log("commands", "rawCommandsNameToID is not availible.")
-		end
-	end 
+	if(inputCommandID == nil) then
+		retCommnadIDInputCommands()
+	end
+	
+	if(treeCommandID == nil) then
+		getCommandIDForReleasedTrees()
+	end
+
+	-- I should check 
+	local rawCommandsIDToName = Spring.GetGameRulesParam("customCommandsIDToName")
+	
 	
 	if(cmdID == CMD_CONVOY) then
 		local treeType = "mex-builders"
