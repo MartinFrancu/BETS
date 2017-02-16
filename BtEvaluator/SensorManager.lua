@@ -25,8 +25,9 @@ WG.SensorManager = WG.SensorManager or (function()
 		__metatable = false,
 		__index = System
 	};
-	local managerForGroup = {}
 
+	local smInstance = {}
+	
 	local SensorManager = {}
 	function SensorManager.loadSensor(name)
 		local file = SENSOR_DIRNAME .. name .. ".lua"
@@ -80,7 +81,7 @@ WG.SensorManager = WG.SensorManager or (function()
 	end
 
 	function SensorManager.forGroup(group)
-		local manager = managerForGroup[group];
+		local manager = group[smInstance];
 		if(not manager)then
 			manager = setmetatable({
 				Reload = function(self)
@@ -114,8 +115,8 @@ WG.SensorManager = WG.SensorManager or (function()
 					return sensor
 				end,
 			})
-			-- TODO: Once the group management gets resolved (as in the group is always represented by the same object), uncomment:
-			-- managerForGroup[group] = manager
+
+			group[smInstance] = manager
 		end
 		return manager
 	end

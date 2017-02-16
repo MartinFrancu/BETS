@@ -433,7 +433,7 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 		local unitsInThisRole = unitsInTreeRole(treeHandle.InstanceId, name)
 		Spring.SelectUnitArray(unitsInThisRole)
 		Logger.loggedCall("Errors", "BtController", "reporting automatic role assignment to BtEvaluator", 
-			BtEvaluator.assignUnits, nil, treeHandle.InstanceId, roleData.roleIndex)
+			BtEvaluator.assignUnits, unitsInThisRole, treeHandle.InstanceId, roleData.roleIndex)
 	end
 end
 
@@ -577,7 +577,7 @@ function listenerAssignUnitsButton(self)
 	end
 	
 	Logger.loggedCall("Errors", "BtController", "assigning units to tree", 
-		BtEvaluator.assignUnits, nil, self.TreeHandle.InstanceId, self.roleIndex)
+		BtEvaluator.assignUnits, selectedUnits, self.TreeHandle.InstanceId, self.roleIndex)
 
 end
 
