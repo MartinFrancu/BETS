@@ -2,6 +2,7 @@
 
 --------------------------------------------------------------------------------
 local BehavioursDirectory = "LuaUI/Widgets/BtBehaviours"
+local ReleaseBehavioursDirectory = "LuaUI/Widgets/BtBehaviours/release"
 --------------------------------------------------------------------------------
 
 
@@ -35,15 +36,48 @@ local dump = Debug.dump
 
 --------------------------------------------------------------------------------
 VFS.Include("LuaRules/Configs/customcmds.h.lua")
+-- get madatory module operators
+VFS.Include("LuaRules/modules.lua") -- modules table
+VFS.Include(modules.attach.data.path .. modules.attach.data.head) -- attach lib module
+
+-- get other madatory dependencies
+attach.Module(modules, "message")
+attach.File("LuaRules/modules/customCommands/data/api/messageSender.lua") -- here you get reference for sendCustomMessage.registerCustomCommand
 --------------------------------------------------------------------------------
+---COMMANDS:--------------------------------------------------------------------
+--- COMMAND FOR TAKING PLAYER INPUT:
+local cmdDescriptions = {
+	["BETS_POSITION"] = {
+		type = CMDTYPE.ICON_MAP,
+		name = 'BETS_POSITION',
+		cursor = 'Attack',
+		--action = 'Convoy',
+		tooltip = 'Collects input position from player.',
+		hidden = true,
+		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
+	},
+	["BETS_AREA"] = {
+		type = CMDTYPE.ICON_AREA,
+		name = 'BETS_AREA',
+		cursor = 'Attack',
+		--action = 'SAD',
+		tooltip = 'Collects area input from player.',
+		hidden = true,
+		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
+		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sad.png' },
+	},
+}
+-- HERE WILL BE STORED CMD IDS ONCE THEY ARE ISSUED:
+local cmdIDs
+--- COMMANDS end ---------------------------------------------------------------
 
-
+--------------------------------------------------------------------------------
 local treeControlWindow
 local controllerLabel
 local selectTreeButton
 local treeTabPanel
 local showTreeCheckbox
--------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 local treeSelectionPanel
 local treeSelectionLabel
 local treeNameEditBox
@@ -632,6 +666,35 @@ end
 
 ---------------------------------------LISTENERS END
 
+---------------------------------------COMMANDS-----
+local function registerCommandsForReleasedTrees()
+	Logger.log("commands", "registering" )
+	local fileNames = BtUtils.dirList(ReleaseBehavioursDirectory, "*.json")--".+%.json$")
+	for i,n in pairs(fileNames) do
+		Logger.log("commands", "name: ".. tostring(n) .. " index: " .. tostring(i) )
+	end
+	for i,fileName in pairs(fileNames) do
+		local treeName = fileName:gsub("%.json","")
+		local commandName =  "BETS_TREE_" ..  fileName
+		Logger.log("commands", "registering: " .. commandName)
+		local description = {
+			type = CMDTYPE.ICON,
+			name = commandName,
+			cursor = 'Attack',
+			action = 'Attack',
+			tooltip = fileName,
+			hidden = true,
+			UIoverride = {caption = fileName, texture = 'LuaUI/Images/commands/guard.png' }
+			--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
+		}
+		sendCustomMessage.registerCustomCommand(description)
+	end
+end
+
+
+
+---------------------------------------COMMANDS-END-
+
 function moveTabItemToEndWithListeners(tabs,tabName)
 	-- Trouble is that we add listeners on barItems, now I have to move them with me. 
 	-- do we have such tab
@@ -876,7 +939,15 @@ function widget:Initialize()
 	BtEvaluator = WG.BtEvaluator 
 	-- extract BtCreator into a local variable once available
 	Dependency.defer(function() BtCreator = WG.BtCreator end, Dependency.BtCreator)
-  
+	
+	-- we need to register our custom commands
+	for name, cmdDesc in pairs(cmdDescriptions) do
+		sendCustomMessage.registerCustomCommand(cmdDesc)
+	end
+	
+	-- register release commands !note: maybe move them into another refreshTreeSelectionPanel?
+	registerCommandsForReleasedTrees()
+	
 	-- Create the window
 	
 	unitsToTreesMap = {}
@@ -918,6 +989,25 @@ function widget:UnitDestroyed(unitId)
 end
 
 function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
+	if(cmdIDs == nil) then
+		-- ARE COMMANDS THERE YET?
+		local rawCommandsNameToID = Spring.GetGameRulesParam("customCommandsNameToID")
+		if (rawCommandsNameToID ~= nil) then
+			cmdIDs = {}
+			local commandsNameToID = message.Decode(rawCommandsNameToID)
+			for name, record in pairs(cmdDescriptions) do 
+				if (commandsNameToID[name] ~= nil) then
+					Logger.log("commands", "New " .. tostring(name) .. " Command ID is ".. tostring(commandsNameToID[name]) )
+					cmdIDs[name] = commandsNameToID[name]
+				else
+					Logger.log("commands", tostring(name) .. "command ID is not available")
+				end
+			end
+		else	
+			Logger.log("commands", "rawCommandsNameToID is not availible.")
+		end
+	end 
+	
 	if(cmdID == CMD_CONVOY) then
 		local treeType = "mex-builders"
 		local instanceName= "Instance"..instanceIdCount
@@ -927,6 +1017,8 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 			instantiateTree(treeType, instanceName, true)
 		end
 	end
+	
+	
 end 
   
 -- this function saves UnitDefs tables into UnitDefs folder - to be able to see what can be used.
