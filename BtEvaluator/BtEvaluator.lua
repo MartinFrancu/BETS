@@ -376,6 +376,38 @@ function widget:Initialize()
 	Spring.SendCommands("AIControl "..Spring.GetLocalPlayerID().." BtEvaluator")
 end
 
+local function asHandlerNoparam(event)
+	return function()
+		return event:Invoke()
+	end
+end
+local function asHandler(event)
+	return function(data)
+		return event:Invoke(data.asJSON())
+	end
+end
+local handlers = {
+	-- internal messages
+	["LOG"] = function(data)
+		Logger.log("BtEvaluator", data.asText())
+		return true
+	end,
+	["INITIALIZED"] = function()
+		Dependency.fill(Dependency.BtEvaluator)
+		return true
+	end,
+	["RESPONSE"] = function(data)
+		lastResponse = data.asJSON()
+		return true
+	end,
+	
+	-- event messages
+	["COMMAND"] = asHandler(BtEvaluator.OnCommand),
+	["EXPRESSION"] = asHandler(BtEvaluator.OnExpression),
+	["UPDATE_STATES"] = asHandler(BtEvaluator.OnUpdateStates),
+	["NODE_DEFINITIONS"] = asHandler(BtEvaluator.OnNodeDefinitions),
+}
+WG.handlers= handlers
 function widget:RecvSkirmishAIMessage(aiTeam, message)
 	Logger.log("communication", "Received message from team " .. tostring(aiTeam) .. ": " .. message)
 
@@ -392,42 +424,17 @@ function widget:RecvSkirmishAIMessage(aiTeam, message)
 	local indexOfFirstSpace = string.find(messageShorter, " ") or (message:len() + 1)
 	local messageType = messageShorter:sub(1, indexOfFirstSpace - 1):upper()	
 	
-	-- internal messages without parameter
-	if(messageType == "LOG") then 
-		Logger.log("BtEvaluator", messageBody)
-		return true
-	elseif(messageType == "INITIALIZED") then 
-		Dependency.fill(Dependency.BtEvaluator)
-		return true
-	elseif(messageType == "RESPONSE")then
-		local messageBody = messageShorter:sub(indexOfFirstSpace + 1)
-		local data = JSON:decode(messageBody)
-		lastResponse = data
-		return true
+	local textData = function() return messageShorter:sub(indexOfFirstSpace + 1) end
+	local jsonData = function() return JSON:decode(textData()) end
+	local data = {
+		asText = textData,
+		asJSON = jsonData,
+	}
+	
+	local handler = handlers[messageType]
+	if(handler)then
+		return handler(data)
 	else
-		-- messages without parameter
-		local handler = ({
-			-- none so far
-		})[messageType]
-		
-		if(handler)then
-			return handler:Invoke()
-		else
-			handler = ({
-				["UPDATE_STATES"] = BtEvaluator.OnUpdateStates,
-				["NODE_DEFINITIONS"] = BtEvaluator.OnNodeDefinitions,
-				["COMMAND"] = BtEvaluator.OnCommand,
-				["EXPRESSION"] = BtEvaluator.OnExpression
-			})[messageType]
-			
-			if(handler)then
-				local messageBody = messageShorter:sub(indexOfFirstSpace + 1)
-				local data = JSON:decode(messageBody)
-				
-				return handler:Invoke(data)
-			else
-				Logger.log("communication", "Unknown message type: |", messageType, "|")
-			end
-		end
+		Logger.log("communication", "Unknown message type: |", messageType, "|")
 	end
 end
