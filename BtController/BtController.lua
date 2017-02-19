@@ -2,7 +2,6 @@
 
 --------------------------------------------------------------------------------
 local BehavioursDirectory = "LuaUI/Widgets/BtBehaviours"
-local ReleaseBehavioursDirectory = "LuaUI/Widgets/BtBehaviours/release"
 --------------------------------------------------------------------------------
 
 
@@ -35,46 +34,6 @@ local Logger = Debug.Logger
 local dump = Debug.dump
 
 --------------------------------------------------------------------------------
-VFS.Include("LuaRules/Configs/customcmds.h.lua")
--- get madatory module operators
-VFS.Include("LuaRules/modules.lua") -- modules table
-VFS.Include(modules.attach.data.path .. modules.attach.data.head) -- attach lib module
-
--- get other madatory dependencies
-attach.Module(modules, "message")
-attach.File("LuaRules/modules/customCommands/data/api/messageSender.lua") -- here you get reference for sendCustomMessage.registerCustomCommand
---------------------------------------------------------------------------------
----COMMANDS:--------------------------------------------------------------------
---- COMMAND FOR TAKING PLAYER INPUT:
-local inputCommandDesc = {
-	["BETS_POSITION"] = {
-		type = CMDTYPE.ICON_MAP,
-		name = 'BETS_POSITION',
-		cursor = 'Attack',
-		--action = 'Convoy',
-		tooltip = 'Collects input position from player.',
-		hidden = true,
-		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
-	},
-	["BETS_AREA"] = {
-		type = CMDTYPE.ICON_AREA,
-		name = 'BETS_AREA',
-		cursor = 'Attack',
-		--action = 'SAD',
-		tooltip = 'Collects area input from player.',
-		hidden = true,
-		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
-		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sad.png' },
-	},
-}
--- HERE WILL BE STORED CMD IDS ONCE THEY ARE ISSUED:
-local inputCommandNameToID
---local treeCommandNameToID
--- commandIDToName is used to identify command in command notify>
-local commandIDToName
---- COMMANDS end ---------------------------------------------------------------
-
---------------------------------------------------------------------------------
 local treeControlWindow
 local controllerLabel
 local selectTreeButton
@@ -95,7 +54,11 @@ local errorOkButton
 -- {InstanceId = "", Role = "", TreeHandle = treehandle} 
 local unitsToTreesMap
 
-------------------------------------------------------------------------------------- 
+--------------------------------------------------------------------------------
+local spGetCmdDescIndex = Spring.GetCmdDescIndex
+local spSetActiveCommand = Spring.SetActiveCommand
+local spGetSelectedUnits = Spring.GetSelectedUnits
+
 function string.starts(String,Start)
    return string.sub(String,1,string.len(Start))==Start
 end
@@ -525,7 +488,7 @@ function instantiateTree(treeType, instanceName, requireUnits)
 		TreeType = treeType,
 	}	
 	
-	local selectedUnits = Spring.GetSelectedUnits()
+	local selectedUnits = spGetSelectedUnits()
 	if ((table.getn(selectedUnits) < 1 ) and requireUnits) then
 		Logger.log("Errors", "BtController: instantiateTree: tree is requiring units and no unit is selected.")
 		return newTreeHandle
@@ -607,7 +570,7 @@ function listenerAssignUnitsButton(self)
 		end
 	end
 	-- make note of assigment in our notebook (this should be possible moved somewhere else:)
-	local selectedUnits = Spring.GetSelectedUnits()
+	local selectedUnits = spGetSelectedUnits()
 	for _,Id in pairs(selectedUnits) do
 		assignUnitToTree(Id, self.TreeHandle, self.Role)
 	end
@@ -644,7 +607,7 @@ local function listenerClickOnSelectedTreeDoneButton(self, x, y, button)
 				Name = treeNameEditBox.text,
 				TreeType = selectedTreeType,
 			}
-			local selectedUnits = Spring.GetSelectedUnits()
+			local selectedUnits = spGetSelectedUnits()
 			
 			-- create tab
 			addTreeToTreeTabPanel(newTreeHandle)
@@ -668,107 +631,6 @@ end
 
 ---------------------------------------LISTENERS END
 
----------------------------------------COMMANDS-----
-local function registerInputCommands()
-	-- we need to register our custom commands
-	for name, cmdDesc in pairs(inputCommandDesc) do
-		sendCustomMessage.registerCustomCommand(cmdDesc)
-	end
-end
-
-local function getCommnadIDInputCommands()
-	local rawCommandsNameToID = Spring.GetGameRulesParam("customCommandsNameToID")
-	if (rawCommandsNameToID ~= nil) then
-		inputCommandNameToID = {}
-		local commandsNameToID = message.Decode(rawCommandsNameToID)
-		for name, record in pairs(inputCommandDesc) do 
-			if (commandsNameToID[name] ~= nil) then
-				inputCommandNameToID[name] = commandsNameToID[name]
-				
-			else
-				Logger.log("commands", tostring(name) .. "command ID is not available")
-			end
-		end
-	else	
-		Logger.log("commands", "rawCommandsNameToID is not availible.")
-	end
-end
-
-
-local function registerCommandsForReleasedTrees()
-	local fileNames = BtUtils.dirList(BehavioursDirectory, "*.json")--".+%.json$")
-	for i,fileName in pairs(fileNames) do
-		local treeName = fileName:gsub("%.json","")
-		local commandName =  "BETS_TREE_" ..  treeName
-		local description = {
-			type = CMDTYPE.ICON,
-			name = commandName,
-			cursor = 'Attack',
-			action = commandName,
-			tooltip = fileName,
-			hidden = false,
-			UIoverride = {caption = treeName}, --texture = 'LuaUI/Images/commands/guard.png' }
-			--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
-		}
-		sendCustomMessage.registerCustomCommand(description)
-	end
-end
-
-local function getCommandIDForReleasedTrees()
-	local rawCommandsNameToID = Spring.GetGameRulesParam("customCommandsNameToID")
-	if (rawCommandsNameToID ~= nil) then
-		treeCommandNameToID = {}
-		local commandsNameToID = message.Decode(rawCommandsNameToID)
-		local fileNames = BtUtils.dirList(BehavioursDirectory, "*.json")--".+%.json$")
-		for i,fileName in pairs(fileNames) do
-			local treeName = fileName:gsub("%.json","")
-			local commandName =  "BETS_TREE_" ..  treeName 
-			if (commandsNameToID[commandName] ~= nil) then
-				treeCommandNameToID[commandName] = commandsNameToID[commandName]
-			else
-				Logger.log("commands", tostring(commandName) .. "command ID is not available")
-			end
-		end
-	else	
-		Logger.log("commands", "customCommandsNameToID is not available.")
-	end
-end
-
-local function getCommandIDToName()
-	-- do input commands: 
-	local rawCommandsNameToID = Spring.GetGameRulesParam("customCommandsNameToID")
-	if (rawCommandsNameToID ~= nil) then
-		commandIDToName = {}
-		local commandsNameToID = message.Decode(rawCommandsNameToID)
-		-- input commands
-		for name, record in pairs(inputCommandDesc) do 
-			if (commandsNameToID[name] ~= nil) then
-				commandIDToName[commandsNameToID[name] ] = {cmdName = name
-				}				
-			else
-				Logger.log("commands", tostring(name) .. "command ID is not available")
-			end
-		end
-		-- tree commands
-		local fileNames = BtUtils.dirList(BehavioursDirectory, "*.json")--".+%.json$")
-		for i,fileName in pairs(fileNames) do
-			local treeName = fileName:gsub("%.json","")
-			local commandName =  "BETS_TREE_" ..  treeName 
-			if (commandsNameToID[commandName] ~= nil) then
-				commandIDToName[commandsNameToID[commandName] ] = {
-					cmdName = commandName,
-					name = treeName,
-					}
-			else
-				Logger.log("commands", tostring(commandName) .. "command ID is not available")
-			end
-		end
-	else	
-		Logger.log("commands", "customCommandsNameToID is not available.")
-	end
-end
-
----------------------------------------COMMANDS-END-
 
 function moveTabItemToEndWithListeners(tabs,tabName)
 	-- Trouble is that we add listeners on barItems, now I have to move them with me. 
@@ -924,7 +786,7 @@ function setUpTreeControlWindow()
     width  = 500 ,
     height = 200,--'10%',	
 		padding = {10,10,10,10},
-		draggable=false,
+		draggable=true,
 		resizable=true,
 		skinName='DarkGlass',
 		backgroundColor = {1,1,1,1},
@@ -1015,11 +877,6 @@ function widget:Initialize()
 	-- extract BtCreator into a local variable once available
 	Dependency.defer(function() BtCreator = WG.BtCreator end, Dependency.BtCreator)
 	
-	--registerInputCommands()
-	
-	-- register release commands !note: maybe move them into another refreshTreeSelectionPanel?
-	registerCommandsForReleasedTrees()
-	
 	-- Create the window
 	
 	unitsToTreesMap = {}
@@ -1060,40 +917,54 @@ function widget:UnitDestroyed(unitId)
 	end
 end
 
-function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
-	
-	if(inputCommandNameToID == nil) then
-		getCommnadIDInputCommands()
-	end
-	--[[
-	if(treeCommandNameToID == nil) then
-		getCommandIDForReleasedTrees()
-	end
-	--]]
-	
-	if(commandIDToName == nil) then
-		 getCommandIDToName()
-	end
+local BtInputs = {}
+local instance = {}
+local inputQueue = {}
 
-	
-	if(commandIDToName[cmdID]~= nil) then
-		-- recognized command:
-		if(inputCommandNameToID[commandIDToName[cmdID]] == nil) then 
-			-- this means it is a tree command, since it is not in input commands.
-			local treeType = commandIDToName[cmdID].name
-			local instanceName= "Instance"..instanceIdCount
-			local selectedUnits = Spring.GetSelectedUnits()
-			if(table.getn(selectedUnits) > 0) then
-				-- do not create tree if there is no units selected
-				instantiateTree(treeType, instanceName, true)
-			end
-		else
-			Logger.log("commands", "Recognized input command: " .. commandIDToName[cmdID].cmdName)
-		end
-		return true
-	else
-		-- I gues nothing
+function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
+	-- Check for custom commands, first input commands
+	if(not WG.InputCommands or not WG.BtCommands) then
+		-- TODO Do a proper initialization, only once. 
+		WG.fillCustomCommandIDs()
 	end
+	if(WG.InputCommands[cmdID]) then
+		-- end user inputs
+		if(WG.InputCommands["BETS_INPUT_END"] == cmdID) then
+			if(table.getn(instance.units) > 0) then
+				-- do not create tree if there is no units selected
+				local treeHandle = instantiateTree(instance.treeName, instance.name, true)
+				-- TODO pass/save BtParams to context now
+				listenerBarItemClick({TreeHandle = treeHandle}, x, y, 1)
+			end
+			inputQueue = {}
+			instance = {}
+			BtInputs = {}
+			return false
+		end
+		BtInputs[ #BtInputs + 1 ] = cmdParams
+		local ret = spSetActiveCommand(spGetCmdDescIndex( WG.InputCommands[ inputQueue[#BtInputs + 1] ] ))
+		return false
+	end
+	-- check for custom commands - Bt behaviour assignments
+	if(WG.BtCommands[cmdID]) then
+		-- behaviour inputs
+		local inputs = WG.BtCommands[cmdID].inputs
+		inputQueue = {}
+		for i=1,#inputs do
+			inputQueue[i] = inputs[i].command
+		end
+		inputQueue[ #inputQueue + 1 ] = "BETS_INPUT_END"
+		local ret = spSetActiveCommand(spGetCmdDescIndex( WG.InputCommands[ inputQueue[1] ] ))
+		
+		instance.treeName = WG.BtCommands[cmdID].treeName
+		instance.name = "Instance"..instanceIdCount
+		instance.units = spGetSelectedUnits()
+		
+		return false
+	end
+	 return false
+	-- This is the way to issue an input command command!
+	--local ret = Spring.SetActiveCommand(Spring.GetCmdDescIndex(WG.InputCommands[ "BETS_POSITION" ]))
 end 
   
 -- this function saves UnitDefs tables into UnitDefs folder - to be able to see what can be used.
