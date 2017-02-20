@@ -226,7 +226,7 @@ function TreeHandle:New(obj)
 	obj.RequireUnits = true
 	obj.AssignedUnitsCount = 0
 	
-	treeTypeLabel = Chili.Label:New{
+	local treeTypeLabel = Chili.Label:New{
 	x = 50,
 	y = 15,
 	height = 30,
@@ -238,8 +238,8 @@ function TreeHandle:New(obj)
 	}
 	-- Order of these childs is sort of IMPORTANT as other entities needs to access children
 	table.insert(obj.ChiliComponents, treeTypeLabel)
-		
-	labelNameTextBox = Chili.TextBox:New{
+	--[[
+	local labelNameTextBox = Chili.TextBox:New{
 		x = 5,
 		y = 50,
 		height = 30,
@@ -250,14 +250,17 @@ function TreeHandle:New(obj)
 		--focusColor = {0.5,0.5,0.5,0.5},
 	}
 	table.insert(obj.ChiliComponents, labelNameTextBox)	
-	
+	--]]
 	local roleInd = 0 
-	roleCount = #obj.Tree.roles
+	local roleCount = #obj.Tree.roles
+	
+	local rolesXOffset = 10
+	local rolesYOffset = 30
 	for _,roleData in pairs(obj.Tree.roles) do
-		roleName = roleData.name
+		local roleName = roleData.name
 		local unitsCountLabel = Chili.Label:New{
-			x = 150+200 ,
-			y = 43 + 22 * roleInd,
+			x = rolesXOffset+200 ,
+			y = rolesYOffset + 5 + 22 * roleInd,
 			height = roleCount == 1 and 30 or 20,
 			width = '25%',
 			minWidth = 150,
@@ -267,9 +270,10 @@ function TreeHandle:New(obj)
 			instanceId = obj.InstanceId
 		}
 		table.insert(obj.ChiliComponents, unitsCountLabel)
+		
 		local roleAssignmentButton = Chili.Button:New{
-			x = 150 ,
-			y = 40 + 22 * roleInd,
+			x = rolesXOffset ,
+			y = rolesYOffset + 22 * roleInd,
 			height = roleCount == 1 and 30 or 20,
 			width = '25%',
 			minWidth = 150,
@@ -300,6 +304,30 @@ function TreeHandle:New(obj)
 				unitTypes = roleUnitTypes
 			}
 		roleInd = roleInd +1
+	end
+	
+	local inputXOffset = 300
+	local inputYOffset = 50
+	local inputInd = 0 
+	for _,input in pairs(obj.Tree.inputs) do
+		local inputName = input.name
+		local inputButton = Chili.Button:New{
+			x = inputXOffset,
+			y = rolesYOffset + 22 * inputInd,
+			height = inputCount == 1 and 30 or 20,
+			width = '25%',
+			minWidth = 150,
+			caption = inputName,
+			OnClick = {}, 
+			skinName = "DarkGlass",
+			focusColor = {0.5,0.5,0.5,0.5},
+			TreeHandle = obj,
+			inputName = inputName,
+			instanceId = obj.InstanceId,
+			backgroundColor = {0.8,0.1,0.1,1}
+		}
+		inputInd = inputInd + 1
+		table.insert(obj.ChiliComponents, inputButton )
 	end
 	return obj
 end
