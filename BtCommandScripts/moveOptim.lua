@@ -25,6 +25,8 @@ local unitIsDead = Spring.GetUnitIsDead
 local SHORT_PATH_LEN = 100
 local SUBTARGET_TOLEARANCE_SQ = 30*30
 local TOLERANCE_SQ = 30*30
+local MOST_DISTANT_UNIT_DIST_SQ = 50*50
+local LEADER_TOLERANCE_SQ = 50 * 50
 
 local function wrapResVect(f, id)
 	local x, y, z = f(id)
@@ -95,9 +97,9 @@ local function EnsureLeader(self, unitIds)
 		end
 	end
 	
-	Logger.log("move-command", "=== finalTargets: ", self.finalTargets)
+	--Logger.log("move-command", "=== finalTargets: ", self.finalTargets)
 	local tar = self.finalTargets[self.leaderId]
-	Logger.log("move-command", "=== tar: ", tar)
+	--Logger.log("move-command", "=== tar: ", tar)
 	giveOrderToUnit(self.leaderId, CMD.MOVE, tar, {})
 	return self.leaderId
 end
@@ -107,9 +109,9 @@ local function InitTargetLocations(self, unitIds, parameter)
 	for i = 1, #unitIds do
 		local id = unitIds[i]
 		local pos = getUnitPos(id)
-		Logger.log("move-command", "=== pos: ", pos)
+		--Logger.log("move-command", "=== pos: ", pos)
 		local tarPos = { pos[1] + parameter.x, pos[2], pos[3] + parameter.y }
-		Logger.log("move-command", "=== tarPos: ", tarPos)
+		--Logger.log("move-command", "=== tarPos: ", tarPos)
 		self.finalTargets[id] = tarPos
 	end
 end
@@ -130,7 +132,7 @@ function Run(self, unitIds, parameter)
 	
 	local leaderDir = getUnitDir(leader)
 	
-	local leaderDone = distanceSq(getUnitPos(leader), self.finalTargets[leader]) < TOLERANCE_SQ
+	local leaderDone = distanceSq(getUnitPos(leader), self.finalTargets[leader]) < LEADER_TOLERANCE_SQ
 	Logger.log("move-command", "Leader done - ", leaderDone, " dist - ", distanceSq(getUnitPos(leader), self.finalTargets[leader]))
 	local done = leaderDone
 	
@@ -140,16 +142,23 @@ function Run(self, unitIds, parameter)
 		issueFinalOrder = true
 	end
 	
-	for i=1,#unitIds do
+	local unitsSize = #unitIds
+	local distSum = 0
+	local distMax = 0
+	
+	for i=1, unitsSize do
 		local unitID = unitIds[i]
 		if unitID ~= leader then
 			local curPos = getUnitPos(unitID)
 			local curSubTar = self.subTargets[unitID]
 			local curDir = direction(getUnitPos(unitID), curSubTar or {0,0,0})
 			
-			if done and distanceSq(curPos, self.finalTargets[unitID]) > TOLERANCE_SQ then
-				done = false
+			local dist = distanceSq(curPos, self.finalTargets[unitID])
+			--Logger.log("move-command", " ------ dist ", dist)
+			if dist > distMax then
+				distMax = dist
 			end
+			distSum = distSum + dist
 			
 			if leaderDone then
 				-- go to the target location when leader reaches the target location
@@ -170,7 +179,9 @@ function Run(self, unitIds, parameter)
 			end
 		end
 	end
-	if done then
+	
+	-- Logger.log("move-command", "dist sum - ", distSum, ", max sum - ", (unitsSize - 1) * TOLERANCE_SQ)
+	if distSum < (unitsSize - 1) * TOLERANCE_SQ and distMax < MOST_DISTANT_UNIT_DIST_SQ then
 		return SUCCESS
 	--elseif noneMoved then
 	--	return FAILURE
