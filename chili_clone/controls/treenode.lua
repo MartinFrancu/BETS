@@ -19,7 +19,7 @@ TreeNode = Control:Inherit{
 	borderThickness = 0.5,
 	skinName = 'DarkGlass',
 	tooltip = "BT NODE TOOLTIP. ",
-	
+
 	id,
 	nodeType = "",
 	connectable = nil,
@@ -29,11 +29,11 @@ TreeNode = Control:Inherit{
 	hasConnectionOut = true,
 	connectionOut = nil,
 	nameEditBox = nil,
-	
+
 	parameters = {},
 	parameterObjects = {},
-	
-	--- List of all connected connectionLines. 
+
+	--- List of all connected connectionLines.
 	attachedLines = {}
 }
 
@@ -98,7 +98,7 @@ function TreeNode:New(obj)
 		nodeWindowOptions.OnMouseUp = { listenerOnMouseUpMoveNode }
 		nodeWindowOptions.disableChildrenHitTest = false
 	end
-	
+
 	obj.nodeWindow = Window:New(copyTable(nodeWindowOptions))
 	local connectionOptions = {
 		parent = obj.nodeWindow,
@@ -142,7 +142,7 @@ function TreeNode:New(obj)
 	}
 	obj.nodeWindow.minWidth = math.max(obj.nodeWindow.minWidth, obj.nameEditBox.font:GetTextWidth(obj.nameEditBox.text) + 33)
 	obj.nodeWindow.minHeight = obj.nodeWindow.height
-	
+
 	obj.parameterObjects = {}
 	for i=1,#obj.parameters do
 		obj.parameterObjects[i] = createNextParameterObject(obj)
@@ -153,12 +153,12 @@ function TreeNode:New(obj)
 	if(#obj.parameters ~= #obj.parameterObjects) then
 		error("#obj.parameters="..#obj.parameters.."  ~= #obj.parameterObjects="..#obj.parameterObjects)
 	end
-	
+
   return obj
 end
 
 --- Transforms obj.parameters[i] into obj.parametersObjects[i] -> adds label and editbox
--- Expects param to be a table with four values: name, value, variableType, componentType. 
+-- Expects param to be a table with four values: name, value, variableType, componentType.
 function createNextParameterObject(obj)
 	local result = {}
 	local i = #obj.parameterObjects + 1
@@ -169,22 +169,8 @@ function createNextParameterObject(obj)
 	if(param["name"] == nil or param["value"] == nil or param["componentType"] == nil or param["variableType"] == nil) then
 			error("TreeNode expects following fields in parameters: name, value, componentType, variableType, got "..dump(param).."\n"..debug.traceback())
 	end
-	-- Initialize parameters[i].value with correct type - check for unquoted string, save number as number
-	--[[if(param["variableType"] == "number") then
-		local number = tonumber(param["value"]) or 0
-		param["value"] = number
-	elseif(param["variableType"] == "string") then
-		local text = param.value
-		if(param.value:sub(1,1) ~= '"' and param.value:sub(1,1) ~= "'") then
-			param.value = "\"" .. param.value
-		end
-		local length = #param.value
-		if(param.value:sub(length, length) ~= '"' and param.value:sub(length, length) ~= "'") then
-			param.value = param.value .. "\""
-		end
-	end]]--
+	--- EditBox componentType
 	if (param["componentType"] and param["componentType"]:lower() == "editbox") then
-		--result.index = i -- to be able to change parameter value in treenode.parameters table
 		result.componentType = "editBox"
 		result.label = Label:New{
 			parent = obj.nodeWindow,
@@ -207,9 +193,20 @@ function createNextParameterObject(obj)
 			borderThickness = 0,
 			backgroundColor = {0,0,0,0},
 			variableType = param["variableType"],
-			index = i,
+			index = i, -- to be able to index editbox from treenode, to update treenode.parameters[i].value
 		}
 		obj.nodeWindow.minWidth = math.max(obj.nodeWindow.minWidth, obj.nodeWindow.font:GetTextWidth(param["value"])+ 48 + obj.nodeWindow.font:GetTextWidth(param["name"]))
+	--- CheckBox componentType
+	elseif(param["componentType"] and param["componentType"]:lower() == "checkbox") then
+		result.componentType = "checkBox"
+		result.checkBox = Checkbox:New{
+			parent = obj.nodeWindow,
+			caption = param.name,
+			checked = (param.value == "true"),
+			x = 25,
+			y = 10 + i*20,
+			index = i, -- to be able to index editbox from treenode, to update treenode.parameters[i].value
+		}
 	end
 	return result
 end
@@ -224,7 +221,7 @@ end
 
 --- Returns a table of children in order of y-coordinate(first is the one with the smallest one)
 function TreeNode:GetChildren()
-	if( not self.hasConnectionOut ) then 
+	if( not self.hasConnectionOut ) then
 		return {}
 	end
 	local connectionOutName = self.connectionOut.name
@@ -243,7 +240,7 @@ function TreeNode:ReGenerateID()
 	self.id = generateID()
 end
 
--- Dispose this treeNode without connection lines connected to it. 
+-- Dispose this treeNode without connection lines connected to it.
 function TreeNode:Dispose()
 	if(self.connectionIn) then
 		self.connectionIn:Dispose()
@@ -271,10 +268,10 @@ end
 
 local clickedConnection
 
---- Returns whether creation of connectionLine between clickedConnection and obj is valid, both objects are connection panels. 
+--- Returns whether creation of connectionLine between clickedConnection and obj is valid, both objects are connection panels.
 function connectionLineCanBeCreated(obj)
-	-- the same object cant be connected. 
-	if (clickedConnection.treeNode.name == obj.treeNode.name) then 
+	-- the same object cant be connected.
+	if (clickedConnection.treeNode.name == obj.treeNode.name) then
 		return false
 	end
 	if(connectionLine.exists(obj, clickedConnection)) then
@@ -295,7 +292,7 @@ function connectionLineCanBeCreated(obj)
 				return false
 			end
 		end
-	else 
+	else
 		-- Spring.Echo("connectionLineCanBeCreated(): connectionIn not found!!! ")
 	end
 	-- Check for cycles
@@ -305,7 +302,7 @@ function connectionLineCanBeCreated(obj)
 		local node = nodesToVisit[#nodesToVisit]
 		-- check if we already visited current node
 		for i=1,#visitedTreeNodeNames do
-			if ( visitedTreeNodeNames[i] == node.name ) then 
+			if ( visitedTreeNodeNames[i] == node.name ) then
 				return false
 			end
 		end
@@ -317,10 +314,10 @@ function connectionLineCanBeCreated(obj)
 			table.insert(nodesToVisit, children[i])
 		end
 	end
-		
-	-- One of the connection panels is connectionOut, the other connectionIn, or the other way around for the connectionLine to be valid. 
+
+	-- One of the connection panels is connectionOut, the other connectionIn, or the other way around for the connectionLine to be valid.
 	if( not(
-		 (clickedConnection.treeNode.connectionOut and clickedConnection.name == clickedConnection.treeNode.connectionOut.name and obj.treeNode.connectionIn and obj.name == obj.treeNode.connectionIn.name) 
+		 (clickedConnection.treeNode.connectionOut and clickedConnection.name == clickedConnection.treeNode.connectionOut.name and obj.treeNode.connectionIn and obj.name == obj.treeNode.connectionIn.name)
 			or
 		 (clickedConnection.treeNode.connectionIn  and clickedConnection.name == clickedConnection.treeNode.connectionIn.name  and obj.treeNode.connectionOut and obj.name == obj.treeNode.connectionOut.name)
 		) ) then
@@ -358,7 +355,7 @@ function listenerClickOnConnectionPanel(self)
 		self:RequestUpdate()
 		return self
 	end
-	if (clickedConnection.name == self.name) then 
+	if (clickedConnection.name == self.name) then
 		self.backgroundColor = connectionPanelBackgroundColor
 		clickedConnection = nil
 		self:RequestUpdate()
@@ -381,13 +378,13 @@ function listenerNodeResize(self, x, y)
 	-- Spring.Echo("Resizing treenode window.. ")
 	-- Spring.Echo("x="..self.treeNode.x..", y="..self.treeNode.y)
 	-- Update position of connectionOut
-	if (self.resizable) then 
+	if (self.resizable) then
 		if (self.treeNode.connectionOut and self.treeNode.nodeWindow) then
 			self.treeNode.connectionOut.x = self.treeNode.nodeWindow.width-18
 			self.treeNode.width = self.treeNode.nodeWindow.width
 			self.treeNode.height = self.treeNode.nodeWindow.height
 		end
-		
+
 		for i=1,#self.treeNode.attachedLines do
 			lineIdx = self.treeNode.attachedLines[i]
 			connectionLine.update(lineIdx)
@@ -410,7 +407,7 @@ WG.selectedNodes = {}
 local ALPHA_OF_SELECTED_NODES = 1
 local ALPHA_OF_NOT_SELECTED_NODES = 0.6
 
-local function validateEditBox(editBox)		
+local function validateEditBox(editBox)
 	local variableType = editBox.variableType
 	if(variableType == "expression") then
 		-- TODO Perform lua validation/compilation check?
@@ -451,19 +448,23 @@ local function validateEditBox(editBox)
 end
 
 
-function TreeNode:ValidateEditBoxes()
+function TreeNode:UpdateParameterValues()
 	for i=1,#self.parameterObjects do
 		local editBox = self.parameterObjects[i]["editBox"]
 		if(editBox) then
 			validateEditBox(editBox)
 		end
-	end	
+		local checkBox = self.parameterObjects[i]["checkBox"]
+		if(checkBox) then
+			checkBox.parent.treeNode.parameters[checkBox.index].value = tostring(checkBox.checked)
+		end
+	end
 end
 
 local function removeNodeFromSelection(nodeWindow)
 	nodeWindow.backgroundColor[4] = ALPHA_OF_NOT_SELECTED_NODES
 	WG.selectedNodes[nodeWindow.treeNode.id] = nil
-	nodeWindow.treeNode:ValidateEditBoxes()
+	nodeWindow.treeNode:UpdateParameterValues()
 	nodeWindow:Invalidate()
 end
 
@@ -518,13 +519,15 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 	end
 	local childName = self:HitTest(x, y).name
 	-- Check if the connectionIn or connectionOut was clicked
-	if((self.treeNode.connectionIn and childName == self.treeNode.connectionIn.name) or (self.treeNode.connectionOut and childName == self.treeNode.connectionOut.name)) then 
+	if((self.treeNode.connectionIn and childName == self.treeNode.connectionIn.name) or (self.treeNode.connectionOut and childName == self.treeNode.connectionOut.name)) then
 		return
 	end
-	-- Check if the parameters editbox text hasnt changed
-	self.treeNode:ValidateEditBoxes()
+	-- Check if the parameter value (editbox's text) hasnt changed
+	self.treeNode:UpdateParameterValues()
 	for i=1,#self.treeNode.parameterObjects do
 		if(self.treeNode.parameterObjects[i]["editBox"] and childName == self.treeNode.parameterObjects[i]["editBox"].name) then
+			return
+		elseif(self.treeNode.parameterObjects[i]["checkBox"] and childName == self.treeNode.parameterObjects[i]["checkBox"].name) then
 			return
 		end
 	end
@@ -545,11 +548,11 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 		previousPosition.y = self.y
 		self:StartDragging(x, y)
 		return self
-	end	
+	end
 	if(movingNodes) then
 		return self
 	end
-	
+
 	local selectSubtree = false
 	if(button == 3) then
 		selectSubtree = true
@@ -572,11 +575,11 @@ function listenerOnMouseUpMoveNode(self, x ,y)
 	self.treeNode.x = self.x
 	self.treeNode.y = self.y
 	self:Invalidate()
-	if(movingNodes) then 
+	if(movingNodes) then
 		local diffx = self.x - previousPosition.x
 		local diffy = self.y - previousPosition.y
 		-- Spring.Echo("diffx="..diffx..", diffy="..diffy)
-		for id,_ in pairs(WG.selectedNodes) do 
+		for id,_ in pairs(WG.selectedNodes) do
 			if(id ~= self.treeNode.id) then
 				local node = WG.nodeList[id]
 				node.nodeWindow.x = node.nodeWindow.x + diffx
@@ -615,6 +618,6 @@ function generateID()
 		return generateID()
 	end
 	usedIDs[str] = true
-	return str	
+	return str
 end
 

@@ -2,7 +2,7 @@ function widget:GetInfo()
 	return {
 		name      = "BtEvaluator loader",
 		desc      = "BtEvaluator loader and message test to this AI.",
-		author    = "JakubStasta",
+		author    = "BETS Team",
 		date      = "Sep 20, 2016",
 		license   = "BY-NC-SA",
 		layer     = 0,
@@ -22,8 +22,67 @@ local Logger = Debug.Logger
 
 local SensorManager = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtEvaluator/SensorManager.lua", nil, VFS.RAW_FIRST)
 
+local getGameFrame = Spring.GetGameFrame;
 
--- BtEvaluator interface definitions
+
+-- ==== tree instance data in Lua ====
+local ALL_UNITS = 0;
+local unitToRoleMap = {} -- map(unitId, role)
+local parentReference = {}
+local treeInstances = {}
+WG.unitToRoleMap = unitToRoleMap
+
+local function makeInstance(instanceId, roles)
+	local instance = {
+		id = instanceId,
+		blackboard = {},
+		roles = {},
+		nodes = {},
+		activeNodes = {},
+	}
+	local function makeRole()
+		return {
+			length = 0,
+			[ parentReference ] = instance,
+			lastModified = getGameFrame(),
+		}
+	end
+	instance.roles[ALL_UNITS] = makeRole()
+	for i, _ in ipairs(roles or {}) do
+		instance.roles[i] = makeRole()
+	end
+	treeInstances[instanceId] = instance
+	
+	return instance;
+end
+local function removeInstance(instanceId)
+	local instance = treeInstances[instanceId]
+	if(not instance)then return end
+	
+	local allUnits = instance.roles[ALL_UNITS]
+	for i = 1, allUnits.length do
+		unitToRoleMap[allUnits[i]] = nil
+	end
+	
+	treeInstances[instanceId] = nil
+end
+
+local function getUnitsActiveCommands(unitId)
+	local role = unitToRoleMap[unitId]
+	if(not role)then return nil end
+	
+	local instance = role[parentReference]
+	local allRole = instance.roles[ALL_UNITS]
+	local t = {}
+	for node, nodeRole in pairs(instance.activeNodes) do
+		if(nodeRole == role or nodeRole == allRole)then
+			table.insert(t, node)
+		end
+	end
+	return t
+end
+
+-- ==== BtEvaluator interface definitions ====
 local BtEvaluator = Sentry:New()
 local lastResponse = nil
 function BtEvaluator.sendMessage(messageType, messageData)
@@ -57,24 +116,86 @@ end
 function BtEvaluator.requestNodeDefinitions()
 	return BtEvaluator.sendMessage("REQUEST_NODE_DEFINITIONS")
 end
-function BtEvaluator.assignUnits(units, instanceId, role)
-	return BtEvaluator.sendMessage("ASSIGN_UNITS", { units = units, instanceId = instanceId, role = role })
+function BtEvaluator.assignUnits(units, instanceId, roleId)
+	roleId = roleId + 1
+	local instance = treeInstances[instanceId]
+	if(not instance)then
+		Logger.error("BtEvaluator", "Attempt to assign units to nonexistant tree")
+		return
+	end
+	
+	local currentFrame = getGameFrame()
+	
+	local role = instance.roles[roleId]
+	local allRole = instance.roles[ALL_UNITS]
+	local treesToReset = { [instance] = true }
+	for i, id in ipairs(units) do
+		local oldRole = unitToRoleMap[id]
+		if(oldRole)then
+			treesToReset[oldRole[parentReference]] = true
+		end
+	end
+	
+	local treeList, i = {}, 1
+	for tree in pairs(treesToReset) do
+		treeList[i] = tree.id
+		i = i + 1
+	end
+	BtEvaluator.sendMessage("RESET_TREES", treeList)
+
+	local function removeItem(t, v)
+		for j = 1, t.length do
+			if(t[j] == v)then
+				t[j] = t[t.length]
+				t[t.length] = nil
+				t.length = t.length - 1
+				break
+			end
+		end
+	end
+	for i, id in ipairs(units) do
+		local oldRole = unitToRoleMap[id]
+		if(oldRole)then
+			removeItem(oldRole, id)
+			local oldAllRole = oldRole[parentReference].roles[ALL_UNITS]
+			removeItem(allRole, id)
+
+			oldRole.lastModified = currentFrame
+			oldAllRole.lastModified = currentFrame
+		end
+	end
+	role.lastModified = currentFrame
+	for i = 1, role.length do
+		removeItem(allRole, role[i])
+		unitToRoleMap[role[i]] = nil
+		role[i] = nil
+	end
+	for i, id in ipairs(units) do
+		role.length = i
+		role[i] = id
+		unitToRoleMap[id] = role
+		allRole.length = allRole.length + 1
+		allRole[allRole.length] = id
+	end
 end
 function BtEvaluator.createTree(instanceId, treeDefinition)
-	return BtEvaluator.sendMessage("CREATE_TREE", { instanceId = instanceId, root = treeDefinition.root })
+	local instance = makeInstance(instanceId, treeDefinition.roles)
+	local result, message = BtEvaluator.sendMessage("CREATE_TREE", { instanceId = instanceId, roleCount = #(treeDefinition.roles or {}), root = treeDefinition.root })
+	
+	return instance;
 end
-function BtEvaluator.removeTree(insId)
-	return BtEvaluator.sendMessage("REMOVE_TREE", { instanceId = insId })
+function BtEvaluator.removeTree(instanceId)
+	removeInstance(instanceId)
+	return BtEvaluator.sendMessage("REMOVE_TREE", { instanceId = instanceId })
 end
-function BtEvaluator.reportTree(insId)
-	return BtEvaluator.sendMessage("REPORT_TREE", { instanceId = insId })
+function BtEvaluator.reportTree(instanceId)
+	return BtEvaluator.sendMessage("REPORT_TREE", { instanceId = instanceId })
 end
 
 
 -- ==== luaCommand handling ====
 
 BtEvaluator.scripts = {}
-BtEvaluator.commands = {}
 
 local baseCommandClass = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtEvaluator/command.lua", nil, VFS.RAW_FIRST)
 
@@ -88,17 +209,7 @@ function getCommandClass(name)
 end
 
 local function getCommand(name, id, treeId)
-	commandMap = BtEvaluator.commands[name]
-	if not commandMap then
-		commandMap = {}
-		BtEvaluator.commands[name] = commandMap
-	end
-	
-	cmdsForInstance = commandMap[treeId]
-	if not cmdsForInstance then
-		cmdsForInstance = {}
-		commandMap[treeId] = cmdsForInstance
-	end
+	local cmdsForInstance = treeInstances[treeId].nodes
 	
 	cmd = cmdsForInstance[id]
 	if not cmd then
@@ -108,16 +219,8 @@ local function getCommand(name, id, treeId)
 	return cmd
 end
 
-BtEvaluator.blackboardsForInstance = {}
-BtEvaluator.commandsForUnits = {}-- map(unitId,command)
-
 local function getBlackboardForInstance(treeId)
-	local blackboard = BtEvaluator.blackboardsForInstance[treeId]
-	if(not blackboard)then
-		blackboard = {}
-		BtEvaluator.blackboardsForInstance[treeId] = blackboard
-	end
-	return blackboard
+	return (treeInstances[treeId] or {}).blackboard
 end
 
 local function createExpression(expression)
@@ -169,18 +272,18 @@ end
 
 
 function BtEvaluator.OnCommand(params)
+	local instance = treeInstances[params.treeId]
 	local command = getCommand(params.name, params.id, params.treeId)
 	local blackboard = getBlackboardForInstance(params.treeId)
+	local units = instance.roles[params.roleId + 1]
 	if (params.func == "RUN") then
-		for i = 1, #params.units do
-			BtEvaluator.commandsForUnits[params.units[i]] = command
-		end
+		instance.activeNodes[command] = units
 		
 		local parameterExpressions, parameters = {}, {}
 		for k, v in pairs(params.parameter) do
 			local expr = createExpression(tostring(v))
 			expr.setBlackboard(blackboard)
-			expr.setGroup(params.units)
+			expr.setGroup(units)
 			parameterExpressions[k] = expr;
 			local success, value = pcall(expr.get)
 			if(success)then
@@ -190,7 +293,7 @@ function BtEvaluator.OnCommand(params)
 			end
 		end
 		
-		local result, output = command:BaseRun(params.units, parameters)
+		local result, output = command:BaseRun(units, parameters)
 		
 		if(output)then
 			for k, v in pairs(output) do
@@ -203,9 +306,14 @@ function BtEvaluator.OnCommand(params)
 			end
 		end
 		
+		if(result == "F")then
+			instance.activeNodes[command] = nil
+		end
 		Logger.log("luacommand", "Result: ", result)
 		return result
 	elseif (params.func == "RESET") then
+		instance.activeNodes[command] = nil
+		
 		command:BaseReset()
 		return nil
 	end
@@ -217,9 +325,10 @@ function BtEvaluator.OnExpression(params)
 	end
 	
 	local blackboard = getBlackboardForInstance(params.treeId)
+	local units = treeInstances[params.treeId].roles[params.roleId + 1]
 	local expr = createExpression(params.expression);
 	expr.setBlackboard(blackboard)
-	expr.setGroup(params.units)
+	expr.setGroup(units)
 	
 	local success, result = pcall(expr.get)
 	if(success and result)then
@@ -231,25 +340,31 @@ end
 
 function widget:UnitCommand(unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdOpts, cmdTag) 
 	Logger.log("command", "----UnitCommand---")
-	local cmd = BtEvaluator.commandsForUnits[unitID]
-	if cmd  then
-		cmd:AddActiveCommand(unitID,cmdID,cmdTag)
+	local cmds = getUnitsActiveCommands(unitID)
+	if cmds then
+		for _, cmd in ipairs(cmds) do
+			cmd:AddActiveCommand(unitID,cmdID,cmdTag)
+		end
 	end
 end
 
 function widget:UnitCmdDone(unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdOpts, cmdTag)
 	Logger.log("command", "----UnitCmdDone---")
-	local cmd = BtEvaluator.commandsForUnits[unitID]
-	if cmd then
-		cmd:CommandDone(unitID,cmdID,cmdTag)
+	local cmds = getUnitsActiveCommands(unitID)
+	if cmds then
+		for _, cmd in ipairs(cmds) do
+			cmd:CommandDone(unitID,cmdID,cmdTag)
+		end
 	end
 end
 
 function widget:UnitIdle(unitID, unitDefID, unitTeam)
 	Logger.log("command", "----UnitIdle---")
-	local cmd = BtEvaluator.commandsForUnits[unitID]
-	if cmd then
-		cmd:SetUnitIdle(unitID)
+	local cmds = getUnitsActiveCommands(unitID)
+	if cmds then
+		for _, cmd in ipairs(cmds) do
+			cmd:SetUnitIdle(unitID)
+		end
 	end
 end
 -- ======================================
@@ -261,6 +376,38 @@ function widget:Initialize()
 	Spring.SendCommands("AIControl "..Spring.GetLocalPlayerID().." BtEvaluator")
 end
 
+local function asHandlerNoparam(event)
+	return function()
+		return event:Invoke()
+	end
+end
+local function asHandler(event)
+	return function(data)
+		return event:Invoke(data.asJSON())
+	end
+end
+local handlers = {
+	-- internal messages
+	["LOG"] = function(data)
+		Logger.log("BtEvaluator", data.asText())
+		return true
+	end,
+	["INITIALIZED"] = function()
+		Dependency.fill(Dependency.BtEvaluator)
+		return true
+	end,
+	["RESPONSE"] = function(data)
+		lastResponse = data.asJSON()
+		return true
+	end,
+	
+	-- event messages
+	["COMMAND"] = asHandler(BtEvaluator.OnCommand),
+	["EXPRESSION"] = asHandler(BtEvaluator.OnExpression),
+	["UPDATE_STATES"] = asHandler(BtEvaluator.OnUpdateStates),
+	["NODE_DEFINITIONS"] = asHandler(BtEvaluator.OnNodeDefinitions),
+}
+WG.handlers= handlers
 function widget:RecvSkirmishAIMessage(aiTeam, message)
 	Logger.log("communication", "Received message from team " .. tostring(aiTeam) .. ": " .. message)
 
@@ -277,42 +424,17 @@ function widget:RecvSkirmishAIMessage(aiTeam, message)
 	local indexOfFirstSpace = string.find(messageShorter, " ") or (message:len() + 1)
 	local messageType = messageShorter:sub(1, indexOfFirstSpace - 1):upper()	
 	
-	-- internal messages without parameter
-	if(messageType == "LOG") then 
-		Logger.log("BtEvaluator", messageBody)
-		return true
-	elseif(messageType == "INITIALIZED") then 
-		Dependency.fill(Dependency.BtEvaluator)
-		return true
-	elseif(messageType == "RESPONSE")then
-		local messageBody = messageShorter:sub(indexOfFirstSpace + 1)
-		local data = JSON:decode(messageBody)
-		lastResponse = data
-		return true
+	local textData = function() return messageShorter:sub(indexOfFirstSpace + 1) end
+	local jsonData = function() return JSON:decode(textData()) end
+	local data = {
+		asText = textData,
+		asJSON = jsonData,
+	}
+	
+	local handler = handlers[messageType]
+	if(handler)then
+		return handler(data)
 	else
-		-- messages without parameter
-		local handler = ({
-			-- none so far
-		})[messageType]
-		
-		if(handler)then
-			return handler:Invoke()
-		else
-			handler = ({
-				["UPDATE_STATES"] = BtEvaluator.OnUpdateStates,
-				["NODE_DEFINITIONS"] = BtEvaluator.OnNodeDefinitions,
-				["COMMAND"] = BtEvaluator.OnCommand,
-				["EXPRESSION"] = BtEvaluator.OnExpression
-			})[messageType]
-			
-			if(handler)then
-				local messageBody = messageShorter:sub(indexOfFirstSpace + 1)
-				local data = JSON:decode(messageBody)
-				
-				return handler:Invoke(data)
-			else
-				Logger.log("communication", "Unknown message type: |", messageType, "|")
-			end
-		end
+		Logger.log("communication", "Unknown message type: |", messageType, "|")
 	end
 end

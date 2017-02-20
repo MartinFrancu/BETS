@@ -1,6 +1,7 @@
 {
 	"additionalNodes": [],
 	"defaultRole": "Defenders",
+	"inputs": [],
 	"properties": {
 		"32TuIXgrlQJ6AMAECYuzTDDqFrJ29AS4": {
 			"height": 90,
@@ -154,10 +155,10 @@
 		}
 	},
 	"roles": [ {
-		"cathegories": [],
+		"categories": [],
 		"name": "Defenders"
 	}, {
-		"cathegories": [ "builders" ],
+		"categories": [ "builders" ],
 		"name": "Builders"
 	} ],
 	"root": {

@@ -1,9 +1,9 @@
 function widget:GetInfo()
 	return {
-		name    = "Behaviour Tree Editor",
+		name    = "BtCreator",
 		desc    = "Behaviour Tree Editor for creating complex behaviours of groups of units. ",
-		author  = "Jakub Stasta",
-		date    = "today",
+		author  = "BETS Team",
+		date    = "2016-09-01",
 		license = "GNU GPL v2",
 		layer   = 0,
 		enabled = true
@@ -33,16 +33,16 @@ local rolesOfCurrentTree
 local rolesWindow
 local showRoleManagementWindow
 local roleManagementDoneButton
-local newCathegoryButton
+local newCategoryButton
 
-local cathegoryDefinitionWindow
-local showCathegoryDefinitionWindow
-local doneCathegoryDefinition
-local cancelCathegoryDefinition
+local categoryDefinitionWindow
+local showCategoryDefinitionWindow
+local doneCategoryDefinition
+local cancelCategoryDefinition
 
 
 local UNIT_CATHEGORIES_DIRNAME = LUAUI_DIRNAME .. "Widgets/BtCreator/"
-local UNIT_CATHEGORIES_FILE = "BtUnitCathegories.json"
+local UNIT_CATHEGORIES_FILE = "BtUnitCategories.json"
 
 --- Keys are node IDs, values are Treenode objects.  
 WG.nodeList = {}
@@ -285,10 +285,11 @@ local function updateStatesMessage(states)
 	end
 	local children = WG.nodeList[rootID]:GetChildren()
 	if(#children > 0) then
-		local alpha = WG.nodeList[rootID].nodeWindow.backgroundColor[4]
-		WG.nodeList[rootID].nodeWindow.backgroundColor = copyTable(children[1].nodeWindow.backgroundColor)
-		WG.nodeList[rootID].nodeWindow.backgroundColor[4] = alpha
-		WG.nodeList[rootID].nodeWindow:Invalidate()
+		local nodeWindow = WG.nodeList[rootID].nodeWindow
+		local alpha = nodeWindow.backgroundColor[4]
+		nodeWindow.backgroundColor = copyTable(children[1].nodeWindow.backgroundColor)
+		nodeWindow.backgroundColor[4] = alpha
+		nodeWindow:Invalidate()
 	end
 end
 
@@ -368,11 +369,9 @@ end
 local function generateNodePoolNodes(nodes)
 	Logger.log("communication", "NODES DECODED:  ", nodes)
 	local heightSum = 30 -- skip NodePoolLabel
-    heightSum = generateScriptNodes(heightSum, nodes)
-	
+  heightSum = generateScriptNodes(heightSum, nodes)
 	-- load lua commands
 	local paramDefs = getParameterDefinitions()
-	
 	for scriptName, params in pairs(paramDefs) do
 		local nodeParams = {
 			name = scriptName,
@@ -414,7 +413,7 @@ end
 function listenerOnClickOnCanvas()
 	WG.clearSelection()
 	for _,node in pairs(WG.nodeList) do
-		node:ValidateEditBoxes()
+		node:UpdateParameterValues()
 	end
 end
 
@@ -455,7 +454,8 @@ function widget:Initialize()
 		skinName='DarkGlass',
 	} 
 	
-	BtEvaluator.requestNodeDefinitions()
+	Logger.loggedCall("Errors", "BtCreator", "requesting node definitions", 
+			BtEvaluator.requestNodeDefinitions)
 	local maxNodeWidth = 125
 	for i=1,#nodePoolList do
 		if(nodePoolList[i].width + 21 > maxNodeWidth) then
@@ -494,16 +494,7 @@ function widget:Initialize()
 		id = false,
 	})
 	
-	buttonPanel = Chili.Control:New{
-		parent = Screen0,
-		x = 0,
-		y = 0,
-		width = '100%',
-		height = '100%',
-	}
-	
 	newTreeButton = Chili.Button:New{
-		parent = buttonPanel,
 		x = windowBtCreator.x,
 		y = windowBtCreator.y - 30,
 		width = 90,
@@ -514,7 +505,6 @@ function widget:Initialize()
 		OnClick = { listenerClickOnNewTree },
 	}
 	saveTreeButton = Chili.Button:New{
-		parent = buttonPanel,
 		x = newTreeButton.x + newTreeButton.width,
 		y = newTreeButton.y,
 		width = 90,
@@ -525,7 +515,6 @@ function widget:Initialize()
 		OnClick = { listenerClickOnSaveTree},
 	}
 	loadTreeButton = Chili.Button:New{
-		parent = buttonPanel,
 		x = saveTreeButton.x + saveTreeButton.width,
 		y = saveTreeButton.y,
 		width = 90,
@@ -536,7 +525,6 @@ function widget:Initialize()
 		OnClick = { listenerClickOnLoadTree },
 	}
 	roleManagerButton = Chili.Button:New{
-		parent = buttonPanel,
 		x = loadTreeButton.x + loadTreeButton.width,
 		y = saveTreeButton.y,
 		width = 150,
@@ -547,7 +535,6 @@ function widget:Initialize()
 		OnClick = { listenerClickOnRoleManager },
 	}
 	showSensorsButton = Chili.Button:New{
-		parent = buttonPanel,
 		x = roleManagerButton.x + roleManagerButton.width,
 		y = saveTreeButton.y,
 		width = 90,
@@ -557,6 +544,15 @@ function widget:Initialize()
 		focusColor = {0.5,0.5,0.5,0.5},
 		OnClick = { listenerClickOnShowSensors },
 	}
+	buttonPanel = Chili.Control:New{
+		parent = Screen0,
+		x = 0,
+		y = 0,
+		width = '100%',
+		height = '100%',
+		children = { newTreeButton, saveTreeButton, loadTreeButton, roleManagerButton, showSensorsButton }
+	}
+	
 	
 	minimizeButton = Chili.Button:New{
 		parent = buttonPanel,
@@ -580,7 +576,6 @@ function widget:Initialize()
 		skinName = 'DarkGlass',
 		borderThickness = 0,
 		backgroundColor = {0,0,0,0},
-		editingText = true,
 	}
 	-- treeNameEditbox.font.size = 16
 	listenerClickOnMinimize()
@@ -650,7 +645,7 @@ function formBehaviourTree()
 	-- Validate every treenode - when editing editBox parameter and immediately serialize, 
 	-- the last edited parameter doesnt have to be updated
 	for _,node in pairs(WG.nodeList) do
-		node:ValidateEditBoxes()
+		node:UpdateParameterValues()
 	end
 	
 	local bt = BehaviourTree:New()
@@ -799,8 +794,8 @@ end
 --------------------------------------------------------------------------------------------------------------------------
 --- ROLE MANAGEMENT ------------------------------------------------------------------------------------------------------
 
-local function loadStandardCathegories()	
-	unitCathegories = {}
+local function loadStandardCategories()	
+	unitCategories = {}
 	local transports = {}
 	local immobile = {}
 	local buildings = {}
@@ -840,39 +835,39 @@ local function loadStandardCathegories()
 			table.insert(airBombers, { id = unitDef.id, name = unitDef.name, humanName = unitDef.humanName})
 		end
 	end
-	table.insert(unitCathegories, {name = "transports", types = transports})
-	table.insert(unitCathegories, {name = "immobile", types = immobile})
-	table.insert(unitCathegories, {name = "buildings", types = buildings})
-	table.insert(unitCathegories, {name = "builders", types = builders})
-	table.insert(unitCathegories, {name = "mobileBuilders", types = mobileBuilders})
-	table.insert(unitCathegories, {name = "groundUnits", types = groundUnits})
-	table.insert(unitCathegories, {name = "airUnits", types = airUnits})
-	table.insert(unitCathegories, {name = "fighterAirUnits", types = airFighters})
-	table.insert(unitCathegories, {name = "bomberAirUnits", types = airBombers})
+	table.insert(unitCategories, {name = "transports", types = transports})
+	table.insert(unitCategories, {name = "immobile", types = immobile})
+	table.insert(unitCategories, {name = "buildings", types = buildings})
+	table.insert(unitCategories, {name = "builders", types = builders})
+	table.insert(unitCategories, {name = "mobileBuilders", types = mobileBuilders})
+	table.insert(unitCategories, {name = "groundUnits", types = groundUnits})
+	table.insert(unitCategories, {name = "airUnits", types = airUnits})
+	table.insert(unitCategories, {name = "fighterAirUnits", types = airFighters})
+	table.insert(unitCategories, {name = "bomberAirUnits", types = airBombers})
 end
 
 
--- This method will load unit cathegories into one object. 
-local function loadUnitCathegories()
-	unitCathegories = {}
+-- This method will load unit categories into one object. 
+local function loadUnitCategories()
+	unitCategories = {}
 	----[[
 	local file = io.open(UNIT_CATHEGORIES_DIRNAME .. UNIT_CATHEGORIES_FILE , "r")
 	if(not file)then
-			unitCathegories = {}
+			unitCategories = {}
 	end
 	local text = file:read("*all")
-	unitCathegories = JSON:decode(text)
+	unitCategories = JSON:decode(text)
 	file:close()
 	--]]
 end
 
-local function saveUnitCathegories()
-	if(unitCathegories == nil) then
-		Logger.log("roles", "unitCathegories = nill")
-		unitCathegories = {}
+local function saveUnitCategories()
+	if(unitCategories == nil) then
+		Logger.log("roles", "unitCategories = nill")
+		unitCategories = {}
 	end
 	
-	local text = JSON:encode(unitCathegories, nil, { pretty = true, indent = "\t" })
+	local text = JSON:encode(unitCategories, nil, { pretty = true, indent = "\t" })
 	Spring.CreateDir(UNIT_CATHEGORIES_DIRNAME)
 	local file = io.open(UNIT_CATHEGORIES_DIRNAME .. UNIT_CATHEGORIES_FILE, "w")
 	if(not file)then
@@ -893,10 +888,10 @@ end
 
 
 
-function showCathegoryDefinitionWindow()
-	loadStandardCathegories()
+function showCategoryDefinitionWindow()
+	loadStandardCategories()
 	rolesWindow:Hide()
-	cathegoryDefinitionWindow = Chili.Window:New{
+	categoryDefinitionWindow = Chili.Window:New{
 		parent = Screen0,
 		x = 150,
 		y = 300,
@@ -905,30 +900,30 @@ function showCathegoryDefinitionWindow()
 		skinName = 'DarkGlass'
 	}
 	local nameEditBox = Chili.EditBox:New{
-			parent = cathegoryDefinitionWindow,
+			parent = categoryDefinitionWindow,
 			x = 0,
 			y = 0,
-			text = "New unit cathegory",
+			text = "New unit category",
 			width = 150
 	}
-	local cathegoryDoneButton = Chili.Button:New{
-		parent =  cathegoryDefinitionWindow,
+	local categoryDoneButton = Chili.Button:New{
+		parent =  categoryDefinitionWindow,
 		x = nameEditBox.x + nameEditBox.width,
 		y = 0,
 		caption = "DONE",
-		OnClick = {doneCathegoryDefinition}, 
+		OnClick = {doneCategoryDefinition}, 
 	}
-	cathegoryDoneButton.UnitCathegories = unitCathegories
+	categoryDoneButton.UnitCategories = unitCategories
 	
-	local cathegoryCancelButton = Chili.Button:New{
-		parent =  cathegoryDefinitionWindow,
-		x = cathegoryDoneButton.x + cathegoryDoneButton.width,
+	local categoryCancelButton = Chili.Button:New{
+		parent =  categoryDefinitionWindow,
+		x = categoryDoneButton.x + categoryDoneButton.width,
 		y = 0,
 		caption = "CANCEL",
-		OnClick = {cancelCathegoryDefinition}, 
+		OnClick = {cancelCategoryDefinition}, 
 	} 
-	local cathegoryScrollPanel = Chili.ScrollPanel:New{
-		parent = cathegoryDefinitionWindow,
+	local categoryScrollPanel = Chili.ScrollPanel:New{
+		parent = categoryDefinitionWindow,
 		x = 0,
 		y = 30,
 		width  = '100%',
@@ -941,7 +936,7 @@ function showCathegoryDefinitionWindow()
 	local xLocalOffSet = 0
 	for _,unitDef in pairs(UnitDefs) do
 		local typeCheckBox = Chili.Checkbox:New{
-			parent = cathegoryScrollPanel,
+			parent = categoryScrollPanel,
 			x = xOffSet + (xLocalOffSet * 250),
 			y = yOffSet,
 			caption = unitDef.humanName,
@@ -959,15 +954,15 @@ function showCathegoryDefinitionWindow()
 		table.insert(typesCheckboxes, typeCheckBox)
 	end
 	-- check old checked checkboxes:
-	cathegoryDoneButton.Checkboxes = typesCheckboxes
-	cathegoryDoneButton.CathegoryNameEditBox = nameEditBox
-	cathegoryDoneButton.Window = cathegoryDefinitionWindow
+	categoryDoneButton.Checkboxes = typesCheckboxes
+	categoryDoneButton.CategoryNameEditBox = nameEditBox
+	categoryDoneButton.Window = categoryDefinitionWindow
 end
 
 
 
-function doneCathegoryDefinition(self)	
-	-- add new cathegory to unitCathegories
+function doneCategoryDefinition(self)	
+	-- add new category to unitCategories
 	local unitTypes = {}
 	for _,unitTypeCheckBox in pairs(self.Checkboxes) do
 		if(unitTypeCheckBox.checked == true) then
@@ -975,24 +970,24 @@ function doneCathegoryDefinition(self)
 			table.insert(unitTypes, typeRecord)
 		end
 	end
-	-- add check for cathegory name?
-	local newCathegory = {
-		name = self.CathegoryNameEditBox.text,
+	-- add check for category name?
+	local newCategory = {
+		name = self.CategoryNameEditBox.text,
 		types = unitTypes,
 	}
-	table.insert(unitCathegories, newCathegory)
-	saveUnitCathegories()
-	cathegoryDefinitionWindow:Hide()
+	table.insert(unitCategories, newCategory)
+	saveUnitCategories()
+	categoryDefinitionWindow:Hide()
 	showRoleManagementWindow()
 end
-function cancelCathegoryDefinition(self)
-	cathegoryDefinitionWindow:Hide()
+function cancelCategoryDefinition(self)
+	categoryDefinitionWindow:Hide()
 	showRoleManagementWindow()
 end
 
-local function findCathegoryData(cathegoryName)
-	for _,catData in pairs(unitCathegories) do 
-		if(catData.name == cathegoryName) then
+local function findCategoryData(categoryName)
+	for _,catData in pairs(unitCategories) do 
+		if(catData.name == categoryName) then
 			return catData
 		end
 	end
@@ -1013,14 +1008,14 @@ function doneRoleManagerWindow(self)
 	local result = {}
 	for _,roleRecord in pairs(self.RolesData) do
 		local roleName = roleRecord.NameEditBox.text
-		local checkedCathegories = {}
-		for _, cathegoryCB in pairs(roleRecord.CheckBoxes) do
-			if(cathegoryCB.checked) then
-				local catName = cathegoryCB.caption
-				table.insert(checkedCathegories, catName)
+		local checkedCategories = {}
+		for _, categoryCB in pairs(roleRecord.CheckBoxes) do
+			if(categoryCB.checked) then
+				local catName = categoryCB.caption
+				table.insert(checkedCategories, catName)
 			end
 		end
-		local roleResult = {name = roleName, cathegories = checkedCathegories}
+		local roleResult = {name = roleName, categories = checkedCategories}
 		table.insert(result, roleResult)
 	end
 	rolesOfCurrentTree = result
@@ -1049,11 +1044,11 @@ function showRoleManagementWindow(mode)
 	
 	
 	--[[ RESET UNIT CATHEGORIES
-	loadStandardCathegories()
-	saveUnitCathegories()
+	loadStandardCategories()
+	saveUnitCategories()
 	--]]
 	
-	--unitCathegories = BtUtils.UnitCathegories.getCathegories()
+	--unitCategories = BtUtils.UnitCategories.getCategories()
 
 	
 	rolesWindow = Chili.Window:New{
@@ -1075,13 +1070,13 @@ function showRoleManagementWindow(mode)
 	}
 	roleManagementDoneButton.Mode = mode
 	
-	newCathegoryButton = Chili.Button:New{
+	newCategoryButton = Chili.Button:New{
 		parent = rolesWindow,
 		x = 150,
 		y = 0,
 		width = 150,
-		caption = "Define new Cathegory",
-		OnClick = {showCathegoryDefinitionWindow},
+		caption = "Define new Category",
+		OnClick = {showCategoryDefinitionWindow},
 	}
 
 	
@@ -1093,11 +1088,11 @@ function showRoleManagementWindow(mode)
 		height = '100%',
 		skinName='DarkGlass'
 	}
-	local rolesCathegoriesCB = {}
+	local rolesCategoriesCB = {}
 	local xOffSet = 10
 	local yOffSet = 10
 	local xCheckBoxOffSet = 180
-	-- set up checkboxes for all roles and cathegories 
+	-- set up checkboxes for all roles and categories 
 	
 	for roleIndex=0, roleCount -1 do
 		local nameEditBox = Chili.EditBox:New{
@@ -1107,28 +1102,28 @@ function showRoleManagementWindow(mode)
 			text = "Role ".. tostring(roleIndex),
 			width = 150
 		}
-		local checkedCathegories = {}
+		local checkedCategories = {}
 		if(rolesOfCurrentTree[roleIndex+1]) then
 			nameEditBox:SetText(rolesOfCurrentTree[roleIndex+1].name)	
-			for _,catName in pairs(rolesOfCurrentTree[roleIndex+1].cathegories) do
-				checkedCathegories[catName] = 1
+			for _,catName in pairs(rolesOfCurrentTree[roleIndex+1].categories) do
+				checkedCategories[catName] = 1
 			end
 		end
 		
-		local cathegoryNames = Utils.UnitCathegories.getAllCathegoryNames()
-		local cathegoryCheckBoxes = {}
+		local categoryNames = Utils.UnitCategories.getAllCategoryNames()
+		local categoryCheckBoxes = {}
 		local xLocalOffSet = 0
-		for _,cathegoryName in pairs(cathegoryNames) do
-			local cathegoryCheckBox = Chili.Checkbox:New{
+		for _,categoryName in pairs(categoryNames) do
+			local categoryCheckBox = Chili.Checkbox:New{
 				parent = rolesScrollPanel,
 				x = xOffSet + xCheckBoxOffSet + (xLocalOffSet * 250),
 				y = yOffSet,
-				caption = cathegoryName,
+				caption = categoryName,
 				checked = false,
 				width = 200,
 			}
-			if(checkedCathegories[cathegoryName] ~= nil) then
-				cathegoryCheckBox:Toggle()
+			if(checkedCategories[categoryName] ~= nil) then
+				categoryCheckBox:Toggle()
 			end
 			xLocalOffSet = xLocalOffSet + 1
 			if(xLocalOffSet == 4) then 
@@ -1136,20 +1131,20 @@ function showRoleManagementWindow(mode)
 				yOffSet = yOffSet + 20
 			end
 			
-			table.insert(cathegoryCheckBoxes, cathegoryCheckBox)
+			table.insert(categoryCheckBoxes, categoryCheckBox)
 		end
 		
 		
 		yOffSet = yOffSet + 50
-		local roleCathegories = {}
-		roleCathegories["NameEditBox"] = nameEditBox
-		roleCathegories["CheckBoxes"] = cathegoryCheckBoxes
+		local roleCategories = {}
+		roleCategories["NameEditBox"] = nameEditBox
+		roleCategories["CheckBoxes"] = categoryCheckBoxes
 		--if(keepOldAssignment ~= nil) then
-		--	roleCathegories["OldUnitTypes"] = keepOldAssignment
+		--	roleCategories["OldUnitTypes"] = keepOldAssignment
 		--end
-		table.insert(rolesCathegoriesCB,roleCathegories)
+		table.insert(rolesCategoriesCB,roleCategories)
 	end	
-	roleManagementDoneButton.RolesData = rolesCathegoriesCB
+	roleManagementDoneButton.RolesData = rolesCategoriesCB
 	roleManagementDoneButton.Window = rolesWindow	
 end
 

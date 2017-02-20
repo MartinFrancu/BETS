@@ -1,6 +1,7 @@
 {
 	"additionalNodes": [],
 	"defaultRole": "Default role",
+	"inputs": [],
 	"properties": {
 		"ytVCQqVeUzO5Ip0vUXzzjjOpfXh6kNHj": {
 			"height": 110,
@@ -10,7 +11,7 @@
 		}
 	},
 	"roles": [ {
-		"cathegories": [],
+		"categories": [],
 		"name": "Default role",
 		"types": []
 	} ],
