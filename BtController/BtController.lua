@@ -696,7 +696,7 @@ end
 
 
 local function registerCommandsForReleasedTrees()
-	local fileNames = BtUtils.dirList(ReleaseBehavioursDirectory, "*.json")--".+%.json$")
+	local fileNames = BtUtils.dirList(BehavioursDirectory, "*.json")--".+%.json$")
 	for i,fileName in pairs(fileNames) do
 		local treeName = fileName:gsub("%.json","")
 		local commandName =  "BETS_TREE_" ..  treeName
@@ -704,10 +704,10 @@ local function registerCommandsForReleasedTrees()
 			type = CMDTYPE.ICON,
 			name = commandName,
 			cursor = 'Attack',
-			action = 'Attack',
+			action = commandName,
 			tooltip = fileName,
-			hidden = true,
-			UIoverride = {caption = treeName, texture = 'LuaUI/Images/commands/guard.png' }
+			hidden = false,
+			UIoverride = {caption = treeName}, --texture = 'LuaUI/Images/commands/guard.png' }
 			--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
 		}
 		sendCustomMessage.registerCustomCommand(description)
@@ -719,7 +719,7 @@ local function getCommandIDForReleasedTrees()
 	if (rawCommandsNameToID ~= nil) then
 		treeCommandNameToID = {}
 		local commandsNameToID = message.Decode(rawCommandsNameToID)
-		local fileNames = BtUtils.dirList(ReleaseBehavioursDirectory, "*.json")--".+%.json$")
+		local fileNames = BtUtils.dirList(BehavioursDirectory, "*.json")--".+%.json$")
 		for i,fileName in pairs(fileNames) do
 			local treeName = fileName:gsub("%.json","")
 			local commandName =  "BETS_TREE_" ..  treeName 
@@ -750,7 +750,7 @@ local function getCommandIDToName()
 			end
 		end
 		-- tree commands
-		local fileNames = BtUtils.dirList(ReleaseBehavioursDirectory, "*.json")--".+%.json$")
+		local fileNames = BtUtils.dirList(BehavioursDirectory, "*.json")--".+%.json$")
 		for i,fileName in pairs(fileNames) do
 			local treeName = fileName:gsub("%.json","")
 			local commandName =  "BETS_TREE_" ..  treeName 
@@ -1015,7 +1015,7 @@ function widget:Initialize()
 	-- extract BtCreator into a local variable once available
 	Dependency.defer(function() BtCreator = WG.BtCreator end, Dependency.BtCreator)
 	
-	registerInputCommands()
+	--registerInputCommands()
 	
 	-- register release commands !note: maybe move them into another refreshTreeSelectionPanel?
 	registerCommandsForReleasedTrees()
