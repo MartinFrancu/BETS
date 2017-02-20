@@ -1,5 +1,25 @@
 {
 	"additionalNodes": [],
+	"defaultRole": "Default role",
+	"inputs": [
+			{
+				"name": "input1",
+				"command": "BETS_POSITION"
+			},
+			{
+				"name": "input2",
+				"command": "BETS_UNIT"
+			},
+			{
+				"name": "input3",
+				"command": "BETS_AREA"
+			}
+		],
+	"roles": [ {
+		"categories": [],
+		"name": "Default role",
+		"types": []
+	} ],
 	"properties": {
 		"SHPfjg6JsJT9RMGYHkPnCDoZijfGuEdt": {
 			"height": 60,
