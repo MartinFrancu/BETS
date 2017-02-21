@@ -371,22 +371,18 @@ function TreeHandle:SetUnitCount(whichRole, number)
 end
 
 function TreeHandle:FillInInput(inputName, data)
-	Logger.log("commands", "FillInInput inputname ", inputName, " data ", data)
 	-- I should change name of input
 	for _,inputButton in pairs(self.InputButtons) do
-		Logger.log("commands", "FillInInput inputname >>>")
 		if(inputButton.InputName == inputName) then
-			Logger.log("commands", "FillInInput inputname >>>")
 			inputButton.backgroundColor = {0.1,0.6,0.1,1}
+			inputButton:Invalidate()
 			inputButton:RequestUpdate()
 		end
 	end
-	Logger.log("commands", "FillInInput inputname ")
+	
 	for _,input in pairs(self.Tree.inputs) do
-		Logger.log("commands", "tree inputs: ", input.name, " data ", data)
 		if(input.name == inputName) then
 			input["value"] = data
-			Logger.log("commands", "Input filled in: instanceID:", self.InstanceId, " input name: ", input.name, " value: ", data)
 		end
 	end
 end
@@ -660,15 +656,10 @@ function listenerInputButton(self,x,y,button, ...)
 		InstanceId = self.InstanceId,
 	}
 	--
-	Logger.log("commands", "cmd name: ",  expectedInput.CommandName)
-	Logger.log("commands" , "CmdID: " , WG.InputCommands[ expectedInput.CommandName ])
-	if(spGetCmdDescIndex(WG.InputCommands[ expectedInput.CommandName ]) == nil ) then
-		Logger.log("commands" , "cmd desc index: nil")
-	else
-		Logger.log("commands" , "cmd desc index: " , spGetCmdDescIndex(WG.InputCommands[ expectedInput.CommandName ]) )
-	end
 	local ret = spSetActiveCommand(  spGetCmdDescIndex(WG.InputCommands[ expectedInput.CommandName ]) ) --  spGetCmdDescIndex( WG.InputCommands[ expectedInput.CommandName ] ))
-	Logger.log("commands", ret) 
+	if(ret == false ) then 
+		Logger.log("commands", "Unable to set command active: " , expectedInput.CommandName) 
+	end
 end
 
 -- Listener for closing error window.
