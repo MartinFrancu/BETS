@@ -18,6 +18,7 @@ local BehaviourTree = Utils.BehaviourTree
 local Debug = Utils.Debug;
 local Logger = Debug.Logger
 local dump = Debug.dump
+local Dependency = Utils.Dependency
 
 --------------------------------------------------------------------------------
 VFS.Include("LuaRules/Configs/customcmds.h.lua")
@@ -154,6 +155,7 @@ function widget:Initialize()
 	registerInputCommands()
 	-- register release commands !note: maybe move them into another refreshTreeSelectionPanel?
 	registerCommandsForBehaviours()
+	Dependency.fill(Dependency.BtCommands)
 end
 
 -- local function getCommandIDsForBehaviours()
@@ -211,3 +213,5 @@ end
 -- end
 
 ---------------------------------------COMMANDS-END-
+
+--Dependency.deferWidget(widget)
