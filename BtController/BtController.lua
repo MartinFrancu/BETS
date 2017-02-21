@@ -323,6 +323,7 @@ function TreeHandle:New(obj)
 			focusColor = {0.5,0.5,0.5,0.5},
 			TreeHandle = obj,
 			inputName = inputName,
+			commandName = input.command,
 			instanceId = obj.InstanceId,
 			backgroundColor = {0.8,0.1,0.1,1}
 		}
@@ -608,6 +609,12 @@ function listenerAssignUnitsButton(self)
 
 end
 
+function listenerInputButton(self)
+	-- I need to store record what we are expecting
+	inputQueue = {}
+	-- 
+end
+
 -- Listener for closing error window.
 function listenerErrorOk(self)
 	errorWindow:Hide()
@@ -853,8 +860,6 @@ function setUpTreeControlWindow()
 	}
 	
 	finalizeAddTreeBarItem(treeTabPanel)
-	
-
 	
 end
 
