@@ -263,7 +263,8 @@ local RUNNING_COLOR = {1,0.5,0,0.6}
 local SUCCESS_COLOR = {0.5,1,0.5,0.6}
 local FAILURE_COLOR = {1,0.25,0.25,0.6}
 
-local function updateStatesMessage(states)
+local function updateStatesMessage(params)
+	local states = params.states
 	for id, node in pairs(WG.nodeList) do
 		local color = copyTable(DEFAULT_COLOR);
 		if(states[id] ~= nil) then

@@ -447,7 +447,15 @@ local handlers = {
 	-- event messages
 	["COMMAND"] = asHandler(BtEvaluator.OnCommand),
 	["EXPRESSION"] = asHandler(BtEvaluator.OnExpression),
-	["UPDATE_STATES"] = asHandler(BtEvaluator.OnUpdateStates),
+	["UPDATE_STATES"] = function(data)
+		local params = data.asJSON()
+		local instanceId = params.id
+		local instance = treeInstances[instanceId]
+		if(instance)then
+			params.blackboard = instance.blackboard
+		end
+		return BtEvaluator.OnUpdateStates:Invoke(params)
+	end,
 	["NODE_DEFINITIONS"] = asHandler(BtEvaluator.OnNodeDefinitions),
 }
 WG.handlers= handlers
