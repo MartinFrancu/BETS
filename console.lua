@@ -37,30 +37,8 @@ if (widget and not widget.GetInfo) then
 	local Debug = Utils.Debug
 	local Logger, dump = Debug.Logger, Debug.dump
 	
-	--- Iterates not only through the regular pairs, but also over the pairs of a metatable
-	local function metanext(state, key)
-		local k, v = next(state.current, key)
-		if(k ~= nil)then
-			return k, v
-		else
-			local mt = getmetatable(state.current)
-			if(not mt or type(mt) ~= "table" or type(mt.__index) ~= "table")then
-				return nil
-			end
-			state.current = mt.__index;
-			return metanext(state, nil)
-		end
-	end
-	local function metapairs(t)
-		if(type(t) == "userdata")then
-			local mt = getmetatable(t)
-			if(not mt or type(mt.__index) ~= "table")then
-				return function() return nil end
-			end
-			t = mt.__index;
-		end
-		return metanext, { current = t }, nil
-	end
+	local metanext = BtUtils.metanext
+	local metapairs = BtUtils.metapairs
 	
 	local consoleContext
 	local contextNext, contextPairs
