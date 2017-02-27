@@ -27,6 +27,7 @@ local SUBTARGET_TOLEARANCE_SQ = 30*30
 local TOLERANCE_SQ = 30*30
 local MOST_DISTANT_UNIT_DIST_SQ = 50*50
 local LEADER_TOLERANCE_SQ = 50 * 50
+local WAYPOINTS_DIST_SQ = 20 * 20
 
 local function wrapResVect(f, id)
 	local x, y, z = f(id)
@@ -41,9 +42,14 @@ local function getUnitDir(unitID)
 	return wrapResVect(Spring.GetUnitDirection, unitID)
 end
 
+local function makeVector(from, to)
+	return{to[1] - from[1], to[2] - from[2], to[3] - from[3]}
+end
+
 local function direction(from, to)
-	local dir = {to[1] - from[1], to[2] - from[2], to[3] - from[3]}
+	local dir = makeVector(from, to)
 	local len = math.sqrt(dir[1] * dir[1] + dir[2] * dir[2] + dir[3] * dir[3])
+	-- normalize vector
 	return {dir[1] / len, dir[2] / len, dir[3] / len }
 end
 
@@ -61,6 +67,18 @@ local function distanceSq(pos1, pos2)
 		dist = dist + d * d
 	end
 	return dist
+end
+
+local function addToList(list, item)
+	list[#list + 1] = item
+end
+
+local function vectSum(...)
+	local sum = {0, 0, 0}
+	for _,vect in ipairs(arg) do
+		sum = {sum[1] + vect[1], sum[2] + vect[2], sum[3] + vect[3]}
+	end
+	return sum
 end
 
 local function UnitMoved(self, unitID, x, _, z)
@@ -82,7 +100,11 @@ function New(self)
 	self.lastPositions = {}
 	self.subTargets = {}
 	self.finalTargets = {}
+	self.formationDiffs = {}
+	self.leaderWaypoints = {}
 end
+
+local lastLeaderPos
 
 local function EnsureLeader(self, unitIds)
 	if self.leaderId and not unitIsDead(self.leaderId) and distanceSq(getUnitPos(self.leaderId), self.finalTargets[self.leaderId]) > TOLERANCE_SQ then
@@ -106,6 +128,8 @@ end
 
 local function InitTargetLocations(self, unitIds, parameter)
 	self.finalTargets = {}
+	local leaderPos = getUnitPos(self.leaderId)
+	
 	for i = 1, #unitIds do
 		local id = unitIds[i]
 		local pos = getUnitPos(id)
@@ -113,11 +137,20 @@ local function InitTargetLocations(self, unitIds, parameter)
 		local tarPos = { pos[1] + parameter.x, pos[2], pos[3] + parameter.y }
 		--Logger.log("move-command", "=== tarPos: ", tarPos)
 		self.finalTargets[id] = tarPos
+		
+		self.formationDiffs[id] = math.sqrt(distanceSq(leaderPos, pos))
 	end
 end
 
+
 function Run(self, unitIds, parameter)
 	Logger.log("move-command", "Lua MOVE command run, unitIds: ", unitIds, ", parameter.x: " .. parameter.x .. ", parameter.y: " .. parameter.y)
+	
+	local leader = EnsureLeader(self, unitIds)
+	if not leader then
+		return FAILURE
+	end
+	
 	
 	local firstTick = false
 	if not self.finalTargets then
@@ -125,15 +158,23 @@ function Run(self, unitIds, parameter)
 		firstTick = true
 	end
 	
-	local leader = EnsureLeader(self, unitIds)
-	if not leader then
-		return FAILURE
+	
+	local leaderPos = getUnitPos(leader)
+	local waypoints = self.leaderWaypoints
+	
+	if (#waypoints == 0 or distanceSq(leaderPos, waypoints[#waypoints]) > WAYPOINTS_DIST_SQ) then
+		addToList(waypoints, leaderPos)
 	end
 	
-	local leaderDir = getUnitDir(leader)
+	local leaderDir
+	if (firstTick) then
+		leaderDir = direction(leaderPos, self.finalTargets[leader])
+	else
+		leaderDir = direction(waypoints[#waypoints - 3] or waypoints[1], leaderPos)
+	end
 	
 	local leaderDone = distanceSq(getUnitPos(leader), self.finalTargets[leader]) < LEADER_TOLERANCE_SQ
-	Logger.log("move-command", "Leader done - ", leaderDone, " dist - ", distanceSq(getUnitPos(leader), self.finalTargets[leader]))
+	-- Logger.log("move-command", "Leader done - ", leaderDone, " dist - ", distanceSq(getUnitPos(leader), self.finalTargets[leader]))
 	local done = leaderDone
 	
 	local issueFinalOrder = false
@@ -163,17 +204,16 @@ function Run(self, unitIds, parameter)
 			if leaderDone then
 				-- go to the target location when leader reaches the target location
 				if issueFinalOrder then
-					Logger.log("move-command", "=== Final order ", unitID)
+					--Logger.log("move-command", "=== Final order ", unitID)
 					giveOrderToUnit(unitID, CMD.MOVE, self.finalTargets[unitID], {})
 				end
 			elseif not curSubTar or distanceSq(curPos, curSubTar) < SUBTARGET_TOLEARANCE_SQ or not dirsEqual(leaderDir, curDir) then
 				-- otherwise move a small distance in the direction the leader is facing
 				
-				if firstTick then -- the leader needs to turn first, so send the unit in the direction of the target instead of following the leaders direction, which may be left over from the previous move command.
-					leaderDir = direction(curPos, self.finalTargets[unitID])
-				end
+				local toLeader = makeVector(curPos, leaderPos)
 				
-				curSubTar = {curPos[1] + leaderDir[1] * SHORT_PATH_LEN, curPos[2], curPos[3] + leaderDir[3] * SHORT_PATH_LEN}
+				curSubTar = vectSum(curPos, toLeader, leaderDir, formationDiffs[unitID])
+				-- curSubTar = {curPos[1] + leaderDir[1] * SHORT_PATH_LEN, curPos[2], curPos[3] + leaderDir[3] * SHORT_PATH_LEN}
 				self.subTargets[unitID] = curSubTar
 				giveOrderToUnit(unitID, CMD.MOVE, curSubTar, {})
 			end
@@ -198,4 +238,5 @@ function Reset(self)
 	self.subTargets = {}
 	self.finalTargets = nil
 	self.finalOrderIssued = false
+	self.formationDiffs = {}
 end
