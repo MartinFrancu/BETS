@@ -275,6 +275,12 @@ function TreeNode:ReGenerateID()
 	self.id = generateID()
 end
 
+function TreeNode:UpdateConnectionLines()
+	for i=1,#self.attachedLines do
+		connectionLine.update(self.attachedLines[i])
+	end
+end
+
 -- Dispose this treeNode without connection lines connected to it.
 function TreeNode:Dispose()
 	if(self.connectionIn) then
@@ -425,11 +431,8 @@ function listenerNodeResize(self, x, y)
 			self.treeNode.width = self.treeNode.nodeWindow.width
 			self.treeNode.height = self.treeNode.nodeWindow.height
 		end
-
-		for i=1,#self.treeNode.attachedLines do
-			lineIdx = self.treeNode.attachedLines[i]
-			connectionLine.update(lineIdx)
-		end
+		
+		self.treeNode:UpdateConnectionLines()
 	end
 	--return true
 end
@@ -620,6 +623,9 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 end
 
 function listenerOnMouseUpMoveNode(self, x ,y)
+	self.x = math.max(0, self.x)
+	self.y = math.max(0, self.y)
+	self.treeNode:UpdateConnectionLines()
 	self.treeNode.x = self.x
 	self.treeNode.y = self.y
 	self:Invalidate()
@@ -632,13 +638,11 @@ function listenerOnMouseUpMoveNode(self, x ,y)
 				local node = WG.nodeList[id]
 				node.nodeWindow.x = node.nodeWindow.x + diffx
 				node.nodeWindow.y = node.nodeWindow.y + diffy
-				node.x = node.x + diffx
-				node.y = node.y + diffy
+				node.x = math.max(0, node.x + diffx)
+				node.y = math.max(0, node.y + diffy)
 				node.nodeWindow:StopDragging(x, y)
 				node.nodeWindow:Invalidate()
-				for i=1,#node.attachedLines do
-					connectionLine.update(node.attachedLines[i])
-				end
+				node:UpdateConnectionLines()
 			end
 		end
 		movingNodes = false
