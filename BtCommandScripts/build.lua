@@ -4,6 +4,7 @@ local giveOrderToUnit = Spring.GiveOrderToUnit
 function getInfo()
 	return {
 		onNoUnits = SUCCESS,
+		issuesOrders = true,
 		parameterDefs = {
 			{ 
 				name = "pos",

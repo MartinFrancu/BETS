@@ -30,7 +30,7 @@ local BehavioursDirectory = "LuaUI/Widgets/BtBehaviours"
 
 -- get other madatory dependencies
 attach.Module(modules, "message")
-attach.File("LuaRules/modules/customCommands/data/api/messageSender.lua") -- here you get reference for sendCustomMessage.registerCustomCommand
+attach.Module(modules, "customCommands") -- here you get reference e.g. for sendCustomMessage.registerCustomCommand
 
 --------------------------------------------------------------------------------
 --- COMMANDS FOR GETTING PLAYER INPUT ------------------------------------------
@@ -85,13 +85,13 @@ local commandIDToName
 local function registerInputCommands()
 	-- we need to register our custom commands
 	for _, cmdDesc in pairs(inputCommandDesc) do
-		sendCustomMessage.registerCustomCommand(cmdDesc)
+		sendCustomMessage.RegisterCustomCommand(cmdDesc)
 	end
 end
 
 --- Fills WG.InputCommands, WG.BtCommands tables with custom commands IDs and othe needed data. Like behaviour inputs. 
 local function fillCustomCommandIDs()
-	local rawCommandsNameToID = Spring.GetGameRulesParam("customCommandsNameToID")
+	local rawCommandsNameToID = Spring.GetGameRulesParam("CustomCommandsNameToID")
 	if (rawCommandsNameToID ~= nil) then
 		WG.InputCommands = {}
 		WG.BtCommands = {}
@@ -147,7 +147,7 @@ local function registerCommandsForBehaviours()
 			UIoverride = {caption = treeName, texture = 'LuaUI/Images/commands/guard.png' }
 			--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
 		}
-		sendCustomMessage.registerCustomCommand(description)
+		sendCustomMessage.RegisterCustomCommand(description)
 	end
 end
 

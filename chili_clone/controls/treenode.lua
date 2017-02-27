@@ -207,6 +207,41 @@ function createNextParameterObject(obj)
 			y = 10 + i*20,
 			index = i, -- to be able to index editbox from treenode, to update treenode.parameters[i].value
 		}
+	elseif(param["componentType"] and param["componentType"]:lower() == "combobox") then
+		local items = {}
+		local defaultIndex = 0
+		local k = 1
+		for word in param.variableType:gmatch('([^,]+)') do
+			if(word == param.value) then
+				defaultIndex = k
+			end
+			k = k + 1
+			table.insert(items, word)
+		end
+		if(defaultIndex == 0) then
+			error("Treenode combobox default value not found in enumeration. defaultValue: "..dump(param.value).."\n"..debug.traceback())
+		end
+		result.componentType = "comboBox"
+		result.label = Label:New{
+			parent = obj.nodeWindow,
+			x = 18,
+			y = 10 + i*20,
+			width  = obj.nodeWindow.font:GetTextWidth(param["name"]),
+			height = '10%',
+			caption = param["name"],
+			--skinName='DarkGlass',
+		}
+		result.comboBox = ComboBox:New{
+			caption = param.name,
+			parent = obj.nodeWindow,
+			x = 25 + obj.nodeWindow.font:GetTextWidth(param["name"]),
+			y = 10 + i*20,
+			width = 100,
+			index = i, -- to be able to index editbox from treenode, to update treenode.parameters[i].value
+			borderThickness = 0,
+			items = items,
+		}
+		result.comboBox:Select(defaultIndex)
 	end
 	return result
 end
@@ -240,6 +275,12 @@ function TreeNode:ReGenerateID()
 	self.id = generateID()
 end
 
+function TreeNode:UpdateConnectionLines()
+	for i=1,#self.attachedLines do
+		connectionLine.update(self.attachedLines[i])
+	end
+end
+
 -- Dispose this treeNode without connection lines connected to it.
 function TreeNode:Dispose()
 	if(self.connectionIn) then
@@ -261,6 +302,12 @@ function TreeNode:Dispose()
 			end
 			if(self.parameterObjects[i]["editBox"]) then
 				self.parameterObjects[i]["editBox"]:Dispose()
+			end
+			if(self.parameterObjects[i]["comboBox"]) then
+				self.parameterObjects[i]["comboBox"]:Dispose()
+			end
+			if(self.parameterObjects[i]["checkBox"]) then
+				self.parameterObjects[i]["checkBox"]:Dispose()
 			end
 		end
 	end
@@ -384,11 +431,8 @@ function listenerNodeResize(self, x, y)
 			self.treeNode.width = self.treeNode.nodeWindow.width
 			self.treeNode.height = self.treeNode.nodeWindow.height
 		end
-
-		for i=1,#self.treeNode.attachedLines do
-			lineIdx = self.treeNode.attachedLines[i]
-			connectionLine.update(lineIdx)
-		end
+		
+		self.treeNode:UpdateConnectionLines()
 	end
 	--return true
 end
@@ -457,6 +501,10 @@ function TreeNode:UpdateParameterValues()
 		local checkBox = self.parameterObjects[i]["checkBox"]
 		if(checkBox) then
 			checkBox.parent.treeNode.parameters[checkBox.index].value = tostring(checkBox.checked)
+		end
+		local comboBox = self.parameterObjects[i]["comboBox"]
+		if(comboBox) then
+			comboBox.parent.treeNode.parameters[comboBox.index].value = tostring(comboBox.items[comboBox.selected])
 		end
 	end
 end
@@ -529,8 +577,11 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 			return
 		elseif(self.treeNode.parameterObjects[i]["checkBox"] and childName == self.treeNode.parameterObjects[i]["checkBox"].name) then
 			return
+		elseif(self.treeNode.parameterObjects[i]["comboBox"] and childName == self.treeNode.parameterObjects[i]["comboBox"].name) then
+			return
 		end
 	end
+	-- Check for double click
 	local now = Spring.GetTimer()
 	if(childName == self.treeNode.nameEditBox.name and Spring.DiffTimers(now, lastClicked) < 0.3) then
 		lastClicked = now
@@ -572,6 +623,9 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 end
 
 function listenerOnMouseUpMoveNode(self, x ,y)
+	self.x = math.max(0, self.x)
+	self.y = math.max(0, self.y)
+	self.treeNode:UpdateConnectionLines()
 	self.treeNode.x = self.x
 	self.treeNode.y = self.y
 	self:Invalidate()
@@ -584,13 +638,11 @@ function listenerOnMouseUpMoveNode(self, x ,y)
 				local node = WG.nodeList[id]
 				node.nodeWindow.x = node.nodeWindow.x + diffx
 				node.nodeWindow.y = node.nodeWindow.y + diffy
-				node.x = node.x + diffx
-				node.y = node.y + diffy
+				node.x = math.max(0, node.x + diffx)
+				node.y = math.max(0, node.y + diffy)
 				node.nodeWindow:StopDragging(x, y)
 				node.nodeWindow:Invalidate()
-				for i=1,#node.attachedLines do
-					connectionLine.update(node.attachedLines[i])
-				end
+				node:UpdateConnectionLines()
 			end
 		end
 		movingNodes = false
