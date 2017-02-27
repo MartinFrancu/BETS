@@ -1,7 +1,7 @@
 {
 	"additionalNodes": [],
 	"defaultRole": "Defenders",
-	"inputs": [],
+  "inputs": [],
 	"properties": {
 		"32TuIXgrlQJ6AMAECYuzTDDqFrJ29AS4": {
 			"height": 90,
@@ -12,8 +12,8 @@
 		"4kTzE0e6W464qLGis1srSo8k3yEemxbB": {
 			"height": 90,
 			"width": 110,
-			"x": 810,
-			"y": 160
+			"x": 658,
+			"y": 194
 		},
 		"8PQLBonaER6Pl09B2yyoqCTYmPlgYwZg": {
 			"height": 70,
@@ -32,12 +32,6 @@
 			"width": 152.000015,
 			"x": 430,
 			"y": 237
-		},
-		"FVDe4WP6PjuTJQSnr7gdPoQBKmYp3tZ1": {
-			"height": 70,
-			"width": 110,
-			"x": 812,
-			"y": 255
 		},
 		"J8yQLZOPJofKYWY24JAGfQWobH8iFtpP": {
 			"height": 60,
@@ -129,12 +123,6 @@
 			"x": 443,
 			"y": 112
 		},
-		"sBQpoerQdO3f7dlxcOxab46P26VA2hL6": {
-			"height": 60,
-			"width": 110,
-			"x": 645,
-			"y": 194
-		},
 		"sUoOxerR7VThCokqM1Z0XitnQWzTXjdr": {
 			"height": 70,
 			"width": 110,
@@ -213,7 +201,7 @@
 						"nodeType": "wait",
 						"parameters": [ {
 							"name": "time",
-							"value": 15
+							"value": 5
 						} ]
 					} ],
 					"id": "ozjggjRWrtRmeTo59RhZWythb5swMfNX",
@@ -224,37 +212,20 @@
 					} ]
 				}, {
 					"children": [ {
-						"children": [ {
-							"children": [],
-							"id": "4kTzE0e6W464qLGis1srSo8k3yEemxbB",
-							"nodeType": "luaCommand",
-							"parameters": [ {
-								"name": "var",
-								"value": "defLoc"
-							}, {
-								"name": "value",
-								"value": "(groupExtents() or { center = target}).center"
-							}, {
-								"name": "scriptName",
-								"value": "store.lua"
-							} ],
-							"scriptName": "store.lua"
+						"children": [],
+						"id": "4kTzE0e6W464qLGis1srSo8k3yEemxbB",
+						"nodeType": "luaCommand",
+						"parameters": [ {
+							"name": "var",
+							"value": "defLoc"
 						}, {
-							"children": [],
-							"id": "FVDe4WP6PjuTJQSnr7gdPoQBKmYp3tZ1",
-							"nodeType": "luaCommand",
-							"parameters": [ {
-								"name": "pos",
-								"value": "defLoc"
-							}, {
-								"name": "scriptName",
-								"value": "absoluteMove.lua"
-							} ],
-							"scriptName": "absoluteMove.lua"
+							"name": "value",
+							"value": "(groupExtents() or { center = target}).center"
+						}, {
+							"name": "scriptName",
+							"value": "store.lua"
 						} ],
-						"id": "sBQpoerQdO3f7dlxcOxab46P26VA2hL6",
-						"nodeType": "sequence",
-						"parameters": []
+						"scriptName": "store.lua"
 					}, {
 						"children": [],
 						"id": "uClz1vl9p6zlLSXAkRnOfe5yrfQlu5FV",
@@ -283,7 +254,7 @@
 								"nodeType": "wait",
 								"parameters": [ {
 									"name": "time",
-									"value": 23
+									"value": 7
 								} ]
 							}, {
 								"children": [],

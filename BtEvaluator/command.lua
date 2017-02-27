@@ -29,6 +29,8 @@ local methodSignatures = {
 	Reset = "Reset(self)"
 }
 
+local orderIssueingCommand = {} -- a reference used as a key in unit roles
+
 function Command:Extend(scriptName)
 	Logger.log("script-load", "Loading command from file " .. scriptName)
 	function Command:loadMethods()
@@ -67,7 +69,9 @@ function Command:Extend(scriptName)
 		newinst.activeCommands = {} -- map(unitID, setOfCmdTags)
 		newinst.idleUnits = {}
 		newinst.scriptName = scriptName -- for debugging purposes
-		newinst.onNoUnits = self.getInfo().onNoUnits or "S"
+		local info = self.getInfo()
+		newinst.issuesOrders = info.issuesOrders or false
+		newinst.onNoUnits = info.onNoUnits or "S"
 
 		success,res = pcall(newinst.New, newinst)
 		if not success then
@@ -84,14 +88,14 @@ function Command:Extend(scriptName)
 end
 
 function Command:BaseRun(unitIDs, parameters)
-	if #unitIDs == 0 and self.onNoUnits ~= self.RUNNING then
+	if unitIDs.length == 0 and self.onNoUnits ~= self.RUNNING then
 		return self.onNoUnits
 	end
-	--if #unitIDs == 0 and self.scriptName ~= "store.lua" then -- hack as store.lua does not need access to units and can be run even when there are none
-	--	return "S" -- succeeding when no units are available
-	--end
 
 	self.unitsAssigned = unitIDs
+	if(self.issuesOrders)then
+		unitIDs[orderIssueingCommand] = self -- store a reference to ourselves so that we can properly reset only if there was not another order issued by another command
+	end
 
 	success,res,retVal = pcall(self.Run, self, unitIDs, parameters)
 	if success then
@@ -103,14 +107,26 @@ end
 
 function Command:BaseReset()
 	Logger.log("command", self.scriptName, " Reset()")
-	-- TODO may mark units as idle in other commands, which break them
-	--[[
-	for i = 1, #self.unitsAssigned do
-		unitID = self.unitsAssigned[i]
-		-- hack to clear the unit's command queue (adding order without "shift" clears the queue)
-		Spring.GiveOrderToUnit(unitID, CMD.STOP, {},{})
+
+	if(self.issuesOrders)then
+		-- TODO: this handles only commands issued to the same roles, it doesn't work when a command is given to a subset, as in ALL_UNITS vs. role
+		-- possible solution: alter the group object in such a way that it can call GiveOrderToUnit itself and as such handle the resetting properly (as in check with the macrogroup)
+	
+		local unitIDs = self.unitsAssigned
+		if(unitIDs[orderIssueingCommand] == self)then -- check that there was not another node that issued a command to the group
+			Logger.log("command", self.scripName, " resetting orders")
+			unitIDs[orderIssueingCommand] = nil
+			
+			for i = 1, unitIDs.length do
+				unitID = unitIDs[i]
+				-- hack to clear the unit's command queue (adding order without "shift" clears the queue)
+				Spring.GiveOrderToUnit(unitID, CMD.STOP, {},{})
+			end
+		else
+			Logger.log("command", self.scripName, " not resetting orders, as they have already been overwritten")
+		end
 	end
-	--]]
+
 	self.unitsAssigned = {}
 	
 	self.idleUnits = {}

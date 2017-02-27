@@ -1097,6 +1097,9 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 	if(not WG.InputCommands or not WG.BtCommands) then
 		-- TODO Do a proper initialization, only once. 
 		WG.fillCustomCommandIDs()
+		if(not WG.InputCommands)then
+			return false -- if the problem persists, end
+		end
 	end
 	if(WG.InputCommands[cmdID]) then
 		Logger.log("commands", "received input command: " , cmdID)

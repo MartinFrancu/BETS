@@ -76,6 +76,30 @@ local function removeInstance(instanceId)
 	treeInstances[instanceId] = nil
 end
 
+local function removeUnitFromRole(role, unitId)
+	for j = 1, role.length do
+		if(role[j] == unitId)then
+			role[j] = role[role.length]
+			role[role.length] = nil
+			role.length = role.length - 1
+			break
+		end
+	end
+end
+
+local function removeUnitFromItsRole(unitId)
+	local role = unitToRoleMap[unitId]
+	if(not role)then return nil end
+	
+	local instance = role[parentReference]
+	local allRole = instance.roles[ALL_UNITS]
+	
+	removeUnitFromRole(role, unitId)
+	removeUnitFromRole(allRole, unitId)
+	
+	return role
+end
+
 local function getUnitsActiveCommands(unitId)
 	local role = unitToRoleMap[unitId]
 	if(not role)then return nil end
@@ -171,22 +195,12 @@ function BtEvaluator.assignUnits(units, instanceId, roleId)
 	end
 	BtEvaluator.resetTrees(treeList)
 
-	local function removeItem(t, v)
-		for j = 1, t.length do
-			if(t[j] == v)then
-				t[j] = t[t.length]
-				t[t.length] = nil
-				t.length = t.length - 1
-				break
-			end
-		end
-	end
 	for i, id in ipairs(units) do
 		local oldRole = unitToRoleMap[id]
 		if(oldRole)then
-			removeItem(oldRole, id)
+			removeUnitFromRole(oldRole, id)
 			local oldAllRole = oldRole[parentReference].roles[ALL_UNITS]
-			removeItem(allRole, id)
+			removeUnitFromRole(allRole, id)
 
 			oldRole.lastModified = currentFrame
 			oldAllRole.lastModified = currentFrame
@@ -194,7 +208,7 @@ function BtEvaluator.assignUnits(units, instanceId, roleId)
 	end
 	role.lastModified = currentFrame
 	for i = 1, role.length do
-		removeItem(allRole, role[i])
+		removeUnitFromRole(allRole, role[i])
 		unitToRoleMap[role[i]] = nil
 		role[i] = nil
 	end
@@ -379,6 +393,12 @@ function BtEvaluator.OnExpression(params)
 	else
 		return "F"
 	end
+end
+
+function widget:UnitDestroyed(unitID, unitDefID, unitTeam, attackerID, attackerDefID, attackerTeam)
+	Logger.log("command", "----UnitDestroyed---")
+	
+	removeUnitFromItsRole(unitID)
 end
 
 function widget:UnitCommand(unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdOpts, cmdTag) 
