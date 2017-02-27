@@ -207,6 +207,41 @@ function createNextParameterObject(obj)
 			y = 10 + i*20,
 			index = i, -- to be able to index editbox from treenode, to update treenode.parameters[i].value
 		}
+	elseif(param["componentType"] and param["componentType"]:lower() == "combobox") then
+		local items = {}
+		local defaultIndex = 0
+		local k = 1
+		for word in param.variableType:gmatch('([^,]+)') do
+			if(word == param.value) then
+				defaultIndex = k
+			end
+			k = k + 1
+			table.insert(items, word)
+		end
+		if(defaultIndex == 0) then
+			error("Treenode combobox default value not found in enumeration. defaultValue: "..dump(param.value).."\n"..debug.traceback())
+		end
+		result.componentType = "comboBox"
+		result.label = Label:New{
+			parent = obj.nodeWindow,
+			x = 18,
+			y = 10 + i*20,
+			width  = obj.nodeWindow.font:GetTextWidth(param["name"]),
+			height = '10%',
+			caption = param["name"],
+			--skinName='DarkGlass',
+		}
+		result.comboBox = ComboBox:New{
+			caption = param.name,
+			parent = obj.nodeWindow,
+			x = 25 + obj.nodeWindow.font:GetTextWidth(param["name"]),
+			y = 10 + i*20,
+			width = 100,
+			index = i, -- to be able to index editbox from treenode, to update treenode.parameters[i].value
+			borderThickness = 0,
+			items = items,
+		}
+		result.comboBox:Select(defaultIndex)
 	end
 	return result
 end
@@ -261,6 +296,12 @@ function TreeNode:Dispose()
 			end
 			if(self.parameterObjects[i]["editBox"]) then
 				self.parameterObjects[i]["editBox"]:Dispose()
+			end
+			if(self.parameterObjects[i]["comboBox"]) then
+				self.parameterObjects[i]["comboBox"]:Dispose()
+			end
+			if(self.parameterObjects[i]["checkBox"]) then
+				self.parameterObjects[i]["checkBox"]:Dispose()
 			end
 		end
 	end
@@ -458,6 +499,10 @@ function TreeNode:UpdateParameterValues()
 		if(checkBox) then
 			checkBox.parent.treeNode.parameters[checkBox.index].value = tostring(checkBox.checked)
 		end
+		local comboBox = self.parameterObjects[i]["comboBox"]
+		if(comboBox) then
+			comboBox.parent.treeNode.parameters[comboBox.index].value = tostring(comboBox.items[comboBox.selected])
+		end
 	end
 end
 
@@ -529,8 +574,11 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 			return
 		elseif(self.treeNode.parameterObjects[i]["checkBox"] and childName == self.treeNode.parameterObjects[i]["checkBox"].name) then
 			return
+		elseif(self.treeNode.parameterObjects[i]["comboBox"] and childName == self.treeNode.parameterObjects[i]["comboBox"].name) then
+			return
 		end
 	end
+	-- Check for double click
 	local now = Spring.GetTimer()
 	if(childName == self.treeNode.nameEditBox.name and Spring.DiffTimers(now, lastClicked) < 0.3) then
 		lastClicked = now
