@@ -164,7 +164,7 @@ function listenerClickOnSaveTree()
 		local resultTree = formBehaviourTree()
 		resultTree.roles = rolesOfCurrentTree
 		resultTree.defaultRole = rolesOfCurrentTree[1].name
-	
+		resultTree.input = {}
 		resultTree:Save(treeNameEditbox.text)
 		WG.clearSelection()
 	else

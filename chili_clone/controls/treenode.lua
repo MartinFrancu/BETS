@@ -211,10 +211,12 @@ function createNextParameterObject(obj)
 		local items = {}
 		local defaultIndex = 0
 		local k = 1
+		local width = 100
 		for word in param.variableType:gmatch('([^,]+)') do
 			if(word == param.value) then
 				defaultIndex = k
 			end
+			width = math.min(obj.nodeWindow.font:GetTextWidth(word), width)
 			k = k + 1
 			table.insert(items, word)
 		end
@@ -236,7 +238,7 @@ function createNextParameterObject(obj)
 			parent = obj.nodeWindow,
 			x = 25 + obj.nodeWindow.font:GetTextWidth(param["name"]),
 			y = 10 + i*20,
-			width = 100,
+			width = width + 40,
 			index = i, -- to be able to index editbox from treenode, to update treenode.parameters[i].value
 			borderThickness = 0,
 			items = items,
