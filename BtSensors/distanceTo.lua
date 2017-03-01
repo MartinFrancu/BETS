@@ -3,5 +3,5 @@ return function(toWhat)
 	if(not center)then
 		return nil;
 	end
-	return math.sqrt((center.x - toWhat.posX) * (center.x - toWhat.posX) + (center.z - toWhat.posZ) * (center.z - toWhat.posZ))
+	return math.sqrt((center.x - toWhat.x) * (center.x - toWhat.x) + (center.z - toWhat.z) * (center.z - toWhat.z))
 end

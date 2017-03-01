@@ -1,7 +1,6 @@
 function getInfo()
 	return {
 		onNoUnits = SUCCESS,
-		issuesOrders = true,
 		parameterDefs = {
 			{
 				name = "x",

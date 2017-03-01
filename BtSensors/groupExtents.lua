@@ -12,7 +12,7 @@ end
 
 return function()
 	if(units.length == 0)then
-		return nil
+		return {}
 	end
 	
 	local centerX, _, centerZ = getPosition(units[1])

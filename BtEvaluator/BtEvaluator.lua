@@ -97,6 +97,8 @@ local function removeUnitFromItsRole(unitId)
 	removeUnitFromRole(role, unitId)
 	removeUnitFromRole(allRole, unitId)
 	
+	unitToRoleMap[unitId] = nil
+	
 	return role
 end
 

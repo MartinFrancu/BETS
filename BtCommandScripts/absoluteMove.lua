@@ -8,7 +8,6 @@ local oldRun = Run
 function getInfo()
 	return {
 		onNoUnits = SUCCESS,
-		issuesOrders = true,
 		parameterDefs = {
 			{ 
 				name = "pos",
