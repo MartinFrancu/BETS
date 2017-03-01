@@ -91,7 +91,7 @@ end
 
 --- Fills WG.InputCommands, WG.BtCommands tables with custom commands IDs and othe needed data. Like behaviour inputs. 
 local function fillCustomCommandIDs()
-	local rawCommandsNameToID = Spring.GetGameRulesParam("CustomCommandsNameToID")
+	local rawCommandsNameToID = Spring.GetTeamRulesParam(Spring.GetMyTeamID(), "CustomCommandsNameToID")
 	if (rawCommandsNameToID ~= nil) then
 		WG.InputCommands = {}
 		WG.BtCommands = {}
@@ -127,6 +127,7 @@ local function fillCustomCommandIDs()
 		
 	else	
 		Logger.log("commands", "rawCommandsNameToID is not availible.")
+		-- should I add
 	end
 end
 
