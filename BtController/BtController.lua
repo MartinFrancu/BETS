@@ -255,40 +255,40 @@ function TreeHandle:New(obj)
 	obj.Inputs = {}
 	
 	local treeTypeLabel = Chili.Label:New{
-	x = 50,
-	y = 15,
-	height = 30,
-	width =  200,
-	minWidth = 50,
-	caption =  obj.TreeType,
+		x = 50,
+		y = 7,
+		height = 30,
+		width =  200,
+		minWidth = 50,
+		caption =  obj.TreeType,
 		skinName = "DarkGlass",
 		--focusColor = {0.5,0.5,0.5,0.5},
 	}
 	-- Order of these childs is sort of IMPORTANT as other entities needs to access children
 	table.insert(obj.ChiliComponents, treeTypeLabel)
-	--[[
-	local labelNameTextBox = Chili.TextBox:New{
-		x = 5,
-		y = 50,
+	local resetTreeButton = Chili.Button:New{
+		x = 150,
+		y = 0,
 		height = 30,
-		width =  150,
+		width =  100,
 		minWidth = 50,
-		text = "Assign selected units:",
+		caption =  "Restart tree",
+		OnClick = {restartTreeListener}, 
+		TreeHandle = obj,
 		skinName = "DarkGlass",
-		--focusColor = {0.5,0.5,0.5,0.5},
 	}
-	table.insert(obj.ChiliComponents, labelNameTextBox)	
-	--]]
+	table.insert(obj.ChiliComponents, resetTreeButton)
 	
 	local roleInd = 0 
 	local roleCount = #obj.Tree.roles
 	
 	local rolesXOffset = 10
 	local rolesYOffset = 30
+	local roleButtonWidth = 200
 	for _,roleData in pairs(obj.Tree.roles) do
 		local roleName = roleData.name
 		local unitsCountLabel = Chili.Label:New{
-			x = rolesXOffset+200 ,
+			x = rolesXOffset + roleButtonWidth ,
 			y = rolesYOffset + 5 + 22 * roleInd,
 			height = roleCount == 1 and 30 or 20,
 			width = '25%',
@@ -555,7 +555,7 @@ function reportTreeToBtEvaluator(treeHandle)
 	Logger.loggedCall("Errors", "BtController", "instantiating new tree in BtEvaluator", 
 		BtEvaluator.createTree, treeHandle.InstanceId, treeHandle.Tree, treeHandle.Inputs)
 end
--- This reports 
+
 function reportAssignedUnits(treeHandle)
 	-- change this to proper tree report
 	local originallySelectedUnits = spGetSelectedUnits()
@@ -577,7 +577,7 @@ function reportTreeAndUnitsBtEval(treeHandle)
 end
 
 function reportInputToBtEval(treeHandle, inputName)
-	Logger.loggedCall("Errors", "BtController", "instantiating new tree in BtEvaluator", 
+	Logger.loggedCall("Errors", "BtController", "reporting changed input", 
 		BtEvaluator.setInput, treeHandle.InstanceId , inputName, treeHandle.Inputs[inputName]) 
 end 
 -- this will remove given unit from its current tree and adjust the gui componnets
@@ -765,7 +765,15 @@ function listenerErrorOk(self)
 end
 
 
-
+function restartTreeListener(self, x,y, button)
+	if(button == 1) then
+		if(self.TreeHandle:CheckReady()) then
+			-- restart it only if it is ready
+			Logger.loggedCall("Errors", "BtController", "reseting tree, reset button", 
+			BtEvaluator.resetTree, self.TreeHandle.InstanceId)
+		end
+	end 
+end 
 
 -- Listener for button in treeSelectionTab which creates new tree.
 local function listenerClickOnSelectedTreeDoneButton(self, x, y, button)
