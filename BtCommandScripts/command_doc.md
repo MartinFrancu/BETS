@@ -15,17 +15,17 @@ getInfo()
 - function providing details about the script
 
 ###  Implementation template ###
-    
-       return {
+
+    return {
     	onNoUnits = [SUCCESS|FAILURE], -- the result of the call to Run() when no units are passed in the argument.
-    	issuesOrders = boolean, -- by default false; information telling the BETS widgets if this command assigns orders to units (by Spring.GiveOrderToUnit() or similar functions)
     	parameterDefs = { -- array of the definitions of parameter that this command uses (and that the creators BTs can specify)
     		{
     			-- name of the parameter. Displayed in the BtCreator and is used to access the value in Run()
     			name = "x",
-    			-- type of values that can be entered in the component 
+    			-- type of values that can be entered in the component. 
+    			-- For componentType 'comboBox' should contain a list of possible values separated by a comma in one string.("value1,value2,value3")
     			variableType = ["number"|"string"|"expression"], -- expression is lua code
-    			-- component to be used in BtCreator for value input. Currently only "editBox" is a valid value.
+    			-- component to be used in BtCreator for value input. Only "editBox", "comboBox", "checkBox" are valid values.
     			componentType = "editBox",
     			-- prefilled value in the component
     			defaultValue = "0",
@@ -39,7 +39,7 @@ getInfo()
     	}
     }
 
-	
+
 ## Run(self, unitIds, parameter) ##
 
 This function is repeatedly called until it returns SUCCESS or FAILURE.
