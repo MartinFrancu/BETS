@@ -430,6 +430,7 @@ function listenerAddInput(obj)
 			items = {"Position", "Area", "UnitID"},
 		}
 	table.insert(inputs, { editBox, comboBox })
+	return true
 end
 
 function listenerRemoveInput(obj)
@@ -441,6 +442,7 @@ function listenerRemoveInput(obj)
 	inputs[i][1]:Dispose()
 	inputs[i][2]:Dispose()
 	table.remove(inputs, i)
+	return true
 end
 
 --//=============================================================================

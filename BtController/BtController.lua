@@ -1063,7 +1063,7 @@ function widget:Initialize()
 				end
 			end
 		end
-		listenerClickOnSelectedTreeDoneButton(self, treeSelectionDoneButton.x, treeSelectionDoneButton.y, 1)
+		-- listenerClickOnSelectedTreeDoneButton(self, treeSelectionDoneButton.x, treeSelectionDoneButton.y, 1)
 	end
 	
 	----[[
