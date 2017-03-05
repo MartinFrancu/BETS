@@ -165,6 +165,22 @@ function listenerClickOnSaveTree()
 		resultTree.roles = rolesOfCurrentTree
 		resultTree.defaultRole = rolesOfCurrentTree[1].name
 		resultTree.inputs = {}
+		
+		local inputs = WG.nodeList[rootID].inputs
+		for i=1,#inputs do
+			local inputType = inputs[i][2].items[ inputs[i][2].selected ]
+			if(inputType == "Position") then 
+				inputType = "ICON_MAP"
+			elseif(inputType == "Area") then
+				inputType = "ICON_AREA"
+			elseif(inputType == "UnitID") then
+				inputType = "ICON_UNIT"
+			else
+				error("Uknown tree input type detected in BtCreator tree serialization. "..debug.traceback())
+			end
+			table.insert(resultTree.inputs, {["name"] = inputs[i][1].text, ["type"] = inputType,})
+		end
+		
 		resultTree:Save(treeNameEditbox.text)
 		WG.clearSelection()
 	else
@@ -418,6 +434,23 @@ function listenerOnClickOnCanvas()
 	end
 end
 
+function createRoot()
+	return Chili.TreeNode:New{
+		parent = windowBtCreator,
+		nodeType = "Root",
+		y = '35%',
+		x = 5,
+		width = 210,
+		height = 80,
+		draggable = true,
+		resizable = true,
+		connectable = true,
+		hasConnectionIn = false,
+		hasConnectionOut = true,
+		id = false,
+	}
+end
+
 function widget:Initialize()	
 	if (not WG.ChiliClone) then
 		-- don't run if we can't find Chili
@@ -482,18 +515,7 @@ function widget:Initialize()
 		-- OnMouseUp = { listenerEndSelectingNodes },
 	}	
 	
-	addNodeToCanvas(Chili.TreeNode:New{
-		parent = windowBtCreator,
-		nodeType = "Root",
-		y = '35%',
-		x = 5,
-		draggable = true,
-		resizable = true,
-		connectable = true,
-		hasConnectionIn = false,
-		hasConnectionOut = true,
-		id = false,
-	})
+	addNodeToCanvas( createRoot() )
 	
 	newTreeButton = Chili.Button:New{
 		x = windowBtCreator.x,
@@ -708,18 +730,7 @@ function clearCanvas(omitRoot)
 	WG.selectedNodes = {}
 	
 	if(not omitRoot)then
-		addNodeToCanvas(Chili.TreeNode:New{
-			parent = windowBtCreator,
-			nodeType = "Root",
-			y = '35%',
-			x = 5,
-			draggable = true,
-			resizable = true,
-			connectable = true,
-			hasConnectionIn = false,
-			hasConnectionOut = true,
-			id = false,
-		})
+		addNodeToCanvas( createRoot() )
 	end
 end
 

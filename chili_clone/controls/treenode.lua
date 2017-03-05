@@ -140,6 +140,31 @@ function TreeNode:New(obj)
 		borderThickness = 0,
 		backgroundColor = {0,0,0,0},
 	}
+	if(obj.nodeType:lower() == "root") then
+		local label = Label:New{
+			parent = obj.nodeWindow,
+			x = 18,
+			y = 24,
+			width  = obj.nodeWindow.font:GetTextWidth("Inputs"),
+			height = '10%',
+			caption = "Inputs",
+		}
+		obj.addButton = Button:New{
+			parent = obj.nodeWindow,
+			x = label.x + label.width + 6,
+			y = label.y,
+			caption = "Add",
+			width = 50,
+			OnClick = { listenerAddInput },
+		}
+		obj.removeButton = Button:New{
+			parent = obj.nodeWindow,
+			x = obj.addButton.x + obj.addButton.width + 6,
+			y = label.y,
+			caption = "Remove",
+			OnClick = { listenerRemoveInput },
+		}
+	end
 	obj.nodeWindow.minWidth = math.max(obj.nodeWindow.minWidth, obj.nameEditBox.font:GetTextWidth(obj.nameEditBox.text) + 33)
 	obj.nodeWindow.minHeight = obj.nodeWindow.height
 
@@ -376,6 +401,49 @@ function connectionLineCanBeCreated(obj)
 end
 
 --//=============================================================================
+--// Listeners - input buttons
+--//=============================================================================
+
+function listenerAddInput(obj)
+	local inputs = obj.parent.treeNode.inputs or {}
+	obj.parent.treeNode.inputs = inputs
+	local i = #inputs
+	local editBox = EditBox:New{
+		parent = obj.parent,
+		text = "input"..i,
+		defaultWidth = '40%',
+		x = '10%',
+		y = 45 + i*20,
+		align = 'left',
+		--skinName = 'DarkGlass',
+		borderThickness = 0,
+		backgroundColor = {0,0,0,0},
+	}
+	local comboBox = ComboBox:New{
+			caption = "",
+			parent = obj.parent,
+			x = '55%',
+			y = 45 + i*20,
+			width = 80,
+			borderThickness = 0,
+			--skinName = 'DarkGlass',
+			items = {"Position", "Area", "UnitID"},
+		}
+	table.insert(inputs, { editBox, comboBox })
+end
+
+function listenerRemoveInput(obj)
+	local inputs = obj.parent.treeNode.inputs or {}
+	local i = #inputs
+	if(i <= 0) then
+		return
+	end 
+	inputs[i][1]:Dispose()
+	inputs[i][2]:Dispose()
+	table.remove(inputs, i)
+end
+
+--//=============================================================================
 --// Listeners
 --//=============================================================================
 
@@ -571,6 +639,22 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 	-- Check if the connectionIn or connectionOut was clicked
 	if((self.treeNode.connectionIn and childName == self.treeNode.connectionIn.name) or (self.treeNode.connectionOut and childName == self.treeNode.connectionOut.name)) then
 		return
+	end
+	-- Check for input buttons
+	if(self.treeNode.addButton and self.treeNode.addButton.name == childName) then
+		return
+	end
+	if(self.treeNode.removeButton and self.treeNode.removeButton.name == childName) then
+		return
+	end
+	-- Check for input editBox and comboBox
+	if(self.treeNode.inputs) then
+		local inputs = self.treeNode.inputs
+		for i=1,#inputs do
+			if(childName == inputs[i][1].name or childName == inputs[i][2].name) then
+				return
+			end
+		end
 	end
 	-- Check if the parameter value (editbox's text) hasnt changed
 	self.treeNode:UpdateParameterValues()
