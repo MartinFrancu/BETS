@@ -360,25 +360,32 @@ local function generateScriptNodes(heightSum, nodes)
 	return heightSum
 end
 
+local function getFileExtension(filename)
+  return filename:match("^.+(%..+)$")
+end
+
 local function getParameterDefinitions()
 	local directoryName = LUAUI_DIRNAME .. "Widgets/BtCommandScripts" 
 	local folderContent = VFS.DirList(directoryName)
 	local paramsDefs = {}
 
 	for _,scriptName in ipairs(folderContent)do
-		Logger.log("script-load", "Loading definition from file: ", scriptName)
-		local nameComment = "--[[" .. scriptName .. "]] "
-		local code = nameComment .. VFS.LoadFile(scriptName) .. "; return getInfo()"
-		local shortName = string.sub(scriptName, string.len(directoryName) + 2)
-		local script = assert(loadstring(code))
-	
-		local success, info = pcall(script)
+		if getFileExtension(scriptName) == ".lua" then
+			Logger.log("script-load", "Loading definition from file: ", scriptName)
+			
+			local nameComment = "--[[" .. scriptName .. "]] "
+			local code = nameComment .. VFS.LoadFile(scriptName) .. "; return getInfo()"
+			local shortName = string.sub(scriptName, string.len(directoryName) + 2)
+			local script = assert(loadstring(code))
+		
+			local success, info = pcall(script)
 
-		if success then
-			Logger.log("script-load", "Script: ", shortName, ", Definitions loaded: ", info.parameterDefs)
-			paramsDefs[shortName] = info.parameterDefs or {}
-		else
-			error("script-load".. "Script ".. scriptName.. " is missing the getParameterDefs() function or it contains an error: ".. info)
+			if success then
+				Logger.log("script-load", "Script: ", shortName, ", Definitions loaded: ", info.parameterDefs)
+				paramsDefs[shortName] = info.parameterDefs or {}
+			else
+				error("script-load".. "Script ".. scriptName.. " is missing the getInfo() function or it contains an error: ".. info)
+			end
 		end
 	end
 	return paramsDefs
