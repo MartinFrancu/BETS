@@ -192,8 +192,8 @@ end
 
 
 
-
-
+TreeHandle = {}
+--[[
 TreeHandle = {
 			Name = "no_name", 
 			TreeType = "no_tree_type", 
@@ -206,8 +206,9 @@ TreeHandle = {
 			InputButtons = {},
 			Ready = false,
 			Reported = false,
+			Inputs = {}
 			} 
-			
+--]]			
 --[[-----------------------------------------------------------------------------------
 --	Contains	Name = "name of tree"
 --				TreeType = loaded tree into table
@@ -225,18 +226,12 @@ TreeHandle = {
 function TreeHandle:CheckReady()
 	local allOkSoFar = true
 	for _,input in pairs(self.Tree.inputs) do
-		Logger.log("commands", "input checked..")
-		if(input["value"] == nil) then
+		if(self.Inputs[input.name] == nil) then
 			allOkSoFar = false
 		end
 	end
 	if(allOkSoFar == true) then
 		self.Ready = true	
-		--[[for _,thingToDo in pairs(self.DoWhenReady) do
-			thingToDo(self)
-		end
-		self.DoWhenReady = {}
-		--]]
 		return true
 	else
 		self.Ready = false
@@ -245,7 +240,7 @@ function TreeHandle:CheckReady()
 end
 
 function TreeHandle:New(obj)
-	obj = obj -- or TreeHandle
+	--obj = obj -- or TreeHandle
 	setmetatable(obj, self)
 	self.__index = self
 	obj.InstanceId = GenerateID()
@@ -257,42 +252,43 @@ function TreeHandle:New(obj)
 	obj.RequireUnits = true
 	obj.AssignedUnitsCount = 0
 	obj.Reported = false
+	obj.Inputs = {}
 	
 	local treeTypeLabel = Chili.Label:New{
-	x = 50,
-	y = 15,
-	height = 30,
-	width =  200,
-	minWidth = 50,
-	caption =  obj.TreeType,
+		x = 50,
+		y = 7,
+		height = 30,
+		width =  200,
+		minWidth = 50,
+		caption =  obj.TreeType,
 		skinName = "DarkGlass",
 		--focusColor = {0.5,0.5,0.5,0.5},
 	}
 	-- Order of these childs is sort of IMPORTANT as other entities needs to access children
 	table.insert(obj.ChiliComponents, treeTypeLabel)
-	--[[
-	local labelNameTextBox = Chili.TextBox:New{
-		x = 5,
-		y = 50,
+	local resetTreeButton = Chili.Button:New{
+		x = 150,
+		y = 0,
 		height = 30,
-		width =  150,
+		width =  100,
 		minWidth = 50,
-		text = "Assign selected units:",
+		caption =  "Restart tree",
+		OnClick = {restartTreeListener}, 
+		TreeHandle = obj,
 		skinName = "DarkGlass",
-		--focusColor = {0.5,0.5,0.5,0.5},
 	}
-	table.insert(obj.ChiliComponents, labelNameTextBox)	
-	--]]
+	table.insert(obj.ChiliComponents, resetTreeButton)
 	
 	local roleInd = 0 
 	local roleCount = #obj.Tree.roles
 	
 	local rolesXOffset = 10
 	local rolesYOffset = 30
+	local roleButtonWidth = 200
 	for _,roleData in pairs(obj.Tree.roles) do
 		local roleName = roleData.name
 		local unitsCountLabel = Chili.Label:New{
-			x = rolesXOffset+200 ,
+			x = rolesXOffset + roleButtonWidth ,
 			y = rolesYOffset + 5 + 22 * roleInd,
 			height = roleCount == 1 and 30 or 20,
 			width = '25%',
@@ -398,11 +394,8 @@ function TreeHandle:SetUnitCount(whichRole, number)
 	roleData.unitCountLabel:SetCaption(number)
 	self.AssignedUnitsCount = self.AssignedUnitsCount + number
 end
-
-
-
 function TreeHandle:FillInInput(inputName, data)
-	-- I should change name of input
+	-- I should change color of input
 	for _,inputButton in pairs(self.InputButtons) do
 		if(inputButton.InputName == inputName) then
 			inputButton.backgroundColor = {0.1,0.6,0.1,1}
@@ -410,14 +403,41 @@ function TreeHandle:FillInInput(inputName, data)
 			inputButton:RequestUpdate()
 		end
 	end
-	
-	for _,input in pairs(self.Tree.inputs) do
+	---!!! here put storing input in proper place
+	--[[for _,input in pairs(self.Tree.inputs) do
 		if(input.name == inputName) then
 			input["value"] = data
 		end
-	end
+	end]]--
+	self.Inputs[inputName] = data
 	self:CheckReady() 
 end
+
+-----TREE HANDLE LISTENERS------------------------------------------------------
+--[[
+
+function TreeHandle:InputButtonListener(x,y,button, ...)
+
+
+	if(not WG.InputCommands or not WG.BtCommands) then
+		WG.fillCustomCommandIDs()
+	end
+	-- should I do something more when reseting the input que?
+	-- I need to store record what we are expecting
+	expectedInput = {
+		TreeHandle = self.TreeHandle,
+		InputName = self.InputName,
+		CommandName = self.CommandName,
+		InstanceId = self.InstanceId,
+	}
+	--
+	local ret = spSetActiveCommand(  spGetCmdDescIndex(WG.InputCommands[ expectedInput.CommandName ]) ) --  spGetCmdDescIndex( WG.InputCommands[ expectedInput.CommandName ] ))
+	if(ret == false ) then 
+		Logger.log("commands", "Unable to set command active: " , expectedInput.CommandName) 
+	end
+end
+--]]
+--------------------------------------------------------------------------------
 
 function SendStringToBtEvaluator(message)
 	Spring.SendSkirmishAIMessage(Spring.GetLocalPlayerID(), "BETS " .. message)
@@ -530,12 +550,14 @@ end
 
 function reportTreeToBtEvaluator(treeHandle) 
 		-- create the tree immediately when the tab is created
+		--- CHANGE this to proper tree reporting
 	Logger.log("commands", "reporting tree")
 	Logger.loggedCall("Errors", "BtController", "instantiating new tree in BtEvaluator", 
-		BtEvaluator.createTree, treeHandle.InstanceId, treeHandle.Tree)
+		BtEvaluator.createTree, treeHandle.InstanceId, treeHandle.Tree, treeHandle.Inputs)
 end
--- This reports 
+
 function reportAssignedUnits(treeHandle)
+	-- change this to proper tree report
 	local originallySelectedUnits = spGetSelectedUnits()
 	for name,roleData in pairs(treeHandle.Roles) do
 		-- now I need to share information with the BtEvaluator
@@ -547,14 +569,17 @@ function reportAssignedUnits(treeHandle)
 	Spring.SelectUnitArray(originallySelectedUnits)
 end
 
-function reportInputs()
-	
-end
 
 function reportTreeAndUnitsBtEval(treeHandle)
+--- change this
 	reportTreeToBtEvaluator(treeHandle)
 	reportAssignedUnits(treeHandle)
 end
+
+function reportInputToBtEval(treeHandle, inputName)
+	Logger.loggedCall("Errors", "BtController", "reporting changed input", 
+		BtEvaluator.setInput, treeHandle.InstanceId , inputName, treeHandle.Inputs[inputName]) 
+end 
 -- this will remove given unit from its current tree and adjust the gui componnets
 function removeUnitFromCurrentTree(unitId)	
 	if(unitsToTreesMap[unitId] == nil) then return end
@@ -607,7 +632,8 @@ function instantiateTree(treeType, instanceName, requireUnits)
 		TreeType = treeType,
 		ReportTree = reportTreeToBtEvaluator,
 		ReportUnits = reportAssignedUnits,
-		ReportInput = reportTreeToBtEvaluator,
+		ReportInput = reportInputToBtEval,
+		-- give here proper functions
 	}
 	
 	local selectedUnits = spGetSelectedUnits()
@@ -623,8 +649,6 @@ function instantiateTree(treeType, instanceName, requireUnits)
 	automaticRoleAssignment(newTreeHandle, selectedUnits)
 	
 	newTreeHandle.RequireUnits = requireUnits
-	
-	
 	
 	if(newTreeHandle:CheckReady()) then
 		newTreeHandle.ReportTree(newTreeHandle)
@@ -741,7 +765,15 @@ function listenerErrorOk(self)
 end
 
 
-
+function restartTreeListener(self, x,y, button)
+	if(button == 1) then
+		if(self.TreeHandle:CheckReady()) then
+			-- restart it only if it is ready
+			Logger.loggedCall("Errors", "BtController", "reseting tree, reset button", 
+			BtEvaluator.resetTree, self.TreeHandle.InstanceId)
+		end
+	end 
+end 
 
 -- Listener for button in treeSelectionTab which creates new tree.
 local function listenerClickOnSelectedTreeDoneButton(self, x, y, button)
@@ -752,40 +784,7 @@ local function listenerClickOnSelectedTreeDoneButton(self, x, y, button)
 			local selectedTreeType = treeSelectionComboBox.items[treeSelectionComboBox.selected]
 			local instanceName = treeNameEditBox.text
 			local newTreeHandle = instantiateTree(selectedTreeType, instanceName, false)
-			
-			--[[if(newTreeHandle.Ready) then 
-				-- tree is ready to go
-				reportTree(newTreeHandle)
-				reportAssignedUnits(newTreeHandle)
-			end
-			--]]
-			
 			listenerBarItemClick({TreeHandle = newTreeHandle},x ,y ,button)	
-			--[[
-			-- instance with such name is not used
-			local selectedTreeType = treeSelectionComboBox.items[treeSelectionComboBox.selected]
-			--should not be needed anymore: name = name:sub(1,name:len()-5)
-				
-			--reloadTree(name)
-			local newTreeHandle = TreeHandle:New{
-				Name = treeNameEditBox.text,
-				TreeType = selectedTreeType,
-			}
-			local selectedUnits = spGetSelectedUnits()
-			
-			-- create tab
-			addTreeToTreeTabPanel(newTreeHandle)
-			
-			-- create the tree immediately when the tab is created
-			BtEvaluator.createTree(newTreeHandle.InstanceId, newTreeHandle.Tree)
-			
-			-- now, assign units to tree
-			automaticRoleAssignment(newTreeHandle, selectedUnits)
-			
-			
-			--]]
-			
-
 		else
 			-- if such instance name exits show error window
 			showErrorWindow("Duplicate instance name.")
@@ -1064,7 +1063,7 @@ function widget:Initialize()
 				end
 			end
 		end
-		listenerClickOnSelectedTreeDoneButton(self, treeSelectionDoneButton.x, treeSelectionDoneButton.y, 1)
+		-- listenerClickOnSelectedTreeDoneButton(self, treeSelectionDoneButton.x, treeSelectionDoneButton.y, 1)
 	end
 	
 	----[[
@@ -1086,12 +1085,6 @@ function widget:UnitDestroyed(unitId)
 	end
 end
 
---[[
-local BtInputs = {}
-local instance = {}
-local inputQueue = {}
---]]
-
 function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 	-- Check for custom commands, first input commands
 	if(not WG.InputCommands or not WG.BtCommands) then
@@ -1103,38 +1096,22 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 	end
 	if(WG.InputCommands[cmdID]) then
 		Logger.log("commands", "received input command: " , cmdID)
-		--[[
-		-- end user inputs
-		if(WG.InputCommands["BETS_INPUT_END"] == cmdID) then
-			if(table.getn(instance.units) > 0) then
-				-- do not create tree if there is no units selected
-				local treeHandle = instantiateTree(instance.treeName, instance.name, true)
-				-- TODO pass/save BtParams to context now
-				listenerBarItemClick({TreeHandle = treeHandle}, x, y, 1)
-			end
-			inputQueue = {}
-			instance = {}
-			BtInputs = {}
-			return false
-		end
-		BtInputs[ #BtInputs + 1 ] = cmdParams
-		local ret = spSetActiveCommand(spGetCmdDescIndex( WG.InputCommands[ inputQueue[#BtInputs + 1] ] ))
-		--]]
+
 		if(expectedInput ~= nil) then
 			-- I should insert given input to tree:
 			local tH = expectedInput.TreeHandle 
-			tH:FillInInput(expectedInput.InputName, cmdParams)
+			local inpName = expectedInput.InputName
+			tH:FillInInput(inpName, cmdParams)
 			expectedInput = nil
 			if(tH:CheckReady()) then 
-				----[[
 				if(tH.Reported == false) then
 					tH.Reported = true
 					tH.ReportTree(tH)
 					tH.ReportUnits(tH)
-				end--]]
-				-- tree is ready, we can report him
-				--reportTreeAndUnitsBtEval(tH)
-				tH:ReportInput(tH)
+				else
+					-- tree is ready, we can report just input
+					tH:ReportInput(tH, inpName)
+				end
 			end
 		else
 			Logger.log("commands", "Received input command while not expecting!!!")
@@ -1148,23 +1125,6 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 		local treeHandle = instantiateTree(WG.BtCommands[cmdID].treeName, "Instance"..instanceIdCount , true)
 		
 		listenerBarItemClick({TreeHandle = treeHandle}, x, y, 1)
-		-- I should be able to create tree without reporting it to wait for input
-
-		--[[
-		local inputs = WG.BtCommands[cmdID].inputs
-		inputQueue = {}
-		for i=1,#inputs do
-			inputQueue[i] = inputs[i].command
-		end
-		inputQueue[ #inputQueue + 1 ] = "BETS_INPUT_END"
-		local ret = spSetActiveCommand(spGetCmdDescIndex( WG.InputCommands[ inputQueue[1] ] ))
-		
-		instance.treeName = WG.BtCommands[cmdID].treeName
-		instance.name = "Instance"..instanceIdCount
-		instance.units = spGetSelectedUnits()
-		
-		return false
-		--]]
 		return true
 	end
 	Logger.log("commands", "received unknown command: " , cmdID)

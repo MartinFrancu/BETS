@@ -29,6 +29,47 @@ local methodSignatures = {
 	Reset = "Reset(self)"
 }
 
+local currentlyExecutingCommand = nil
+local unitToOrderIssueingCommandMap = {}
+-- alters the certain tables that are available from within the instance
+Command.Spring = setmetatable({
+	GiveOrderToUnit = function(unitID, ...)
+		unitToOrderIssueingCommandMap[unitID] = currentlyExecutingCommand
+		
+		return Spring.GiveOrderToUnit(unitID, ...)
+	end,
+	GiveOrderToUnitMap = function(unitMap, ...)
+		for unitID in pairs(unitMap) do
+			unitToOrderIssueingCommandMap[unitID] = currentlyExecutingCommand
+		end
+		
+		return Spring.GiveOrderToUnitMap(unitMap, ...)
+	end,
+	GiveOrderToUnitArray = function(unitArray, ...)
+		for _, unitID in ipairs(unitArray) do
+			unitToOrderIssueingCommandMap[unitID] = currentlyExecutingCommand
+		end
+		
+		return Spring.GiveOrderToUnitArray(unitArray, ...)
+	end,
+	GiveOrderArrayToUnitMap = function(unitMap, ...)
+		for unitID in pairs(unitMap) do
+			unitToOrderIssueingCommandMap[unitID] = currentlyExecutingCommand
+		end
+		
+		return Spring.GiveOrderArrayToUnitMap(unitMap, ...)
+	end,
+	GiveOrderArrayToUnitArray = function(unitArray, ...)
+		for _, unitID in ipairs(unitArray) do
+			unitToOrderIssueingCommandMap[unitID] = currentlyExecutingCommand
+		end
+		
+		return Spring.GiveOrderArrayToUnitArray(unitArray, ...)
+	end,
+}, {
+	__index = Spring
+})
+
 local orderIssueingCommand = {} -- a reference used as a key in unit roles
 
 function Command:Extend(scriptName)
@@ -54,37 +95,37 @@ function Command:Extend(scriptName)
 		
 		if not self.Run then
 			Logger.error("script-load", "scriptName: ", scriptName, ", Method ", methodSignatures.Run, "  missing")
-			self.Run = function() return FAILURE end
+			self.Run = function() return Command.FAILURE end
 		end
 	end
 
 	Logger.log("script-load", "scriptName: ", scriptName)
-    local new_class = {	}
-    local class_mt = { __index = new_class }
+	local new_class = {	}
+	local class_mt = { __index = new_class }
 	
-    function new_class:BaseNew()
-        local newinst = {}
-        setmetatable( newinst, class_mt )
+	function new_class:BaseNew()
+		local newinst = {}
+		setmetatable( newinst, class_mt )
 		newinst.unitsAssigned = {}
 		newinst.activeCommands = {} -- map(unitID, setOfCmdTags)
 		newinst.idleUnits = {}
 		newinst.scriptName = scriptName -- for debugging purposes
+		
 		local info = self.getInfo()
-		newinst.issuesOrders = info.issuesOrders or false
-		newinst.onNoUnits = info.onNoUnits or "S"
+		newinst.onNoUnits = info.onNoUnits or Command.SUCCESS
 
 		success,res = pcall(newinst.New, newinst)
 		if not success then
-			Logger.log("command", "Error in script ", scriptName, ", method " .. methodSignatures.New, ": ", res)
+			Logger.error("command", "Error in script ", scriptName, ", method " .. methodSignatures.New, ": ", res)
 		end
-        return newinst
-    end
-    setmetatable( new_class, { __index = self } )
+		return newinst
+	end
+	setmetatable( new_class, { __index = self } )
 
 	
 	new_class:loadMethods()
 
-    return new_class
+	return new_class
 end
 
 function Command:BaseRun(unitIDs, parameters)
@@ -93,37 +134,29 @@ function Command:BaseRun(unitIDs, parameters)
 	end
 
 	self.unitsAssigned = unitIDs
-	if(self.issuesOrders)then
-		unitIDs[orderIssueingCommand] = self -- store a reference to ourselves so that we can properly reset only if there was not another order issued by another command
-	end
+
+	currentlyExecutingCommand = self
 
 	success,res,retVal = pcall(self.Run, self, unitIDs, parameters)
 	if success then
 		return res, retVal
 	else
-		Logger.log("command", "Error in script ", self.scriptName, ", method ", methodSignatures.Run, ": ", res)
+		Logger.error("command", "Error in script ", self.scriptName, ", method ", methodSignatures.Run, ": ", res)
 	end
 end
 
 function Command:BaseReset()
 	Logger.log("command", self.scriptName, " Reset()")
 
-	if(self.issuesOrders)then
-		-- TODO: this handles only commands issued to the same roles, it doesn't work when a command is given to a subset, as in ALL_UNITS vs. role
-		-- possible solution: alter the group object in such a way that it can call GiveOrderToUnit itself and as such handle the resetting properly (as in check with the macrogroup)
-	
-		local unitIDs = self.unitsAssigned
-		if(unitIDs[orderIssueingCommand] == self)then -- check that there was not another node that issued a command to the group
-			Logger.log("command", self.scripName, " resetting orders")
-			unitIDs[orderIssueingCommand] = nil
-			
-			for i = 1, unitIDs.length do
-				unitID = unitIDs[i]
+	local unitIDs = self.unitsAssigned
+	if(unitIDs.length)then
+		for i = 1, unitIDs.length do
+			unitID = unitIDs[i]
+			if(unitToOrderIssueingCommandMap[unitID] == self)then
+				unitToOrderIssueingCommandMap[unitID] = nil
 				-- hack to clear the unit's command queue (adding order without "shift" clears the queue)
 				Spring.GiveOrderToUnit(unitID, CMD.STOP, {},{})
 			end
-		else
-			Logger.log("command", self.scripName, " not resetting orders, as they have already been overwritten")
 		end
 	end
 
@@ -131,10 +164,11 @@ function Command:BaseReset()
 	
 	self.idleUnits = {}
 	
+	currentlyExecutingCommand = self
 
 	success,res = pcall(self.Reset, self)
 	if not success then
-		Logger.log("command", "Error in script ", self.scriptName, ", method ", methodSignatures.Reset, ": ", res)
+		Logger.error("command", "Error in script ", self.scriptName, ", method ", methodSignatures.Reset, ": ", res)
 	end
 end
 

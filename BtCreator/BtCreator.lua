@@ -157,6 +157,14 @@ function listenerEndCopyingNode(self, x , y)
 end
 
 local clearCanvas, loadBehaviourTree, formBehaviourTree
+local inputTypeMap = {
+	["Position"] = "BETS_POSITION",
+	["Area"]     = "BETS_AREA",
+	["UnitID"]   = "BETS_UNIT",
+	["BETS_POSITION"] = "Position",
+	["BETS_AREA"]			= "Area",
+	["BETS_UNIT"]			= "UnitID",
+}
 
 function listenerClickOnSaveTree()
 	if( next(rolesOfCurrentTree) ~= nil ) then
@@ -164,7 +172,16 @@ function listenerClickOnSaveTree()
 		local resultTree = formBehaviourTree()
 		resultTree.roles = rolesOfCurrentTree
 		resultTree.defaultRole = rolesOfCurrentTree[1].name
-	
+		resultTree.inputs = {}
+		
+		local inputs = WG.nodeList[rootID].inputs
+		for i=1,#inputs do
+			if (inputTypeMap[ inputs[i][2].items[ inputs[i][2].selected ] ] == nil) then
+				error("Uknown tree input type detected in BtCreator tree serialization. "..debug.traceback())
+			end
+			table.insert(resultTree.inputs, {["name"] = inputs[i][1].text, ["command"] = inputTypeMap[ inputs[i][2].items[ inputs[i][2].selected ] ],})
+		end
+		
 		resultTree:Save(treeNameEditbox.text)
 		WG.clearSelection()
 	else
@@ -418,6 +435,23 @@ function listenerOnClickOnCanvas()
 	end
 end
 
+function createRoot()
+	return Chili.TreeNode:New{
+		parent = windowBtCreator,
+		nodeType = "Root",
+		y = '35%',
+		x = 5,
+		width = 210,
+		height = 80,
+		draggable = true,
+		resizable = true,
+		connectable = true,
+		hasConnectionIn = false,
+		hasConnectionOut = true,
+		id = false,
+	}
+end
+
 function widget:Initialize()	
 	if (not WG.ChiliClone) then
 		-- don't run if we can't find Chili
@@ -482,18 +516,7 @@ function widget:Initialize()
 		-- OnMouseUp = { listenerEndSelectingNodes },
 	}	
 	
-	addNodeToCanvas(Chili.TreeNode:New{
-		parent = windowBtCreator,
-		nodeType = "Root",
-		y = '35%',
-		x = 5,
-		draggable = true,
-		resizable = true,
-		connectable = true,
-		hasConnectionIn = false,
-		hasConnectionOut = true,
-		id = false,
-	})
+	addNodeToCanvas( createRoot() )
 	
 	newTreeButton = Chili.Button:New{
 		x = windowBtCreator.x,
@@ -708,18 +731,7 @@ function clearCanvas(omitRoot)
 	WG.selectedNodes = {}
 	
 	if(not omitRoot)then
-		addNodeToCanvas(Chili.TreeNode:New{
-			parent = windowBtCreator,
-			nodeType = "Root",
-			y = '35%',
-			x = 5,
-			draggable = true,
-			resizable = true,
-			connectable = true,
-			hasConnectionIn = false,
-			hasConnectionOut = true,
-			id = false,
-		})
+		addNodeToCanvas( createRoot() )
 	end
 end
 
@@ -784,12 +796,25 @@ function loadBehaviourTree(bt)
 	if(root)then
 		connectionLine.add(WG.nodeList[rootID].connectionOut, root.connectionIn)
 	end
-	
 	for _, node in ipairs(bt.additionalNodes) do
 		loadBehaviourNode(bt, node)
 	end
 	WG.clearSelection()
 	updateSerializedIDs()
+	-- deserialize tree inputs
+	local addButton = WG.nodeList[rootID].addButton
+	for i=1,#bt.inputs do
+		-- Add inputs and sets them to saved values
+		addButton:CallListeners( addButton.OnClick )
+		WG.nodeList[rootID].inputs[i][1].text = bt.inputs[i].name
+		local inputType = inputTypeMap[ bt.inputs[i]["command"] ]
+		local inputComboBox = WG.nodeList[rootID].inputs[i][2]
+		for k=1,#inputComboBox.items do
+			if(inputComboBox.items[k] == inputType) then
+				WG.nodeList[rootID].inputs[i][2]:Select( k )
+			end
+		end
+	end
 end                
 
 --------------------------------------------------------------------------------------------------------------------------
