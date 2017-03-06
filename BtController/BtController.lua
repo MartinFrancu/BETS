@@ -466,9 +466,11 @@ function removeTreeBtController(tabs,treeHandle)
 	-- remove records of unit assignment:
 	removeUnitsFromTree(treeHandle.InstanceId)
 	
-	-- remove send message to BtEvaluator
-	Logger.loggedCall("Errors", "BtController", "removing tree fromBbtEvaluator", 
-		BtEvaluator.removeTree, treeHandle.InstanceId)
+	if( treeHandle.Reported) then
+		-- remove send message to BtEvaluator
+		Logger.loggedCall("Errors", "BtController", "removing tree fromBbtEvaluator", 
+			BtEvaluator.removeTree, treeHandle.InstanceId)
+	end
 end
 
 
