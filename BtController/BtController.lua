@@ -1110,7 +1110,7 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 					tH.ReportUnits(tH)
 				else
 					-- tree is ready, we can report just input
-					tH:ReportInput(tH, inpName)
+					tH.ReportInput(tH, inpName)
 				end
 			end
 		else

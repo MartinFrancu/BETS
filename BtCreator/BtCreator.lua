@@ -21,6 +21,7 @@ local buttonPanel
 local loadTreeButton
 local saveTreeButton
 local showSensorsButton
+local showBlackboardButton
 local minimizeButton
 local roleManagerButton
 local newTreeButton
@@ -68,8 +69,7 @@ local BtCreator = {} -- if we need events, change to Sentry:New()
 -- connection lines functions
 local connectionLine = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/connection_line.lua", nil, VFS.RAW_FIRST)
 
-
-function BtCreator.show(tree)
+function BtCreator.show(tree, instanceId)
 	if(not windowBtCreator.visible) then
 		windowBtCreator:Show()
 	end
@@ -235,6 +235,113 @@ function listenerClickOnShowSensors()
 		sensorsWindow:GetChildByName("Sensor"..i).font.color = {0.7,0.7,0.7,1}
 	end
 end
+
+-- ===============================================================
+--   Blackboard showing
+
+local blackboardWindowState
+local rowsMetatable
+do
+	local metapairs = Utils.metapairs
+	local expandedVariablesMap = {} 
+
+	local function makeCaption(k, v)
+		return tostring(k) .. " = " .. dump(v)
+	end
+	local rowsPrototype = {}
+	function rowsPrototype:SetTable(t)
+		local keyMap = self.keyMap
+		if(not keyMap)then
+			keyMap = {}
+			self.keyMap = keyMap
+		end
+		
+		local length = self.length or 0
+		local offset = 0
+		for i = 1, length do
+			local row = self[i]
+			if(not t[row.key])then
+				row.control:Dispose()
+				self.keyMap[row.key] = nil
+				offset = offset + 1
+			else
+				self[i - offset] = row
+				row.index = i - offset
+				row.control:SetCaption(makeCaption(k, v))
+			end
+		end
+		for i = length - offset, length do
+			self[i] = nil
+		end
+		length = length - offset
+		local top = (self[length] or { y = 0 }).y
+		for k, v in metapairs(t) do
+			local row = {
+				key = k,
+				control = Chili.Label:New{
+					parent = blackboardWindowState.contentWrapper,
+					x = 0,
+					y = top,
+					caption = makeCaption(k, v),
+				},
+			}
+		end
+	end
+	
+	rowsMetatable = {
+		__index = rowsPrototype
+	}
+end
+local function showCurrentBlackboard(blackboardState)
+	currentBlackboardState = blackboardState
+	if(not blackboardWindowState)then
+		return
+	end
+	
+	currentBlackboardState.rows:SetTable(blackboardState)
+end
+local function listenerClickOnShowBlackboard()
+	if(blackboardWindowState)then
+		blackboardWindowState.window:Dispose()
+		blackboardWindowState = nil
+		return
+	end
+	
+	blackboardWindowState = {}
+	
+	local height = 60+10*20
+	local window = Chili.Window:New{
+		parent = Screen0,
+		name = "BlackboardWindow",
+		x = showBlackboardButton.x - 5,
+		y = showBlackboardButton.y - height + 5,
+		width = 200,
+		height = height,
+		skinName = 'DarkGlass',
+	}
+	blackboardWindowState.window = window
+	
+	blackboardWindowState.contentWrapper = Chili.ScrollPanel:New{
+		parent = window,
+		x = 0,
+		y = 0,
+	}
+	
+	Chili.Label:New{
+		parent = blackboardWindowState.contentWrapper,
+		x = 10,
+		y = 0,
+		caption = "Blackboard:",
+	}
+	
+	blackboardWindowState.rows = setmetatable({}, rowsMetatable)
+	
+	if(currentBlackboardState)then
+		showCurrentBlackboard(currentBlackboardState)
+	end
+end
+
+-- ===============================================================
 
 function listenerClickOnNewTree()
 	local i = 0
@@ -557,7 +664,7 @@ function widget:Initialize()
 	}
 	roleManagerButton = Chili.Button:New{
 		x = loadTreeButton.x + loadTreeButton.width,
-		y = saveTreeButton.y,
+		y = loadTreeButton.y,
 		width = 150,
 		height = 30,
 		caption = "Role manager",
@@ -567,7 +674,7 @@ function widget:Initialize()
 	}
 	showSensorsButton = Chili.Button:New{
 		x = roleManagerButton.x + roleManagerButton.width,
-		y = saveTreeButton.y,
+		y = roleManagerButton.y,
 		width = 90,
 		height = 30,
 		caption = "Sensors",
@@ -575,13 +682,23 @@ function widget:Initialize()
 		focusColor = {0.5,0.5,0.5,0.5},
 		OnClick = { listenerClickOnShowSensors },
 	}
+	showBlackboardButton = Chili.Button:New{
+		x = showSensorsButton.x + showSensorsButton.width,
+		y = showSensorsButton.y,
+		width = 110,
+		height = 30,
+		caption = "Blackboard",
+		skinName = "DarkGlass",
+		focusColor = {0.5,0.5,0.5,0.5},
+		OnClick = { listenerClickOnShowBlackboard },
+	}
 	buttonPanel = Chili.Control:New{
 		parent = Screen0,
 		x = 0,
 		y = 0,
 		width = '100%',
 		height = '100%',
-		children = { newTreeButton, saveTreeButton, loadTreeButton, roleManagerButton, showSensorsButton }
+		children = { newTreeButton, saveTreeButton, loadTreeButton, roleManagerButton, showSensorsButton, showBlackboardButton }
 	}
 	
 	

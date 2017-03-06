@@ -241,9 +241,11 @@ function BtEvaluator.setInput(instanceId, inputName, data)
 	
 	BtEvaluator.resetTree(instanceId)
 	
+	Logger.log("inputs", "Input ", inputName, " set to ", data)
 	instance.inputs[inputName] = data
 end
 function BtEvaluator.removeTree(instanceId)
+	BtEvaluator.resetTree(instanceId)
 	removeInstance(instanceId)
 	return BtEvaluator.sendMessage("REMOVE_TREE", { instanceId = instanceId })
 end
