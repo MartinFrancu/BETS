@@ -29,6 +29,49 @@ local methodSignatures = {
 	Reset = "Reset(self)"
 }
 
+local currentlyExecutingCommand = nil
+local unitToOrderIssueingCommandMap = {}
+-- alters the certain tables that are available from within the instance
+Command.Spring = setmetatable({
+	GiveOrderToUnit = function(unitID, ...)
+		unitToOrderIssueingCommandMap[unitID] = currentlyExecutingCommand
+		
+		return Spring.GiveOrderToUnit(unitID, ...)
+	end,
+	GiveOrderToUnitMap = function(unitMap, ...)
+		for unitID in pairs(unitMap) do
+			unitToOrderIssueingCommandMap[unitID] = currentlyExecutingCommand
+		end
+		
+		return Spring.GiveOrderToUnitMap(unitMap, ...)
+	end,
+	GiveOrderToUnitArray = function(unitArray, ...)
+		for _, unitID in ipairs(unitArray) do
+			unitToOrderIssueingCommandMap[unitID] = currentlyExecutingCommand
+		end
+		
+		return Spring.GiveOrderToUnitArray(unitArray, ...)
+	end,
+	GiveOrderArrayToUnitMap = function(unitMap, ...)
+		for unitID in pairs(unitMap) do
+			unitToOrderIssueingCommandMap[unitID] = currentlyExecutingCommand
+		end
+		
+		return Spring.GiveOrderArrayToUnitMap(unitMap, ...)
+	end,
+	GiveOrderArrayToUnitArray = function(unitArray, ...)
+		for _, unitID in ipairs(unitArray) do
+			unitToOrderIssueingCommandMap[unitID] = currentlyExecutingCommand
+		end
+		
+		return Spring.GiveOrderArrayToUnitArray(unitArray, ...)
+	end,
+}, {
+	__index = Spring
+})
+
+local orderIssueingCommand = {} -- a reference used as a key in unit roles
+
 function Command:Extend(scriptName)
 	Logger.log("script-load", "Loading command from file " .. scriptName)
 	function Command:loadMethods()
@@ -52,73 +95,80 @@ function Command:Extend(scriptName)
 		
 		if not self.Run then
 			Logger.error("script-load", "scriptName: ", scriptName, ", Method ", methodSignatures.Run, "  missing")
-			self.Run = function() return FAILURE end
+			self.Run = function() return Command.FAILURE end
 		end
 	end
 
 	Logger.log("script-load", "scriptName: ", scriptName)
-    local new_class = {	}
-    local class_mt = { __index = new_class }
+	local new_class = {	}
+	local class_mt = { __index = new_class }
 	
-    function new_class:BaseNew()
-        local newinst = {}
-        setmetatable( newinst, class_mt )
+	function new_class:BaseNew()
+		local newinst = {}
+		setmetatable( newinst, class_mt )
 		newinst.unitsAssigned = {}
 		newinst.activeCommands = {} -- map(unitID, setOfCmdTags)
 		newinst.idleUnits = {}
 		newinst.scriptName = scriptName -- for debugging purposes
-		newinst.onNoUnits = self.getInfo().onNoUnits or "S"
+		
+		local info = self.getInfo()
+		newinst.onNoUnits = info.onNoUnits or Command.SUCCESS
 
 		success,res = pcall(newinst.New, newinst)
 		if not success then
-			Logger.log("command", "Error in script ", scriptName, ", method " .. methodSignatures.New, ": ", res)
+			Logger.error("command", "Error in script ", scriptName, ", method " .. methodSignatures.New, ": ", res)
 		end
-        return newinst
-    end
-    setmetatable( new_class, { __index = self } )
+		return newinst
+	end
+	setmetatable( new_class, { __index = self } )
 
 	
 	new_class:loadMethods()
 
-    return new_class
+	return new_class
 end
 
 function Command:BaseRun(unitIDs, parameters)
-	if #unitIDs == 0 and self.onNoUnits ~= self.RUNNING then
+	if unitIDs.length == 0 and self.onNoUnits ~= self.RUNNING then
 		return self.onNoUnits
 	end
-	--if #unitIDs == 0 and self.scriptName ~= "store.lua" then -- hack as store.lua does not need access to units and can be run even when there are none
-	--	return "S" -- succeeding when no units are available
-	--end
 
 	self.unitsAssigned = unitIDs
+
+	currentlyExecutingCommand = self
 
 	success,res,retVal = pcall(self.Run, self, unitIDs, parameters)
 	if success then
 		return res, retVal
 	else
-		Logger.log("command", "Error in script ", self.scriptName, ", method ", methodSignatures.Run, ": ", res)
+		Logger.error("command", "Error in script ", self.scriptName, ", method ", methodSignatures.Run, ": ", res)
 	end
 end
 
 function Command:BaseReset()
 	Logger.log("command", self.scriptName, " Reset()")
-	-- TODO may mark units as idle in other commands, which break them
-	--[[
-	for i = 1, #self.unitsAssigned do
-		unitID = self.unitsAssigned[i]
-		-- hack to clear the unit's command queue (adding order without "shift" clears the queue)
-		Spring.GiveOrderToUnit(unitID, CMD.STOP, {},{})
+
+	local unitIDs = self.unitsAssigned
+	if(unitIDs.length)then
+		for i = 1, unitIDs.length do
+			unitID = unitIDs[i]
+			if(unitToOrderIssueingCommandMap[unitID] == self)then
+				unitToOrderIssueingCommandMap[unitID] = nil
+				-- hack to clear the unit's command queue (adding order without "shift" clears the queue)
+				Spring.GiveOrderToUnit(unitID, CMD.STOP, {},{})
+			end
+		end
 	end
-	--]]
+
 	self.unitsAssigned = {}
 	
 	self.idleUnits = {}
 	
+	currentlyExecutingCommand = self
 
 	success,res = pcall(self.Reset, self)
 	if not success then
-		Logger.log("command", "Error in script ", self.scriptName, ", method ", methodSignatures.Reset, ": ", res)
+		Logger.error("command", "Error in script ", self.scriptName, ", method ", methodSignatures.Reset, ": ", res)
 	end
 end
 

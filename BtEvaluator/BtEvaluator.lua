@@ -35,11 +35,20 @@ WG.unitToRoleMap = unitToRoleMap
 local function makeInstance(instanceId, roles)
 	local instance = {
 		id = instanceId,
-		blackboard = {},
+		inputs = {},
 		roles = {},
 		nodes = {},
 		activeNodes = {},
 	}
+	local blackboardMetatable = {
+		__index = instance.inputs,
+	}
+	function instance:ResetBlackboard()
+		self.blackboard = setmetatable({}, blackboardMetatable)
+		return self.blackboard
+	end
+	instance:ResetBlackboard()
+	
 	local function makeRole()
 		return {
 			length = 0,
@@ -65,6 +74,32 @@ local function removeInstance(instanceId)
 	end
 	
 	treeInstances[instanceId] = nil
+end
+
+local function removeUnitFromRole(role, unitId)
+	for j = 1, role.length do
+		if(role[j] == unitId)then
+			role[j] = role[role.length]
+			role[role.length] = nil
+			role.length = role.length - 1
+			break
+		end
+	end
+end
+
+local function removeUnitFromItsRole(unitId)
+	local role = unitToRoleMap[unitId]
+	if(not role)then return nil end
+	
+	local instance = role[parentReference]
+	local allRole = instance.roles[ALL_UNITS]
+	
+	removeUnitFromRole(role, unitId)
+	removeUnitFromRole(allRole, unitId)
+	
+	unitToRoleMap[unitId] = nil
+	
+	return role
 end
 
 local function getUnitsActiveCommands(unitId)
@@ -116,6 +151,25 @@ end
 function BtEvaluator.requestNodeDefinitions()
 	return BtEvaluator.sendMessage("REQUEST_NODE_DEFINITIONS")
 end
+function BtEvaluator.resetTrees(instanceIds)
+	-- reset all nodes with the current blackboards preserved
+	local result, msg = BtEvaluator.sendMessage("RESET_TREES", instanceIds)
+	
+	-- reset the blackboards
+	for i, instanceId in ipairs(instanceIds) do
+		local instance = treeInstances[instanceId]
+		if(instance)then
+			instance:ResetBlackboard()
+		else
+			Logger.error("BtEvaluator", "Attempt to reset a nonexistant tree")
+		end
+	end
+	
+	return result, msg
+end
+function BtEvaluator.resetTree(instanceId)
+	return BtEvaluator.resetTrees({ instanceId })
+end
 function BtEvaluator.assignUnits(units, instanceId, roleId)
 	roleId = roleId + 1
 	local instance = treeInstances[instanceId]
@@ -141,24 +195,14 @@ function BtEvaluator.assignUnits(units, instanceId, roleId)
 		treeList[i] = tree.id
 		i = i + 1
 	end
-	BtEvaluator.sendMessage("RESET_TREES", treeList)
+	BtEvaluator.resetTrees(treeList)
 
-	local function removeItem(t, v)
-		for j = 1, t.length do
-			if(t[j] == v)then
-				t[j] = t[t.length]
-				t[t.length] = nil
-				t.length = t.length - 1
-				break
-			end
-		end
-	end
 	for i, id in ipairs(units) do
 		local oldRole = unitToRoleMap[id]
 		if(oldRole)then
-			removeItem(oldRole, id)
+			removeUnitFromRole(oldRole, id)
 			local oldAllRole = oldRole[parentReference].roles[ALL_UNITS]
-			removeItem(allRole, id)
+			removeUnitFromRole(allRole, id)
 
 			oldRole.lastModified = currentFrame
 			oldAllRole.lastModified = currentFrame
@@ -166,7 +210,7 @@ function BtEvaluator.assignUnits(units, instanceId, roleId)
 	end
 	role.lastModified = currentFrame
 	for i = 1, role.length do
-		removeItem(allRole, role[i])
+		removeUnitFromRole(allRole, role[i])
 		unitToRoleMap[role[i]] = nil
 		role[i] = nil
 	end
@@ -178,13 +222,30 @@ function BtEvaluator.assignUnits(units, instanceId, roleId)
 		allRole[allRole.length] = id
 	end
 end
-function BtEvaluator.createTree(instanceId, treeDefinition)
+function BtEvaluator.createTree(instanceId, treeDefinition, inputs)
 	local instance = makeInstance(instanceId, treeDefinition.roles)
 	local result, message = BtEvaluator.sendMessage("CREATE_TREE", { instanceId = instanceId, roleCount = #(treeDefinition.roles or {}), root = treeDefinition.root })
 	
+	for k, v in pairs(inputs or {}) do
+		instance.inputs[k] = v
+	end
+	
 	return instance;
 end
+function BtEvaluator.setInput(instanceId, inputName, data)
+	local instance = treeInstances[instanceId]
+	if(not instance)then
+		Logger.error("BtEvaluator", "Attempt to set input of a nonexistant tree")
+		return
+	end
+	
+	BtEvaluator.resetTree(instanceId)
+	
+	Logger.log("inputs", "Input ", inputName, " set to ", data)
+	instance.inputs[inputName] = data
+end
 function BtEvaluator.removeTree(instanceId)
+	BtEvaluator.resetTree(instanceId)
 	removeInstance(instanceId)
 	return BtEvaluator.sendMessage("REMOVE_TREE", { instanceId = instanceId })
 end
@@ -338,6 +399,12 @@ function BtEvaluator.OnExpression(params)
 	end
 end
 
+function widget:UnitDestroyed(unitID, unitDefID, unitTeam, attackerID, attackerDefID, attackerTeam)
+	Logger.log("command", "----UnitDestroyed---")
+	
+	removeUnitFromItsRole(unitID)
+end
+
 function widget:UnitCommand(unitID, unitDefID, unitTeam, cmdID, cmdParams, cmdOpts, cmdTag) 
 	Logger.log("command", "----UnitCommand---")
 	local cmds = getUnitsActiveCommands(unitID)
@@ -404,7 +471,15 @@ local handlers = {
 	-- event messages
 	["COMMAND"] = asHandler(BtEvaluator.OnCommand),
 	["EXPRESSION"] = asHandler(BtEvaluator.OnExpression),
-	["UPDATE_STATES"] = asHandler(BtEvaluator.OnUpdateStates),
+	["UPDATE_STATES"] = function(data)
+		local params = data.asJSON()
+		local instanceId = params.id
+		local instance = treeInstances[instanceId]
+		if(instance)then
+			params.blackboard = instance.blackboard
+		end
+		return BtEvaluator.OnUpdateStates:Invoke(params)
+	end,
 	["NODE_DEFINITIONS"] = asHandler(BtEvaluator.OnNodeDefinitions),
 }
 WG.handlers= handlers

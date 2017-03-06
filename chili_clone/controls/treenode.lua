@@ -140,6 +140,31 @@ function TreeNode:New(obj)
 		borderThickness = 0,
 		backgroundColor = {0,0,0,0},
 	}
+	if(obj.nodeType:lower() == "root") then
+		local label = Label:New{
+			parent = obj.nodeWindow,
+			x = 18,
+			y = 24,
+			width  = obj.nodeWindow.font:GetTextWidth("Inputs"),
+			height = '10%',
+			caption = "Inputs",
+		}
+		obj.addButton = Button:New{
+			parent = obj.nodeWindow,
+			x = label.x + label.width + 6,
+			y = label.y,
+			caption = "Add",
+			width = 50,
+			OnClick = { listenerAddInput },
+		}
+		obj.removeButton = Button:New{
+			parent = obj.nodeWindow,
+			x = obj.addButton.x + obj.addButton.width + 6,
+			y = label.y,
+			caption = "Remove",
+			OnClick = { listenerRemoveInput },
+		}
+	end
 	obj.nodeWindow.minWidth = math.max(obj.nodeWindow.minWidth, obj.nameEditBox.font:GetTextWidth(obj.nameEditBox.text) + 33)
 	obj.nodeWindow.minHeight = obj.nodeWindow.height
 
@@ -207,6 +232,43 @@ function createNextParameterObject(obj)
 			y = 10 + i*20,
 			index = i, -- to be able to index editbox from treenode, to update treenode.parameters[i].value
 		}
+	elseif(param["componentType"] and param["componentType"]:lower() == "combobox") then
+		local items = {}
+		local defaultIndex = 0
+		local k = 1
+		local width = 100
+		for word in param.variableType:gmatch('([^,]+)') do
+			if(word == param.value) then
+				defaultIndex = k
+			end
+			width = math.min(obj.nodeWindow.font:GetTextWidth(word), width)
+			k = k + 1
+			table.insert(items, word)
+		end
+		if(defaultIndex == 0) then
+			error("Treenode combobox default value not found in enumeration. defaultValue: "..dump(param.value).."\n"..debug.traceback())
+		end
+		result.componentType = "comboBox"
+		result.label = Label:New{
+			parent = obj.nodeWindow,
+			x = 18,
+			y = 10 + i*20,
+			width  = obj.nodeWindow.font:GetTextWidth(param["name"]),
+			height = '10%',
+			caption = param["name"],
+			--skinName='DarkGlass',
+		}
+		result.comboBox = ComboBox:New{
+			caption = param.name,
+			parent = obj.nodeWindow,
+			x = 25 + obj.nodeWindow.font:GetTextWidth(param["name"]),
+			y = 10 + i*20,
+			width = width + 40,
+			index = i, -- to be able to index editbox from treenode, to update treenode.parameters[i].value
+			borderThickness = 0,
+			items = items,
+		}
+		result.comboBox:Select(defaultIndex)
 	end
 	return result
 end
@@ -240,6 +302,12 @@ function TreeNode:ReGenerateID()
 	self.id = generateID()
 end
 
+function TreeNode:UpdateConnectionLines()
+	for i=1,#self.attachedLines do
+		connectionLine.update(self.attachedLines[i])
+	end
+end
+
 -- Dispose this treeNode without connection lines connected to it.
 function TreeNode:Dispose()
 	if(self.connectionIn) then
@@ -261,6 +329,12 @@ function TreeNode:Dispose()
 			end
 			if(self.parameterObjects[i]["editBox"]) then
 				self.parameterObjects[i]["editBox"]:Dispose()
+			end
+			if(self.parameterObjects[i]["comboBox"]) then
+				self.parameterObjects[i]["comboBox"]:Dispose()
+			end
+			if(self.parameterObjects[i]["checkBox"]) then
+				self.parameterObjects[i]["checkBox"]:Dispose()
 			end
 		end
 	end
@@ -327,6 +401,51 @@ function connectionLineCanBeCreated(obj)
 end
 
 --//=============================================================================
+--// Listeners - input buttons
+--//=============================================================================
+
+function listenerAddInput(obj)
+	local inputs = obj.parent.treeNode.inputs or {}
+	obj.parent.treeNode.inputs = inputs
+	local i = #inputs
+	local editBox = EditBox:New{
+		parent = obj.parent,
+		text = "input"..i,
+		defaultWidth = '40%',
+		x = '10%',
+		y = 45 + i*20,
+		align = 'left',
+		--skinName = 'DarkGlass',
+		borderThickness = 0,
+		backgroundColor = {0,0,0,0},
+	}
+	local comboBox = ComboBox:New{
+			caption = "",
+			parent = obj.parent,
+			x = '55%',
+			y = 45 + i*20,
+			width = 80,
+			borderThickness = 0,
+			--skinName = 'DarkGlass',
+			items = {"Position", "Area", "UnitID"},
+		}
+	table.insert(inputs, { editBox, comboBox })
+	return true
+end
+
+function listenerRemoveInput(obj)
+	local inputs = obj.parent.treeNode.inputs or {}
+	local i = #inputs
+	if(i <= 0) then
+		return
+	end 
+	inputs[i][1]:Dispose()
+	inputs[i][2]:Dispose()
+	table.remove(inputs, i)
+	return true
+end
+
+--//=============================================================================
 --// Listeners
 --//=============================================================================
 
@@ -384,11 +503,8 @@ function listenerNodeResize(self, x, y)
 			self.treeNode.width = self.treeNode.nodeWindow.width
 			self.treeNode.height = self.treeNode.nodeWindow.height
 		end
-
-		for i=1,#self.treeNode.attachedLines do
-			lineIdx = self.treeNode.attachedLines[i]
-			connectionLine.update(lineIdx)
-		end
+		
+		self.treeNode:UpdateConnectionLines()
 	end
 	--return true
 end
@@ -458,6 +574,10 @@ function TreeNode:UpdateParameterValues()
 		if(checkBox) then
 			checkBox.parent.treeNode.parameters[checkBox.index].value = tostring(checkBox.checked)
 		end
+		local comboBox = self.parameterObjects[i]["comboBox"]
+		if(comboBox) then
+			comboBox.parent.treeNode.parameters[comboBox.index].value = tostring(comboBox.items[comboBox.selected])
+		end
 	end
 end
 
@@ -522,6 +642,22 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 	if((self.treeNode.connectionIn and childName == self.treeNode.connectionIn.name) or (self.treeNode.connectionOut and childName == self.treeNode.connectionOut.name)) then
 		return
 	end
+	-- Check for input buttons
+	if(self.treeNode.addButton and self.treeNode.addButton.name == childName) then
+		return
+	end
+	if(self.treeNode.removeButton and self.treeNode.removeButton.name == childName) then
+		return
+	end
+	-- Check for input editBox and comboBox
+	if(self.treeNode.inputs) then
+		local inputs = self.treeNode.inputs
+		for i=1,#inputs do
+			if(childName == inputs[i][1].name or childName == inputs[i][2].name) then
+				return
+			end
+		end
+	end
 	-- Check if the parameter value (editbox's text) hasnt changed
 	self.treeNode:UpdateParameterValues()
 	for i=1,#self.treeNode.parameterObjects do
@@ -529,8 +665,11 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 			return
 		elseif(self.treeNode.parameterObjects[i]["checkBox"] and childName == self.treeNode.parameterObjects[i]["checkBox"].name) then
 			return
+		elseif(self.treeNode.parameterObjects[i]["comboBox"] and childName == self.treeNode.parameterObjects[i]["comboBox"].name) then
+			return
 		end
 	end
+	-- Check for double click
 	local now = Spring.GetTimer()
 	if(childName == self.treeNode.nameEditBox.name and Spring.DiffTimers(now, lastClicked) < 0.3) then
 		lastClicked = now
@@ -572,6 +711,9 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 end
 
 function listenerOnMouseUpMoveNode(self, x ,y)
+	self.x = math.max(0, self.x)
+	self.y = math.max(0, self.y)
+	self.treeNode:UpdateConnectionLines()
 	self.treeNode.x = self.x
 	self.treeNode.y = self.y
 	self:Invalidate()
@@ -584,13 +726,11 @@ function listenerOnMouseUpMoveNode(self, x ,y)
 				local node = WG.nodeList[id]
 				node.nodeWindow.x = node.nodeWindow.x + diffx
 				node.nodeWindow.y = node.nodeWindow.y + diffy
-				node.x = node.x + diffx
-				node.y = node.y + diffy
+				node.x = math.max(0, node.x + diffx)
+				node.y = math.max(0, node.y + diffy)
 				node.nodeWindow:StopDragging(x, y)
 				node.nodeWindow:Invalidate()
-				for i=1,#node.attachedLines do
-					connectionLine.update(node.attachedLines[i])
-				end
+				node:UpdateConnectionLines()
 			end
 		end
 		movingNodes = false

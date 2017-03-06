@@ -13,7 +13,9 @@ WG.BtUtils = WG.BtUtils or (function()
 		BehaviourTree = "behaviour-tree", -- @{BehaviourTree}
 		dirList = "dir-list", -- @{dirList}
 		Debug = "debug_utils/", -- @{BtUtils.Debug}
-		UnitCategories = "categories" 
+		UnitCategories = "categories",
+		metanext = { "meta-iteration", 1 }, -- @{metanext}
+		metapairs = { "meta-iteration", 2 }, -- @{metapairs}
 	}
 	
 	local LOCAL_PATH = LUAUI_DIRNAME .. "Widgets/BtUtils/"
@@ -83,7 +85,7 @@ WG.BtUtils = WG.BtUtils or (function()
 			
 				local locator = locators[key]
 				if(locator)then
-					local result = include(prefix .. locator)
+					local result = type(locator) == "string" and include(prefix .. locator) or select(locator[2], include(prefix .. locator[1]))
 					rawset(self, key, result)
 					return result
 				else

@@ -21,6 +21,7 @@ local buttonPanel
 local loadTreeButton
 local saveTreeButton
 local showSensorsButton
+local showBlackboardButton
 local minimizeButton
 local roleManagerButton
 local newTreeButton
@@ -68,8 +69,7 @@ local BtCreator = {} -- if we need events, change to Sentry:New()
 -- connection lines functions
 local connectionLine = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/connection_line.lua", nil, VFS.RAW_FIRST)
 
-
-function BtCreator.show(tree)
+function BtCreator.show(tree, instanceId)
 	if(not windowBtCreator.visible) then
 		windowBtCreator:Show()
 	end
@@ -157,6 +157,14 @@ function listenerEndCopyingNode(self, x , y)
 end
 
 local clearCanvas, loadBehaviourTree, formBehaviourTree
+local inputTypeMap = {
+	["Position"] = "BETS_POSITION",
+	["Area"]     = "BETS_AREA",
+	["UnitID"]   = "BETS_UNIT",
+	["BETS_POSITION"] = "Position",
+	["BETS_AREA"]			= "Area",
+	["BETS_UNIT"]			= "UnitID",
+}
 
 function listenerClickOnSaveTree()
 	if( next(rolesOfCurrentTree) ~= nil ) then
@@ -164,7 +172,16 @@ function listenerClickOnSaveTree()
 		local resultTree = formBehaviourTree()
 		resultTree.roles = rolesOfCurrentTree
 		resultTree.defaultRole = rolesOfCurrentTree[1].name
-	
+		resultTree.inputs = {}
+		
+		local inputs = WG.nodeList[rootID].inputs
+		for i=1,#inputs do
+			if (inputTypeMap[ inputs[i][2].items[ inputs[i][2].selected ] ] == nil) then
+				error("Uknown tree input type detected in BtCreator tree serialization. "..debug.traceback())
+			end
+			table.insert(resultTree.inputs, {["name"] = inputs[i][1].text, ["command"] = inputTypeMap[ inputs[i][2].items[ inputs[i][2].selected ] ],})
+		end
+		
 		resultTree:Save(treeNameEditbox.text)
 		WG.clearSelection()
 	else
@@ -219,6 +236,113 @@ function listenerClickOnShowSensors()
 	end
 end
 
+-- ===============================================================
+--   Blackboard showing
+
+local blackboardWindowState
+local rowsMetatable
+do
+	local metapairs = Utils.metapairs
+	local expandedVariablesMap = {} 
+
+	local function makeCaption(k, v)
+		return tostring(k) .. " = " .. dump(v)
+	end
+	local rowsPrototype = {}
+	function rowsPrototype:SetTable(t)
+		local keyMap = self.keyMap
+		if(not keyMap)then
+			keyMap = {}
+			self.keyMap = keyMap
+		end
+		
+		local length = self.length or 0
+		local offset = 0
+		for i = 1, length do
+			local row = self[i]
+			if(not t[row.key])then
+				row.control:Dispose()
+				self.keyMap[row.key] = nil
+				offset = offset + 1
+			else
+				self[i - offset] = row
+				row.index = i - offset
+				row.control:SetCaption(makeCaption(k, v))
+			end
+		end
+		for i = length - offset, length do
+			self[i] = nil
+		end
+		length = length - offset
+		local top = (self[length] or { y = 0 }).y
+		for k, v in metapairs(t) do
+			local row = {
+				key = k,
+				control = Chili.Label:New{
+					parent = blackboardWindowState.contentWrapper,
+					x = 0,
+					y = top,
+					caption = makeCaption(k, v),
+				},
+			}
+		end
+	end
+	
+	rowsMetatable = {
+		__index = rowsPrototype
+	}
+end
+local function showCurrentBlackboard(blackboardState)
+	currentBlackboardState = blackboardState
+	if(not blackboardWindowState)then
+		return
+	end
+	
+	currentBlackboardState.rows:SetTable(blackboardState)
+end
+local function listenerClickOnShowBlackboard()
+	if(blackboardWindowState)then
+		blackboardWindowState.window:Dispose()
+		blackboardWindowState = nil
+		return
+	end
+	
+	blackboardWindowState = {}
+	
+	local height = 60+10*20
+	local window = Chili.Window:New{
+		parent = Screen0,
+		name = "BlackboardWindow",
+		x = showBlackboardButton.x - 5,
+		y = showBlackboardButton.y - height + 5,
+		width = 200,
+		height = height,
+		skinName = 'DarkGlass',
+	}
+	blackboardWindowState.window = window
+	
+	blackboardWindowState.contentWrapper = Chili.ScrollPanel:New{
+		parent = window,
+		x = 0,
+		y = 0,
+	}
+	
+	Chili.Label:New{
+		parent = blackboardWindowState.contentWrapper,
+		x = 10,
+		y = 0,
+		caption = "Blackboard:",
+	}
+	
+	blackboardWindowState.rows = setmetatable({}, rowsMetatable)
+	
+	if(currentBlackboardState)then
+		showCurrentBlackboard(currentBlackboardState)
+	end
+end
+
+-- ===============================================================
+
 function listenerClickOnNewTree()
 	local i = 0
 	local newTreeName = "New Tree " .. i
@@ -263,7 +387,8 @@ local RUNNING_COLOR = {1,0.5,0,0.6}
 local SUCCESS_COLOR = {0.5,1,0.5,0.6}
 local FAILURE_COLOR = {1,0.25,0.25,0.6}
 
-local function updateStatesMessage(states)
+local function updateStatesMessage(params)
+	local states = params.states
 	for id, node in pairs(WG.nodeList) do
 		local color = copyTable(DEFAULT_COLOR);
 		if(states[id] ~= nil) then
@@ -342,25 +467,32 @@ local function generateScriptNodes(heightSum, nodes)
 	return heightSum
 end
 
+local function getFileExtension(filename)
+  return filename:match("^.+(%..+)$")
+end
+
 local function getParameterDefinitions()
 	local directoryName = LUAUI_DIRNAME .. "Widgets/BtCommandScripts" 
 	local folderContent = VFS.DirList(directoryName)
 	local paramsDefs = {}
 
 	for _,scriptName in ipairs(folderContent)do
-		Logger.log("script-load", "Loading definition from file: ", scriptName)
-		local nameComment = "--[[" .. scriptName .. "]] "
-		local code = nameComment .. VFS.LoadFile(scriptName) .. "; return getInfo()"
-		local shortName = string.sub(scriptName, string.len(directoryName) + 2)
-		local script = assert(loadstring(code))
-	
-		local success, info = pcall(script)
+		if getFileExtension(scriptName) == ".lua" then
+			Logger.log("script-load", "Loading definition from file: ", scriptName)
+			
+			local nameComment = "--[[" .. scriptName .. "]] "
+			local code = nameComment .. VFS.LoadFile(scriptName) .. "; return getInfo()"
+			local shortName = string.sub(scriptName, string.len(directoryName) + 2)
+			local script = assert(loadstring(code))
+		
+			local success, info = pcall(script)
 
-		if success then
-			Logger.log("script-load", "Script: ", shortName, ", Definitions loaded: ", info.parameterDefs)
-			paramsDefs[shortName] = info.parameterDefs or {}
-		else
-			error("script-load".. "Script ".. scriptName.. " is missing the getParameterDefs() function or it contains an error: ".. info)
+			if success then
+				Logger.log("script-load", "Script: ", shortName, ", Definitions loaded: ", info.parameterDefs)
+				paramsDefs[shortName] = info.parameterDefs or {}
+			else
+				error("script-load".. "Script ".. scriptName.. " is missing the getInfo() function or it contains an error: ".. info)
+			end
 		end
 	end
 	return paramsDefs
@@ -415,6 +547,23 @@ function listenerOnClickOnCanvas()
 	for _,node in pairs(WG.nodeList) do
 		node:UpdateParameterValues()
 	end
+end
+
+function createRoot()
+	return Chili.TreeNode:New{
+		parent = windowBtCreator,
+		nodeType = "Root",
+		y = '35%',
+		x = 5,
+		width = 210,
+		height = 80,
+		draggable = true,
+		resizable = true,
+		connectable = true,
+		hasConnectionIn = false,
+		hasConnectionOut = true,
+		id = false,
+	}
 end
 
 function widget:Initialize()	
@@ -481,18 +630,7 @@ function widget:Initialize()
 		-- OnMouseUp = { listenerEndSelectingNodes },
 	}	
 	
-	addNodeToCanvas(Chili.TreeNode:New{
-		parent = windowBtCreator,
-		nodeType = "Root",
-		y = '35%',
-		x = 5,
-		draggable = true,
-		resizable = true,
-		connectable = true,
-		hasConnectionIn = false,
-		hasConnectionOut = true,
-		id = false,
-	})
+	addNodeToCanvas( createRoot() )
 	
 	newTreeButton = Chili.Button:New{
 		x = windowBtCreator.x,
@@ -526,7 +664,7 @@ function widget:Initialize()
 	}
 	roleManagerButton = Chili.Button:New{
 		x = loadTreeButton.x + loadTreeButton.width,
-		y = saveTreeButton.y,
+		y = loadTreeButton.y,
 		width = 150,
 		height = 30,
 		caption = "Role manager",
@@ -536,7 +674,7 @@ function widget:Initialize()
 	}
 	showSensorsButton = Chili.Button:New{
 		x = roleManagerButton.x + roleManagerButton.width,
-		y = saveTreeButton.y,
+		y = roleManagerButton.y,
 		width = 90,
 		height = 30,
 		caption = "Sensors",
@@ -544,13 +682,23 @@ function widget:Initialize()
 		focusColor = {0.5,0.5,0.5,0.5},
 		OnClick = { listenerClickOnShowSensors },
 	}
+	showBlackboardButton = Chili.Button:New{
+		x = showSensorsButton.x + showSensorsButton.width,
+		y = showSensorsButton.y,
+		width = 110,
+		height = 30,
+		caption = "Blackboard",
+		skinName = "DarkGlass",
+		focusColor = {0.5,0.5,0.5,0.5},
+		OnClick = { listenerClickOnShowBlackboard },
+	}
 	buttonPanel = Chili.Control:New{
 		parent = Screen0,
 		x = 0,
 		y = 0,
 		width = '100%',
 		height = '100%',
-		children = { newTreeButton, saveTreeButton, loadTreeButton, roleManagerButton, showSensorsButton }
+		children = { newTreeButton, saveTreeButton, loadTreeButton, roleManagerButton, showSensorsButton, showBlackboardButton }
 	}
 	
 	
@@ -707,18 +855,7 @@ function clearCanvas(omitRoot)
 	WG.selectedNodes = {}
 	
 	if(not omitRoot)then
-		addNodeToCanvas(Chili.TreeNode:New{
-			parent = windowBtCreator,
-			nodeType = "Root",
-			y = '35%',
-			x = 5,
-			draggable = true,
-			resizable = true,
-			connectable = true,
-			hasConnectionIn = false,
-			hasConnectionOut = true,
-			id = false,
-		})
+		addNodeToCanvas( createRoot() )
 	end
 end
 
@@ -783,12 +920,25 @@ function loadBehaviourTree(bt)
 	if(root)then
 		connectionLine.add(WG.nodeList[rootID].connectionOut, root.connectionIn)
 	end
-	
 	for _, node in ipairs(bt.additionalNodes) do
 		loadBehaviourNode(bt, node)
 	end
 	WG.clearSelection()
 	updateSerializedIDs()
+	-- deserialize tree inputs
+	local addButton = WG.nodeList[rootID].addButton
+	for i=1,#bt.inputs do
+		-- Add inputs and sets them to saved values
+		addButton:CallListeners( addButton.OnClick )
+		WG.nodeList[rootID].inputs[i][1].text = bt.inputs[i].name
+		local inputType = inputTypeMap[ bt.inputs[i]["command"] ]
+		local inputComboBox = WG.nodeList[rootID].inputs[i][2]
+		for k=1,#inputComboBox.items do
+			if(inputComboBox.items[k] == inputType) then
+				WG.nodeList[rootID].inputs[i][2]:Select( k )
+			end
+		end
+	end
 end                
 
 --------------------------------------------------------------------------------------------------------------------------

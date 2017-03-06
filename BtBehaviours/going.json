@@ -1,13 +1,16 @@
 {
 	"additionalNodes": [],
 	"defaultRole": "Default role",
-	"inputs": [],
+	"inputs": [ {
+		"command": "BETS_POSITION",
+		"name": "moveTo"
+	} ],
 	"properties": {
-		"ytVCQqVeUzO5Ip0vUXzzjjOpfXh6kNHj": {
-			"height": 110,
-			"width": 177.071442,
-			"x": 192,
-			"y": 119
+		"1vk09Kswf7Fh4YfGIIAfbVvsD3EWjmmB": {
+			"height": 70,
+			"width": 110,
+			"x": 264,
+			"y": 92
 		}
 	},
 	"roles": [ {
@@ -17,18 +20,15 @@
 	} ],
 	"root": {
 		"children": [],
-		"id": "ytVCQqVeUzO5Ip0vUXzzjjOpfXh6kNHj",
+		"id": "1vk09Kswf7Fh4YfGIIAfbVvsD3EWjmmB",
 		"nodeType": "luaCommand",
 		"parameters": [ {
-			"name": "x",
-			"value": 300
-		}, {
-			"name": "y",
-			"value": 0
+			"name": "pos",
+			"value": "{x=moveTo[1], y=moveTo[2], z=moveTo[3]}"
 		}, {
 			"name": "scriptName",
-			"value": "move.lua"
+			"value": "absoluteMove.lua"
 		} ],
-		"scriptName": "move.lua"
+		"scriptName": "absoluteMove.lua"
 	}
 }
