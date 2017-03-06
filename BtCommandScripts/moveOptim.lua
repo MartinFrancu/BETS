@@ -23,7 +23,7 @@ local giveOrderToUnit = Spring.GiveOrderToUnit
 local unitIsDead = Spring.GetUnitIsDead
 
 local SHORT_PATH_LEN = 100
-local SUBTARGET_TOLEARANCE_SQ = 35 * 35
+local SUBTARGET_TOLEARANCE_SQ = 40 * 40
 local TOLERANCE_SQ = 25 * 25
 local MOST_DISTANT_UNIT_DIST_SQ = 50 * 50
 local LEADER_TOLERANCE_SQ = 50 * 50
@@ -195,7 +195,7 @@ function Run(self, unitIds, parameter)
 	leaderDir = normalizeVect(leaderDir)
 	leaderDir = {leaderDir[1] * SHORT_PATH_LEN, 0, leaderDir[3] * SHORT_PATH_LEN}
 	
-	local leaderDone = distanceSq(getUnitPos(leader), self.finalTargets[leader]) < LEADER_TOLERANCE_SQ
+	local leaderDone = distanceSq(getUnitPos(leader), self.finalTargets[leader]) < LEADER_TOLERANCE_SQ or UnitIdle(self, leader)
 	-- Logger.log("move-command", "Leader done - ", leaderDone, " dist - ", distanceSq(getUnitPos(leader), self.finalTargets[leader]))
 	local done = leaderDone
 	
@@ -229,7 +229,7 @@ function Run(self, unitIds, parameter)
 					--Logger.log("move-command", "=== Final order ", unitID)
 					giveOrderToUnit(unitID, CMD.MOVE, self.finalTargets[unitID], {})
 				end
-			elseif not curSubTar or distanceSq(curPos, curSubTar) < SUBTARGET_TOLEARANCE_SQ or not dirsEqual(leaderDir, curDir) then
+			elseif not curSubTar or UnitIdle(self, unitID) or distanceSq(curPos, curSubTar) < SUBTARGET_TOLEARANCE_SQ then --or not dirsEqual(leaderDir, curDir) then
 				-- otherwise move a small distance in the direction the leader is facing
 				
 				local toLeader = makeVector(curPos, leaderPos)
@@ -251,7 +251,9 @@ function Run(self, unitIds, parameter)
 		unitsMovingToTarget = true
 		self.stuckForTicks = 0
 	else
-		self.stuckForTicks = self.stuckForTicks + 1
+		if leaderDone then
+			self.stuckForTicks = self.stuckForTicks + 1
+		end
 	end
 	self.lastDistSum = distSum
 	
@@ -273,7 +275,7 @@ function Run(self, unitIds, parameter)
 end
 
 function Reset(self)
-	Logger.log("move-command", "Lua command reset")
+	--Logger.log("move-command", "Lua command reset")
 	self.leaderTarget = nil
 	self.lastPositions = {}
 	self.leaderId = nil
