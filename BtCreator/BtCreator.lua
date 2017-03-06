@@ -166,22 +166,46 @@ local inputTypeMap = {
 	["BETS_UNIT"]			= "UnitID",
 }
 
+local function maxRoleSplit(tree)
+	local roleCount = 1
+	local function visit(node)
+		if(not node) then
+			return
+		end
+		if(node.nodeType == "roleSplit" and roleCount < #node.children)then
+				roleCount = #node.children
+		end
+		for _, child in ipairs(node.children) do
+				visit(child)
+		end
+	end
+	visit(tree.root)
+	return roleCount
+end
+
 function listenerClickOnSaveTree()
-	if( next(rolesOfCurrentTree) ~= nil ) then
-		Logger.log("save-and-load", "Save Tree clicked on. ")
-		local resultTree = formBehaviourTree()
+	Logger.log("save-and-load", "Save Tree clicked on. ")
+	local resultTree = formBehaviourTree()
+	-- are there enough roles?
+	local maxSplit = maxRoleSplit(resultTree)
+	local rolesCount = 0
+	for _,role in pairs(rolesOfCurrentTree) do		
+		rolesCount = rolesCount + 1
+	end
+	if((maxSplit == rolesCount) and (rolesCount > 0) ) then --roles are plausible
 		resultTree.roles = rolesOfCurrentTree
 		resultTree.defaultRole = rolesOfCurrentTree[1].name
 		resultTree.inputs = {}
 		
 		local inputs = WG.nodeList[rootID].inputs
-		for i=1,#inputs do
-			if (inputTypeMap[ inputs[i][2].items[ inputs[i][2].selected ] ] == nil) then
-				error("Uknown tree input type detected in BtCreator tree serialization. "..debug.traceback())
+		if(inputs ~= nil) then 
+			for i=1,#inputs do
+				if (inputTypeMap[ inputs[i][2].items[ inputs[i][2].selected ] ] == nil) then
+					error("Uknown tree input type detected in BtCreator tree serialization. "..debug.traceback())
+				end
+				table.insert(resultTree.inputs, {["name"] = inputs[i][1].text, ["command"] = inputTypeMap[ inputs[i][2].items[ inputs[i][2].selected ] ],})
 			end
-			table.insert(resultTree.inputs, {["name"] = inputs[i][1].text, ["command"] = inputTypeMap[ inputs[i][2].items[ inputs[i][2].selected ] ],})
-		end
-		
+		end 
 		resultTree:Save(treeNameEditbox.text)
 		WG.clearSelection()
 	else
@@ -1178,8 +1202,8 @@ end
 function showRoleManagementWindow(mode) 	
 	local tree = formBehaviourTree()
 	-- find out how many roles we need:
-	local roleCount = 1
-	local function visit(node)
+	local roleCount = maxRoleSplit(tree)
+	--[[local function visit(node)
 		if(not node) then
 			return
 		end
@@ -1191,7 +1215,7 @@ function showRoleManagementWindow(mode)
 		end
 	end
 	visit(tree.root)
-	
+	--]]
 	
 	--[[ RESET UNIT CATHEGORIES
 	loadStandardCategories()
@@ -1289,9 +1313,6 @@ function showRoleManagementWindow(mode)
 		local roleCategories = {}
 		roleCategories["NameEditBox"] = nameEditBox
 		roleCategories["CheckBoxes"] = categoryCheckBoxes
-		--if(keepOldAssignment ~= nil) then
-		--	roleCategories["OldUnitTypes"] = keepOldAssignment
-		--end
 		table.insert(rolesCategoriesCB,roleCategories)
 	end	
 	roleManagementDoneButton.RolesData = rolesCategoriesCB
