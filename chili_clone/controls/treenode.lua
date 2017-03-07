@@ -139,6 +139,7 @@ function TreeNode:New(obj)
 		skinName = 'DarkGlass',
 		borderThickness = 0,
 		backgroundColor = {0,0,0,0},
+		autosize = true,
 	}
 	if(obj.nodeType:lower() == "root") then
 		local label = Label:New{
@@ -219,6 +220,7 @@ function createNextParameterObject(obj)
 			backgroundColor = {0,0,0,0},
 			variableType = param["variableType"],
 			index = i, -- to be able to index editbox from treenode, to update treenode.parameters[i].value
+			autosize = true,
 		}
 		obj.nodeWindow.minWidth = math.max(obj.nodeWindow.minWidth, obj.nodeWindow.font:GetTextWidth(param["value"])+ 48 + obj.nodeWindow.font:GetTextWidth(param["name"]))
 	--- CheckBox componentType
@@ -271,14 +273,6 @@ function createNextParameterObject(obj)
 		result.comboBox:Select(defaultIndex)
 	end
 	return result
-end
-
-function TreeNode:CreateNextParameterObject()
-	local i = #self.parameterObjects + 1
-	self.parameterObjects[i] = createNextParameterObject(self)
-	-- Do not serialize unnecessary(dependent on nodeType) parameter fields, those are stored in nodeDefinitionInfo
-	self.parameters[i]["variableType"] = nil
-	self.parameters[i]["componentType"] = nil
 end
 
 --- Returns a table of children in order of y-coordinate(first is the one with the smallest one)
@@ -418,6 +412,7 @@ function listenerAddInput(obj)
 		--skinName = 'DarkGlass',
 		borderThickness = 0,
 		backgroundColor = {0,0,0,0},
+		autosize = true,
 	}
 	local comboBox = ComboBox:New{
 			caption = "",
