@@ -850,7 +850,8 @@ function moveToEndAddTab(tabs)
 		local newTabBarItem = Chili.TabBarItem:New{
 			caption = "+", 
 			defaultWidth = tabBar.minItemWidth, 
-			defaultHeight = tabBar.minItemHeight
+			defaultHeight = tabBar.minItemHeight,
+			tooltip = "Add new instance of a tree. ",
 		}
 		tabBar:AddChild(
 			newTabBarItem
@@ -973,12 +974,13 @@ function setUpTreeControlWindow()
 	x = '80%',
 	y = 0,
 	width = 80,
-		skinName='DarkGlass'
+	skinName='DarkGlass',
+	tooltip = "Determines, whether BtCreator will be shown on instance assignment. ",
 	}
 
 	setUpTreeSelectionTab()
 	
-	local newTab = {name = "+", children = {treeSelectionPanel} }
+	local newTab = {name = "+", tooltip = "Add new instance of a tree. ", children = {treeSelectionPanel} }
 	
 	treeTabPanel = Chili.TabPanel:New{
 		parent = treeControlWindow,
@@ -1080,6 +1082,19 @@ end
 
 --//////////////////////////////////////////////////////////////////////////////
 -- Callins
+
+
+function widget:IsAbove(x,y)
+	-- TODO test whether x,y are above treeControlPanel, currently it would also show btcreators tooltips. 
+		return true
+end
+
+function widget:GetTooltip(x, y)
+	local component = Screen0:HitTest(x, Screen0.height - y)
+	if (component) then
+		return component.tooltip
+	end
+end
 
 function widget:UnitDestroyed(unitId)
 	if(unitsToTreesMap[unitId] ~= nil) then
