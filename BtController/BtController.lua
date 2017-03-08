@@ -439,7 +439,7 @@ end
 --]]
 --------------------------------------------------------------------------------
 
-function SendStringToBtEvaluator(message)
+function sendStringToBtEvaluator(message)
 	Spring.SendSkirmishAIMessage(Spring.GetLocalPlayerID(), "BETS " .. message)
 end
 
