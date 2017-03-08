@@ -205,7 +205,7 @@ TreeHandle = {
 			AssignedUnitsCount = 0,
 			InputButtons = {},
 			Ready = false,
-			Reported = false,
+			Created = false,
 			Inputs = {}
 			} 
 --]]			
@@ -239,6 +239,10 @@ function TreeHandle:CheckReady()
 	end
 end
 
+
+--[[ It is expected from obj that ti contains following records:
+	AssignUnitListener
+--]]
 function TreeHandle:New(obj)
 	--obj = obj -- or TreeHandle
 	setmetatable(obj, self)
@@ -251,7 +255,7 @@ function TreeHandle:New(obj)
 	obj.InputButtons = {}
 	obj.RequireUnits = true
 	obj.AssignedUnitsCount = 0
-	obj.Reported = false
+	obj.Created = false
 	obj.Inputs = {}
 	
 	local treeTypeLabel = Chili.Label:New{
@@ -307,7 +311,7 @@ function TreeHandle:New(obj)
 			width = '25%',
 			minWidth = 150,
 			caption = roleName,
-			OnClick = {listenerAssignUnitsButton}, 
+			OnClick = {obj.AssignUnitListener}, 
 			skinName = "DarkGlass",
 			focusColor = {0.5,0.5,0.5,0.5},
 			TreeHandle = obj,
@@ -337,20 +341,21 @@ function TreeHandle:New(obj)
 	
 	local inputXOffset = 300
 	local inputYOffset = 50
+	local inputButtonHeight = 25
+	local firtButtonHeightModifier = 10
 	local inputInd = 0 
-	
-
+	--
 	local notGivenColor = {0.8,0.1,0.1,1}
 	for _,input in pairs(obj.Tree.inputs) do
 		local inputName = input.name
 		local inputButton = Chili.Button:New{
 			x = inputXOffset,
-			y = rolesYOffset + 22 * inputInd,
-			height = inputCount == 1 and 30 or 20,
+			y = rolesYOffset + inputButtonHeight * inputInd,
+			height =  inputCount == 1 and inputButtonHeight + firtHeightModifier or inputButtonHeight,
 			width = '25%',
 			minWidth = 150,
-			caption = inputName,
-			OnClick = { listenerInputButton}, 
+			caption =" " .. inputName .. " " .. input.command,
+			OnClick = {obj.InputButtonListener}, 
 			skinName = "DarkGlass",
 			focusColor = {0.5,0.5,0.5,0.5},
 			TreeHandle = obj,
@@ -413,31 +418,6 @@ function TreeHandle:FillInInput(inputName, data)
 	self:CheckReady() 
 end
 
------TREE HANDLE LISTENERS------------------------------------------------------
---[[
-
-function TreeHandle:InputButtonListener(x,y,button, ...)
-
-
-	if(not WG.InputCommands or not WG.BtCommands) then
-		WG.fillCustomCommandIDs()
-	end
-	-- should I do something more when reseting the input que?
-	-- I need to store record what we are expecting
-	expectedInput = {
-		TreeHandle = self.TreeHandle,
-		InputName = self.InputName,
-		CommandName = self.CommandName,
-		InstanceId = self.InstanceId,
-	}
-	--
-	local ret = spSetActiveCommand(  spGetCmdDescIndex(WG.InputCommands[ expectedInput.CommandName ]) ) --  spGetCmdDescIndex( WG.InputCommands[ expectedInput.CommandName ] ))
-	if(ret == false ) then 
-		Logger.log("commands", "Unable to set command active: " , expectedInput.CommandName) 
-	end
-end
---]]
---------------------------------------------------------------------------------
 
 function sendStringToBtEvaluator(message)
 	Spring.SendSkirmishAIMessage(Spring.GetLocalPlayerID(), "BETS " .. message)
@@ -466,7 +446,7 @@ function removeTreeBtController(tabs,treeHandle)
 	-- remove records of unit assignment:
 	removeUnitsFromTree(treeHandle.InstanceId)
 	
-	if( treeHandle.Reported) then
+	if( treeHandle.Created) then
 		-- remove send message to BtEvaluator
 		Logger.loggedCall("Errors", "BtController", "removing tree fromBbtEvaluator", 
 			BtEvaluator.removeTree, treeHandle.InstanceId)
@@ -550,7 +530,7 @@ end
 
 
 
-function reportTreeToBtEvaluator(treeHandle) 
+function createTreeInBtEvaluator(treeHandle) 
 		-- create the tree immediately when the tab is created
 		--- CHANGE this to proper tree reporting
 	Logger.log("commands", "reporting tree")
@@ -574,7 +554,7 @@ end
 
 function reportTreeAndUnitsBtEval(treeHandle)
 --- change this
-	reportTreeToBtEvaluator(treeHandle)
+	createTreeInBtEvaluator(treeHandle)
 	reportAssignedUnits(treeHandle)
 end
 
@@ -622,44 +602,7 @@ function assignUnitToTree(unitId, treeHandle, roleName)
 	treeHandle:IncreaseUnitCount(roleName)
 end
 
--- This is the method to create new tree instance, 
-	-- it will create the instance,
-	-- create new tree tab
-	-- (removed) notify BtEvaluator
--- it return the new treeHandle
-function instantiateTree(treeType, instanceName, requireUnits)
-	
-	local newTreeHandle = TreeHandle:New{
-		Name = instanceName,
-		TreeType = treeType,
-		ReportTree = reportTreeToBtEvaluator,
-		ReportUnits = reportAssignedUnits,
-		ReportInput = reportInputToBtEval,
-		-- give here proper functions
-	}
-	
-	local selectedUnits = spGetSelectedUnits()
-	if ((table.getn(selectedUnits) < 1 ) and requireUnits) then
-		Logger.log("Errors", "BtController: instantiateTree: tree is requiring units and no unit is selected.")
-		return newTreeHandle
-	end
-	
-	-- create tab
-	addTreeToTreeTabPanel(newTreeHandle)
-			
-	-- now, auto assign units to tree
-	automaticRoleAssignment(newTreeHandle, selectedUnits)
-	
-	newTreeHandle.RequireUnits = requireUnits
-	
-	if(newTreeHandle:CheckReady()) then
-		newTreeHandle.ReportTree(newTreeHandle)
-		newTreeHandle.Reported = true
-		newTreeHandle.ReportUnits(newTreeHandle)
-	end
-	return newTreeHandle
-end
-
+local instantiateTree
 
 
 --//////////////////////////////////////////////////////////////////////////////
@@ -690,11 +633,13 @@ function listenerBarItemClick(self, x, y, button, ...)
 
 		if(not BtCreator)then return end
 	
-		if(showTreeCheckbox.checked) then
-			Logger.loggedCall("Error", "BtController", 
-				"reporting tree to BtEvaluator",
-				BtEvaluator.reportTree, self.TreeHandle.InstanceId
-			)
+		if((showTreeCheckbox.checked)) then
+			if(self.TreeHandle.Created) then 
+				Logger.loggedCall("Error", "BtController", 
+					"reporting tree to BtEvaluator",
+					BtEvaluator.reportTree, self.TreeHandle.InstanceId
+				)
+			end
 			Logger.loggedCall("Error", "BtController", 
 				"making BtCreator show selected tree",
 				BtCreator.show, self.TreeHandle.TreeType )
@@ -795,6 +740,46 @@ local function listenerClickOnSelectedTreeDoneButton(self, x, y, button)
 end
 
 ---------------------------------------LISTENERS END
+
+-- This is the method to create new tree instance, 
+	-- it will create the instance,
+	-- create new tree tab
+	-- (removed) notify BtEvaluator
+-- it return the new treeHandle
+function instantiateTree(treeType, instanceName, requireUnits)
+	
+	local newTreeHandle = TreeHandle:New{
+		Name = instanceName,
+		TreeType = treeType,
+		AssignUnitListener = listenerAssignUnitsButton,
+		InputButtonListener = listenerInputButton,
+	}
+	
+	local selectedUnits = spGetSelectedUnits()
+	if ((table.getn(selectedUnits) < 1 ) and requireUnits) then
+		Logger.log("Errors", "BtController: instantiateTree: tree is requiring units and no unit is selected.")
+		return newTreeHandle
+	end
+	
+	-- create tab
+	addTreeToTreeTabPanel(newTreeHandle)
+			
+	-- now, auto assign units to tree
+	automaticRoleAssignment(newTreeHandle, selectedUnits)
+	
+	newTreeHandle.RequireUnits = requireUnits
+	
+	if(newTreeHandle:CheckReady()) then
+		createTreeInBtEvaluator(newTreeHandle)
+		--newTreeHandle.ReportTree(newTreeHandle)
+		newTreeHandle.Created = true
+		reportAssignedUnits(newTreeHandle)
+		--newTreeHandle.ReportUnits(newTreeHandle)
+	end
+	return newTreeHandle
+end
+
+
 
 
 function moveTabItemToEndWithListeners(tabs,tabName)
@@ -1121,13 +1106,17 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 			tH:FillInInput(inpName, cmdParams)
 			expectedInput = nil
 			if(tH:CheckReady()) then 
-				if(tH.Reported == false) then
-					tH.Reported = true
-					tH.ReportTree(tH)
-					tH.ReportUnits(tH)
+				if(tH.Created == false) then
+					tH.Created = true
+					createTreeInBtEvaluator(tH)
+					reportAssignedUnits(tH)
+					Logger.loggedCall("Error", "BtController", 
+					"reporting tree to BtEvaluator - last input filled in",
+					BtEvaluator.reportTree, tH.InstanceId
+					)
 				else
 					-- tree is ready, we can report just input
-					tH.ReportInput(tH, inpName)
+					reportInputToBtEval(tH, inpName)
 				end
 			end
 		else
