@@ -44,6 +44,7 @@ local inputCommandDesc = {
 		--action = 'Convoy',
 		tooltip = 'Collects a position input from player.',
 		hidden = true,
+		buttonName = "Position",
 		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
 	},
 	["BETS_AREA"] = {
@@ -53,6 +54,7 @@ local inputCommandDesc = {
 		--action = 'SAD',
 		tooltip = 'Collects an area input from player.',
 		hidden = true,
+		buttonName = "Area",
 		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
 		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sad.png' },
 	},
@@ -63,6 +65,7 @@ local inputCommandDesc = {
 		--action = 'SAD',
 		tooltip = 'Collects unit input from player.',
 		hidden = true,
+		buttonName = "Unit",
 		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
 		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sad.png' },
 	},
@@ -73,6 +76,7 @@ local inputCommandDesc = {
 		--action = 'SAD',
 		tooltip = 'Ends the user input.',
 		hidden = true,
+		buttonName = "End",
 		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
 		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sad.png' },
 	},
@@ -80,12 +84,20 @@ local inputCommandDesc = {
 
 -- commandIDToName is used to identify command in command notify>
 local commandIDToName
-
+local commandNameToHumanName
 
 local function registerInputCommands()
 	-- we need to register our custom commands
 	for _, cmdDesc in pairs(inputCommandDesc) do
 		sendCustomMessage.RegisterCustomCommand(cmdDesc)
+	end
+end
+
+
+local function createCommandHumanNameTable()
+	commandNameToHumanName = {}
+	for name,data in pairs(inputCommandDesc) do
+		commandNameToHumanName[name] = data.buttonName
 	end
 end
 
@@ -154,6 +166,8 @@ end
 
 function widget:Initialize()
 	registerInputCommands()
+	createCommandHumanNameTable()
+	WG.BtCommandsInputHumanNames = commandNameToHumanName
 	-- register release commands !note: maybe move them into another refreshTreeSelectionPanel?
 	registerCommandsForBehaviours()
 	Dependency.fill(Dependency.BtCommands)

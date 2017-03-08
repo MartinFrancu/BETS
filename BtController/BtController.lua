@@ -61,45 +61,22 @@ local spGetCmdDescIndex = Spring.GetCmdDescIndex
 local spSetActiveCommand = Spring.SetActiveCommand
 local spGetSelectedUnits = Spring.GetSelectedUnits
 
-function string.starts(String,Start)
-   return string.sub(String,1,string.len(Start))==Start
-end
-
-function string.ends(String,End)
-   return End=='' or string.sub(String,-string.len(End))==End
-end
-
-local function isInTable(value, t)
-	for i=1,#t do
-		if(t[i] == value) then
-			return true
-		end
-	end
-	return false
-end
-
-local function getStringsWithoutSuffix(list, suff)
-	-- returns list which contains only string without this suffix
-	local result = {}
-	for i,v in ipairs(list)do
-		if(string.ends(v,suff)) then
-		--vRes = v.sub(v, string.len( BehavioursDirectory)+2 )
-		--table.insert(result,v.sub(1, v:len()))
-		table.insert(result,v:sub(1,v:len()- suff:len()))
-		end
-   end
-   return result
-end
-
-local function getNamesInDirectory(directoryName, suffix)
-   local folderContent = VFS.DirList(directoryName)
+local function getTreeNamesInDirectory(directoryName)
+   local ending = ".json"
+   local folderContent = Utils.dirList(directoryName, "*"..ending) --VFS.DirList(directoryName)
    -- get just names .json files
-   folderContent = getStringsWithoutSuffix(folderContent, ".json")
-   -- Remove the path prefix of folder:
+   local treeNames = {}
+   for _,treeName in ipairs(folderContent) do
+	table.insert(treeNames, treeName:sub(1, treeName:len() - ending:len()) ) 
+	--folderContent = getStringsWithoutSuffix(folderContent, ".json")
+   end 
+  --[[ -- Remove the path prefix of folder:
    for i,v in ipairs(folderContent)do
-	folderContent[i] = string.sub(v, string.len( directoryName)+2 ) --THIS WILL MAKE TROUBLES WHEN DIRECTORY IS DIFFERENT: the slashes are sometimes counted once, sometimes twice!!!\\
+	folderContent[i] = string.sub(v, string.len( directoryName)+2 ) 
+	--THIS WILL MAKE TROUBLES WHEN DIRECTORY IS DIFFERENT: the slashes are sometimes counted once, sometimes twice!!!\\
    end
-   return folderContent
+   --]]
+   return  treeNames
 end
 
 -- //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -242,6 +219,8 @@ end
 
 --[[ It is expected from obj that ti contains following records:
 	AssignUnitListener
+	InputButtonListener
+	ResetTreeListener
 --]]
 function TreeHandle:New(obj)
 	--obj = obj -- or TreeHandle
@@ -266,7 +245,6 @@ function TreeHandle:New(obj)
 		minWidth = 50,
 		caption =  obj.TreeType,
 		skinName = "DarkGlass",
-		--focusColor = {0.5,0.5,0.5,0.5},
 	}
 	-- Order of these childs is sort of IMPORTANT as other entities needs to access children
 	table.insert(obj.ChiliComponents, treeTypeLabel)
@@ -277,7 +255,7 @@ function TreeHandle:New(obj)
 		width =  100,
 		minWidth = 50,
 		caption =  "Restart tree",
-		OnClick = {restartTreeListener}, 
+		OnClick = {obj.RestartTreeListener}, 
 		TreeHandle = obj,
 		skinName = "DarkGlass",
 	}
@@ -354,7 +332,7 @@ function TreeHandle:New(obj)
 			height =  inputCount == 1 and inputButtonHeight + firtHeightModifier or inputButtonHeight,
 			width = '25%',
 			minWidth = 150,
-			caption =" " .. inputName .. " " .. input.command,
+			caption =" " .. inputName .. " (" .. WG.BtCommandsInputHumanNames[input.command].. ")",
 			OnClick = {obj.InputButtonListener}, 
 			skinName = "DarkGlass",
 			focusColor = {0.5,0.5,0.5,0.5},
@@ -617,7 +595,7 @@ end
 -- This listener is called when AddTreeTab becomes active to update directory 
 -- content and default instance name.
 local function refreshTreeSelectionPanel(self)
-	names = getNamesInDirectory(BehavioursDirectory, ".json")
+	names = getTreeNamesInDirectory(BehavioursDirectory) --Utils.dirList(BehavioursDirectory, "*.json") --getNamesInDirectory(BehavioursDirectory, ".json")
 	treeSelectionComboBox.items = names 
 	treeSelectionComboBox:RequestUpdate()
 	treeNameEditBox.text = "Instance"..instanceIdCount
@@ -753,6 +731,7 @@ function instantiateTree(treeType, instanceName, requireUnits)
 		TreeType = treeType,
 		AssignUnitListener = listenerAssignUnitsButton,
 		InputButtonListener = listenerInputButton,
+		RestartTreeListener =  restartTreeListener,
 	}
 	
 	local selectedUnits = spGetSelectedUnits()
@@ -866,7 +845,9 @@ function setUpTreeSelectionTab()
 		skinName='DarkGlass',
 	}
 	
-	local availableTreeTypes = getNamesInDirectory(BehavioursDirectory, ".json")
+	local availableTreeTypes = getTreeNamesInDirectory(BehavioursDirectory) 
+	--Utils.dirList(BehavioursDirectory, "*.json") 
+	-- getNamesInDirectory(BehavioursDirectory, ".json")
 	
 	treeSelectionComboBox = Chili.ComboBox:New{
 		items = availableTreeTypes,
