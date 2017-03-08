@@ -113,14 +113,14 @@ local alphanum = {
 local usedIDs = {}
 local instanceIdCount = 0
 
-function GenerateID()
+function generateID()
 	local length = 32
 	local str = ""
 	for i = 1, length do
 		str = str..alphanum[math.random(#alphanum)]
 	end
 	if(usedIDs[str] ~= nil) then
-		return GenerateID()
+		return generateID()
 	end
 	usedIDs[str] = true
 	instanceIdCount = instanceIdCount + 1
@@ -243,7 +243,7 @@ function TreeHandle:New(obj)
 	--obj = obj -- or TreeHandle
 	setmetatable(obj, self)
 	self.__index = self
-	obj.InstanceId = GenerateID()
+	obj.InstanceId = generateID()
 	obj.Tree = BehaviourTree.load(obj.TreeType)
 	
 	obj.ChiliComponents = {}
