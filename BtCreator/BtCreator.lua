@@ -264,11 +264,12 @@ end
 --   Blackboard showing
 
 local blackboardWindowState
-local rowsMetatable
+local createRows, rowsMetatable
 do
+	local ROW_HEIGHT = 20
 	local metapairs = Utils.metapairs
 	local expandedVariablesMap = {} 
-
+	
 	local function makeCaption(k, v)
 		return tostring(k) .. " = " .. dump(v)
 	end
@@ -281,48 +282,68 @@ do
 		end
 		
 		local length = self.length or 0
+		local oldLength = length
 		local offset = 0
+		local top = 0
 		for i = 1, length do
 			local row = self[i]
 			if(not t[row.key])then
 				row.control:Dispose()
-				self.keyMap[row.key] = nil
+				keyMap[row.key] = nil
 				offset = offset + 1
 			else
 				self[i - offset] = row
 				row.index = i - offset
-				row.control:SetCaption(makeCaption(k, v))
+				row.control:SetPos(0, top)
+				row.control:SetCaption(makeCaption(row.key, t[row.key]))
+				top = top + row.height
 			end
 		end
-		for i = length - offset, length do
+		length = length - offset
+		for k, v in metapairs(t) do
+			if(not keyMap[k])then
+				local row = {
+					key = k,
+					control = Chili.Label:New{
+						parent = self.wrapper,
+						x = 0,
+						y = top,
+						caption = makeCaption(k, v),
+					},
+					height = 20,
+				}
+				top = top + ROW_HEIGHT
+				keyMap[k] = row
+				length = length + 1
+				self[length] = row
+				row.index = length
+			end
+		end
+		for i = length + 1, oldLength do
 			self[i] = nil
 		end
-		length = length - offset
-		local top = (self[length] or { y = 0 }).y
-		for k, v in metapairs(t) do
-			local row = {
-				key = k,
-				control = Chili.Label:New{
-					parent = blackboardWindowState.contentWrapper,
-					x = 0,
-					y = top,
-					caption = makeCaption(k, v),
-				},
-			}
-		end
+		self.length = length
 	end
 	
 	rowsMetatable = {
 		__index = rowsPrototype
 	}
+	
+	function createRows(wrapper, sizeChangedCallback)
+		return setmetatable({
+			wrapper = wrapper,
+			sizeChangedCallback = sizeChangedCallback,
+		}, rowsMetatable)
+	end
 end
+
 local function showCurrentBlackboard(blackboardState)
 	currentBlackboardState = blackboardState
 	if(not blackboardWindowState)then
 		return
 	end
 	
-	currentBlackboardState.rows:SetTable(blackboardState)
+	blackboardWindowState.rows:SetTable(blackboardState)
 end
 local function listenerClickOnShowBlackboard()
 	if(blackboardWindowState)then
@@ -339,9 +360,10 @@ local function listenerClickOnShowBlackboard()
 		name = "BlackboardWindow",
 		x = showBlackboardButton.x - 5,
 		y = showBlackboardButton.y - height + 5,
-		width = 200,
+		width = 400,
 		height = height,
 		skinName = 'DarkGlass',
+		caption = "Blackboard:",
 	}
 	blackboardWindowState.window = window
 	
@@ -349,16 +371,11 @@ local function listenerClickOnShowBlackboard()
 		parent = window,
 		x = 0,
 		y = 0,
+		width = '100%',
+		height = '100%',
 	}
 	
-	Chili.Label:New{
-		parent = blackboardWindowState.contentWrapper,
-		x = 10,
-		y = 0,
-		caption = "Blackboard:",
-	}
-	
-	blackboardWindowState.rows = setmetatable({}, rowsMetatable)
+	blackboardWindowState.rows = createRows(blackboardWindowState.contentWrapper)
 	
 	if(currentBlackboardState)then
 		showCurrentBlackboard(currentBlackboardState)
@@ -440,6 +457,8 @@ local function updateStatesMessage(params)
 		nodeWindow.backgroundColor[4] = alpha
 		nodeWindow:Invalidate()
 	end
+	
+	showCurrentBlackboard(params.blackboard)
 end
 
 local function generateScriptNodes(heightSum, nodes) 

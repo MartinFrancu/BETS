@@ -562,6 +562,8 @@ if (widget and not widget.GetInfo) then
 		-- Get ready to use Chili
 		Chili = WG.ChiliClone
 		ChiliRoot = Chili.Screen0	
+		consoleContext.Chili = Chili
+		consoleContext.ChiliRoot = ChiliRoot
 		
 		injectErrorReporter()
 
