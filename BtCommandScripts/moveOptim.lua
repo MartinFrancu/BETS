@@ -34,6 +34,9 @@ local CAN_BE_STUCK_FOR_TICKS = 3
 
 local function wrapResVect(f, id)
 	local x, y, z = f(id)
+	if not x then
+		return nil
+	end
 	return { x, y, z}
 end
 
