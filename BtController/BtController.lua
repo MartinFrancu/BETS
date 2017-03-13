@@ -199,6 +199,33 @@ TreeHandle = {
 --				Ready = indicator if this tree is ready to be send to BtEvaluator
 
 -----------------------------------------------------------------------------------]]--
+
+-- The following funtion creates string which summarize state of this tree. 
+function TreeHandle:UpdateTreeStatus()
+	local result
+	if(self.Created) then
+		result = "running"
+	else
+		result = "not running"
+	end
+	local soFarOk = true
+	local missingInputs = ""
+	for _,input in ipairs(self.Tree.inputs) do
+		if(self.Inputs[input.name] == nil)then
+			if(soFarOk) then
+				soFarOk = false
+				missingInputs = input.name
+			else
+				missingInputs = missingInputs .. ", ".. input.name
+			end
+		end
+	end
+	if(soFarOk == false) then
+	result = result .. ", missing input: " .. missingInputs
+	end
+	self.ChiliComponents[1]:SetCaption(self.TreeType .. " (" .. result .. ")") 
+end
+
 -- this function will check if all required inputs are given. 
 function TreeHandle:CheckReady()
 	local allOkSoFar = true
@@ -215,6 +242,7 @@ function TreeHandle:CheckReady()
 		return false
 	end
 end
+
 
 
 --[[ It is expected from obj that ti contains following records:
@@ -238,18 +266,18 @@ function TreeHandle:New(obj)
 	obj.Inputs = {}
 	
 	local treeTypeLabel = Chili.Label:New{
-		x = 50,
+		x = 7,
 		y = 7,
 		height = 30,
-		width =  200,
+		width =  300,
 		minWidth = 50,
-		caption =  obj.TreeType,
+		caption =  obj.TreeType .. " (initializing)",
 		skinName = "DarkGlass",
 	}
 	-- Order of these childs is sort of IMPORTANT as other entities needs to access children
 	table.insert(obj.ChiliComponents, treeTypeLabel)
 	local resetTreeButton = Chili.Button:New{
-		x = 150,
+		x = 370,
 		y = 0,
 		height = 30,
 		width =  100,
@@ -393,7 +421,8 @@ function TreeHandle:FillInInput(inputName, data)
 		end
 	end]]--
 	self.Inputs[inputName] = data
-	self:CheckReady() 
+	self:CheckReady()
+	self:UpdateTreeStatus()	
 end
 
 
@@ -610,7 +639,9 @@ function listenerBarItemClick(self, x, y, button, ...)
 		Spring.SelectUnitArray(unitsToSelect)
 
 		if(not BtCreator)then return end
-	
+		
+		self.TreeHandle:UpdateTreeStatus()
+		
 		if((showTreeCheckbox.checked)) then
 			if(self.TreeHandle.Created) then 
 				Logger.loggedCall("Error", "BtController", 
@@ -1095,10 +1126,12 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 					"reporting tree to BtEvaluator - last input filled in",
 					BtEvaluator.reportTree, tH.InstanceId
 					)
+					tH:UpdateTreeStatus()
 				else
 					-- tree is ready, we can report just input
 					reportInputToBtEval(tH, inpName)
 				end
+				
 			end
 		else
 			Logger.log("commands", "Received input command while not expecting!!!")
