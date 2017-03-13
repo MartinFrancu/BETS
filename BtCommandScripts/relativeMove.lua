@@ -10,7 +10,7 @@ function getInfo()
 		onNoUnits = SUCCESS,
 		parameterDefs = {
 			{ 
-				name = "pos",
+				name = "dist",
 				variableType = "expression",
 				componentType = "editBox",
 				defaultValue = "{x = 0, z = 0}",
@@ -27,8 +27,12 @@ function Run(self, unitIds, parameter)
 		return FAILURE
 	end
 	
-	return oldRun(self, unitIds, {
-		x = parameter.pos.x - center.x,
-		y = parameter.pos.z - center.z,
-	})
+	local absParam = { 
+		pos = { 
+			x = parameter.dist.x + center.x,
+			z = parameter.dist.z + center.z
+		} 
+	}
+	
+	return oldRun(self, unitIds, absParam)
 end
