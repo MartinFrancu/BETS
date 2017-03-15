@@ -151,7 +151,7 @@ function addFieldToBarItemList(tabs, tabName, atributName, atribut)
 end
 
 function addTreeToTreeTabPanel(treeHandle)
-	local newTab =  {name = treeHandle.Name, children = treeHandle.ChiliComponents }
+	local newTab =  {name = treeHandle.Name, children = treeHandle.ChiliComponents}
 	-- if TabPanel is not inialized I have to initalize it:
 	treeTabPanel:AddTab(newTab)
 	highlightTab(newTab.name)
@@ -161,6 +161,7 @@ function addTreeToTreeTabPanel(treeHandle)
 	addFieldToBarItem(treeTabPanel, newTab.name, "MouseDown", tabBarItemMouseDownBETS)
 	addFieldToBarItemList(treeTabPanel, newTab.name, "OnClick", listenerBarItemClick )
 	addFieldToBarItem(treeTabPanel, newTab.name, "TreeHandle", treeHandle)
+	addFieldToBarItem(treeTabPanel, newTab.name, "tooltip", "Panel of ".. treeHandle.Name .. " tree")
 	
 	moveToEndAddTab(treeTabPanel)
 end
@@ -272,6 +273,7 @@ function TreeHandle:New(obj)
 		minWidth = 50,
 		caption =  obj.TreeType .. " (initializing)",
 		skinName = "DarkGlass",
+		tooltip = "Name of tree type",
 	}
 	-- Order of these childs is sort of IMPORTANT as other entities needs to access children
 	table.insert(obj.ChiliComponents, treeTypeLabel)
@@ -285,6 +287,7 @@ function TreeHandle:New(obj)
 		OnClick = {obj.RestartTreeListener}, 
 		TreeHandle = obj,
 		skinName = "DarkGlass",
+		tooltip = "Restarts evalution of this tree",
 	}
 	table.insert(obj.ChiliComponents, resetTreeButton)
 	
@@ -300,12 +303,13 @@ function TreeHandle:New(obj)
 			x = rolesXOffset + roleButtonWidth ,
 			y = rolesYOffset + 5 + 22 * roleInd,
 			height = roleCount == 1 and 30 or 20,
-			width = '25%',
-			minWidth = 150,
+			width = '10%',
+			minWidth = 50,
 			caption = 0, 
 			skinName = "DarkGlass",
 			focusColor = {0.5,0.5,0.5,0.5},
-			instanceId = obj.InstanceId
+			instanceId = obj.InstanceId,
+			tooltip = "How many units are currently assigned to this role.",
 		}
 		table.insert(obj.ChiliComponents, unitsCountLabel)
 		
@@ -323,7 +327,8 @@ function TreeHandle:New(obj)
 			Role = roleName,
 			roleIndex = roleInd,
 			unitsCountLabel = unitsCountLabel,
-			instanceId = obj.InstanceId
+			instanceId = obj.InstanceId,
+			tooltip = "Assigns currently selected units to this role",
 		}
 		table.insert(obj.ChiliComponents, roleAssignmentButton)
 		-- get the role unit types:
@@ -368,6 +373,7 @@ function TreeHandle:New(obj)
 			CommandName = input.command,
 			InstanceId = obj.InstanceId,
 			backgroundColor = notGivenColor,
+			tooltip = "Give required input (red = not given yet, green = given)",
 		}
 		inputInd = inputInd + 1
 		table.insert(obj.ChiliComponents, inputButton )
