@@ -244,7 +244,6 @@ function TreeHandle:CheckReady()
 end
 
 
-
 --[[ It is expected from obj that ti contains following records:
 	AssignUnitListener
 	InputButtonListener
@@ -410,17 +409,17 @@ function TreeHandle:FillInInput(inputName, data)
 	for _,inputButton in pairs(self.InputButtons) do
 		if(inputButton.InputName == inputName) then
 			inputButton.backgroundColor = {0.1,0.6,0.1,1}
+			
+			local transformedData = Logger.loggedCall("Error", "BtController", 
+					"fill in input value",
+					WG.BtCommandsTransformData, 
+					data,
+					inputButton.CommandName)
+			self.Inputs[inputName] = transformedData
 			inputButton:Invalidate()
-			inputButton:RequestUpdate()
+			inputButton:RequestUpdate()	
 		end
-	end
-	---!!! here put storing input in proper place
-	--[[for _,input in pairs(self.Tree.inputs) do
-		if(input.name == inputName) then
-			input["value"] = data
-		end
-	end]]--
-	self.Inputs[inputName] = data
+	end	
 	self:CheckReady()
 	self:UpdateTreeStatus()	
 end
@@ -558,14 +557,8 @@ function reportAssignedUnits(treeHandle)
 	Spring.SelectUnitArray(originallySelectedUnits)
 end
 
-
-function reportTreeAndUnitsBtEval(treeHandle)
---- change this
-	createTreeInBtEvaluator(treeHandle)
-	reportAssignedUnits(treeHandle)
-end
-
 function reportInputToBtEval(treeHandle, inputName)
+	-- TD: transform input
 	Logger.loggedCall("Errors", "BtController", "reporting changed input", 
 		BtEvaluator.setInput, treeHandle.InstanceId , inputName, treeHandle.Inputs[inputName]) 
 end 
@@ -708,8 +701,7 @@ function listenerInputButton(self,x,y,button, ...)
 		CommandName = self.CommandName,
 		InstanceId = self.InstanceId,
 	}
-	--
-	local ret = spSetActiveCommand(  spGetCmdDescIndex(WG.InputCommands[ expectedInput.CommandName ]) ) --  spGetCmdDescIndex( WG.InputCommands[ expectedInput.CommandName ] ))
+	local ret = spSetActiveCommand(  spGetCmdDescIndex(WG.InputCommands[ expectedInput.CommandName ]) ) 
 	if(ret == false ) then 
 		Logger.log("commands", "Unable to set command active: " , expectedInput.CommandName) 
 	end
@@ -787,41 +779,6 @@ function instantiateTree(treeType, instanceName, requireUnits)
 		--newTreeHandle.ReportUnits(newTreeHandle)
 	end
 	return newTreeHandle
-end
-
-
-
-
-function moveTabItemToEndWithListeners(tabs,tabName)
-	-- Trouble is that we add listeners on barItems, now I have to move them with me. 
-	-- do we have such tab
-	----[[
-	if tabs.tabIndexMapping[tabName] == nil then
-		-- Or should I report it:
-		Logger.log("Error", "Trying to move tab and it is not there.")
-		return
-	end
-	--]]
-	local tabBarChildIndex = 1
-	-- get tabBar
-	local tabBar = tabs.children[tabBarChildIndex]
-	-- find corresponding tabBarItem: 
-	local onClickListeners
-	local barItems = tabBar.children
-	for index,item in ipairs(barItems) do
-		if(item.caption == tabName) then
-			-- get listeners
-			onClickListeners = item.OnMouseDown
-		end
-	end
-	
-
-	tabBar:Remove(tabName)
-	local newTabBarItem = Chili.TabBarItem:New{caption = tabName, defaultWidth = tabBar.minItemWidth, defaultHeight = tabBar.minItemHeight}
-	newTabBarItem.OnMouseDown = onClickListeners
-	tabBar:AddChild(
-        newTabBarItem
-    )
 end
 
 function moveToEndAddTab(tabs)
@@ -1116,8 +1073,6 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 		end
 	end
 	if(WG.InputCommands[cmdID]) then
-		Logger.log("commands", "received input command: " , cmdID)
-
 		if(expectedInput ~= nil) then
 			-- I should insert given input to tree:
 			local tH = expectedInput.TreeHandle 
@@ -1147,7 +1102,6 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 	end
 	-- check for custom commands - Bt behaviour assignments
 	if(WG.BtCommands[cmdID]) then
-		Logger.log("commands", "received tree command: " , cmdID)
 		-- setting up a behaviour tree :
 		local treeHandle = instantiateTree(WG.BtCommands[cmdID].treeName, "Instance"..instanceIdCount , true)
 		
