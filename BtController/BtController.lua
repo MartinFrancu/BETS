@@ -846,7 +846,6 @@ function moveToEndAddTab(tabs)
 			caption = "+", 
 			defaultWidth = tabBar.minItemWidth, 
 			defaultHeight = tabBar.minItemHeight,
-			tooltip = "Add new instance of a tree. ",
 		}
 		tabBar:AddChild(
 			newTabBarItem
@@ -860,6 +859,7 @@ end
 function finalizeAddTreeBarItem(tabs)
 	local item = getBarItemByName(tabs, "+")
 	item.focusColor = {0.2, 1.0, 0.2, 0.6}
+	item.tooltip = "Adds new instance of a tree. "
 	local listeners = item.OnMouseDown
 	table.insert(listeners,refreshTreeSelectionPanel)
 end
@@ -889,6 +889,7 @@ function setUpTreeSelectionTab()
 		skinName = 'DarkGlass',
 		borderThickness = 0,
 		backgroundColor = {0.3,0.3,0.3,0.3},
+		tooltip = "Choose a tree type from available behaviours located in BtBehaviours folder. ",
 	}
 	
 	treeNameLabel = Chili.Label:New{
@@ -911,6 +912,7 @@ function setUpTreeSelectionTab()
 		borderThickness = 0,
 		backgroundColor = {0.1,0.1,0.1,0},
 		editingText = true,
+		tooltip = "Tree instance name, which will be visible on its instance tab. ",
 	}
 
    	treeSelectionDoneButton = Chili.Button:New{
@@ -921,7 +923,8 @@ function setUpTreeSelectionTab()
 		caption = "Done",
 		skinName='DarkGlass',
 		OnClick = {listenerClickOnSelectedTreeDoneButton},
-    }	
+		tooltip = "Creates new instance of selected behaviour with given tree instance name. ",
+	}
 	
   
 	treeSelectionPanel = Chili.Control:New{
@@ -977,7 +980,7 @@ function setUpTreeControlWindow()
 
 	setUpTreeSelectionTab()
 	
-	local newTab = {name = "+", tooltip = "Add new instance of a tree. ", children = {treeSelectionPanel} }
+	local newTab = {name = "+", children = {treeSelectionPanel} }
 	
 	treeTabPanel = Chili.TabPanel:New{
 		parent = treeControlWindow,
@@ -1082,8 +1085,12 @@ end
 
 
 function widget:IsAbove(x,y)
-	-- TODO test whether x,y are above treeControlPanel, currently it would also show btcreators tooltips. 
-		return true
+	y = Screen0.height - y
+	if (x > treeControlWindow.x and x < treeControlWindow.x + treeControlWindow.width and 
+			y > treeControlWindow.y and y < treeControlWindow.y + treeControlWindow.height) then
+			return true
+	end
+	return false
 end
 
 function widget:GetTooltip(x, y)
