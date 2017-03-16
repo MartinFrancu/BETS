@@ -84,6 +84,15 @@ function BtCreator.show(tree, instanceId)
 end
 
 function BtCreator.hide()
+	if(rolesWindow and rolesWindow.visible) then
+		rolesWindow:Hide()
+	end
+	if(sensorsWindow and sensorsWindow.visible) then
+		sensorsWindow:Hide()
+	end
+	if(blackboardWindowState and blackboardWindowState.visible) then
+		blackboardWindowState:Hide()
+	end
 	if(windowBtCreator.visible) then
 		windowBtCreator:Hide()
 	end
