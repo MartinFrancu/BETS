@@ -509,7 +509,41 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 		return
 	end
 	------------------------------------------
-
+	
+	local unitIdRoleTable = {}
+	
+	for _,roleData in pairs(treeHandle.Roles) do
+		for name,record in pairs(roleData.unitTypes) do
+			if(unitIdRoleTable[name] == nil) then
+				unitIdRoleTable[name] = {currentIndex = 1, roles = {}}
+			end
+			table.insert(unitIdRoleTable[name].roles, roleData)
+		end
+	end	
+	
+	for i,unitId in pairs(selectedUnits) do
+		local unitDefId = Spring.GetUnitDefID(unitId)
+		if(UnitDefs[unitDefId] ~= nil)then  
+			local name = UnitDefs[unitDefId].name
+			if(unitIdRoleTable[name] ~= nil) then
+				local unitRoles = unitIdRoleTable[name]
+				local currentRoleData = unitRoles.roles[unitRoles.currentIndex]
+				Logger.log("roles", "assigning to role", currentRoleData)
+				assignUnitToTree(unitId, treeHandle, currentRoleData.assignButton.caption)
+				-- now, I should shift the index:
+				unitRoles.currentIndex = unitRoles.currentIndex + 1 
+				if(unitRoles.currentIndex > table.getn(unitRoles.roles) ) then
+					unitRoles.currentIndex = 1 -- reset the current index
+				end
+			else
+				-- put into default role:
+				assignUnitToTree(unitId, treeHandle, treeHandle.Tree.defaultRole)
+			end
+		else
+			Logger.log("roles", "could not find UnitDefs entry for: ",  unitId )
+		end
+	end
+	--[[
 	for i,unitId in pairs(selectedUnits) do
 		-- put each unit to its role:
 		local unitAssigned  = false
@@ -529,6 +563,7 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 			assignUnitToTree(unitId, treeHandle, treeHandle.Tree.defaultRole)
 		end
 	end
+	--]]
 	--[[
 	for name,roleData in pairs(treeHandle.Roles) do
 	-- now I need to share information with the BtEvaluator
