@@ -6,11 +6,11 @@
 		"name": "moveTo"
 	} ],
 	"properties": {
-		"1vk09Kswf7Fh4YfGIIAfbVvsD3EWjmmB": {
+		"yykifcvKSzNXd8dc23648VrhONkTvdy2": {
 			"height": 70,
 			"width": 110,
-			"x": 264,
-			"y": 92
+			"x": 565,
+			"y": 240
 		}
 	},
 	"roles": [ {
@@ -20,15 +20,15 @@
 	} ],
 	"root": {
 		"children": [],
-		"id": "1vk09Kswf7Fh4YfGIIAfbVvsD3EWjmmB",
+		"id": "yykifcvKSzNXd8dc23648VrhONkTvdy2",
 		"nodeType": "luaCommand",
 		"parameters": [ {
 			"name": "pos",
 			"value": "{x=moveTo[1], y=moveTo[2], z=moveTo[3]}"
 		}, {
 			"name": "scriptName",
-			"value": "absoluteMove.lua"
+			"value": "move.lua"
 		} ],
-		"scriptName": "absoluteMove.lua"
+		"scriptName": "move.lua"
 	}
 }

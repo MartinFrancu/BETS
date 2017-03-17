@@ -138,8 +138,9 @@ local function InitTargetLocations(self, unitIds, parameter)
 	for i = 1, #unitIds do
 		local id = unitIds[i]
 		local pos = getUnitPos(id)
+		local diff = self.formationDiffs[id]
 		--Logger.log("move-command", "=== pos: ", pos)
-		local tarPos = { parameter.pos.x, pos[2], parameter.pos.z }
+		local tarPos = { parameter.pos.x + diff[1], pos[2], parameter.pos.z + diff[3]}
 		--Logger.log("move-command", "=== tarPos: ", tarPos)
 		self.finalTargets[id] = tarPos
 	end
@@ -167,8 +168,8 @@ function Run(self, unitIds, parameter)
 	
 	local firstTick = false
 	if not self.finalTargets[leader] then
-		InitTargetLocations(self, unitIds, parameter)
 		InitFormationDiffs(self, unitIds)
+		InitTargetLocations(self, unitIds, parameter)
 		local leaderTar = self.finalTargets[self.leaderId]
 		Logger.log("move-command", "=== leaderTar: ", leaderTar)
 		giveOrderToUnit(self.leaderId, CMD.MOVE, leaderTar, {})
