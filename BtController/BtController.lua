@@ -151,7 +151,7 @@ function addFieldToBarItemList(tabs, tabName, atributName, atribut)
 end
 
 function addTreeToTreeTabPanel(treeHandle)
-	local newTab =  {name = treeHandle.Name, children = treeHandle.ChiliComponents }
+	local newTab =  {name = treeHandle.Name, children = treeHandle.ChiliComponents}
 	-- if TabPanel is not inialized I have to initalize it:
 	treeTabPanel:AddTab(newTab)
 	highlightTab(newTab.name)
@@ -161,6 +161,7 @@ function addTreeToTreeTabPanel(treeHandle)
 	addFieldToBarItem(treeTabPanel, newTab.name, "MouseDown", tabBarItemMouseDownBETS)
 	addFieldToBarItemList(treeTabPanel, newTab.name, "OnClick", listenerBarItemClick )
 	addFieldToBarItem(treeTabPanel, newTab.name, "TreeHandle", treeHandle)
+	addFieldToBarItem(treeTabPanel, newTab.name, "tooltip", "Panel of ".. treeHandle.Name .. " tree")
 	
 	moveToEndAddTab(treeTabPanel)
 end
@@ -244,7 +245,6 @@ function TreeHandle:CheckReady()
 end
 
 
-
 --[[ It is expected from obj that ti contains following records:
 	AssignUnitListener
 	InputButtonListener
@@ -273,6 +273,7 @@ function TreeHandle:New(obj)
 		minWidth = 50,
 		caption =  obj.TreeType .. " (initializing)",
 		skinName = "DarkGlass",
+		tooltip = "Name of tree type",
 	}
 	-- Order of these childs is sort of IMPORTANT as other entities needs to access children
 	table.insert(obj.ChiliComponents, treeTypeLabel)
@@ -286,6 +287,7 @@ function TreeHandle:New(obj)
 		OnClick = {obj.RestartTreeListener}, 
 		TreeHandle = obj,
 		skinName = "DarkGlass",
+		tooltip = "Restarts evalution of this tree",
 	}
 	table.insert(obj.ChiliComponents, resetTreeButton)
 	
@@ -301,12 +303,13 @@ function TreeHandle:New(obj)
 			x = rolesXOffset + roleButtonWidth ,
 			y = rolesYOffset + 5 + 22 * roleInd,
 			height = roleCount == 1 and 30 or 20,
-			width = '25%',
-			minWidth = 150,
+			width = '10%',
+			minWidth = 50,
 			caption = 0, 
 			skinName = "DarkGlass",
 			focusColor = {0.5,0.5,0.5,0.5},
-			instanceId = obj.InstanceId
+			instanceId = obj.InstanceId,
+			tooltip = "How many units are currently assigned to this role.",
 		}
 		table.insert(obj.ChiliComponents, unitsCountLabel)
 		
@@ -324,7 +327,8 @@ function TreeHandle:New(obj)
 			Role = roleName,
 			roleIndex = roleInd,
 			unitsCountLabel = unitsCountLabel,
-			instanceId = obj.InstanceId
+			instanceId = obj.InstanceId,
+			tooltip = "Assigns currently selected units to this role",
 		}
 		table.insert(obj.ChiliComponents, roleAssignmentButton)
 		-- get the role unit types:
@@ -369,6 +373,7 @@ function TreeHandle:New(obj)
 			CommandName = input.command,
 			InstanceId = obj.InstanceId,
 			backgroundColor = notGivenColor,
+			tooltip = "Give required input (red = not given yet, green = given)",
 		}
 		inputInd = inputInd + 1
 		table.insert(obj.ChiliComponents, inputButton )
@@ -410,17 +415,17 @@ function TreeHandle:FillInInput(inputName, data)
 	for _,inputButton in pairs(self.InputButtons) do
 		if(inputButton.InputName == inputName) then
 			inputButton.backgroundColor = {0.1,0.6,0.1,1}
+			
+			local transformedData = Logger.loggedCall("Error", "BtController", 
+					"fill in input value",
+					WG.BtCommandsTransformData, 
+					data,
+					inputButton.CommandName)
+			self.Inputs[inputName] = transformedData
 			inputButton:Invalidate()
-			inputButton:RequestUpdate()
+			inputButton:RequestUpdate()	
 		end
-	end
-	---!!! here put storing input in proper place
-	--[[for _,input in pairs(self.Tree.inputs) do
-		if(input.name == inputName) then
-			input["value"] = data
-		end
-	end]]--
-	self.Inputs[inputName] = data
+	end	
 	self:CheckReady()
 	self:UpdateTreeStatus()	
 end
@@ -504,7 +509,41 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 		return
 	end
 	------------------------------------------
-
+	
+	local unitIdRoleTable = {}
+	
+	for _,roleData in pairs(treeHandle.Roles) do
+		for name,record in pairs(roleData.unitTypes) do
+			if(unitIdRoleTable[name] == nil) then
+				unitIdRoleTable[name] = {currentIndex = 1, roles = {}}
+			end
+			table.insert(unitIdRoleTable[name].roles, roleData)
+		end
+	end	
+	
+	for i,unitId in pairs(selectedUnits) do
+		local unitDefId = Spring.GetUnitDefID(unitId)
+		if(UnitDefs[unitDefId] ~= nil)then  
+			local name = UnitDefs[unitDefId].name
+			if(unitIdRoleTable[name] ~= nil) then
+				local unitRoles = unitIdRoleTable[name]
+				local currentRoleData = unitRoles.roles[unitRoles.currentIndex]
+				Logger.log("roles", "assigning to role", currentRoleData)
+				assignUnitToTree(unitId, treeHandle, currentRoleData.assignButton.caption)
+				-- now, I should shift the index:
+				unitRoles.currentIndex = unitRoles.currentIndex + 1 
+				if(unitRoles.currentIndex > table.getn(unitRoles.roles) ) then
+					unitRoles.currentIndex = 1 -- reset the current index
+				end
+			else
+				-- put into default role:
+				assignUnitToTree(unitId, treeHandle, treeHandle.Tree.defaultRole)
+			end
+		else
+			Logger.log("roles", "could not find UnitDefs entry for: ",  unitId )
+		end
+	end
+	--[[
 	for i,unitId in pairs(selectedUnits) do
 		-- put each unit to its role:
 		local unitAssigned  = false
@@ -524,6 +563,7 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 			assignUnitToTree(unitId, treeHandle, treeHandle.Tree.defaultRole)
 		end
 	end
+	--]]
 	--[[
 	for name,roleData in pairs(treeHandle.Roles) do
 	-- now I need to share information with the BtEvaluator
@@ -558,14 +598,8 @@ function reportAssignedUnits(treeHandle)
 	Spring.SelectUnitArray(originallySelectedUnits)
 end
 
-
-function reportTreeAndUnitsBtEval(treeHandle)
---- change this
-	createTreeInBtEvaluator(treeHandle)
-	reportAssignedUnits(treeHandle)
-end
-
 function reportInputToBtEval(treeHandle, inputName)
+	-- TD: transform input
 	Logger.loggedCall("Errors", "BtController", "reporting changed input", 
 		BtEvaluator.setInput, treeHandle.InstanceId , inputName, treeHandle.Inputs[inputName]) 
 end 
@@ -708,8 +742,7 @@ function listenerInputButton(self,x,y,button, ...)
 		CommandName = self.CommandName,
 		InstanceId = self.InstanceId,
 	}
-	--
-	local ret = spSetActiveCommand(  spGetCmdDescIndex(WG.InputCommands[ expectedInput.CommandName ]) ) --  spGetCmdDescIndex( WG.InputCommands[ expectedInput.CommandName ] ))
+	local ret = spSetActiveCommand(  spGetCmdDescIndex(WG.InputCommands[ expectedInput.CommandName ]) ) 
 	if(ret == false ) then 
 		Logger.log("commands", "Unable to set command active: " , expectedInput.CommandName) 
 	end
@@ -789,41 +822,6 @@ function instantiateTree(treeType, instanceName, requireUnits)
 	return newTreeHandle
 end
 
-
-
-
-function moveTabItemToEndWithListeners(tabs,tabName)
-	-- Trouble is that we add listeners on barItems, now I have to move them with me. 
-	-- do we have such tab
-	----[[
-	if tabs.tabIndexMapping[tabName] == nil then
-		-- Or should I report it:
-		Logger.log("Error", "Trying to move tab and it is not there.")
-		return
-	end
-	--]]
-	local tabBarChildIndex = 1
-	-- get tabBar
-	local tabBar = tabs.children[tabBarChildIndex]
-	-- find corresponding tabBarItem: 
-	local onClickListeners
-	local barItems = tabBar.children
-	for index,item in ipairs(barItems) do
-		if(item.caption == tabName) then
-			-- get listeners
-			onClickListeners = item.OnMouseDown
-		end
-	end
-	
-
-	tabBar:Remove(tabName)
-	local newTabBarItem = Chili.TabBarItem:New{caption = tabName, defaultWidth = tabBar.minItemWidth, defaultHeight = tabBar.minItemHeight}
-	newTabBarItem.OnMouseDown = onClickListeners
-	tabBar:AddChild(
-        newTabBarItem
-    )
-end
-
 function moveToEndAddTab(tabs)
 	-- do we have such tab
 	----[[
@@ -846,7 +844,6 @@ function moveToEndAddTab(tabs)
 			caption = "+", 
 			defaultWidth = tabBar.minItemWidth, 
 			defaultHeight = tabBar.minItemHeight,
-			tooltip = "Add new instance of a tree. ",
 		}
 		tabBar:AddChild(
 			newTabBarItem
@@ -860,6 +857,7 @@ end
 function finalizeAddTreeBarItem(tabs)
 	local item = getBarItemByName(tabs, "+")
 	item.focusColor = {0.2, 1.0, 0.2, 0.6}
+	item.tooltip = "Adds new instance of a tree. "
 	local listeners = item.OnMouseDown
 	table.insert(listeners,refreshTreeSelectionPanel)
 end
@@ -889,6 +887,7 @@ function setUpTreeSelectionTab()
 		skinName = 'DarkGlass',
 		borderThickness = 0,
 		backgroundColor = {0.3,0.3,0.3,0.3},
+		tooltip = "Choose a tree type from available behaviours located in BtBehaviours folder. ",
 	}
 	
 	treeNameLabel = Chili.Label:New{
@@ -911,6 +910,7 @@ function setUpTreeSelectionTab()
 		borderThickness = 0,
 		backgroundColor = {0.1,0.1,0.1,0},
 		editingText = true,
+		tooltip = "Tree instance name, which will be visible on its instance tab. ",
 	}
 
    	treeSelectionDoneButton = Chili.Button:New{
@@ -921,7 +921,8 @@ function setUpTreeSelectionTab()
 		caption = "Done",
 		skinName='DarkGlass',
 		OnClick = {listenerClickOnSelectedTreeDoneButton},
-    }	
+		tooltip = "Creates new instance of selected behaviour with given tree instance name. ",
+	}
 	
   
 	treeSelectionPanel = Chili.Control:New{
@@ -977,7 +978,7 @@ function setUpTreeControlWindow()
 
 	setUpTreeSelectionTab()
 	
-	local newTab = {name = "+", tooltip = "Add new instance of a tree. ", children = {treeSelectionPanel} }
+	local newTab = {name = "+", children = {treeSelectionPanel} }
 	
 	treeTabPanel = Chili.TabPanel:New{
 		parent = treeControlWindow,
@@ -1082,8 +1083,12 @@ end
 
 
 function widget:IsAbove(x,y)
-	-- TODO test whether x,y are above treeControlPanel, currently it would also show btcreators tooltips. 
-		return true
+	y = Screen0.height - y
+	if (x > treeControlWindow.x and x < treeControlWindow.x + treeControlWindow.width and 
+			y > treeControlWindow.y and y < treeControlWindow.y + treeControlWindow.height) then
+			return true
+	end
+	return false
 end
 
 function widget:GetTooltip(x, y)
@@ -1109,8 +1114,6 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 		end
 	end
 	if(WG.InputCommands[cmdID]) then
-		Logger.log("commands", "received input command: " , cmdID)
-
 		if(expectedInput ~= nil) then
 			-- I should insert given input to tree:
 			local tH = expectedInput.TreeHandle 
@@ -1140,7 +1143,6 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 	end
 	-- check for custom commands - Bt behaviour assignments
 	if(WG.BtCommands[cmdID]) then
-		Logger.log("commands", "received tree command: " , cmdID)
 		-- setting up a behaviour tree :
 		local treeHandle = instantiateTree(WG.BtCommands[cmdID].treeName, "Instance"..instanceIdCount , true)
 		

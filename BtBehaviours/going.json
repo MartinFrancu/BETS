@@ -24,7 +24,7 @@
 		"nodeType": "luaCommand",
 		"parameters": [ {
 			"name": "pos",
-			"value": "{x=moveTo[1], y=moveTo[2], z=moveTo[3]}"
+			"value": "moveTo"
 		}, {
 			"name": "scriptName",
 			"value": "move.lua"

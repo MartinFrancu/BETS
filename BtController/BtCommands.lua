@@ -19,6 +19,7 @@ local Debug = Utils.Debug;
 local Logger = Debug.Logger
 local dump = Debug.dump
 local Dependency = Utils.Dependency
+local Vec3 = Utils.Vec3
 
 --------------------------------------------------------------------------------
 VFS.Include("LuaRules/Configs/customcmds.h.lua")
@@ -144,6 +145,30 @@ local function fillCustomCommandIDs()
 end
 
 WG.fillCustomCommandIDs = fillCustomCommandIDs
+
+--[[ 
+The following function is used to tranform spring-based representation of 
+command parameters into our representation based on name of "input command" 
+associated to given data type.
+--]]
+local function transformCommandData(data, commandName)
+	if(commandName == inputCommandDesc["BETS_UNIT"].name) then
+		return data
+	end
+	if(commandName == inputCommandDesc["BETS_AREA"].name) then
+		local a,b,c,d = unpack(data)
+		local area = {}
+		area["center"] = Vec3(a,b,c)
+		area["radius"] = d
+		return area
+	end
+	if(commandName == inputCommandDesc["BETS_POSITION"].name) then
+		return Vec3(unpack(data))
+	end
+	Logger.log("commands", "Encountered unknown command name.")
+end
+
+WG.BtCommandsTransformData = transformCommandData
 
 local function registerCommandsForBehaviours()
 	local fileNames = BtUtils.dirList(BehavioursDirectory, "*.json")--".+%.json$")
