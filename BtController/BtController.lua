@@ -53,7 +53,7 @@ local errorOkButton
 --------------------------------------------------------------------------------
 -- This table is indexed by unitId and contains structures:
 -- {InstanceId = "", Role = "", TreeHandle = treehandle} 
-local unitsToTreesMap
+-- local unitsToTreesMap
 
 -- If we are in state of expecting input we will make store this information here
 local expectedInput 
@@ -144,11 +144,11 @@ end
 function addFieldToBarItemList(tabs, tabName, atributName, atribut)
 	item = getBarItemByName(tabs,tabName)
 	if item[atributName] == nil then
-				item[atributName] = {atribut}
-			else
-				local currentAtt = item[atributName]
-				table.insert(currentAtt, atribut)
-			end
+		item[atributName] = {atribut}
+	else
+		local currentAtt = item[atributName]
+		table.insert(currentAtt, atribut)
+	end
 end
 
 function addTreeToTreeTabPanel(treeHandle)
@@ -172,6 +172,7 @@ end
 
 
 TreeHandle = {}
+TreeHandle.unitsToTreesMap = {}
 --[[
 TreeHandle = {
 			Name = "no_name", 
@@ -252,7 +253,6 @@ end
 	ResetTreeListener
 --]]
 function TreeHandle:New(obj)
-	--obj = obj -- or TreeHandle
 	setmetatable(obj, self)
 	self.__index = self
 	obj.InstanceId = generateID()
@@ -431,6 +431,53 @@ function TreeHandle:FillInInput(inputName, data)
 	self:UpdateTreeStatus()	
 end
 
+-- this will remove given unit from its current tree and adjust the gui componnets
+function TreeHandle.removeUnitFromCurrentTree(unitId)	
+	if(TreeHandle.unitsToTreesMap[unitId] == nil) then return end
+	-- unit is assigned to some tree:
+	-- decrease count of given tree:
+	
+	local treeHandle = TreeHandle.unitsToTreesMap[unitId].TreeHandle
+	role = TreeHandle.unitsToTreesMap[unitId].Role
+	treeHandle:DecreaseUnitCount(role)
+	TreeHandle.unitsToTreesMap[unitId] = nil
+	
+	-- if the tree has no more units:
+	if (treeHandle.AssignedUnitsCount < 1) and (treeHandle.RequireUnits) then
+		-- remove this tree
+		removeTreeBtController(treeTabPanel, treeHandle)
+	end
+end
+
+function TreeHandle.unitsInTreeRole(instanceId,roleName)
+	local unitsInThisTree = {}
+	for unitId, unitEntry in pairs(TreeHandle.unitsToTreesMap) do
+		if( (unitEntry.InstanceId == instanceId) and (unitEntry.Role == roleName)) then
+			table.insert(unitsInThisTree, unitId)
+		end
+	end
+	return unitsInThisTree
+end
+
+-- this will take note of assignment of a unit to given tree and adjust gui componnets
+function TreeHandle.assignUnitToTree(unitId, treeHandle, roleName)
+	if(TreeHandle.unitsToTreesMap[unitId] ~= nill) then
+		-- unit is currently assigned elsewhere, need to remove it first
+		TreeHandle.removeUnitFromCurrentTree(unitId)
+	end
+	TreeHandle.unitsToTreesMap[unitId] = {
+		InstanceId = treeHandle.InstanceId, 
+		Role = roleName,
+		TreeHandle = treeHandle
+		}
+	treeHandle:IncreaseUnitCount(roleName)
+end
+
+-- Function responsible for selecting units in given role.
+function TreeHandle.selectUnitsInRolesListener(button, ...) 
+	local unitsInThisRole = TreeHandle.unitsInTreeRole(button.TreeHandle.InstanceId, button.Role)
+	Spring.SelectUnitArray(unitsInThisRole)
+end
 
 function sendStringToBtEvaluator(message)
 	Spring.SendSkirmishAIMessage(Spring.GetLocalPlayerID(), "BETS " .. message)
@@ -475,7 +522,7 @@ end
 
 function logUnitsToTreesMap(category)
 	Logger.log(category, " ***** unitsToTreesMapLog: *****" )
-	for unitId, unitData in pairs(unitsToTreesMap) do
+	for unitId, unitData in pairs(TreeHandle.unitsToTreesMap) do
 		Logger.log(category, "unitId ", unitId, " instId ", unitData.InstanceId, " label inst: ", unitData.TreeHandle.Roles[unitData.Role].unitCountLabel.instanceId, " treeHandleId: ", unitData.TreeHandle.InstanceId, " button insId: ", unitData.TreeHandle.Roles[unitData.Role].assignButton.instanceId, " treeHandleName ", unitData.TreeHandle.Name )
 	end
 	Logger.log(category, "***** end *****" )
@@ -484,18 +531,8 @@ end
 -- This will return name id of all units in given tree
 local function unitsInTree(instanceId)
 	local unitsInThisTree = {}
-	for unitId, unitEntry in pairs(unitsToTreesMap) do
+	for unitId, unitEntry in pairs(TreeHandle.unitsToTreesMap) do
 		if(unitEntry.InstanceId == instanceId) then
-			table.insert(unitsInThisTree, unitId)
-		end
-	end
-	return unitsInThisTree
-end
-
-function unitsInTreeRole(instanceId,roleName)
-	local unitsInThisTree = {}
-	for unitId, unitEntry in pairs(unitsToTreesMap) do
-		if( (unitEntry.InstanceId == instanceId) and (unitEntry.Role == roleName)) then
 			table.insert(unitsInThisTree, unitId)
 		end
 	end
@@ -530,7 +567,7 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 				local unitRoles = unitIdRoleTable[name]
 				local currentRoleData = unitRoles.roles[unitRoles.currentIndex]
 				Logger.log("roles", "assigning to role", currentRoleData)
-				assignUnitToTree(unitId, treeHandle, currentRoleData.assignButton.caption)
+				TreeHandle.assignUnitToTree(unitId, treeHandle, currentRoleData.assignButton.caption)
 				-- now, I should shift the index:
 				unitRoles.currentIndex = unitRoles.currentIndex + 1 
 				if(unitRoles.currentIndex > table.getn(unitRoles.roles) ) then
@@ -538,42 +575,12 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 				end
 			else
 				-- put into default role:
-				assignUnitToTree(unitId, treeHandle, treeHandle.Tree.defaultRole)
+				TreeHandle.assignUnitToTree(unitId, treeHandle, treeHandle.Tree.defaultRole)
 			end
 		else
 			Logger.log("roles", "could not find UnitDefs entry for: ",  unitId )
 		end
 	end
-	--[[
-	for i,unitId in pairs(selectedUnits) do
-		-- put each unit to its role:
-		local unitAssigned  = false
-		local unitDefId = Spring.GetUnitDefID(unitId)
-		if(UnitDefs[unitDefId] ~= nil)then  
-			local name = UnitDefs[unitDefId].name
-			for _,roleData in pairs(treeHandle.Roles) do
-				if (roleData.unitTypes[name] ~= nil) then
-					unitAssigned = true
-					assignUnitToTree(unitId, treeHandle, roleData.assignButton.caption)
-				end
-			end	
-		else
-			Logger.log("roles", "could not find UnitDefs entry for: ",  unitId )
-		end
-		if(unitAssigned == false) then
-			assignUnitToTree(unitId, treeHandle, treeHandle.Tree.defaultRole)
-		end
-	end
-	--]]
-	--[[
-	for name,roleData in pairs(treeHandle.Roles) do
-	-- now I need to share information with the BtEvaluator
-		local unitsInThisRole = unitsInTreeRole(treeHandle.InstanceId, name)
-		Spring.SelectUnitArray(unitsInThisRole)
-		Logger.loggedCall("Errors", "BtController", "reporting automatic role assignment to BtEvaluator", 
-			BtEvaluator.assignUnits, unitsInThisRole, treeHandle.InstanceId, roleData.roleIndex)
-	end
-	--]]
 end
 
 
@@ -587,11 +594,10 @@ function createTreeInBtEvaluator(treeHandle)
 end
 
 function reportAssignedUnits(treeHandle)
-	-- change this to proper tree report
 	local originallySelectedUnits = spGetSelectedUnits()
 	for name,roleData in pairs(treeHandle.Roles) do
 		-- now I need to share information with the BtEvaluator
-		local unitsInThisRole = unitsInTreeRole(treeHandle.InstanceId, name)
+		local unitsInThisRole = TreeHandle.unitsInTreeRole(treeHandle.InstanceId, name)
 		Spring.SelectUnitArray(unitsInThisRole)
 		Logger.loggedCall("Errors", "BtController", "reporting assigned units, reporting role: ".. name, 
 			BtEvaluator.assignUnits, unitsInThisRole, treeHandle.InstanceId, roleData.roleIndex)
@@ -600,49 +606,20 @@ function reportAssignedUnits(treeHandle)
 end
 
 function reportInputToBtEval(treeHandle, inputName)
-	-- TD: transform input
 	Logger.loggedCall("Errors", "BtController", "reporting changed input", 
 		BtEvaluator.setInput, treeHandle.InstanceId , inputName, treeHandle.Inputs[inputName]) 
 end 
--- this will remove given unit from its current tree and adjust the gui componnets
-function removeUnitFromCurrentTree(unitId)	
-	if(unitsToTreesMap[unitId] == nil) then return end
-	-- unit is assigned to some tree:
-	-- decrease count of given tree:
-	
-	local treeHandle = unitsToTreesMap[unitId].TreeHandle
-	role = unitsToTreesMap[unitId].Role
-	treeHandle:DecreaseUnitCount(role)
-	unitsToTreesMap[unitId] = nil
-	
-	-- if the tree has no more units:
-	if (treeHandle.AssignedUnitsCount < 1) and (treeHandle.RequireUnits) then
-		-- remove this tree
-		removeTreeBtController(treeTabPanel, treeHandle)
-	end
-end
+
 -- this will remove all units from given tree and adjust gui componnets
 function removeUnitsFromTree(instanceId)
-	for unitId, unitData in pairs(unitsToTreesMap) do
+	for unitId, unitData in pairs(TreeHandle.unitsToTreesMap) do
 		if(unitData.InstanceId == instanceId) then
 			unitData.TreeHandle:DecreaseUnitCount(unitData.Role)
-			unitsToTreesMap[unitId] = nil
+			TreeHandle.unitsToTreesMap[unitId] = nil
 		end
 	end
 end
--- this will take note of assignment of a unit to given tree and adjust gui componnets
-function assignUnitToTree(unitId, treeHandle, roleName)
-	if(unitsToTreesMap[unitId] ~= nill) then
-		-- unit is currently assigned elsewhere, need to remove it first
-		removeUnitFromCurrentTree(unitId)
-	end
-	unitsToTreesMap[unitId] = {
-		InstanceId = treeHandle.InstanceId, 
-		Role = roleName,
-		TreeHandle = treeHandle
-		}
-	treeHandle:IncreaseUnitCount(roleName)
-end
+
 
 local instantiateTree
 
@@ -706,15 +683,15 @@ function listenerAssignUnitsButton(self,x,y, button, ...)
 	if(button == 1 )then -- left mouse button
 		
 		-- deselect units in current role
-		for unitId,treeAndRole in pairs(unitsToTreesMap) do	
+		for unitId,treeAndRole in pairs(TreeHandle.unitsToTreesMap) do	
 			if(treeAndRole.InstanceId == self.TreeHandle.InstanceId) and (treeAndRole.Role == self.Role) then
-				removeUnitFromCurrentTree(unitId)
+				TreeHandle.removeUnitFromCurrentTree(unitId)
 			end
 		end
 		-- make note of assigment in our notebook (this should be possible moved somewhere else:)
 		local selectedUnits = spGetSelectedUnits()
 		for _,Id in pairs(selectedUnits) do
-			assignUnitToTree(Id, self.TreeHandle, self.Role)
+			TreeHandle.assignUnitToTree(Id, self.TreeHandle, self.Role)
 		end
 		if(self.TreeHandle:CheckReady() ) then
 			Logger.loggedCall("Errors", "BtController", "assigning units to tree", 
@@ -723,7 +700,7 @@ function listenerAssignUnitsButton(self,x,y, button, ...)
 	end
 	if(button == 3) then 
 		-- right-click: I should select given units:
-		local unitsInThisRole = unitsInTreeRole(self.TreeHandle.InstanceId, self.Role)
+		local unitsInThisRole = TreeHandle.unitsInTreeRole(self.TreeHandle.InstanceId, self.Role)
 		Spring.SelectUnitArray(unitsInThisRole)
 	end
 end
@@ -1045,7 +1022,7 @@ function widget:Initialize()
 	
 	-- Create the window
 	
-	unitsToTreesMap = {}
+	--unitsToTreesMap = {}
    
 	setUpTreeControlWindow()
   
@@ -1098,8 +1075,8 @@ function widget:GetTooltip(x, y)
 end
 
 function widget:UnitDestroyed(unitId)
-	if(unitsToTreesMap[unitId] ~= nil) then
-		removeUnitFromCurrentTree(unitId)
+	if(TreeHandle.unitsToTreesMap[unitId] ~= nil) then
+		TreeHandle.removeUnitFromCurrentTree(unitId)
 	end
 end
 
