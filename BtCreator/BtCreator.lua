@@ -337,7 +337,7 @@ do
 								end
 								self:Realign()
 								return control
-							end }) or nil
+							end }) or nil,
 						}, },
 					},
 					height = TEXT_HEIGHT,
@@ -512,6 +512,7 @@ local DEFAULT_COLOR = {1,1,1,0.6}
 local RUNNING_COLOR = {1,0.5,0,0.6}
 local SUCCESS_COLOR = {0.5,1,0.5,0.6}
 local FAILURE_COLOR = {1,0.25,0.25,0.6}
+local STOPPED_COLOR = {0,0,1,0.6}
 
 local function updateStatesMessage(params)
 	local states = params.states
@@ -524,6 +525,8 @@ local function updateStatesMessage(params)
 				color = copyTable(SUCCESS_COLOR)
 			elseif(states[id]:upper() == "FAILURE") then
 				color = copyTable(FAILURE_COLOR)
+			elseif(states[id]:upper() == "STOPPED") then
+				color = copyTable(STOPPED_COLOR)
 			else
 				Logger.log("communication", "Uknown state received from AI, for node id: ", id)
 			end

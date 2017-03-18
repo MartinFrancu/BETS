@@ -252,6 +252,21 @@ end
 function BtEvaluator.reportTree(instanceId)
 	return BtEvaluator.sendMessage("REPORT_TREE", { instanceId = instanceId })
 end
+function BtEvaluator.setBreakpoint(instanceId, nodeId)
+	return BtEvaluator.sendMessage("SET_BREAKPOINT", { instanceId = instanceId, nodeId = nodeId })
+end
+function BtEvaluator.removeBreakpoint(instanceId, nodeId)
+	return BtEvaluator.sendMessage("REMOVE_BREAKPOINT", { instanceId = instanceId, nodeId = nodeId })
+end
+function BtEvaluator.getInstances()
+	local result = {}
+	local i = 1
+	for id, instance in pairs(treeInstances) do
+		result[i] = instance
+		i = i + 1
+	end
+	return result
+end
 
 
 -- ==== luaCommand handling ====
