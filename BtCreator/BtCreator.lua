@@ -864,12 +864,8 @@ function widget:Initialize()
 end 
 
 function widget:Shutdown()
-	WG.selectedNodes = nil
-	WG.nodeList = nil
-	WG.clearSelection = nil
-	WG.addNodeToSelection = nil
-	connectionLine = nil
-	WG.BtConnectionLine = nil
+	WG.clearSelection()
+	clearCanvas()
 	Dependency.clear(Dependency.BtCreator)
 end
 
