@@ -112,7 +112,7 @@ local function updateVisualiser()
 		
 		for widgetName in pairs(widgets) do
 			local label = visualiser[widgetName]
-			label.font.color = state[widgetName] and {0,1,0,1} or (widgetHandler.knownWidgets[widgetName].active and {1,1,0,1} or {1,0,0,1})
+			label.font.color = state[widgetName] and {0,1,0,1} or (((widgetHandler.knownWidgets or {})[widgetName] or {}).active and {1,1,0,1} or {1,0,0,1})
 			label:Invalidate()
 		end
 	elseif(visualiser)then

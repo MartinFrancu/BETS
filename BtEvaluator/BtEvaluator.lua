@@ -452,6 +452,18 @@ end
 -- ======================================
 
 function widget:Initialize()	
+	local foundAI = false
+	for _, ai in ipairs(VFS.GetAvailableAIs()) do
+		if(ai.shortName == "BtEvaluator")then
+			foundAI = true
+			break
+		end
+	end
+	if(not foundAI)then
+		Logger.error("BtEvaluator", "BtEvaluator C++ AI is not present")
+		widgetHandler:RemoveWidget()
+	end
+
 	WG.BtEvaluator = BtEvaluator
 	
 	BtEvaluator.sendMessage("REINITIALIZE")
