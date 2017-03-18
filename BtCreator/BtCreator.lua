@@ -1022,6 +1022,10 @@ local function loadBehaviourNode(bt, btNode)
 			Logger.log("save-and-load", "params: ", params, ", params.parameters: ", params.parameters, "v[3]: ", v[3])
 			for i=1,#v do
 				if (v[i].name ~= "scriptName") then
+					if(params.parameters[i].name ~= v[i].name)then
+						Logger.error("save-and-load", "Parameter names do not match: ", params.parameters[i].name, " != ", v[i].name)
+					end
+				
 					Logger.log("save-and-load", "params.parameters[i]: ", params.parameters[i], ", v[i]: ", v[i])
 					params.parameters[i].value = v[i].value
 				end
