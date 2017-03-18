@@ -1,6 +1,6 @@
 function widget:GetInfo()
 	return {
-		name      = "BtEvaluator loader",
+		name      = "BtEvaluator",
 		desc      = "BtEvaluator loader and message test to this AI.",
 		author    = "BETS Team",
 		date      = "Sep 20, 2016",
@@ -458,6 +458,11 @@ function widget:Initialize()
 	Spring.SendCommands("AIControl "..Spring.GetLocalPlayerID().." BtEvaluator")
 end
 function widget:Shutdown()
+	--This is not used, because if what we want to do is a reload, it will not manage to start it up again
+	--if(Dependency.BtEvaluator.filled)then
+	--	Spring.SendCommands("AIKill "..Spring.GetLocalPlayerID())
+	--end
+	
 	Dependency.clear(Dependency.BtEvaluator)
 end
 

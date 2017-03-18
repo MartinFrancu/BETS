@@ -1036,7 +1036,11 @@ function widget:Initialize()
   
 	BtEvaluator = WG.BtEvaluator 
 	-- extract BtCreator into a local variable once available
-	Dependency.defer(function() BtCreator = WG.BtCreator end, function() BtCreator = nil end, Dependency.BtCreator)
+	Dependency.defer(
+		function() BtCreator = WG.BtCreator end,
+		function() BtCreator = nil end,
+		Dependency.BtCreator
+	)
 	
 	-- Create the window
 	
