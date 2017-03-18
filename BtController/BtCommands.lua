@@ -197,7 +197,17 @@ function widget:Initialize()
 	registerCommandsForBehaviours()
 	Dependency.fill(Dependency.BtCommands)
 end
+
 function widget:Shutdown()
+	-- deregister our custom commands
+	for _, cmdDesc in pairs(inputCommandDesc) do
+		sendCustomMessage.DeregisterCustomCommand(cmdDesc.name)
+	end
+	WG.fillCustomCommandIDs = nil
+	WG.BtCommandsInputHumanNames = nil
+	WG.BtCommandsTransformData = nil
+	WG.InputCommands = nil
+	WG.BtCommands = nil
 	Dependency.clear(Dependency.BtCommands)
 end
 
