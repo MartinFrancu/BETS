@@ -4,24 +4,23 @@ local dump = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.R
 
 local COMMAND_DIRNAME = LUAUI_DIRNAME .. "Widgets/BtCommandScripts/"
 
-Command = {
-	Spring = Spring,
-	CMD = CMD,
-	VFS = VFS, -- to be removed
-	Logger = Logger,
-	dump = dump,
-	math = math,
-	select = select,
-	pairs = pairs,
-	ipairs = ipairs,
-	UnitDefNames = UnitDefNames,
-	COMMAND_DIRNAME = COMMAND_DIRNAME,
-	
-	SUCCESS = "S",
-	FAILURE = "F",
-	RUNNING = "R"
-}
-Command_mt = { __index = Command }
+local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
+
+local System = Utils.Debug.clone(loadstring("return _G")().System)
+
+setmetatable(System, { 
+	__index = {
+		Logger = Logger,
+		COMMAND_DIRNAME = COMMAND_DIRNAME,
+		System = System,
+		Command = Command,
+		SUCCESS = "S",
+		FAILURE = "F",
+		RUNNING = "R"
+	}
+})
+
+Command = {}
 
 local methodSignatures = {
 	New = "New(self)",
@@ -120,9 +119,9 @@ function Command:Extend(scriptName)
 		end
 		return newinst
 	end
-	setmetatable( new_class, { __index = self } )
 
-	
+	setmetatable( new_class, { __index = self })
+	setmetatable(self, { __index = System })	
 	new_class:loadMethods()
 
 	return new_class
