@@ -442,7 +442,7 @@ function removeTreeBtController(tabs,treeHandle)
 	-- get tabBar
 	local tabBar = tabs.children[tabBarChildIndex]
 	
-	if treeHandle.Name == tabBar.selected_obj.caption then
+	if treeHandle.Name == tabBar.selected_obj.caption and BtCreator then
 		Logger.loggedCall("Call", "BtController", "hiding BtController which is showing removed tree", BtCreator.hide)
 	end
 	
@@ -672,11 +672,9 @@ function listenerBarItemClick(self, x, y, button, ...)
 		local unitsToSelect = unitsInTree(self.TreeHandle.InstanceId)
 		Spring.SelectUnitArray(unitsToSelect)
 
-		if(not BtCreator)then return end
-		
 		self.TreeHandle:UpdateTreeStatus()
 		
-		if((showTreeCheckbox.checked)) then
+		if((showTreeCheckbox.checked) and BtCreator) then
 			if(self.TreeHandle.Created) then 
 				Logger.loggedCall("Error", "BtController", 
 					"reporting tree to BtEvaluator",
@@ -1038,7 +1036,7 @@ function widget:Initialize()
   
 	BtEvaluator = WG.BtEvaluator 
 	-- extract BtCreator into a local variable once available
-	Dependency.defer(function() BtCreator = WG.BtCreator end, Dependency.BtCreator)
+	Dependency.defer(function() BtCreator = WG.BtCreator end, function() BtCreator = nil end, Dependency.BtCreator)
 	
 	-- Create the window
 	
