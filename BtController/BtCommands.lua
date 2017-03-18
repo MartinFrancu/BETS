@@ -197,6 +197,9 @@ function widget:Initialize()
 	registerCommandsForBehaviours()
 	Dependency.fill(Dependency.BtCommands)
 end
+function widget:Shutdown()
+	Dependency.clear(Dependency.BtCommands)
+end
 
 -- local function getCommandIDsForBehaviours()
 	-- local rawCommandsNameToID = Spring.GetGameRulesParam("customCommandsNameToID")

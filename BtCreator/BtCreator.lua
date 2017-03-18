@@ -863,6 +863,17 @@ function widget:Initialize()
 	Dependency.fill(Dependency.BtCreator)
 end 
 
+function widget:Shutdown()
+	WG.selectedNodes = nil
+	WG.nodeList = nil
+	WG.clearSelection = nil
+	WG.addNodeToSelection = nil
+	connectionLine = nil
+	WG.BtConnectionLine = nil
+	Dependency.clear(Dependency.BtCreator)
+end
+
+
 function widget:KeyPress(key)
 	if(Spring.GetKeySymbol(key) == "delete") then -- Delete was pressed
 		for id,_ in pairs(WG.selectedNodes) do
@@ -1429,4 +1440,4 @@ end
 --------------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------
 
-Dependency.deferWidget(widget, Dependency.BtEvaluator)
+return Dependency.deferWidget(widget, Dependency.BtEvaluator)

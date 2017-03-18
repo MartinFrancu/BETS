@@ -457,6 +457,9 @@ function widget:Initialize()
 	BtEvaluator.sendMessage("REINITIALIZE")
 	Spring.SendCommands("AIControl "..Spring.GetLocalPlayerID().." BtEvaluator")
 end
+function widget:Shutdown()
+	Dependency.clear(Dependency.BtEvaluator)
+end
 
 local function asHandlerNoparam(event)
 	return function()
