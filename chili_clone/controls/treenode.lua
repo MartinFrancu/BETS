@@ -488,7 +488,7 @@ function listenerClickOnConnectionPanel(self)
 end
 
 -- called also after move!
-function listenerNodeResize(self, x, y)
+function listenerNodeResize(self)
 	-- Spring.Echo("Resizing treenode window.. ")
 	-- Spring.Echo("x="..self.treeNode.x..", y="..self.treeNode.y)
 	-- Update position of connectionOut

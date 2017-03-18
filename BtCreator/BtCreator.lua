@@ -14,7 +14,7 @@ local Chili, Screen0
 
 local BtEvaluator, BtCreator
 
-local windowBtCreator
+local btCreatorWindow
 local nodePoolLabel
 local nodePoolPanel
 local buttonPanel
@@ -70,8 +70,8 @@ local BtCreator = {} -- if we need events, change to Sentry:New()
 local connectionLine = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/connection_line.lua", nil, VFS.RAW_FIRST)
 
 function BtCreator.show(tree, instanceId)
-	if(not windowBtCreator.visible) then
-		windowBtCreator:Show()
+	if(not btCreatorWindow.visible) then
+		btCreatorWindow:Show()
 	end
 	if(not nodePoolPanel.visible) then
 		nodePoolPanel:Show()
@@ -93,8 +93,8 @@ function BtCreator.hide()
 	if(blackboardWindowState and blackboardWindowState.visible) then
 		blackboardWindowState:Hide()
 	end
-	if(windowBtCreator.visible) then
-		windowBtCreator:Hide()
+	if(btCreatorWindow.visible) then
+		btCreatorWindow:Hide()
 	end
 	if(nodePoolLabel.visible) then
 		nodePoolPanel:Hide()
@@ -124,8 +124,8 @@ local function removeNodeFromCanvas(id)
 	node:Dispose()
 	node = nil
 	WG.nodeList[id] = nil
-	windowBtCreator:Invalidate()
-	windowBtCreator:RequestUpdate()
+	btCreatorWindow:Invalidate()
+	btCreatorWindow:RequestUpdate()
 end
 
 -- //////////////////////////////////////////////////////////////////////
@@ -148,7 +148,7 @@ function listenerEndCopyingNode(self, x , y)
 	--y = y + startCopyingLocation.y
 	if(copyTreeNode and x - nodePoolPanel.width - startCopyingLocation.x > -20) then
 		local params = {
-			parent = windowBtCreator,
+			parent = btCreatorWindow,
 			nodeType = copyTreeNode.nodeType,
 			x = x - nodePoolPanel.width - startCopyingLocation.x,
 			y = y + startCopyingLocation.y - 70,
@@ -680,9 +680,32 @@ function listenerOnClickOnCanvas()
 	end
 end
 
+function listenerOnResizeBtCreator(self)
+	if(nodePoolPanel) then
+		nodePoolPanel.x = self.x - nodePoolPanel.width - 22
+		nodePoolPanel.y = self.y
+		nodePoolPanel.height = self.height
+		--nodePoolPanel:UpdateClientArea()
+		--nodePoolPanel:_DetermineContentArea()
+		--nodePoolPanel:UpdateLayout()
+	end
+	if(buttonPanel) then
+		buttonPanel.x = self.x
+		buttonPanel.y = self.y - 30
+		buttonPanel.width = self.width
+		buttonPanel:UpdateClientArea()
+	end
+	if(minimizeButton) then
+		minimizeButton.x = self.width - 45
+		minimizeButton:RequestUpdate()
+		--buttonPanel:RequestUpdate()
+	end
+	
+end
+
 function createRoot()
 	return Chili.TreeNode:New{
-		parent = windowBtCreator,
+		parent = btCreatorWindow,
 		nodeType = "Root",
 		y = '35%',
 		x = 5,
@@ -745,7 +768,7 @@ function widget:Initialize()
 	nodePoolPanel.width = maxNodeWidth
 	nodePoolPanel:RequestUpdate()
 	 -- Create the window
-	windowBtCreator = Chili.Window:New{
+	btCreatorWindow = Chili.Window:New{
 		parent = Screen0,
 		x = nodePoolPanel.width + 22,
 		y = '56%',
@@ -756,7 +779,8 @@ function widget:Initialize()
 		resizable=true,
 		skinName='DarkGlass',
 		backgroundColor = {1,1,1,1},
-		OnClick = { listenerOnClickOnCanvas }
+		OnClick = { listenerOnClickOnCanvas },
+		OnResize = { listenerOnResizeBtCreator },
 		-- OnMouseDown = { listenerStartSelectingNodes },
 		-- OnMouseUp = { listenerEndSelectingNodes },
 	}	
@@ -764,8 +788,8 @@ function widget:Initialize()
 	addNodeToCanvas( createRoot() )
 	
 	newTreeButton = Chili.Button:New{
-		x = windowBtCreator.x,
-		y = windowBtCreator.y - 30,
+		x = 0,
+		y = 0,
 		width = 90,
 		height = 30,
 		caption = "New Tree",
@@ -775,7 +799,7 @@ function widget:Initialize()
 	}
 	saveTreeButton = Chili.Button:New{
 		x = newTreeButton.x + newTreeButton.width,
-		y = newTreeButton.y,
+		y = 0,
 		width = 90,
 		height = 30,
 		caption = "Save Tree",
@@ -785,7 +809,7 @@ function widget:Initialize()
 	}
 	loadTreeButton = Chili.Button:New{
 		x = saveTreeButton.x + saveTreeButton.width,
-		y = saveTreeButton.y,
+		y = 0,
 		width = 90,
 		height = 30,
 		caption = "Load Tree",
@@ -795,8 +819,8 @@ function widget:Initialize()
 	}
 	roleManagerButton = Chili.Button:New{
 		x = loadTreeButton.x + loadTreeButton.width,
-		y = loadTreeButton.y,
-		width = 150,
+		y = 0,
+		width = 130,
 		height = 30,
 		caption = "Role manager",
 		skinName = "DarkGlass",
@@ -805,7 +829,7 @@ function widget:Initialize()
 	}
 	showSensorsButton = Chili.Button:New{
 		x = roleManagerButton.x + roleManagerButton.width,
-		y = roleManagerButton.y,
+		y = 0,
 		width = 90,
 		height = 30,
 		caption = "Sensors",
@@ -815,7 +839,7 @@ function widget:Initialize()
 	}
 	showBlackboardButton = Chili.Button:New{
 		x = showSensorsButton.x + showSensorsButton.width,
-		y = showSensorsButton.y,
+		y = 0,
 		width = 110,
 		height = 30,
 		caption = "Blackboard",
@@ -825,17 +849,17 @@ function widget:Initialize()
 	}
 	buttonPanel = Chili.Control:New{
 		parent = Screen0,
-		x = 0,
-		y = 0,
-		width = '100%',
-		height = '100%',
+		x = btCreatorWindow.x,
+		y = btCreatorWindow.y - 30,
+		width = btCreatorWindow.width,
+		height = 40,
 		children = { newTreeButton, saveTreeButton, loadTreeButton, roleManagerButton, showSensorsButton, showBlackboardButton }
 	}
 	
 	
 	minimizeButton = Chili.Button:New{
 		parent = buttonPanel,
-		x = buttonPanel.width - 50,
+		x = btCreatorWindow.width - 45,
 		y = loadTreeButton.y,
 		width = 35,
 		height = 30,
@@ -846,7 +870,7 @@ function widget:Initialize()
 	}
 	
 	treeNameEditbox = Chili.EditBox:New{
-		parent = windowBtCreator,
+		parent = btCreatorWindow,
 		text = "02-flipEcho",
 		width = '33%',
 		x = '40%',
@@ -1039,7 +1063,7 @@ local function loadBehaviourNode(bt, btNode)
 	end
 	params.children = nil
 	params.name = nil
-	params.parent = windowBtCreator
+	params.parent = btCreatorWindow
 	params.connectable = true
 	params.draggable = true
 	
