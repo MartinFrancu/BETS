@@ -121,7 +121,7 @@ return Utils:Assign("Dependency", function()
 			end
 		end, function()
 			Logger.log("dependency", "Removing widget ", widget:GetInfo().name, ".")
-			widget.widgetHandler:RemoveWidget()
+			widget.widgetHandler:RemoveWidget(widget) -- we cannot use widgetHandler directly, because that would be a proxy to widgetHandler of the widget that runs this file (which may be a different one)
 		end, ...)
 		
 		return widget

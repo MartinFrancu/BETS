@@ -28,6 +28,7 @@ local BtEvaluator, BtCreator
 local JSON = Utils.JSON
 local BehaviourTree = Utils.BehaviourTree
 local Dependency = Utils.Dependency
+local sanitizer = Utils.Sanitizer.forWidget(widget)
 
 local Debug = Utils.Debug;
 local Logger = Debug.Logger
@@ -159,7 +160,7 @@ function addTreeToTreeTabPanel(treeHandle)
 	-- Now I should add a listener to show proper tree:
 	-- get tabBar		
 	addFieldToBarItem(treeTabPanel, newTab.name, "MouseDown", tabBarItemMouseDownBETS)
-	addFieldToBarItemList(treeTabPanel, newTab.name, "OnClick", listenerBarItemClick )
+	addFieldToBarItemList(treeTabPanel, newTab.name, "OnClick", sanitizer.handler(listenerBarItemClick) )
 	addFieldToBarItem(treeTabPanel, newTab.name, "TreeHandle", treeHandle)
 	addFieldToBarItem(treeTabPanel, newTab.name, "tooltip", "Panel of ".. treeHandle.Name .. " tree")
 	
@@ -284,7 +285,7 @@ function TreeHandle:New(obj)
 		width =  100,
 		minWidth = 50,
 		caption =  "Restart tree",
-		OnClick = {obj.RestartTreeListener}, 
+		OnClick = {sanitizer.handler(obj.RestartTreeListener)}, 
 		TreeHandle = obj,
 		skinName = "DarkGlass",
 		tooltip = "Restarts evalution of this tree",
@@ -320,7 +321,7 @@ function TreeHandle:New(obj)
 			width = '25%',
 			minWidth = 150,
 			caption = roleName,
-			OnClick = {obj.AssignUnitListener}, 
+			OnClick = {sanitizer.handler(obj.AssignUnitListener)}, 
 			skinName = "DarkGlass",
 			focusColor = {0.5,0.5,0.5,0.5},
 			TreeHandle = obj,
@@ -365,7 +366,7 @@ function TreeHandle:New(obj)
 			width = '25%',
 			minWidth = 150,
 			caption =" " .. inputName .. " (" .. WG.BtCommandsInputHumanNames[input.command].. ")",
-			OnClick = {obj.InputButtonListener}, 
+			OnClick = {sanitizer.handler(obj.InputButtonListener)}, 
 			skinName = "DarkGlass",
 			focusColor = {0.5,0.5,0.5,0.5},
 			TreeHandle = obj,
@@ -918,7 +919,7 @@ function setUpTreeSelectionTab()
 		height = 30,
 		caption = "Done",
 		skinName='DarkGlass',
-		OnClick = {listenerClickOnSelectedTreeDoneButton},
+		OnClick = {sanitizer.handler(listenerClickOnSelectedTreeDoneButton)},
 		tooltip = "Creates new instance of selected behaviour with given tree instance name. ",
 	}
 	
@@ -1022,7 +1023,7 @@ function setUpErrorWindow()
 		height = 20,
 		caption = "Ok",
 		skinName='DarkGlass',
-		OnClick = {listenerErrorOk},
+		OnClick = {sanitizer.handler(listenerErrorOk)},
     }	
 	errorWindow:Hide()
 end
@@ -1164,4 +1165,5 @@ function saveAllUnitDefs()
 	end
 end
 
+sanitizer.sanitize()
 return Dependency.deferWidget(widget, Dependency.BtEvaluator, Dependency.BtCommands)
