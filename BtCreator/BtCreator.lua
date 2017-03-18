@@ -56,6 +56,7 @@ local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.
 local JSON = Utils.JSON
 local BehaviourTree = Utils.BehaviourTree
 local Dependency = Utils.Dependency
+local sanitizer = Utils.Sanitizer.forWidget(widget)
 
 local Debug = Utils.Debug;
 local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyTable, Debug.fileTable
@@ -329,7 +330,7 @@ do
 							x = 0,
 							y = 0,
 							caption = makeCaption(k, v),
-							OnMouseUp = (type(v) == "table" and { function(control)
+							OnMouseUp = (type(v) == "table" and { sanitizer.handler(function(control)
 								if(row.panel)then
 									row:Contract()
 								else
@@ -337,7 +338,7 @@ do
 								end
 								self:Realign()
 								return control
-							end }) or nil,
+							end) }) or nil,
 						}, },
 					},
 					height = TEXT_HEIGHT,
@@ -779,8 +780,8 @@ function widget:Initialize()
 		resizable=true,
 		skinName='DarkGlass',
 		backgroundColor = {1,1,1,1},
-		OnClick = { listenerOnClickOnCanvas },
-		OnResize = { listenerOnResizeBtCreator },
+		OnClick = { sanitizer.handler(listenerOnClickOnCanvas) },
+		OnResize = { sanitizer.handler(listenerOnResizeBtCreator) },
 		-- OnMouseDown = { listenerStartSelectingNodes },
 		-- OnMouseUp = { listenerEndSelectingNodes },
 	}	
@@ -795,7 +796,7 @@ function widget:Initialize()
 		caption = "New Tree",
 		skinName = "DarkGlass",
 		focusColor = {0.5,0.5,0.5,0.5},
-		OnClick = { listenerClickOnNewTree },
+		OnClick = { sanitizer.handler(listenerClickOnNewTree) },
 	}
 	saveTreeButton = Chili.Button:New{
 		x = newTreeButton.x + newTreeButton.width,
@@ -805,7 +806,7 @@ function widget:Initialize()
 		caption = "Save Tree",
 		skinName = "DarkGlass",
 		focusColor = {0.5,0.5,0.5,0.5},
-		OnClick = { listenerClickOnSaveTree},
+		OnClick = { sanitizer.handler(listenerClickOnSaveTree) },
 	}
 	loadTreeButton = Chili.Button:New{
 		x = saveTreeButton.x + saveTreeButton.width,
@@ -815,7 +816,7 @@ function widget:Initialize()
 		caption = "Load Tree",
 		skinName = "DarkGlass",
 		focusColor = {0.5,0.5,0.5,0.5},
-		OnClick = { listenerClickOnLoadTree },
+		OnClick = { sanitizer.handler(listenerClickOnLoadTree) },
 	}
 	roleManagerButton = Chili.Button:New{
 		x = loadTreeButton.x + loadTreeButton.width,
@@ -825,7 +826,7 @@ function widget:Initialize()
 		caption = "Role manager",
 		skinName = "DarkGlass",
 		focusColor = {0.5,0.5,0.5,0.5},
-		OnClick = { listenerClickOnRoleManager },
+		OnClick = { sanitizer.handler(listenerClickOnRoleManager) },
 	}
 	showSensorsButton = Chili.Button:New{
 		x = roleManagerButton.x + roleManagerButton.width,
@@ -835,7 +836,7 @@ function widget:Initialize()
 		caption = "Sensors",
 		skinName = "DarkGlass",
 		focusColor = {0.5,0.5,0.5,0.5},
-		OnClick = { listenerClickOnShowSensors },
+		OnClick = { sanitizer.handler(listenerClickOnShowSensors) },
 	}
 	showBlackboardButton = Chili.Button:New{
 		x = showSensorsButton.x + showSensorsButton.width,
@@ -845,7 +846,7 @@ function widget:Initialize()
 		caption = "Blackboard",
 		skinName = "DarkGlass",
 		focusColor = {0.5,0.5,0.5,0.5},
-		OnClick = { listenerClickOnShowBlackboard },
+		OnClick = { sanitizer.handler(listenerClickOnShowBlackboard) },
 	}
 	buttonPanel = Chili.Control:New{
 		parent = Screen0,
@@ -866,7 +867,7 @@ function widget:Initialize()
 		caption = "_",
 		skinName = "DarkGlass",
 		focusColor = {0.5,0.5,0.5,0.5},
-		OnClick = { listenerClickOnMinimize },
+		OnClick = { sanitizer.handler(listenerClickOnMinimize) },
 	}
 	
 	treeNameEditbox = Chili.EditBox:New{
@@ -1129,7 +1130,7 @@ function showCategoryDefinitionWindow()
 		x = nameEditBox.x + nameEditBox.width,
 		y = 0,
 		caption = "DONE",
-		OnClick = {doneCategoryDefinition}, 
+		OnClick = {sanitizer.handler(doneCategoryDefinition)}, 
 	}
 	--categoryDoneButton.UnitCategories = unitCategories
 	
@@ -1138,7 +1139,7 @@ function showCategoryDefinitionWindow()
 		x = categoryDoneButton.x + categoryDoneButton.width,
 		y = 0,
 		caption = "CANCEL",
-		OnClick = {cancelCategoryDefinition}, 
+		OnClick = {sanitizer.handler(cancelCategoryDefinition)}, 
 	} 
 	local categoryScrollPanel = Chili.ScrollPanel:New{
 		parent = categoryDefinitionWindow,
@@ -1284,7 +1285,7 @@ function showRoleManagementWindow(mode)
 		x = 0,
 		y = 0,
 		caption = "DONE",
-		OnClick = {doneRoleManagerWindow}, 
+		OnClick = {sanitizer.handler(doneRoleManagerWindow)}, 
 	}
 	roleManagementDoneButton.Mode = mode
 	
@@ -1294,7 +1295,7 @@ function showRoleManagementWindow(mode)
 		y = 0,
 		width = 150,
 		caption = "Define new Category",
-		OnClick = {showCategoryDefinitionWindow},
+		OnClick = {sanitizer.handler(showCategoryDefinitionWindow)},
 	}
 
 	
@@ -1366,4 +1367,5 @@ end
 --------------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------
 
+sanitizer.sanitize()
 return Dependency.deferWidget(widget, Dependency.BtEvaluator)

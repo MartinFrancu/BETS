@@ -19,6 +19,7 @@ local Debug = Utils.Debug;
 local Logger = Debug.Logger
 local dump = Debug.dump
 local Dependency = Utils.Dependency
+local sanitizer = Utils.Sanitizer.forWidget(widget)
 local Vec3 = Utils.Vec3
 
 --------------------------------------------------------------------------------
@@ -267,4 +268,5 @@ end
 
 ---------------------------------------COMMANDS-END-
 
+sanitizer.sanitize()
 --Dependency.deferWidget(widget)

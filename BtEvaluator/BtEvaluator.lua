@@ -16,6 +16,7 @@ local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.
 local JSON = Utils.JSON
 local Sentry = Utils.Sentry
 local Dependency = Utils.Dependency
+local sanitizer = Utils.Sanitizer.forWidget(widget)
 
 local Debug = Utils.Debug
 local Logger = Debug.Logger
@@ -548,3 +549,5 @@ function widget:RecvSkirmishAIMessage(aiTeam, message)
 		Logger.log("communication", "Unknown message type: |", messageType, "|")
 	end
 end
+
+sanitizer.sanitize()
