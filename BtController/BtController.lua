@@ -1077,6 +1077,9 @@ function widget:Initialize()
 	
 	Dependency.fill(Dependency.BtController)
 end
+function widget:Shutdown()
+	Dependency.clear(Dependency.BtController)
+end
 
 --//////////////////////////////////////////////////////////////////////////////
 -- Callins
@@ -1166,4 +1169,4 @@ function saveAllUnitDefs()
 	end
 end
 
-Dependency.deferWidget(widget, Dependency.BtEvaluator, Dependency.BtCommands)
+return Dependency.deferWidget(widget, Dependency.BtEvaluator, Dependency.BtCommands)

@@ -862,6 +862,10 @@ function widget:Initialize()
 	WG.BtCreator = BtCreator
 	Dependency.fill(Dependency.BtCreator)
 end 
+function widget:Shutdown()
+	Dependency.clear(Dependency.BtCreator)
+end
+
 
 function widget:KeyPress(key)
 	if(Spring.GetKeySymbol(key) == "delete") then -- Delete was pressed
@@ -1429,4 +1433,4 @@ end
 --------------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------
 
-Dependency.deferWidget(widget, Dependency.BtEvaluator)
+return Dependency.deferWidget(widget, Dependency.BtEvaluator)

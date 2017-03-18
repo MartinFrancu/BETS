@@ -13,6 +13,7 @@ return Utils:Assign("Dependency", function()
 	local Dependency = {}
 
 	local Logger = Utils.Debug.Logger
+	local dump = Utils.Debug.dump
 	
 	-- the actual table that stores the dependency identifiers
 	local dependencies = {}
@@ -21,11 +22,36 @@ return Utils:Assign("Dependency", function()
 	-- @func f Function, that should be executed.
 	-- @tparam Dependency ... A list of dependencies that need to be fulfilled.
 	-- @remark If all dependencies are fulfilled at the time of the call, the function is executed synchronously. Otherwise, it is executed once the last dependency gets fulfilled.
-	function Dependency.defer(f, ...)
+	function Dependency.defer(onFill, onClear, ...)
+		local f, dependencies
+		if(type(onClear) ~= "function")then
+			dependencies = { onClear, ... }
+			f = onFill
+		else
+			dependencies = { ... }
+			f = function()
+				onFill()
+				
+				local clearedAlready = false
+				local function clearDeferer()
+					if(not clearedAlready)then
+						if(onClear())then
+							Dependency.defer(onFill, onClear, unpack(dependencies))
+						end
+						clearedAlready = true
+					end
+				end
+				for i, v in ipairs(dependencies) do
+					table.insert(v, clearDeferer)
+				end
+			end
+		end
+		-- TODO: correctly deal with multiple dependencies and both onFill and onClear: right now, if any dependency is already filled and is later cleared, it is not identified properly
+		
 		local unfulfilledCount = 0
 		local unfulfilled = {}
 	
-		for i, v in ipairs({...}) do
+		for i, v in ipairs(dependencies) do
 			if(not v.filled)then
 				unfulfilledCount = unfulfilledCount + 1
 				table.insert(unfulfilled, v)
@@ -84,27 +110,54 @@ return Utils:Assign("Dependency", function()
 				end
 			end
 		end
-	
+		
 		Dependency.defer(function()
 			dependenciesFulfilled = true
 			if(initializeTriggered)then
-				Logger.log("dependency", "Deferred widget initialization due to dependency.")
+				Logger.log("dependency", "Deferred widget ", widget:GetInfo().name, " initialization due to dependency.")
 				initialize(widget)
 			else
-				Logger.log("dependency", "Widget dependency fulfilled before initialization.")
+				Logger.log("dependency", "Widget ", widget:GetInfo().name, " dependency fulfilled before initialization.")
 			end
+		end, function()
+			Logger.log("dependency", "Removing widget ", widget:GetInfo().name, ".")
+			widget.widgetHandler:RemoveWidget()
 		end, ...)
+		
+		return widget
 	end
 	
 	--- Marks the specified dependency as fulfilled.
-	-- Any functions defered because of only this dependency end up being executed synchronously.
+	-- Any functions defered because of only this dependency ends up being executed synchronously.
 	-- @tparam Dependency dependency The dependency to mark as fulfilled.
 	-- @usage Dependency.fill(Dependency.CustomName)
 	function Dependency.fill(dependency)
 		if(dependency.filled)then return end
-		dependency.filled = true
 		
+		local handlers = {}
 		for i, v in ipairs(dependency) do
+			handlers[i] = v
+		end
+		table.clear(dependency)
+		dependency.filled = true
+		for i, v in ipairs(handlers) do
+			v()
+		end
+	end
+	--- Marks the specified dependency as no longer fulfilled.
+	-- Any functions defered because of only this dependency that provided onClear function ends up being executed synchronously.
+	-- @tparam Dependency dependency The dependency to mark as not fulfilled.
+	-- @usage Dependency.fill(Dependency.CustomName)
+	function Dependency.clear(dependency)
+		if(not dependency.filled)then return end
+		
+		local handlers = {}
+		for i, v in ipairs(dependency) do
+			handlers[i] = v
+		end
+		table.clear(dependency)
+		dependency.filled = false
+		for i, v in ipairs(handlers) do
 			v()
 		end
 	end
@@ -116,7 +169,7 @@ return Utils:Assign("Dependency", function()
 				return nil
 			end
 			
-			local result = {}
+			local result = { name = key }
 			self[key] = result
 			return result
 		end,
