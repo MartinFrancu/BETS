@@ -991,9 +991,9 @@ function clearCanvas(omitRoot)
 end
 
 local function loadBehaviourNode(bt, btNode)
-	if(not btNode)then return nil end
+	if(not btNode or btNode.nodeType == "empty_tree")then return nil end
 	local params = {}
-	local info
+	local info = {}
 	
 	Logger.log("save-and-load", "loadBehaviourNode - nodeType: ", btNode.nodeType, " scriptName: ", btNode.scriptName, " info: ", nodeDefinitionInfo)
 	if (btNode.scriptName ~= nil) then

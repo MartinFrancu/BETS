@@ -126,6 +126,10 @@ return Utils:Assign("BehaviourTree", function()
 		bt.properties = bt.properties or {}
 		setmetatable(bt, treeMetatable)
 		
+		if not bt.root then
+			local root = bt:NewNode({id = "rootId", nodeType = "empty_tree"})
+			bt:SetRoot(root)
+		end
 		load_setupNode(bt, bt.root)
 		for _, node in ipairs(bt.additionalNodes) do
 			load_setupNode(bt, node)
