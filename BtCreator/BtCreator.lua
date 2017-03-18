@@ -1083,105 +1083,7 @@ function loadBehaviourTree(bt)
 	end
 end                
 
---------------------------------------------------------------------------------------------------------------------------
---- ROLE MANAGEMENT ------------------------------------------------------------------------------------------------------
-
-local function loadStandardCategories()	
-	unitCategories = {}
-	local transports = {}
-	local immobile = {}
-	local buildings = {}
-	local builders = {}
-	local mobileBuilders = {}
-	local groundUnits = {}
-	local airUnits = {}
-	local airFighters = {}
-	local airBombers = {}
-	
-	for _,unitDef in pairs(UnitDefs) do
-		if(unitDef.isTransport ) then
-			table.insert(transports, { id = unitDef.id, name = unitDef.name, humanName = unitDef.humanName})
-		end
-		if(unitDef.isImmobile ) then
-			table.insert(immobile, { id = unitDef.id, name = unitDef.name, humanName = unitDef.humanName})
-		end
-		if(unitDef.isBuilding ) then
-			table.insert(buildings, { id = unitDef.id, name = unitDef.name, humanName = unitDef.humanName})
-		end
-		if(unitDef.isBuilder ) then
-			table.insert(builders, { id = unitDef.id, name = unitDef.name, humanName = unitDef.humanName})
-		end
-		if(unitDef.isMobileBuilder ) then
-			table.insert(mobileBuilders, { id = unitDef.id, name = unitDef.name, humanName = unitDef.humanName})
-		end
-		if(unitDef.isGroundUnit ) then
-			table.insert(groundUnits, { id = unitDef.id, name = unitDef.name, humanName = unitDef.humanName})
-		end
-		if(unitDef.isAirUnit ) then
-			table.insert(airUnits, { id = unitDef.id, name = unitDef.name, humanName = unitDef.humanName})
-		end
-		if(unitDef.isFighterAirUnit ) then
-			table.insert(airFighters, { id = unitDef.id, name = unitDef.name, humanName = unitDef.humanName})
-		end
-		if(unitDef.isBomberAirUnit ) then
-			table.insert(airBombers, { id = unitDef.id, name = unitDef.name, humanName = unitDef.humanName})
-		end
-	end
-	table.insert(unitCategories, {name = "transports", types = transports})
-	table.insert(unitCategories, {name = "immobile", types = immobile})
-	table.insert(unitCategories, {name = "buildings", types = buildings})
-	table.insert(unitCategories, {name = "builders", types = builders})
-	table.insert(unitCategories, {name = "mobileBuilders", types = mobileBuilders})
-	table.insert(unitCategories, {name = "groundUnits", types = groundUnits})
-	table.insert(unitCategories, {name = "airUnits", types = airUnits})
-	table.insert(unitCategories, {name = "fighterAirUnits", types = airFighters})
-	table.insert(unitCategories, {name = "bomberAirUnits", types = airBombers})
-end
-
-
--- This method will load unit categories into one object. 
-local function loadUnitCategories()
-	unitCategories = {}
-	----[[
-	local file = io.open(UNIT_CATHEGORIES_DIRNAME .. UNIT_CATHEGORIES_FILE , "r")
-	if(not file)then
-			unitCategories = {}
-	end
-	local text = file:read("*all")
-	unitCategories = JSON:decode(text)
-	file:close()
-	--]]
-end
-
-local function saveUnitCategories()
-	if(unitCategories == nil) then
-		Logger.log("roles", "unitCategories = nill")
-		unitCategories = {}
-	end
-	
-	local text = JSON:encode(unitCategories, nil, { pretty = true, indent = "\t" })
-	Spring.CreateDir(UNIT_CATHEGORIES_DIRNAME)
-	local file = io.open(UNIT_CATHEGORIES_DIRNAME .. UNIT_CATHEGORIES_FILE, "w")
-	if(not file)then
-		return nil
-	end
-	file:write(text)
-	file:close()	
-	return true
-end
--- This method returns unitTypes in given role in  rolesOfCurrentTree.
-function getRoleData(roleName)
-	for _,roleData in pairs(rolesOfCurrentTree) do 
-			if(roleData.name == roleName) then
-				return roleData
-			end
-	end
-end
-
-
-
 function showCategoryDefinitionWindow()
-	loadStandardCategories()
 	rolesWindow:Hide()
 	categoryDefinitionWindow = Chili.Window:New{
 		parent = Screen0,
@@ -1205,7 +1107,7 @@ function showCategoryDefinitionWindow()
 		caption = "DONE",
 		OnClick = {doneCategoryDefinition}, 
 	}
-	categoryDoneButton.UnitCategories = unitCategories
+	--categoryDoneButton.UnitCategories = unitCategories
 	
 	local categoryCancelButton = Chili.Button:New{
 		parent =  categoryDefinitionWindow,
@@ -1267,8 +1169,8 @@ function doneCategoryDefinition(self)
 		name = self.CategoryNameEditBox.text,
 		types = unitTypes,
 	}
-	table.insert(unitCategories, newCategory)
-	saveUnitCategories()
+	Utils.UnitCategories.redefineCategories(newCategory)
+
 	categoryDefinitionWindow:Hide()
 	showRoleManagementWindow()
 end
@@ -1276,7 +1178,7 @@ function cancelCategoryDefinition(self)
 	categoryDefinitionWindow:Hide()
 	showRoleManagementWindow()
 end
-
+--[[
 local function findCategoryData(categoryName)
 	for _,catData in pairs(unitCategories) do 
 		if(catData.name == categoryName) then
@@ -1284,7 +1186,7 @@ local function findCategoryData(categoryName)
 		end
 	end
 end
-
+--]]
 
 local function isInTable(value, t)
 	for i=1,#t do

@@ -1070,13 +1070,6 @@ function widget:Initialize()
 		-- listenerClickOnSelectedTreeDoneButton(self, treeSelectionDoneButton.x, treeSelectionDoneButton.y, 1)
 	end
 	
-	--[[
-	if(not WG.InputCommands or not WG.BtCommands) then
-		-- TODO Do a proper initialization, only once. 
-		WG.fillCustomCommandIDs()
-	end
-	--]]
-	
 	Dependency.fill(Dependency.BtController)
 end
 function widget:Shutdown()
