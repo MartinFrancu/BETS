@@ -862,7 +862,14 @@ function widget:Initialize()
 	WG.BtCreator = BtCreator
 	Dependency.fill(Dependency.BtCreator)
 end 
+
 function widget:Shutdown()
+	WG.selectedNodes = nil
+	WG.nodeList = nil
+	WG.clearSelection = nil
+	WG.addNodeToSelection = nil
+	connectionLine = nil
+	WG.BtConnectionLine = nil
 	Dependency.clear(Dependency.BtCreator)
 end
 
