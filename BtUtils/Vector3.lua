@@ -7,12 +7,14 @@
 --   - added LengthSqr
 --   - changed Normalize to alter the current instance
 --   - added return self to the various arithemtic operations
+--   - disabled querying of the metatable from the outside
 
 local type = type
 
 -- Meta table.
 local vector_prototype = {}
 local vector_mt = { __index = vector_prototype }
+vector_mt.__metatable = false -- disable accessing of the metatable
 
 -- Divran's idea.
 local function new(x,y,z)
