@@ -1157,6 +1157,11 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 		local treeHandle = instantiateTree(WG.BtCommands[cmdID].treeName, "Instance"..instanceIdCount , true)
 		
 		listenerBarItemClick({TreeHandle = treeHandle}, x, y, 1)
+		
+		-- click on first input:
+		if(table.getn(treeHandle.InputButtons) >= 1) then -- there are inputs
+			listenerInputButton(treeHandle.InputButtons[1])
+		end
 		return true
 	end
 	Logger.log("commands", "received unknown command: " , cmdID)
