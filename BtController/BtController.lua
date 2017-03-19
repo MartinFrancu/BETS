@@ -61,6 +61,7 @@ local expectedInput
 local spGetCmdDescIndex = Spring.GetCmdDescIndex
 local spSetActiveCommand = Spring.SetActiveCommand
 local spGetSelectedUnits = Spring.GetSelectedUnits
+local spSelectUnits = Spring.SelectUnitArray
 
 local function getTreeNamesInDirectory(directoryName)
    local ending = ".json"
@@ -249,7 +250,7 @@ end
 -- Function responsible for selecting units in given role.
 function TreeHandle.selectUnitsInRolesListener(button, ...) 
 	local unitsInThisRole = TreeHandle.unitsInTreeRole(button.TreeHandle.InstanceId, button.Role)
-	Spring.SelectUnitArray(unitsInThisRole)
+	spSelectUnits(unitsInThisRole)
 end
 
 
@@ -626,11 +627,11 @@ function reportAssignedUnits(treeHandle)
 	for name,roleData in pairs(treeHandle.Roles) do
 		-- now I need to share information with the BtEvaluator
 		local unitsInThisRole = TreeHandle.unitsInTreeRole(treeHandle.InstanceId, name)
-		Spring.SelectUnitArray(unitsInThisRole)
+		spSelectUnits(unitsInThisRole)
 		Logger.loggedCall("Errors", "BtController", "reporting assigned units, reporting role: ".. name, 
 			BtEvaluator.assignUnits, unitsInThisRole, treeHandle.InstanceId, roleData.roleIndex)
 	end
-	Spring.SelectUnitArray(originallySelectedUnits)
+	spSelectUnits(originallySelectedUnits)
 end
 
 function reportInputToBtEval(treeHandle, inputName)
@@ -651,6 +652,14 @@ end
 
 local instantiateTree
 
+-- This selects any ally unit. 
+local function getDummyAllyUnit()
+	-- what to do if there are no units 
+	-- what is our team number??
+	
+	local allUnits = Spring.GetTeamUnits(Spring.GetMyTeamID())
+	return allUnits[1]
+end
 
 --//////////////////////////////////////////////////////////////////////////////
 ---------REWRITTEN CHILI FUNCTIONS:
@@ -676,7 +685,7 @@ function listenerBarItemClick(self, x, y, button, ...)
 	if button == 1 then
 		-- select assigned units, if any
 		local unitsToSelect = unitsInTree(self.TreeHandle.InstanceId)
-		Spring.SelectUnitArray(unitsToSelect)
+		spSelectUnits(unitsToSelect)
 
 		self.TreeHandle:UpdateTreeStatus()
 		
@@ -746,15 +755,39 @@ function listenerInputButton(self,x,y,button, ...)
 	end
 	-- should I do something more when reseting the input que?
 	-- I need to store record what we are expecting
+	local selectedUnits = spGetSelectedUnits()
 	expectedInput = {
 		TreeHandle = self.TreeHandle,
 		InputName = self.InputName,
 		CommandName = self.CommandName,
 		InstanceId = self.InstanceId,
 	}
-	local ret = spSetActiveCommand(  spGetCmdDescIndex(WG.InputCommands[ expectedInput.CommandName ]) ) 
-	if(ret == false ) then 
-		Logger.log("commands", "Unable to set command active: " , expectedInput.CommandName) 
+
+	if(table.getn(selectedUnits) < 1) then -- no units selected
+		-- some units has to be selected for command to be issued
+		expectedInput["NoSelectedUnits"] = true
+		local someArray = {[1] = getDummyAllyUnit()}
+		spSelectUnits(someArray)
+		Logger.log("commands", "selected units: ", spGetSelectedUnits() ) 
+		listenerInputButton(self,x,y,button, ...)
+	else
+		selectedUnits = spGetSelectedUnits()
+		local inputCommandNum =  WG.InputCommands[ expectedInput.CommandName ]
+		Logger.log("commands", "really selected: ", Spring.IsUnitSelected(selectedUnits[1]) )
+		Logger.log("commands", "building: ", UnitDefs[Spring.GetUnitDefID(selectedUnits[1])].isBuilder," name ", UnitDefs[Spring.GetUnitDefID(selectedUnits[1])].name )
+		local index
+		if(UnitDefs[Spring.GetUnitDefID(selectedUnits[1])].isBuilder) then
+			Logger.log("commands", "is builder")
+			index = spGetCmdDescIndex(WG.InputCommands[ expectedInput.CommandName ])
+		else
+			index =  Spring.FindUnitCmdDesc(selectedUnits[1], inputCommandNum ) -- someArray[1], inputCommandsRec)
+		end
+		Logger.log("commands", 
+			" input comd rec: ", inputCommandNum, 
+			" command name ", expectedInput.CommandName, 
+			" index ", index )
+
+		local result = spSetActiveCommand(index )
 	end
 end
 
@@ -1129,6 +1162,10 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 			local tH = expectedInput.TreeHandle 
 			local inpName = expectedInput.InputName
 			tH:FillInInput(inpName, cmdParams)
+			-- I should select selected units before this command:
+			if(expectedInput.NoSelectedUnits ~= nil) then
+				spSelectUnits({})
+			end
 			expectedInput = nil
 			if(tH:CheckReady()) then 
 				if(tH.Created == false) then
@@ -1146,6 +1183,7 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 				end
 				
 			end
+
 		else
 			Logger.log("commands", "Received input command while not expecting!!!")
 		end
