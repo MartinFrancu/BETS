@@ -24,7 +24,7 @@ return Utils:Assign("Sanitizer", function()
 				return unpack(r)
 			else
 				if(rethrow)then
-					error(unpack(err))
+					error(err)
 				else
 					widget.widgetHandler:RemoveWidget(widget) -- we cannot use widgetHandler directly, because that would be a proxy to widgetHandler of the widget that runs this file (which may be a different one)
 				end

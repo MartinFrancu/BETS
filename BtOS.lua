@@ -39,7 +39,7 @@ local state = {}
 WG.state = state
 local TEXT_HEIGHT = 20
 
-local initializeDependencyHooks
+local initializeDependencyHooks, injectErrorReporter
 
 local visualiser;
 local function updateVisualiser()
@@ -139,7 +139,7 @@ end
 
 -- ============ Error reporting
 
-local function injectErrorReporter()
+function injectErrorReporter()
 	local padding = 10
 	local currentLogType
 	local currentMessage
@@ -307,15 +307,25 @@ function widget:Initialize()
 end
 
 
+local lastCheck = nil
 function widget:Update()
+	local frameNumber = getFrame()
 	if(initializedAt)then
-		local frameNumber = getFrame()
 		if(frameNumber - initializedAt > 50)then
 			for widgetName in pairs(widgets) do
 				state[widgetName] = state[widgetName] or false -- convert nils to false
 			end
 			updateVisualiser()
 			initializedAt = nil
+			lastCheck = frameNumber
+		end
+	elseif(frameNumber - lastCheck > 60*5)then
+		for widgetName in pairs(widgets) do
+			local w = (widgetHandler.knownWidgets or {})[widgetName]
+			state[widgetName] = w and w.active and Dependency[widgetName].filled
+			if(not state[widgetName] and Dependency[widgetName].filled)then
+				Dependency.clear(Dependency[widgetName])
+			end
 		end
 	end
 end
