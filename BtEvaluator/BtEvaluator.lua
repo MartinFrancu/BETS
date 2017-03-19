@@ -415,6 +415,8 @@ function BtEvaluator.OnExpression(params)
 	end
 end
 
+function BtEvaluator.crash() error("Intentional error.") end
+
 function widget:UnitDestroyed(unitID, unitDefID, unitTeam, attackerID, attackerDefID, attackerTeam)
 	Logger.log("command", "----UnitDestroyed---")
 	
@@ -465,7 +467,7 @@ function widget:Initialize()
 		widgetHandler:RemoveWidget()
 	end
 
-	WG.BtEvaluator = BtEvaluator
+	WG.BtEvaluator = sanitizer:Export(BtEvaluator)
 	
 	BtEvaluator.sendMessage("REINITIALIZE")
 	Spring.SendCommands("AIControl "..Spring.GetLocalPlayerID().." BtEvaluator")
@@ -518,7 +520,6 @@ local handlers = {
 	end,
 	["NODE_DEFINITIONS"] = asHandler(BtEvaluator.OnNodeDefinitions),
 }
-WG.handlers= handlers
 function widget:RecvSkirmishAIMessage(aiTeam, message)
 	Logger.log("communication", "Received message from team " .. tostring(aiTeam) .. ": " .. message)
 

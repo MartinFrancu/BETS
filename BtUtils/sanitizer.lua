@@ -55,17 +55,18 @@ return Utils:Assign("Sanitizer", function()
 		return {
 			[originalKey] = t,
 			[exportKey] = result,
+			Get = function() return result end -- for debug purposes
 		}
 	end
 	function sanitizerPrototype:Import(foreign)
 		local exportTable = foreign[exportKey]
-		if(not result)then
+		if(not exportTable)then
 			Logger.error("sanitizer", "Attempt to import a table that was not exported before.")
 		end
 		local original = foreign[originalKey]
 		
-		local result
-		for k, v in pairs(t) do
+		local result = {}
+		for k, v in pairs(exportTable) do
 			if(type(v) == "table")then
 				result[k] = self:Import(v)
 			else

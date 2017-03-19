@@ -752,7 +752,7 @@ function widget:Initialize()
 		return
 	end
 	
-	BtEvaluator = WG.BtEvaluator
+	BtEvaluator = sanitizer:Import(WG.BtEvaluator)
 	
 	BtEvaluator.OnNodeDefinitions = generateNodePoolNodes
 	BtEvaluator.OnUpdateStates = updateStatesMessage

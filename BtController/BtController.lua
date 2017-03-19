@@ -1046,7 +1046,7 @@ function widget:Initialize()
 	Chili = WG.ChiliClone
 	Screen0 = Chili.Screen0	
   
-	BtEvaluator = WG.BtEvaluator 
+	BtEvaluator = sanitizer:Import(WG.BtEvaluator)
 	-- extract BtCreator into a local variable once available
 	Dependency.defer(
 		function() BtCreator = WG.BtCreator end,
