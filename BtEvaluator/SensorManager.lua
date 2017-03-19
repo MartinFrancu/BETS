@@ -69,7 +69,7 @@ WG.SensorManager = WG.SensorManager or (function()
 				if(lastExecutionFrame == nil or currentFrame - lastExecutionFrame > lastPeriod)then
 					local success, result, period = pcall(evaluator, ...)
 					if(not success)then
-						Logger.error("sensors", "Evaluation of sensor '", name ,"' failed: ", lastResult[2])
+						Logger.error("sensors", "Evaluation of sensor '", name ,"' failed: ", result)
 						return
 					end
 					lastResult = result
