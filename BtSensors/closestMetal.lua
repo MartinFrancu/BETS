@@ -23,8 +23,7 @@ return function(toWhat)
 		end
 	end
 	if(selectedMetal)then
-		selectedMetal.x = selectedMetal.posX
-		selectedMetal.z = selectedMetal.posZ
+		selectedMetal.pos = Vec3(selectedMetal.posX, selectedMetal.height, selectedMetal.posZ)
 	end
 	return selectedMetal
 end

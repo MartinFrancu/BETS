@@ -26,6 +26,9 @@ local TOLERANCE_IF_STUCK_SQ = 50 * 50
 local CAN_BE_STUCK_FOR_TICKS = 3
 
 local function wrapResVect(f, id)
+	if (type(id) ~= "number") then
+		return nil
+	end
 	local x, y, z = f(id)
 	if not x then
 		return nil
@@ -90,8 +93,9 @@ end
 local function EnsureLeader(self, unitIds)
 	Logger.log("move-command", "EnsureLeader")
 
+	local leaderPos = getUnitPos(self.leaderId)
 	local leaderTar = self.finalTargets[self.leaderId]
-	if self.leaderId and not unitIsDead(self.leaderId) and leaderTar ~= nil and (getUnitPos(self.leaderId) - leaderTar):LengthSqr() > TOLERANCE_SQ then
+	if self.leaderId and not unitIsDead(self.leaderId) and leaderPos ~= nil and leaderTar ~= nil and (leaderPos - leaderTar):LengthSqr() > TOLERANCE_SQ then
 		return self.leaderId
 	end
 	
@@ -126,12 +130,17 @@ end
 local function InitFormationDiffs(self, unitIds)
 	Logger.log("move-command", "InitFormationDiffs")
 	
+	--[[
 	local sum = Vec3(0,0,0)
 	for i = 1, #unitIds do
 		sum = sum + getUnitPos(unitIds[i])
 	end
 	
 	local centerVec = sum / #unitIds
+	--]]
+	
+	local center = Sensors.groupExtents().center
+	local centerVec = Vec3(center.x, getUnitPos(unitIds[1]).y, center.z)
 	
 	if center then
 		centerVec = Vec3(center.x, getUnitPos(self.leaderId).y, center.z)
@@ -211,7 +220,7 @@ function Run(self, unitIds, parameter)
 			if dist > distMax then
 				distMax = dist
 			end
-			Logger.log("move-command", "self.finalTargets[unitID]: ", self.finalTargets[unitID], "; dist: ", dist)
+			--Logger.log("move-command", "self.finalTargets[unitID]: ", self.finalTargets[unitID], "; dist: ", dist)
 			distSum = distSum + dist
 			
 			if leaderDone then

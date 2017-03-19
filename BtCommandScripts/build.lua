@@ -48,10 +48,10 @@ function Run(self, unitIds, parameter)
 	
 	if(not self.inProgress)then
 		local pos = parameter.pos
-		if(testBuildOrder(buildingId, pos.posX, pos.height, pos.posZ, 2) ~= 0)then
+		if(testBuildOrder(buildingId, pos.x, pos.y, pos.z, 2) ~= 0)then
 			for i = 1, #unitIds do
 				local unitID = unitIds[i]
-				giveOrderToUnit(unitID, -buildingId, { pos.posX, pos.height, pos.posZ }, {})
+				giveOrderToUnit(unitID, -buildingId, pos:AsSpringVector(), {})
 			end
 			self.inProgress = true
 			return RUNNING
