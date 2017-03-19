@@ -62,7 +62,7 @@ local function updateVisualiser()
 				skinName = 'DarkGlass',
 				backgroundColor = {0,0,0,1},
 			}
-			visualiser.window:SetPos(screenWidth - visualiser.window.width, 200)
+			visualiser.window:SetPos(screenWidth * 15 / 100 + 500, 30) -- visualiser.window.width, 200)
 			
 			local top = 0
 			for widgetName in pairs(widgets) do
