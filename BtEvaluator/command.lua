@@ -131,6 +131,7 @@ end
 
 function Command:BaseRun(unitIDs, parameters)
 	if unitIDs.length == 0 and self.onNoUnits ~= self.RUNNING then
+		Logger.loc("command", "No units assigned.")
 		return self.onNoUnits
 	end
 

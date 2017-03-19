@@ -42,12 +42,12 @@ local function getUnitDir(unitID)
 end
 
 local function direction(from, to)
-	Logger.log("move-command", "direction")
+	--Logger.log("move-command", "direction")
 	return (to - from):Normalize()
 end
 
 local function dirsEqual(v1, v2)
-	Logger.log("move-command", "dirsEqual")
+	--Logger.log("move-command", "dirsEqual")
 	local ratioX = v1.x / v2.x
 	local ratioZ = v1.z / v2.z
 	local tolerance = 0.2
@@ -58,9 +58,25 @@ local function addToList(list, item)
 	list[#list + 1] = item
 end
 
+
+local function ClearState(self)
+	Logger.log("move-command", "Lua command ClearState")
+	self.leaderTarget = nil
+	self.lastPositions = {}
+	self.leaderId = nil
+	self.subTargets = {}
+	self.finalTargets = {}
+	self.finalOrderIssued = false
+	self.formationDiffs = {}
+	self.lastDistSum = 0
+	self.stuckForTicks = 0
+	self.leaderWaypoints = {}
+	self.lastPositions = {}
+end
+
 function New(self)
 	Logger.log("move-command", "Running New in move")
-	Reset(self)
+	ClearState(self)
 	--[[self.lastPositions = {}
 	self.subTargets = {}
 	self.finalTargets = {}
@@ -189,11 +205,13 @@ function Run(self, unitIds, parameter)
 			local curSubTar = self.subTargets[unitID]
 			local curDir = direction(getUnitPos(unitID), curSubTar or Vec3(0,0,0))
 			
+			
 			local dist = (self.finalTargets[unitID] - curPos):LengthSqr();
 			--Logger.log("move-command", " ------ dist ", dist)
 			if dist > distMax then
 				distMax = dist
 			end
+			Logger.log("move-command", "self.finalTargets[unitID]: ", self.finalTargets[unitID], "; dist: ", dist)
 			distSum = distSum + dist
 			
 			if leaderDone then
@@ -246,17 +264,8 @@ function Run(self, unitIds, parameter)
 	end
 end
 
+
 function Reset(self)
-	--Logger.log("move-command", "Lua command reset")
-	self.leaderTarget = nil
-	self.lastPositions = {}
-	self.leaderId = nil
-	self.subTargets = {}
-	self.finalTargets = {}
-	self.finalOrderIssued = false
-	self.formationDiffs = {}
-	self.lastDistSum = 0
-	self.stuckForTicks = 0
-	self.leaderWaypoints = {}
-	self.lastPositions = {}
+	Logger.log("move-command", "Lua command reset")
+	ClearState(self)
 end
