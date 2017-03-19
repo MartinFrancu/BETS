@@ -131,7 +131,7 @@ end
 
 function Command:BaseRun(unitIDs, parameters)
 	if unitIDs.length == 0 and self.onNoUnits ~= self.RUNNING then
-		Logger.loc("command", "No units assigned.")
+		Logger.log("command", "No units assigned.")
 		return self.onNoUnits
 	end
 
@@ -140,7 +140,7 @@ function Command:BaseRun(unitIDs, parameters)
 	currentlyExecutingCommand = self
 
 	System.Sensors = self.Sensors
-	success,res,retVal = pcall(self.Run, self, unitIDs, parameters)
+	local success,res,retVal = pcall(self.Run, self, unitIDs, parameters)
 	System.Sensors = nil
 	
 	if success then
@@ -174,7 +174,7 @@ function Command:BaseReset()
 	
 	currentlyExecutingCommand = self
 
-	success,res = pcall(self.Reset, self)
+	local success,res = pcall(self.Reset, self)
 	if not success then
 		Logger.error("command", "Error in script ", self.scriptName, ", method ", methodSignatures.Reset, ": ", res)
 	end
