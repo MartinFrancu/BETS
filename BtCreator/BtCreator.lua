@@ -320,7 +320,9 @@ do
 	local metapairs = Utils.metapairs
 	
 	local function makeCaption(k, v)
-		return tostring(k) .. " = " .. ((type(v) ~= "table" or (getmetatable(v) or {}).__tostring) and tostring(v) or "{...}")
+		local strKey = tostring(k)
+		local strValue = tostring(v)
+		return strKey .. " = " .. (strValue == "<table>" and "{...}" or strValue)
 	end
 	local rowsPrototype = {}
 	function rowsPrototype:SetTable(t)
