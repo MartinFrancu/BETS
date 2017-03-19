@@ -303,17 +303,56 @@ function TreeHandle:New(obj)
 	
 	local rolesXOffset = 10
 	local rolesYOffset = 30
-	local roleButtonWidth = 200
 	local buttonHeight = 22
 	local singleButtonModifier = 10
+	local labelToButtonYModifier = 5 -- chili feature/bug
+	local minRoleLabelWidth = 70
+	local minRoleAssingWidth = 100
+	local minUnitCountWidth = 50
+	local inputGap = 30
+	local notGivenColor = {0.8,0.1,0.1,1}
+	local rolesEndX -- to be computed
+	local minInputButtonWidth = 150
+	
 	for _,roleData in pairs(obj.Tree.roles) do
 		local roleName = roleData.name
-		local unitsCountButton = Chili.Button:New{
-			x = rolesXOffset + roleButtonWidth ,
+		local roleNameLabel = Chili.Label:New{
+			x = rolesXOffset ,
+			y = rolesYOffset +labelToButtonYModifier  + ( buttonHeight ) * roleInd,
+			height = (roleCount == 1 and buttonHeight + singleButtonModifier or buttonHeight),
+			width = '20%',
+			minWidth = minRoleLabelWidth,
+			caption = roleName,
+			skinName = "DarkGlass",
+			focusColor = {0.5,0.5,0.5,0.5},
+			tooltip = "Role name",
+		}
+		table.insert(obj.ChiliComponents, roleNameLabel)
+		
+		local roleAssignmentButton = Chili.Button:New{
+			x = rolesXOffset + roleNameLabel.width + 50,
 			y = rolesYOffset + buttonHeight * roleInd,
 			height = roleCount == 1 and buttonHeight + singleButtonModifier or buttonHeight,
 			width = '10%',
-			minWidth = 50,
+			minWidth = minRoleAssingWidth,
+			caption = "Assign",
+			OnClick = {sanitizer.handler(obj.AssignUnitListener)}, 
+			skinName = "DarkGlass",
+			focusColor = {0.5,0.5,0.5,0.5},
+			TreeHandle = obj,
+			Role = roleName,
+			roleIndex = roleInd,
+			instanceId = obj.InstanceId,
+			tooltip = "Assigns currently selected units to this role",
+		}
+		table.insert(obj.ChiliComponents, roleAssignmentButton)
+		
+		local unitCountButton = Chili.Button:New{
+			x = roleAssignmentButton.x + roleAssignmentButton.width ,
+			y = rolesYOffset + buttonHeight * roleInd,
+			height = roleCount == 1 and buttonHeight + singleButtonModifier or buttonHeight,
+			width = '10%',
+			minWidth = minUnitCountWidth,
 			caption = 0, 
 			skinName = "DarkGlass",
 			focusColor = {0.5,0.5,0.5,0.5},
@@ -323,26 +362,9 @@ function TreeHandle:New(obj)
 			Role = roleName,
 			OnClick = {TreeHandle.selectUnitsInRolesListener},
 		}
-		table.insert(obj.ChiliComponents, unitsCountButton)
+		table.insert(obj.ChiliComponents, unitCountButton)
 		
-		local roleAssignmentButton = Chili.Button:New{
-			x = rolesXOffset ,
-			y = rolesYOffset + buttonHeight * roleInd,
-			height = roleCount == 1 and buttonHeight + singleButtonModifier or buttonHeight,
-			width = '25%',
-			minWidth = 150,
-			caption = roleName,
-			OnClick = {sanitizer.handler(obj.AssignUnitListener)}, 
-			skinName = "DarkGlass",
-			focusColor = {0.5,0.5,0.5,0.5},
-			TreeHandle = obj,
-			Role = roleName,
-			roleIndex = roleInd,
-			unitsCountButton = unitsCountButton,
-			instanceId = obj.InstanceId,
-			tooltip = "Assigns currently selected units to this role",
-		}
-		table.insert(obj.ChiliComponents, roleAssignmentButton)
+		rolesEndX = unitCountButton.x + unitCountButton.width 
 		-- get the role unit types:
 		local roleUnitTypes = {}
 		for _,catName in pairs(roleData.categories) do
@@ -354,19 +376,19 @@ function TreeHandle:New(obj)
 		
 		obj.Roles[roleName]={
 			assignButton = roleAssignmentButton,
-			unitCountButton = unitsCountButton,
+			unitCountButton = unitCountButton,
 			roleIndex = roleInd,
 			unitTypes = roleUnitTypes
 		}
 		roleInd = roleInd +1
 	end
 	
-	local inputXOffset = 300
-	local inputYOffset = 50
+	local inputXOffset = rolesEndX + inputGap
+	local inputYOffset =  rolesYOffset
 	local inputInd = 0
 	local inputCount = table.getn(obj.Tree.inputs)
 	--
-	local notGivenColor = {0.8,0.1,0.1,1}
+	
 	for _,input in pairs(obj.Tree.inputs) do
 		local inputName = input.name
 		local inputButton = Chili.Button:New{
@@ -374,7 +396,7 @@ function TreeHandle:New(obj)
 			y = rolesYOffset + buttonHeight * inputInd,
 			height = inputCount == 1 and buttonHeight +  singleButtonModifier or buttonHeight,
 			width = '25%',
-			minWidth = 150,
+			minWidth = minInputButtonWidth,
 			caption =" " .. inputName .. " (" .. WG.BtCommandsInputHumanNames[input.command].. ")",
 			OnClick = {sanitizer.handler(obj.InputButtonListener)}, 
 			skinName = "DarkGlass",
@@ -397,6 +419,7 @@ end
 
 -- Following three methods are shortcut for increasing and decreassing role counts.
 function TreeHandle:DecreaseUnitCount(whichRole)
+	Logger.log("roles", "decrease: ")
 	local roleData = self.Roles[whichRole]
 	-- this is the current role and tree
 	local currentCount = tonumber(roleData.unitCountButton.caption)
@@ -572,7 +595,7 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 				local unitRoles = unitIdRoleTable[name]
 				local currentRoleData = unitRoles.roles[unitRoles.currentIndex]
 				Logger.log("roles", "assigning to role", currentRoleData)
-				TreeHandle.assignUnitToTree(unitId, treeHandle, currentRoleData.assignButton.caption)
+				TreeHandle.assignUnitToTree(unitId, treeHandle, currentRoleData.assignButton.Role)
 				-- now, I should shift the index:
 				unitRoles.currentIndex = unitRoles.currentIndex + 1 
 				if(unitRoles.currentIndex > table.getn(unitRoles.roles) ) then
@@ -683,30 +706,31 @@ end
 
 -- This is listener for AssignUnits buttons of given tree instance. 
 -- The button should have TreeHandle and Role attached on it. 
-function listenerAssignUnitsButton(self,x,y, button, ...)
+function listenerAssignUnitsButton(self,x,y, ...)
 	-- self = chili:button
 	-- deselect units in current role
-	
 	-- Here I am deassigning all units, that might destroy some tree:
+
 	local requireUnitsOriginal = self.TreeHandle.RequireUnits
+	Logger.log("roles", "orig require units: ", requireUnitsOriginal)
 	self.TreeHandle.RequireUnits = false
 	for unitId,treeAndRole in pairs(TreeHandle.unitsToTreesMap) do	
 		if(treeAndRole.InstanceId == self.TreeHandle.InstanceId) and (treeAndRole.Role == self.Role) then
 			TreeHandle.removeUnitFromCurrentTree(unitId)
 		end
 	end
-	self.TreeHandle.RequireUnits = requireUnitsOrigina
+	
 	local selectedUnits = spGetSelectedUnits()
-	-- there are units in this tree or it dont matter
 	for _,Id in pairs(selectedUnits) do
 		TreeHandle.assignUnitToTree(Id, self.TreeHandle, self.Role)
 	end
 	-- check if tree is empty and if it require units
 	if(self.TreeHandle:CheckReady() ) then
+		Logger.log("roles", "tree is ready i guess, is it reported? ", self.TreeHandle.Created)
 		Logger.loggedCall("Errors", "BtController", "assigning units to tree", 
 		BtEvaluator.assignUnits, selectedUnits, self.TreeHandle.InstanceId, self.roleIndex)
 	end
-
+	self.TreeHandle.RequireUnits = requireUnitsOriginal
 	-- now I should check if there are units in this tree
 		-- if the tree has no more units:
 	if (self.TreeHandle.AssignedUnitsCount < 1) and (self.TreeHandle.RequireUnits) then
