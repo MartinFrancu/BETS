@@ -689,7 +689,7 @@ function listenerBarItemClick(self, x, y, button, ...)
 			end
 			Logger.loggedCall("Error", "BtController", 
 				"making BtCreator show selected tree",
-				BtCreator.show, self.TreeHandle.TreeType )
+				BtCreator.show, self.TreeHandle.TreeType, self.TreeHandle.InstanceId )
 		end
 		
 		-- ORIGINAL LISTENER FORM BarItem:

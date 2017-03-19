@@ -22,6 +22,8 @@ local loadTreeButton
 local saveTreeButton
 local showSensorsButton
 local showBlackboardButton
+local breakpointButton
+local continueButton
 local minimizeButton
 local roleManagerButton
 local newTreeButton
@@ -70,6 +72,8 @@ local BtCreator = {} -- if we need events, change to Sentry:New()
 -- connection lines functions
 local connectionLine = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/connection_line.lua", nil, VFS.RAW_FIRST)
 
+local treeInstanceId
+
 function BtCreator.show(tree, instanceId)
 	if(not btCreatorWindow.visible) then
 		btCreatorWindow:Show()
@@ -81,6 +85,7 @@ function BtCreator.show(tree, instanceId)
 		buttonPanel:Show()
 	end
 	treeNameEditbox:SetText(tree)
+	treeInstanceId = instanceId
 	listenerClickOnLoadTree()
 end
 
@@ -506,7 +511,7 @@ function listenerClickOnMinimize()
 end
 
 -- //////////////////////////////////////////////////////////////////////
--- Messages from BtEvaluator
+-- Messages from/to BtEvaluator
 -- //////////////////////////////////////////////////////////////////////
 
 local DEFAULT_COLOR = {1,1,1,0.6}
@@ -514,6 +519,23 @@ local RUNNING_COLOR = {1,0.5,0,0.6}
 local SUCCESS_COLOR = {0.5,1,0.5,0.6}
 local FAILURE_COLOR = {1,0.25,0.25,0.6}
 local STOPPED_COLOR = {0,0,1,0.6}
+
+local function listenerClickOnBreakpoint()
+	for nodeId,_ in pairs(WG.selectedNodes) do
+		BtEvaluator.setBreakpoint(treeInstanceId, nodeId)
+		local nodeWindow = WG.nodeList[nodeId].nodeWindow
+		local alpha = nodeWindow.backgroundColor[4]
+		nodeWindow.backgroundColor = copyTable(STOPPED_COLOR)
+		nodeWindow.backgroundColor[4] = alpha
+		nodeWindow:Invalidate()
+	end
+end
+
+local stoppedNodeId
+
+local function listenerClickOnContinue()
+	Spring.SendCommands("pause")
+end
 
 local function updateStatesMessage(params)
 	local states = params.states
@@ -528,6 +550,8 @@ local function updateStatesMessage(params)
 				color = copyTable(FAILURE_COLOR)
 			elseif(states[id]:upper() == "STOPPED") then
 				color = copyTable(STOPPED_COLOR)
+				stoppedNodeId = id
+				Spring.SendCommands("pause")
 			else
 				Logger.log("communication", "Uknown state received from AI, for node id: ", id)
 			end
@@ -848,13 +872,34 @@ function widget:Initialize()
 		focusColor = {0.5,0.5,0.5,0.5},
 		OnClick = { sanitizer:AsHandler(listenerClickOnShowBlackboard) },
 	}
+	breakpointButton = Chili.Button:New{
+		x = showBlackboardButton.x + showBlackboardButton.width,
+		y = 0,
+		width = 110,
+		height = 30,
+		caption = "Set Breakpoint",
+		skinName = "DarkGlass",
+		focusColor = {0.5,0.5,0.5,0.5},
+		OnClick = { sanitizer:AsHandler(listenerClickOnBreakpoint) },
+	}
+	continueButton = Chili.Button:New{
+		x = breakpointButton.x + breakpointButton.width,
+		y = 0,
+		width = 110,
+		height = 30,
+		caption = "Continue",
+		skinName = "DarkGlass",
+		focusColor = {0.5,0.5,0.5,0.5},
+		OnClick = { sanitizer:AsHandler(listenerClickOnContinue) },
+	}
+	
 	buttonPanel = Chili.Control:New{
 		parent = Screen0,
 		x = btCreatorWindow.x,
 		y = btCreatorWindow.y - 30,
 		width = btCreatorWindow.width,
 		height = 40,
-		children = { newTreeButton, saveTreeButton, loadTreeButton, roleManagerButton, showSensorsButton, showBlackboardButton }
+		children = { newTreeButton, saveTreeButton, loadTreeButton, roleManagerButton, showSensorsButton, showBlackboardButton, breakpointButton, continueButton }
 	}
 	
 	
