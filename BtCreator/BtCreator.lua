@@ -272,17 +272,22 @@ function listenerClickOnShowSensors()
 	showSensorsButton.backgroundColor , bgrColor = bgrColor, showSensorsButton.backgroundColor
 	showSensorsButton.focusColor, focusColor = focusColor, showSensorsButton.focusColor
 	local sensors = WG.SensorManager.getAvailableSensors()
+	local minWidth = 200
+	for i=1,#sensors do
+		minWidth = math.max(minWidth, showSensorsButton.font:GetTextWidth(sensors[i]) + 20)
+	end
 	if(sensorsWindow) then
 		sensorsWindow:Dispose()
 		sensorsWindow = nil
 		return
 	end
+	local x,y = Screen0:ClientToScreen(showSensorsButton.x, showSensorsButton.y)
 	sensorsWindow = Chili.Window:New{
 		parent = Screen0,
 		name = "SensorsWindow",
-		x = showSensorsButton.x - 5,
-		y = showSensorsButton.y - (#sensors*20 + 60) + 5,
-		width = 200,
+		x = buttonPanel.x + showSensorsButton.x - 10,
+		y = buttonPanel.y + showSensorsButton.y - (#sensors*20 + 60) + 5,
+		width = minWidth,
 		height = #sensors*20 + 60,
 		skinName='DarkGlass',
 	}
@@ -486,8 +491,8 @@ local function listenerClickOnShowBlackboard()
 	local window = Chili.Window:New{
 		parent = Screen0,
 		name = "BlackboardWindow",
-		x = showBlackboardButton.x - 5,
-		y = showBlackboardButton.y - height + 5,
+		x = buttonPanel.x + showBlackboardButton.x - 5 - 130,
+		y = buttonPanel.y + showBlackboardButton.y - height + 5,
 		width = 400,
 		height = height,
 		skinName = 'DarkGlass',
@@ -744,25 +749,14 @@ end
 
 function listenerOnResizeBtCreator(self)
 	if(nodePoolPanel) then
-		nodePoolPanel.x = self.x - nodePoolPanel.width - 22
-		nodePoolPanel.y = self.y
-		nodePoolPanel.height = self.height
-		for i=1,#nodePoolList do
-			nodePoolList[i]:RequestUpdate()
-		end
+		nodePoolPanel:SetPos(self.x - nodePoolPanel.width, self.y, nil, self.height)
 	end
 	if(buttonPanel) then
-		buttonPanel.x = self.x
-		buttonPanel.y = self.y - 30
-		buttonPanel.width = self.width
-		buttonPanel:UpdateClientArea()
+		buttonPanel:SetPos(self.x, self.y - 30, self.width)
 	end
 	if(minimizeButton) then
-		minimizeButton.x = self.width - 45
-		minimizeButton:RequestUpdate()
-		--buttonPanel:RequestUpdate()
+		minimizeButton:SetPos(self.width - 45)
 	end
-	
 end
 
 function createRoot()
