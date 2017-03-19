@@ -31,7 +31,7 @@ local function wrapResVect(f, id)
 	if not x then
 		return nil
 	end
-	return { x, y, z}
+	return Vec3(x, y, z)
 end
 
 local function getUnitPos(unitID)
@@ -42,68 +42,25 @@ local function getUnitDir(unitID)
 	return wrapResVect(Spring.GetUnitDirection, unitID)
 end
 
-local function makeVector(from, to)
-	return{to[1] - from[1], to[2] - from[2], to[3] - from[3]}
-end
-
-local function normalizeVect(dir)
-	local len = math.sqrt(dir[1] * dir[1] + dir[2] * dir[2] + dir[3] * dir[3])
-	return {dir[1] / len, dir[2] / len, dir[3] / len }
-end
-
 local function direction(from, to)
-	local dir = makeVector(from, to)
-	return normalizeVect(dir)
+	Logger.log("move-command", "direction")
+	return (to - from):Normalize()
 end
 
 local function dirsEqual(v1, v2)
-	local ratioX = v1[1] / v2[1]
-	local ratioZ = v1[3] / v2[3]
+	Logger.log("move-command", "dirsEqual")
+	local ratioX = v1.x / v2.x
+	local ratioZ = v1.z / v2.z
 	local tolerance = 0.2
 	return math.abs(ratioZ - ratioX) < tolerance
-end
-
-local function distanceSq(pos1, pos2)
-	if not pos1 or not pos2 then
-		Logger.log("move-command","distanceSq() - one of the params is nil - pos1: ", pos1, ", pos2: ", pos2)
-		return 0
-	end
-	local dist = 0
-	for i = 1,3 do
-		local d = pos1[i] - pos2[i]
-		dist = dist + d * d
-	end
-	return dist
 end
 
 local function addToList(list, item)
 	list[#list + 1] = item
 end
 
-local function vectSum(vectors) -- should take variable number of arguments (...), which I couldn't get to work. So it takes an array of args instead.
-	local sum = {0, 0, 0}
-	for _,vect in ipairs(vectors) do
-		sum = {sum[1] + vect[1], sum[2] + vect[2], sum[3] + vect[3]}
-	end
-	return sum
-end
-
-local function UnitMoved(self, unitID, x, _, z)
-	local lastPos = self.lastPositions[unitID]
-	if not lastPos then
-		lastPos = {x = x, z = z}
-		self.lastPositions[unitID] = lastPos
-		Logger.log("move-command","unit:", unitID, "x: ", x ,", z: ", z)
-		return true
-	end
-	Logger.log("move-command", "unit:", unitID, " x: ", x ,", lastX: ", lastPos.x, ", z: ", z, ", lastZ: ", lastPos.z)
-	moved = x ~= lastPos.x or z ~= lastPos.z
-	self.lastPositions[unitID] = {x = x, z = z}
-	return moved
-end
-
 function New(self)
-	Logger.log("command", "Running New in move")
+	Logger.log("move-command", "Running New in move")
 	Reset(self)
 	--[[self.lastPositions = {}
 	self.subTargets = {}
@@ -116,7 +73,8 @@ function New(self)
 end
 
 local function EnsureLeader(self, unitIds)
-	if self.leaderId and not unitIsDead(self.leaderId) and distanceSq(getUnitPos(self.leaderId), self.finalTargets[self.leaderId]) > TOLERANCE_SQ then
+Logger.log("move-command", "EnsureLeader")
+	if self.leaderId and not unitIsDead(self.leaderId) and (getUnitPos(self.leaderId) - self.finalTargets[self.leaderId]):LengthSqr() > TOLERANCE_SQ then
 		return self.leaderId
 	end
 	
@@ -134,25 +92,28 @@ local function EnsureLeader(self, unitIds)
 end
 
 local function InitTargetLocations(self, unitIds, parameter)
+	Logger.log("move-command", "InitTargetLocations")
 	self.finalTargets = {}
 	for i = 1, #unitIds do
 		local id = unitIds[i]
-		local pos = getUnitPos(id)
-		local diff = self.formationDiffs[id]
 		--Logger.log("move-command", "=== pos: ", pos)
-		local tarPos = { parameter.pos.x + diff[1], pos[2], parameter.pos.z + diff[3]}
+		parameter.pos.y = parameter.pos.y or getUnitPos(id).y
+		
+		local tarPos = parameter.pos + self.formationDiffs[id]
 		--Logger.log("move-command", "=== tarPos: ", tarPos)
 		self.finalTargets[id] = tarPos
+		Logger.log("move-command", "finalTargets[", id ,"] - ", tarPos)
 	end
 end
 
 local function InitFormationDiffs(self, unitIds)
+Logger.log("move-command", "InitFormationDiffs")
 	local leaderPos = getUnitPos(self.leaderId)
 	
 	for i = 1, #unitIds do
 		local id = unitIds[i]
 		local pos = getUnitPos(id)
-		self.formationDiffs[id] = {pos[1] - leaderPos[1], pos[2] - leaderPos[2], pos[3] - leaderPos[3]}
+		self.formationDiffs[id] = pos - leaderPos
 	end
 end
 
@@ -172,7 +133,7 @@ function Run(self, unitIds, parameter)
 		InitTargetLocations(self, unitIds, parameter)
 		local leaderTar = self.finalTargets[self.leaderId]
 		Logger.log("move-command", "=== leaderTar: ", leaderTar)
-		giveOrderToUnit(self.leaderId, CMD.MOVE, leaderTar, {})
+		giveOrderToUnit(self.leaderId, CMD.MOVE, leaderTar:AsSpringVector(), {})
 		firstTick = true
 	end
 	
@@ -180,7 +141,7 @@ function Run(self, unitIds, parameter)
 	local waypoints = self.leaderWaypoints
 	
 	Logger.log("move-command", "waypoints - ", waypoints)
-	if (#waypoints == 0 or distanceSq(leaderPos, waypoints[#waypoints]) > WAYPOINTS_DIST_SQ) then
+	if (#waypoints == 0 or (leaderPos - waypoints[#waypoints]):LengthSqr() > WAYPOINTS_DIST_SQ) then
 		addToList(waypoints, leaderPos)
 	end
 	
@@ -190,10 +151,10 @@ function Run(self, unitIds, parameter)
 	else
 		leaderDir = direction(waypoints[#waypoints - 3] or waypoints[1], leaderPos) -- average direction in which the leader was moving during the last several ticks 
 	end
-	leaderDir = normalizeVect(leaderDir)
-	leaderDir = {leaderDir[1] * SHORT_PATH_LEN, 0, leaderDir[3] * SHORT_PATH_LEN}
+	leaderDir:Normalize()
+	leaderDir = leaderDir * SHORT_PATH_LEN
 	
-	local leaderDone = distanceSq(getUnitPos(leader), self.finalTargets[leader]) < LEADER_TOLERANCE_SQ or UnitIdle(self, leader)
+	local leaderDone = (self.finalTargets[leader] - getUnitPos(leader)):LengthSqr() < LEADER_TOLERANCE_SQ or UnitIdle(self, leader)
 	-- Logger.log("move-command", "Leader done - ", leaderDone, " dist - ", distanceSq(getUnitPos(leader), self.finalTargets[leader]))
 	local done = leaderDone
 	
@@ -212,9 +173,9 @@ function Run(self, unitIds, parameter)
 		if unitID ~= leader then
 			local curPos = getUnitPos(unitID)
 			local curSubTar = self.subTargets[unitID]
-			local curDir = direction(getUnitPos(unitID), curSubTar or {0,0,0})
+			local curDir = direction(getUnitPos(unitID), curSubTar or Vec3(0,0,0))
 			
-			local dist = distanceSq(curPos, self.finalTargets[unitID])
+			local dist = (self.finalTargets[unitID] - curPos):LengthSqr();
 			--Logger.log("move-command", " ------ dist ", dist)
 			if dist > distMax then
 				distMax = dist
@@ -225,21 +186,20 @@ function Run(self, unitIds, parameter)
 				-- go to the target location when leader reaches the target location
 				if issueFinalOrder then
 					--Logger.log("move-command", "=== Final order ", unitID)
-					giveOrderToUnit(unitID, CMD.MOVE, self.finalTargets[unitID], {})
+					giveOrderToUnit(unitID, CMD.MOVE, self.finalTargets[unitID]:AsSpringVector(), {})
 				end
-			elseif not curSubTar or UnitIdle(self, unitID) or distanceSq(curPos, curSubTar) < SUBTARGET_TOLEARANCE_SQ then --or not dirsEqual(leaderDir, curDir) then
+			elseif not curSubTar or UnitIdle(self, unitID) or (curSubTar - curPos):LengthSqr() < SUBTARGET_TOLEARANCE_SQ then --or not dirsEqual(leaderDir, curDir) then
 				-- otherwise move a small distance in the direction the leader is facing
 				
-				local toLeader = makeVector(curPos, leaderPos)
+				local toLeader = leaderPos - curPos
 				
 				-- vector to fix the formation (if the units would move in the dir this vector specifies and if the leader didn't move, 
 				-- the units would be in the same formation they were at the beginning)
-				local formationVect = vectSum({toLeader, self.formationDiffs[unitID]}) 
-				local direction = vectSum({leaderDir, formationVect})
+				local formationVect = toLeader + self.formationDiffs[unitID] 
+				local curSubTar = leaderDir + formationVect + curPos
 				
-				curSubTar = vectSum({curPos, direction})
 				self.subTargets[unitID] = curSubTar
-				giveOrderToUnit(unitID, CMD.MOVE, curSubTar, {})
+				giveOrderToUnit(unitID, CMD.MOVE, curSubTar:AsSpringVector(), {})
 			end
 		end
 	end
