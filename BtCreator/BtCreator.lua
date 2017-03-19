@@ -198,8 +198,43 @@ local function maxRoleSplit(tree)
 	return roleCount
 end
 
+
+--- Contains IDs of nodes as keys - stores IDs of serialized tree, the one with name serializedTree
+-- To be able to update duplicit IDs on tree save - so the loaded and saved trees ids does not colide.
+local serializedIDs = {}
+
+local function updateSerializedIDs()
+	serializedIDs = {}
+	for id,_ in pairs(WG.nodeList) do
+		serializedIDs[id] = true
+	end
+end
+
+--- Assumes that id is present in WG.nodeList
+local function reGenerateTreenodeID(id)
+	if(WG.nodeList[id]) then
+		WG.nodeList[id]:ReGenerateID()
+	end
+	local newID = WG.nodeList[id].id
+	if(id == rootID) then
+		rootID = newID
+	end
+	WG.nodeList[newID] = WG.nodeList[id]
+	WG.nodeList[id] = nil
+end
+
 function listenerClickOnSaveTree()
 	Logger.log("save-and-load", "Save Tree clicked on. ")
+		-- on tree Save() regenerate IDs of nodes already present in loaded tree
+	if(serializedTreeName and serializedTreeName ~= treeNameEditbox.text) then
+		--regenerate all IDs from loaded Tree
+		for id,_ in pairs(serializedIDs) do
+			if(WG.nodeList[id]) then
+				reGenerateTreenodeID(id)
+			end
+		end
+		updateSerializedIDs()
+	end
 	local resultTree = formBehaviourTree()
 	-- are there enough roles?
 	local maxSplit = maxRoleSplit(resultTree)
@@ -964,40 +999,7 @@ local fieldsToSerialize = {
 	'parameters',
 }
 
---- Contains IDs of nodes as keys - stores IDs of serialized tree, the one with name serializedTree
-local serializedIDs = {}
-
-local function updateSerializedIDs()
-	serializedIDs = {}
-	for id,_ in pairs(WG.nodeList) do
-		serializedIDs[id] = true
-	end
-end
-
---- Assumes that id is present in WG.nodeList
-local function reGenerateTreenodeID(id)
-	if(WG.nodeList[id]) then
-		WG.nodeList[id]:ReGenerateID()
-	end
-	local newID = WG.nodeList[id].id
-	if(id == rootID) then
-		rootID = newID
-	end
-	WG.nodeList[newID] = WG.nodeList[id]
-	WG.nodeList[id] = nil
-end
-
 function formBehaviourTree()
-	-- on tree Save() regenerate IDs of nodes already present in loaded tree
-	if(serializedTreeName and serializedTreeName ~= treeNameEditbox.text) then
-		--regenerate all IDs from loaded Tree
-		for id,_ in pairs(serializedIDs) do
-			if(WG.nodeList[id]) then
-				reGenerateTreenodeID(id)
-			end
-		end
-		updateSerializedIDs()
-	end
 	-- Validate every treenode - when editing editBox parameter and immediately serialize, 
 	-- the last edited parameter doesnt have to be updated
 	for _,node in pairs(WG.nodeList) do
