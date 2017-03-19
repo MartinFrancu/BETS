@@ -14,6 +14,7 @@ WG.SensorManager = WG.SensorManager or (function()
 			Global = globalData,
 			Logger = Logger,
 			System = System,
+			Vec3 = Utils.Vec3,
 		}
 	})
 	
