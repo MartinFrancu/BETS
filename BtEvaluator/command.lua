@@ -14,6 +14,8 @@ setmetatable(System, {
 		COMMAND_DIRNAME = COMMAND_DIRNAME,
 		System = System,
 		Command = Command,
+		Vec3 = Utils.Vec3,
+		
 		SUCCESS = "S",
 		FAILURE = "F",
 		RUNNING = "R"

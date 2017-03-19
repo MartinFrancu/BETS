@@ -12,6 +12,9 @@ function getInfo()
 	}
 end
 
+local groupExtents = VFS.Include("LuaUI/Widgets/BtSensors/groupExtents.lua", nil, VFS.RAW_FIRST)
+
+
 local giveOrderToUnit = Spring.GiveOrderToUnit
 --local getUnitDir = Spring.GetUnitDirection
 local unitIsDead = Spring.GetUnitIsDead
@@ -73,8 +76,10 @@ function New(self)
 end
 
 local function EnsureLeader(self, unitIds)
-Logger.log("move-command", "EnsureLeader")
-	if self.leaderId and not unitIsDead(self.leaderId) and (getUnitPos(self.leaderId) - self.finalTargets[self.leaderId]):LengthSqr() > TOLERANCE_SQ then
+	Logger.log("move-command", "EnsureLeader")
+
+	local leaderTar = self.finalTargets[self.leaderId]
+	if self.leaderId and not unitIsDead(self.leaderId) and leaderTar ~= nil and (getUnitPos(self.leaderId) - leaderTar):LengthSqr() > TOLERANCE_SQ then
 		return self.leaderId
 	end
 	
@@ -107,13 +112,21 @@ local function InitTargetLocations(self, unitIds, parameter)
 end
 
 local function InitFormationDiffs(self, unitIds)
-Logger.log("move-command", "InitFormationDiffs")
-	local leaderPos = getUnitPos(self.leaderId)
+	Logger.log("move-command", "InitFormationDiffs")
+	local center = groupExtents().center
+	local centerVec 
+	
+	if center then
+		centerVec = Vec3(center.x, getUnitPos(self.leaderId).y, center.z)
+		Logger.log("move-command", "Vector - ", centerVec)
+	else
+		centerVec = getUnitPos(self.leaderId)
+	end
 	
 	for i = 1, #unitIds do
 		local id = unitIds[i]
 		local pos = getUnitPos(id)
-		self.formationDiffs[id] = pos - leaderPos
+		self.formationDiffs[id] = pos - centerVec
 	end
 end
 
