@@ -416,6 +416,8 @@ function BtEvaluator.OnExpression(params)
 	local success, result = pcall(expr.get)
 	if(success and result)then
 		return "S"
+	elseif(not success)then
+		Logger.error("expression", result)
 	else
 		return "F"
 	end
