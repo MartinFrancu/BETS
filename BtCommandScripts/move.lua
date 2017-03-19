@@ -12,11 +12,7 @@ function getInfo()
 	}
 end
 
-local groupExtents = VFS.Include("LuaUI/Widgets/BtSensors/groupExtents.lua", nil, VFS.RAW_FIRST)
-
-
 local giveOrderToUnit = Spring.GiveOrderToUnit
---local getUnitDir = Spring.GetUnitDirection
 local unitIsDead = Spring.GetUnitIsDead
 
 local SHORT_PATH_LEN = 100
@@ -113,8 +109,13 @@ end
 
 local function InitFormationDiffs(self, unitIds)
 	Logger.log("move-command", "InitFormationDiffs")
-	local center = groupExtents().center
-	local centerVec 
+	
+	local sum = Vec3(0,0,0)
+	for i = 1, #unitIds do
+		sum = sum + getUnitPos(unitIds[i])
+	end
+	
+	local centerVec = sum / #unitIds
 	
 	if center then
 		centerVec = Vec3(center.x, getUnitPos(self.leaderId).y, center.z)
