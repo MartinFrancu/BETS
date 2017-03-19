@@ -23,7 +23,7 @@ local sanitizer = Utils.Sanitizer.forWidget(widget)
 local Vec3 = Utils.Vec3
 
 --------------------------------------------------------------------------------
-VFS.Include("LuaRules/Configs/customcmds.h.lua")
+--VFS.Include("LuaRules/Configs/customcmds.h.lua")
 -- get madatory module operators
 VFS.Include("LuaRules/modules.lua") -- modules table
 VFS.Include(modules.attach.data.path .. modules.attach.data.head) -- attach lib module
