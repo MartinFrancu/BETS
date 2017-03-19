@@ -144,6 +144,9 @@ function Command:BaseRun(unitIDs, parameters)
 	System.Sensors = nil
 	
 	if success then
+		if (res == self.SUCCESS or res == self.FAILURE) then
+			self:BaseReset()
+		end
 		return res, retVal
 	else
 		Logger.error("command", "Error in script ", self.scriptName, ", method ", methodSignatures.Run, ": ", res)

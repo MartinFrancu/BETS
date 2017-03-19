@@ -389,7 +389,7 @@ function BtEvaluator.OnCommand(params)
 			end
 		end
 		
-		if(result == "F")then
+		if(result ~= "R")then
 			instance.activeNodes[command] = nil
 		end
 		Logger.log("luacommand", "Result: ", result)
