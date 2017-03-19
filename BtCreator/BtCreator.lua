@@ -747,9 +747,9 @@ function listenerOnResizeBtCreator(self)
 		nodePoolPanel.x = self.x - nodePoolPanel.width - 22
 		nodePoolPanel.y = self.y
 		nodePoolPanel.height = self.height
-		--nodePoolPanel:UpdateClientArea()
-		--nodePoolPanel:_DetermineContentArea()
-		--nodePoolPanel:UpdateLayout()
+		for i=1,#nodePoolList do
+			nodePoolList[i]:RequestUpdate()
+		end
 	end
 	if(buttonPanel) then
 		buttonPanel.x = self.x
