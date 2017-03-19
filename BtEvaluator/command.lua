@@ -138,7 +138,10 @@ function Command:BaseRun(unitIDs, parameters)
 
 	currentlyExecutingCommand = self
 
+	System.Sensors = self.Sensors
 	success,res,retVal = pcall(self.Run, self, unitIDs, parameters)
+	System.Sensors = nil
+	
 	if success then
 		return res, retVal
 	else

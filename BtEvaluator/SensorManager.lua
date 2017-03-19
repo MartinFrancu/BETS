@@ -135,7 +135,6 @@ WG.SensorManager = WG.SensorManager or (function()
 		globalData = {}
 		getmetatable(System).__index.Global = globalData
 		sensors = {}
-		managerForGroup = {}
 	end
 	
 	return SensorManager

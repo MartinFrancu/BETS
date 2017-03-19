@@ -269,6 +269,11 @@ function BtEvaluator.getInstances()
 	return result
 end
 
+function BtEvaluator.reloadCaches()
+	SensorManager.reload()
+	BtEvaluator.scripts = {}
+end
+
 
 -- ==== luaCommand handling ====
 
@@ -370,6 +375,7 @@ function BtEvaluator.OnCommand(params)
 			end
 		end
 		
+		command.Sensors = SensorManager.forGroup(units)
 		local result, output = command:BaseRun(units, parameters)
 		
 		if(output)then
