@@ -100,6 +100,7 @@ local function updateVisualiser()
 					BtUtils:Reload()
 					localizeUtils()
 					initializeDependencyHooks()
+					injectErrorReporter();
 					initializedAt = getFrame()
 					
 					for widgetName in pairs(widgets) do

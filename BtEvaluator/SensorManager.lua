@@ -63,15 +63,16 @@ WG.SensorManager = WG.SensorManager or (function()
 			
 			local lastExecutionFrame = nil
 			local lastResult = nil
+			local lastPeriod = 0
 			return function(...)
 				local currentFrame = getGameFrame()
-				if(lastExecutionFrame == nil or currentFrame - lastExecutionFrame > info.period)then
-					lastResult = { pcall(evaluator, ...) }
-					if(not lastResult[1])then
+				if(lastExecutionFrame == nil or currentFrame - lastExecutionFrame > lastPeriod)then
+					local success, lastResult, period = pcall(evaluator, ...)
+					if(not success)then
 						Logger.error("sensors", "Evaluation of sensor '", name ,"' failed: ", lastResult[2])
 						return
 					end
-					table.remove(lastResult, 1)
+					lastPeriod = period or info.period
 					lastExecutionFrame = currentFrame
 				end
 				return unpack(lastResult)

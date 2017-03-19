@@ -276,8 +276,8 @@ BtEvaluator.scripts = {}
 
 local baseCommandClass = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtEvaluator/command.lua", nil, VFS.RAW_FIRST)
 
-function getCommandClass(name) 
-	c = BtEvaluator.scripts[name] 
+local function getCommandClass(name)
+	c = BtEvaluator.scripts[name]
 	if not c then 
 		c = baseCommandClass:Extend(name)
 		BtEvaluator.scripts[name] = c
@@ -550,4 +550,4 @@ function widget:RecvSkirmishAIMessage(aiTeam, message)
 	end
 end
 
-sanitizer.sanitize()
+sanitizer:SanitizeWidget()

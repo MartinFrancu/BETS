@@ -267,5 +267,5 @@ end
 
 ---------------------------------------COMMANDS-END-
 
-sanitizer.sanitize()
+sanitizer:SanitizeWidget()
 --Dependency.deferWidget(widget)
