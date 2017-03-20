@@ -769,26 +769,36 @@ function listenerInputButton(self,x,y,button, ...)
 		local someArray = {[1] = getDummyAllyUnit()}
 		spSelectUnits(someArray)
 		Logger.log("commands", "selected units: ", spGetSelectedUnits() ) 
-		listenerInputButton(self,x,y,button, ...)
-	else
-		selectedUnits = spGetSelectedUnits()
-		local inputCommandNum =  WG.InputCommands[ expectedInput.CommandName ]
-		Logger.log("commands", "really selected: ", Spring.IsUnitSelected(selectedUnits[1]) )
-		Logger.log("commands", "building: ", UnitDefs[Spring.GetUnitDefID(selectedUnits[1])].isBuilder," name ", UnitDefs[Spring.GetUnitDefID(selectedUnits[1])].name )
-		local index
-		if(UnitDefs[Spring.GetUnitDefID(selectedUnits[1])].isBuilder) then
-			Logger.log("commands", "is builder")
-			index = spGetCmdDescIndex(WG.InputCommands[ expectedInput.CommandName ])
-		else
-			index =  Spring.FindUnitCmdDesc(selectedUnits[1], inputCommandNum ) -- someArray[1], inputCommandsRec)
-		end
-		Logger.log("commands", 
-			" input comd rec: ", inputCommandNum, 
-			" command name ", expectedInput.CommandName, 
-			" index ", index )
-
-		local result = spSetActiveCommand(index )
 	end
+	
+	selectedUnits = spGetSelectedUnits()
+	local inputCommandNum =  WG.InputCommands[ expectedInput.CommandName ]
+	Logger.log("commands", "really selected: ", Spring.IsUnitSelected(selectedUnits[1]) )
+	Logger.log("commands", "building: ", UnitDefs[Spring.GetUnitDefID(selectedUnits[1])].isBuilder," name ", UnitDefs[Spring.GetUnitDefID(selectedUnits[1])].name )
+	local isBuilder = UnitDefs[Spring.GetUnitDefID(selectedUnits[1])].isBuilder
+	local allDesc = Spring.GetUnitCmdDescs(selectedUnits[1])
+	for index, desc in pairs(allDesc) do
+		Logger.log("commands", "cmdDesc", index, " name ", desc.name)
+	end
+	local index
+	if(isBuilder) then
+		Logger.log("commands", "is builder")
+		index = spGetCmdDescIndex(inputCommandNum)
+		cmdDescIndex = index
+	end
+	if (not builder or index == nil ) then
+		index =  Spring.FindUnitCmdDesc(selectedUnits[1], inputCommandNum ) -- someArray[1], inputCommandsRec)
+	end
+	Logger.log("commands", 
+		" input comd rec: ", inputCommandNum, 
+		" command name ", expectedInput.CommandName, 
+		" index ", index, 
+		" cmdDescIndex ", cmdDescIndex )
+
+	local result = spSetActiveCommand(index)
+	--local result = Spring.SetActiveCommand(index, 1, true, false, false, false, false, false)
+	Logger.log("commands", "result", result)
+	--local result = spSetActiveCommand(indexWG.BtCommands[index].treeName)
 end
 
 -- Listener for closing error window.
