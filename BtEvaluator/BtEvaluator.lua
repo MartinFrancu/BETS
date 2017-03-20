@@ -1,6 +1,6 @@
 function widget:GetInfo()
 	return {
-		name      = "BtEvaluator loader",
+		name      = "BtEvaluator",
 		desc      = "BtEvaluator loader and message test to this AI.",
 		author    = "BETS Team",
 		date      = "Sep 20, 2016",
@@ -16,6 +16,7 @@ local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.
 local JSON = Utils.JSON
 local Sentry = Utils.Sentry
 local Dependency = Utils.Dependency
+local sanitizer = Utils.Sanitizer.forWidget(widget)
 
 local Debug = Utils.Debug
 local Logger = Debug.Logger
@@ -252,6 +253,26 @@ end
 function BtEvaluator.reportTree(instanceId)
 	return BtEvaluator.sendMessage("REPORT_TREE", { instanceId = instanceId })
 end
+function BtEvaluator.setBreakpoint(instanceId, nodeId)
+	return BtEvaluator.sendMessage("SET_BREAKPOINT", { instanceId = instanceId, nodeId = nodeId })
+end
+function BtEvaluator.removeBreakpoint(instanceId, nodeId)
+	return BtEvaluator.sendMessage("REMOVE_BREAKPOINT", { instanceId = instanceId, nodeId = nodeId })
+end
+function BtEvaluator.getInstances()
+	local result = {}
+	local i = 1
+	for id, instance in pairs(treeInstances) do
+		result[i] = instance
+		i = i + 1
+	end
+	return result
+end
+
+function BtEvaluator.reloadCaches()
+	SensorManager.reload()
+	BtEvaluator.scripts = {}
+end
 
 
 -- ==== luaCommand handling ====
@@ -260,8 +281,8 @@ BtEvaluator.scripts = {}
 
 local baseCommandClass = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtEvaluator/command.lua", nil, VFS.RAW_FIRST)
 
-function getCommandClass(name) 
-	c = BtEvaluator.scripts[name] 
+local function getCommandClass(name)
+	c = BtEvaluator.scripts[name]
 	if not c then 
 		c = baseCommandClass:Extend(name)
 		BtEvaluator.scripts[name] = c
@@ -354,6 +375,7 @@ function BtEvaluator.OnCommand(params)
 			end
 		end
 		
+		command.Sensors = SensorManager.forGroup(units)
 		local result, output = command:BaseRun(units, parameters)
 		
 		if(output)then
@@ -367,7 +389,7 @@ function BtEvaluator.OnCommand(params)
 			end
 		end
 		
-		if(result == "F")then
+		if(result ~= "R")then
 			instance.activeNodes[command] = nil
 		end
 		Logger.log("luacommand", "Result: ", result)
@@ -394,10 +416,14 @@ function BtEvaluator.OnExpression(params)
 	local success, result = pcall(expr.get)
 	if(success and result)then
 		return "S"
+	elseif(not success)then
+		Logger.error("expression", result)
 	else
 		return "F"
 	end
 end
+
+function BtEvaluator.crash() error("Intentional error.") end
 
 function widget:UnitDestroyed(unitID, unitDefID, unitTeam, attackerID, attackerDefID, attackerTeam)
 	Logger.log("command", "----UnitDestroyed---")
@@ -437,10 +463,30 @@ end
 -- ======================================
 
 function widget:Initialize()	
-	WG.BtEvaluator = BtEvaluator
+	local foundAI = false
+	for _, ai in ipairs(VFS.GetAvailableAIs()) do
+		if(ai.shortName == "BtEvaluator")then
+			foundAI = true
+			break
+		end
+	end
+	if(not foundAI)then
+		Logger.error("BtEvaluator", "BtEvaluator C++ AI is not present")
+		widgetHandler:RemoveWidget()
+	end
+
+	WG.BtEvaluator = sanitizer:Export(BtEvaluator)
 	
 	BtEvaluator.sendMessage("REINITIALIZE")
 	Spring.SendCommands("AIControl "..Spring.GetLocalPlayerID().." BtEvaluator")
+end
+function widget:Shutdown()
+	--This is not used, because if what we want to do is a reload, it will not manage to start it up again
+	--if(Dependency.BtEvaluator.filled)then
+	--	Spring.SendCommands("AIKill "..Spring.GetLocalPlayerID())
+	--end
+	
+	Dependency.clear(Dependency.BtEvaluator)
 end
 
 local function asHandlerNoparam(event)
@@ -482,7 +528,6 @@ local handlers = {
 	end,
 	["NODE_DEFINITIONS"] = asHandler(BtEvaluator.OnNodeDefinitions),
 }
-WG.handlers= handlers
 function widget:RecvSkirmishAIMessage(aiTeam, message)
 	Logger.log("communication", "Received message from team " .. tostring(aiTeam) .. ": " .. message)
 
@@ -513,3 +558,5 @@ function widget:RecvSkirmishAIMessage(aiTeam, message)
 		Logger.log("communication", "Unknown message type: |", messageType, "|")
 	end
 end
+
+sanitizer:SanitizeWidget()

@@ -14,6 +14,7 @@ WG.SensorManager = WG.SensorManager or (function()
 			Global = globalData,
 			Logger = Logger,
 			System = System,
+			Vec3 = Utils.Vec3,
 		}
 	})
 	
@@ -63,18 +64,20 @@ WG.SensorManager = WG.SensorManager or (function()
 			
 			local lastExecutionFrame = nil
 			local lastResult = nil
+			local lastPeriod = 0
 			return function(...)
 				local currentFrame = getGameFrame()
-				if(lastExecutionFrame == nil or currentFrame - lastExecutionFrame >= info.period)then
-					lastResult = { pcall(evaluator, ...) }
-					if(not lastResult[1])then
-						Logger.error("sensors", "Evaluation of sensor '", name ,"' failed: ", lastResult[2])
+				if(lastExecutionFrame == nil or currentFrame - lastExecutionFrame > lastPeriod)then
+					local success, result, period = pcall(evaluator, ...)
+					if(not success)then
+						Logger.error("sensors", "Evaluation of sensor '", name ,"' failed: ", result)
 						return
 					end
-					table.remove(lastResult, 1)
+					lastResult = result
+					lastPeriod = period or info.period
 					lastExecutionFrame = currentFrame
 				end
-				return unpack(lastResult)
+				return lastResult
 			end
 		end
 		return sensorConstructor
@@ -133,7 +136,6 @@ WG.SensorManager = WG.SensorManager or (function()
 		globalData = {}
 		getmetatable(System).__index.Global = globalData
 		sensors = {}
-		managerForGroup = {}
 	end
 	
 	return SensorManager

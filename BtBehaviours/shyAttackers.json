@@ -1,0 +1,57 @@
+{
+	"additionalNodes": [],
+	"defaultRole": "gang",
+	"inputs": [],
+	"properties": {
+		"2A1iS15hsvvY7uSUJvRbpzJi0mbwlep7": {
+			"height": 70,
+			"width": 189.500015,
+			"x": 825,
+			"y": 261
+		},
+		"DL7IYrvIeHaGttn9xvKgwpbClF1hYux3": {
+			"height": 103,
+			"width": 455,
+			"x": 288,
+			"y": 148
+		},
+		"XEQ3LW7Vdsh5tt0rtBoiUi8Unpr243Vc": {
+			"height": 70,
+			"width": 189.500015,
+			"x": 826,
+			"y": 72
+		}
+	},
+	"roles": [ {
+		"categories": [],
+		"name": "gang"
+	} ],
+	"root": {
+		"children": [ {
+			"children": [],
+			"id": "XEQ3LW7Vdsh5tt0rtBoiUi8Unpr243Vc",
+			"nodeType": "echo",
+			"parameters": [ {
+				"name": "message",
+				"value": "We feel brave!"
+			} ]
+		}, {
+			"children": [],
+			"id": "2A1iS15hsvvY7uSUJvRbpzJi0mbwlep7",
+			"nodeType": "echo",
+			"parameters": [ {
+				"name": "message",
+				"value": "We feel weak."
+			} ]
+		} ],
+		"id": "DL7IYrvIeHaGttn9xvKgwpbClF1hYux3",
+		"nodeType": "luaExpression",
+		"parameters": [ {
+			"name": "expression",
+			"value": "tacticalAdvantageByHPForGroundAttack(1000)"
+		}, {
+			"name": "repeat",
+			"value": "false"
+		} ]
+	}
+}

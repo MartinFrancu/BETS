@@ -108,16 +108,13 @@
 				"id": "nHjOppcuWryjplvFOc2LJkD7U0q21Pa4",
 				"nodeType": "luaCommand",
 				"parameters": [ {
-					"name": "x",
-					"value": 500
-				}, {
-					"name": "y",
-					"value": 0
+					"name": "dist",
+					"value": "{ x = 500, z = 0}"
 				}, {
 					"name": "scriptName",
-					"value": "move.lua"
+					"value": "relativeMove.lua"
 				} ],
-				"scriptName": "move.lua"
+				"scriptName": "relativeMove.lua"
 			}, {
 				"children": [],
 				"id": "c6xyIoabr5jFmV2uq4nAsZLBcLhH8wwT",
@@ -147,16 +144,13 @@
 				"id": "4GPy9CmHkKu8xZXDCLdmlzKemK6uB2bA",
 				"nodeType": "luaCommand",
 				"parameters": [ {
-					"name": "x",
-					"value": 0
-				}, {
-					"name": "y",
-					"value": 500
+					"name": "dist",
+					"value": "{ x = 0, z = 500}"
 				}, {
 					"name": "scriptName",
-					"value": "move.lua"
+					"value": "relativeMove.lua"
 				} ],
-				"scriptName": "move.lua"
+				"scriptName": "relativeMove.lua"
 			} ],
 			"id": "mAagdLhKdOrHZ8rlqriACJzFKnbae5Ee",
 			"nodeType": "roleSplit",
@@ -169,16 +163,13 @@
 			"id": "0UaeY7wtC0nc3PSRp0KEMUnCJ34GzS0j",
 			"nodeType": "luaCommand",
 			"parameters": [ {
-				"name": "x",
-				"value": -250
-			}, {
-				"name": "y",
-				"value": -250
-			}, {
-				"name": "scriptName",
-				"value": "move.lua"
-			} ],
-			"scriptName": "move.lua"
+					"name": "dist",
+					"value": "{ x = -250, z = -250}"
+				}, {
+					"name": "scriptName",
+					"value": "relativeMove.lua"
+				} ],
+			"scriptName": "relativeMove.lua"
 		}, {
 			"children": [],
 			"id": "XXYR0P7NdG7SqOmFc7L5aOKcXmDnzJTB",
@@ -200,16 +191,13 @@
 				"id": "2nM6KUyyxKHD9SJUkhZ5XIdgssF0wrGn",
 				"nodeType": "luaCommand",
 				"parameters": [ {
-					"name": "x",
-					"value": 500
-				}, {
-					"name": "y",
-					"value": 500
+					"name": "diff",
+					"value": "{ x = 500, z = 500}"
 				}, {
 					"name": "scriptName",
-					"value": "move.lua"
+					"value": "relativeMove.lua"
 				} ],
-				"scriptName": "move.lua"
+				"scriptName": "relativeMove.lua"
 			}, {
 				"children": [],
 				"id": "lIzU9cKCTvFAXYIZe6anFMsbQgIgtZ6T",
@@ -231,16 +219,13 @@
 				"id": "s2tYxtTf0IQKiPirtmaLaY8Ktraees8t",
 				"nodeType": "luaCommand",
 				"parameters": [ {
-					"name": "x",
-					"value": -500
-				}, {
-					"name": "y",
-					"value": -500
+					"name": "diff",
+					"value": "{ x = -500, z = -500}"
 				}, {
 					"name": "scriptName",
-					"value": "move.lua"
+					"value": "relativeMove.lua"
 				} ],
-				"scriptName": "move.lua"
+				"scriptName": "relativeMove.lua"
 			}, {
 				"children": [],
 				"id": "NpTMOTRztBqprQrWSy8TzLI88AH5OeRB",

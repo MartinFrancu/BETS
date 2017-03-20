@@ -111,7 +111,14 @@ If it is not an array, it is equivalent to an array with a single value.
 
 	function internalLog(logGroup, logType, ...)
 		local message = ""
-		for i,v in ipairs({ ... }) do
+		local parameters = { ... }
+		local maxIndex = 0
+		for i,v in pairs(parameters) do
+			maxIndex = math.max(maxIndex, i)
+		end
+		
+		for i = 1, maxIndex do
+			local v = parameters[i]
 			message = message .. (type(v) == "string" and v or dump(v))
 		end
 		

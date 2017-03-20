@@ -4,24 +4,25 @@ local dump = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.R
 
 local COMMAND_DIRNAME = LUAUI_DIRNAME .. "Widgets/BtCommandScripts/"
 
-Command = {
-	Spring = Spring,
-	CMD = CMD,
-	VFS = VFS, -- to be removed
-	Logger = Logger,
-	dump = dump,
-	math = math,
-	select = select,
-	pairs = pairs,
-	ipairs = ipairs,
-	UnitDefNames = UnitDefNames,
-	COMMAND_DIRNAME = COMMAND_DIRNAME,
-	
-	SUCCESS = "S",
-	FAILURE = "F",
-	RUNNING = "R"
-}
-Command_mt = { __index = Command }
+local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
+
+local System = Utils.Debug.clone(loadstring("return _G")().System)
+
+setmetatable(System, { 
+	__index = {
+		Logger = Logger,
+		COMMAND_DIRNAME = COMMAND_DIRNAME,
+		System = System,
+		Command = Command,
+		Vec3 = Utils.Vec3,
+		
+		SUCCESS = "S",
+		FAILURE = "F",
+		RUNNING = "R"
+	}
+})
+
+Command = {}
 
 local methodSignatures = {
 	New = "New(self)",
@@ -120,9 +121,9 @@ function Command:Extend(scriptName)
 		end
 		return newinst
 	end
-	setmetatable( new_class, { __index = self } )
 
-	
+	setmetatable( new_class, { __index = self })
+	setmetatable(self, { __index = System })	
 	new_class:loadMethods()
 
 	return new_class
@@ -130,6 +131,7 @@ end
 
 function Command:BaseRun(unitIDs, parameters)
 	if unitIDs.length == 0 and self.onNoUnits ~= self.RUNNING then
+		Logger.log("command", "No units assigned.")
 		return self.onNoUnits
 	end
 
@@ -137,8 +139,14 @@ function Command:BaseRun(unitIDs, parameters)
 
 	currentlyExecutingCommand = self
 
-	success,res,retVal = pcall(self.Run, self, unitIDs, parameters)
+	System.Sensors = self.Sensors
+	local success,res,retVal = pcall(self.Run, self, unitIDs, parameters)
+	System.Sensors = nil
+	
 	if success then
+		if (res == self.SUCCESS or res == self.FAILURE) then
+			self:BaseReset()
+		end
 		return res, retVal
 	else
 		Logger.error("command", "Error in script ", self.scriptName, ", method ", methodSignatures.Run, ": ", res)
@@ -166,7 +174,7 @@ function Command:BaseReset()
 	
 	currentlyExecutingCommand = self
 
-	success,res = pcall(self.Reset, self)
+	local success,res = pcall(self.Reset, self)
 	if not success then
 		Logger.error("command", "Error in script ", self.scriptName, ", method ", methodSignatures.Reset, ": ", res)
 	end

@@ -14,7 +14,7 @@ local Chili, Screen0
 
 local BtEvaluator, BtCreator
 
-local windowBtCreator
+local btCreatorWindow
 local nodePoolLabel
 local nodePoolPanel
 local buttonPanel
@@ -22,6 +22,8 @@ local loadTreeButton
 local saveTreeButton
 local showSensorsButton
 local showBlackboardButton
+local breakpointButton
+local continueButton
 local minimizeButton
 local roleManagerButton
 local newTreeButton
@@ -56,6 +58,7 @@ local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.
 local JSON = Utils.JSON
 local BehaviourTree = Utils.BehaviourTree
 local Dependency = Utils.Dependency
+local sanitizer = Utils.Sanitizer.forWidget(widget)
 
 local Debug = Utils.Debug;
 local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyTable, Debug.fileTable
@@ -69,9 +72,11 @@ local BtCreator = {} -- if we need events, change to Sentry:New()
 -- connection lines functions
 local connectionLine = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/connection_line.lua", nil, VFS.RAW_FIRST)
 
+local treeInstanceId
+
 function BtCreator.show(tree, instanceId)
-	if(not windowBtCreator.visible) then
-		windowBtCreator:Show()
+	if(not btCreatorWindow.visible) then
+		btCreatorWindow:Show()
 	end
 	if(not nodePoolPanel.visible) then
 		nodePoolPanel:Show()
@@ -80,12 +85,22 @@ function BtCreator.show(tree, instanceId)
 		buttonPanel:Show()
 	end
 	treeNameEditbox:SetText(tree)
+	treeInstanceId = instanceId
 	listenerClickOnLoadTree()
 end
 
 function BtCreator.hide()
-	if(windowBtCreator.visible) then
-		windowBtCreator:Hide()
+	if(rolesWindow and rolesWindow.visible) then
+		rolesWindow:Hide()
+	end
+	if(sensorsWindow and sensorsWindow.visible) then
+		sensorsWindow:Hide()
+	end
+	if(blackboardWindowState and blackboardWindowState.visible) then
+		blackboardWindowState:Hide()
+	end
+	if(btCreatorWindow.visible) then
+		btCreatorWindow:Hide()
 	end
 	if(nodePoolLabel.visible) then
 		nodePoolPanel:Hide()
@@ -115,8 +130,8 @@ local function removeNodeFromCanvas(id)
 	node:Dispose()
 	node = nil
 	WG.nodeList[id] = nil
-	windowBtCreator:Invalidate()
-	windowBtCreator:RequestUpdate()
+	btCreatorWindow:Invalidate()
+	btCreatorWindow:RequestUpdate()
 end
 
 -- //////////////////////////////////////////////////////////////////////
@@ -139,7 +154,7 @@ function listenerEndCopyingNode(self, x , y)
 	--y = y + startCopyingLocation.y
 	if(copyTreeNode and x - nodePoolPanel.width - startCopyingLocation.x > -20) then
 		local params = {
-			parent = windowBtCreator,
+			parent = btCreatorWindow,
 			nodeType = copyTreeNode.nodeType,
 			x = x - nodePoolPanel.width - startCopyingLocation.x,
 			y = y + startCopyingLocation.y - 70,
@@ -166,22 +181,81 @@ local inputTypeMap = {
 	["BETS_UNIT"]			= "UnitID",
 }
 
+local function maxRoleSplit(tree)
+	local roleCount = 1
+	local function visit(node)
+		if(not node) then
+			return
+		end
+		if(node.nodeType == "roleSplit" and roleCount < #node.children)then
+				roleCount = #node.children
+		end
+		for _, child in ipairs(node.children) do
+				visit(child)
+		end
+	end
+	visit(tree.root)
+	return roleCount
+end
+
+
+--- Contains IDs of nodes as keys - stores IDs of serialized tree, the one with name serializedTree
+-- To be able to update duplicit IDs on tree save - so the loaded and saved trees ids does not colide.
+local serializedIDs = {}
+
+local function updateSerializedIDs()
+	serializedIDs = {}
+	for id,_ in pairs(WG.nodeList) do
+		serializedIDs[id] = true
+	end
+end
+
+--- Assumes that id is present in WG.nodeList
+local function reGenerateTreenodeID(id)
+	if(WG.nodeList[id]) then
+		WG.nodeList[id]:ReGenerateID()
+	end
+	local newID = WG.nodeList[id].id
+	if(id == rootID) then
+		rootID = newID
+	end
+	WG.nodeList[newID] = WG.nodeList[id]
+	WG.nodeList[id] = nil
+end
+
 function listenerClickOnSaveTree()
-	if( next(rolesOfCurrentTree) ~= nil ) then
-		Logger.log("save-and-load", "Save Tree clicked on. ")
-		local resultTree = formBehaviourTree()
+	Logger.log("save-and-load", "Save Tree clicked on. ")
+		-- on tree Save() regenerate IDs of nodes already present in loaded tree
+	if(serializedTreeName and serializedTreeName ~= treeNameEditbox.text) then
+		--regenerate all IDs from loaded Tree
+		for id,_ in pairs(serializedIDs) do
+			if(WG.nodeList[id]) then
+				reGenerateTreenodeID(id)
+			end
+		end
+		updateSerializedIDs()
+	end
+	local resultTree = formBehaviourTree()
+	-- are there enough roles?
+	local maxSplit = maxRoleSplit(resultTree)
+	local rolesCount = 0
+	for _,role in pairs(rolesOfCurrentTree) do		
+		rolesCount = rolesCount + 1
+	end
+	if((maxSplit == rolesCount) and (rolesCount > 0) ) then --roles are plausible
 		resultTree.roles = rolesOfCurrentTree
 		resultTree.defaultRole = rolesOfCurrentTree[1].name
 		resultTree.inputs = {}
 		
 		local inputs = WG.nodeList[rootID].inputs
-		for i=1,#inputs do
-			if (inputTypeMap[ inputs[i][2].items[ inputs[i][2].selected ] ] == nil) then
-				error("Uknown tree input type detected in BtCreator tree serialization. "..debug.traceback())
+		if(inputs ~= nil) then 
+			for i=1,#inputs do
+				if (inputTypeMap[ inputs[i][2].items[ inputs[i][2].selected ] ] == nil) then
+					error("Uknown tree input type detected in BtCreator tree serialization. "..debug.traceback())
+				end
+				table.insert(resultTree.inputs, {["name"] = inputs[i][1].text, ["command"] = inputTypeMap[ inputs[i][2].items[ inputs[i][2].selected ] ],})
 			end
-			table.insert(resultTree.inputs, {["name"] = inputs[i][1].text, ["command"] = inputTypeMap[ inputs[i][2].items[ inputs[i][2].selected ] ],})
-		end
-		
+		end 
 		resultTree:Save(treeNameEditbox.text)
 		WG.clearSelection()
 	else
@@ -198,17 +272,22 @@ function listenerClickOnShowSensors()
 	showSensorsButton.backgroundColor , bgrColor = bgrColor, showSensorsButton.backgroundColor
 	showSensorsButton.focusColor, focusColor = focusColor, showSensorsButton.focusColor
 	local sensors = WG.SensorManager.getAvailableSensors()
+	local minWidth = 200
+	for i=1,#sensors do
+		minWidth = math.max(minWidth, showSensorsButton.font:GetTextWidth(sensors[i]) + 20)
+	end
 	if(sensorsWindow) then
 		sensorsWindow:Dispose()
 		sensorsWindow = nil
 		return
 	end
+	local x,y = Screen0:ClientToScreen(showSensorsButton.x, showSensorsButton.y)
 	sensorsWindow = Chili.Window:New{
 		parent = Screen0,
 		name = "SensorsWindow",
-		x = showSensorsButton.x - 5,
-		y = showSensorsButton.y - (#sensors*20 + 60) + 5,
-		width = 200,
+		x = buttonPanel.x + showSensorsButton.x - 10,
+		y = buttonPanel.y + showSensorsButton.y - (#sensors*20 + 60) + 5,
+		width = minWidth,
 		height = #sensors*20 + 60,
 		skinName='DarkGlass',
 	}
@@ -240,13 +319,15 @@ end
 --   Blackboard showing
 
 local blackboardWindowState
-local rowsMetatable
+local createRows, rowsMetatable
 do
+	local TEXT_HEIGHT = 20
 	local metapairs = Utils.metapairs
-	local expandedVariablesMap = {} 
-
+	
 	local function makeCaption(k, v)
-		return tostring(k) .. " = " .. dump(v)
+		local strKey = tostring(k)
+		local strValue = tostring(v)
+		return strKey .. " = " .. (strValue == "<table>" and "{...}" or strValue)
 	end
 	local rowsPrototype = {}
 	function rowsPrototype:SetTable(t)
@@ -257,48 +338,145 @@ do
 		end
 		
 		local length = self.length or 0
+		local oldLength = length
 		local offset = 0
+		local top = 0
 		for i = 1, length do
 			local row = self[i]
-			if(not t[row.key])then
+			if(t[row.key] == nil)then
 				row.control:Dispose()
-				self.keyMap[row.key] = nil
+				keyMap[row.key] = nil
 				offset = offset + 1
 			else
 				self[i - offset] = row
 				row.index = i - offset
-				row.control:SetCaption(makeCaption(k, v))
+				row.control:SetPos(0, top)
+				local v = t[row.key]
+				row.currentValue = v
+				row.control.children[1]:SetCaption(makeCaption(row.key, v))
+				if(row.subrows)then
+					row.subrows:SetTable(v)
+				end
+				top = top + row.height
 			end
 		end
-		for i = length - offset, length do
+		length = length - offset
+		for k, v in metapairs(t) do
+			if(not keyMap[k])then
+				local row; row = {
+					key = k,
+					currentValue = v,
+					control = Chili.Control:New{
+						parent = self.wrapper,
+						x = 0,
+						y = top,
+						padding = {0,0,0,0},
+						width = '100%',
+						height = TEXT_HEIGHT*4,
+						children = { Chili.Label:New{
+							x = 0,
+							y = 0,
+							caption = makeCaption(k, v),
+							OnMouseUp = (type(v) == "table" and { sanitizer:AsHandler(function(control)
+								if(row.panel)then
+									row:Contract()
+								else
+									row:Expand()
+								end
+								self:Realign()
+								return control
+							end) }) or nil,
+						}, },
+					},
+					height = TEXT_HEIGHT,
+					Contract = function(row)
+						if(not row.panel)then return end
+					
+						self.expandTable[k] = nil
+						row.panel:Dispose()
+						row.panel = nil
+						row.subrows = nil
+						row.height = TEXT_HEIGHT
+					end,
+					Expand = function(row)
+						if(row.panel)then return end
+					
+						row.panel = Chili.Control:New{
+							parent = row.control,
+							x = 0,
+							y = TEXT_HEIGHT,
+							width = '100%',
+							padding = {10,0,0,0},
+						}
+						local innerExpandTable = self.expandTable[k]
+						if(not innerExpandTable)then
+							innerExpandTable = {}
+							self.expandTable[k] = innerExpandTable
+						end
+						row.subrows = createRows(row.panel, innerExpandTable, function(rows, height)
+							row.panel:SetPos(nil, nil, nil, height)
+							row.height = TEXT_HEIGHT + height
+							row.control:SetPos(nil, nil, nil, row.height)
+						end)
+						row.subrows:SetTable(row.currentValue)
+					end,
+				}
+				if(self.expandTable[k])then
+					row:Expand()
+				end
+				top = top + row.height
+				keyMap[k] = row
+				length = length + 1
+				self[length] = row
+				row.index = length
+			end
+		end
+		for i = length + 1, oldLength do
 			self[i] = nil
 		end
-		length = length - offset
-		local top = (self[length] or { y = 0 }).y
-		for k, v in metapairs(t) do
-			local row = {
-				key = k,
-				control = Chili.Label:New{
-					parent = blackboardWindowState.contentWrapper,
-					x = 0,
-					y = top,
-					caption = makeCaption(k, v),
-				},
-			}
+		self.length = length
+		
+		self.height = top
+		if(self.sizeChangedCallback)then
+			self.sizeChangedCallback(self, top)
+		end
+	end
+	function rowsPrototype:Realign()
+		local top = 0
+		for i = 1, self.length do
+			row = self[i]
+			row.control:SetPos(0, top)
+			top = top + row.height
+		end		
+		
+		self.height = top
+		if(self.sizeChangedCallback)then
+			self.sizeChangedCallback(self, top)
 		end
 	end
 	
 	rowsMetatable = {
 		__index = rowsPrototype
 	}
+	
+	function createRows(wrapper, expandTable, sizeChangedCallback)
+		return setmetatable({
+			length = 0,
+			wrapper = wrapper,
+			sizeChangedCallback = sizeChangedCallback,
+			expandTable = expandTable,
+		}, rowsMetatable)
+	end
 end
+local expandedVariablesMap = {} 
+
 local function showCurrentBlackboard(blackboardState)
 	currentBlackboardState = blackboardState
 	if(not blackboardWindowState)then
 		return
 	end
 	
-	currentBlackboardState.rows:SetTable(blackboardState)
+	blackboardWindowState.rows:SetTable(blackboardState)
 end
 local function listenerClickOnShowBlackboard()
 	if(blackboardWindowState)then
@@ -313,11 +491,12 @@ local function listenerClickOnShowBlackboard()
 	local window = Chili.Window:New{
 		parent = Screen0,
 		name = "BlackboardWindow",
-		x = showBlackboardButton.x - 5,
-		y = showBlackboardButton.y - height + 5,
-		width = 200,
+		x = buttonPanel.x + showBlackboardButton.x - 5 - 130,
+		y = buttonPanel.y + showBlackboardButton.y - height + 5,
+		width = 400,
 		height = height,
 		skinName = 'DarkGlass',
+		caption = "Blackboard:",
 	}
 	blackboardWindowState.window = window
 	
@@ -325,16 +504,11 @@ local function listenerClickOnShowBlackboard()
 		parent = window,
 		x = 0,
 		y = 0,
+		width = '100%',
+		height = '100%',
 	}
 	
-	Chili.Label:New{
-		parent = blackboardWindowState.contentWrapper,
-		x = 10,
-		y = 0,
-		caption = "Blackboard:",
-	}
-	
-	blackboardWindowState.rows = setmetatable({}, rowsMetatable)
+	blackboardWindowState.rows = createRows(blackboardWindowState.contentWrapper, expandedVariablesMap)
 	
 	if(currentBlackboardState)then
 		showCurrentBlackboard(currentBlackboardState)
@@ -379,13 +553,31 @@ function listenerClickOnMinimize()
 end
 
 -- //////////////////////////////////////////////////////////////////////
--- Messages from BtEvaluator
+-- Messages from/to BtEvaluator
 -- //////////////////////////////////////////////////////////////////////
 
 local DEFAULT_COLOR = {1,1,1,0.6}
 local RUNNING_COLOR = {1,0.5,0,0.6}
 local SUCCESS_COLOR = {0.5,1,0.5,0.6}
 local FAILURE_COLOR = {1,0.25,0.25,0.6}
+local STOPPED_COLOR = {0,0,1,0.6}
+
+local function listenerClickOnBreakpoint()
+	for nodeId,_ in pairs(WG.selectedNodes) do
+		BtEvaluator.setBreakpoint(treeInstanceId, nodeId)
+		local nodeWindow = WG.nodeList[nodeId].nodeWindow
+		local alpha = nodeWindow.backgroundColor[4]
+		nodeWindow.backgroundColor = copyTable(STOPPED_COLOR)
+		nodeWindow.backgroundColor[4] = alpha
+		nodeWindow:Invalidate()
+	end
+end
+
+local stoppedNodeId
+
+local function listenerClickOnContinue()
+	Spring.SendCommands("pause")
+end
 
 local function updateStatesMessage(params)
 	local states = params.states
@@ -398,6 +590,10 @@ local function updateStatesMessage(params)
 				color = copyTable(SUCCESS_COLOR)
 			elseif(states[id]:upper() == "FAILURE") then
 				color = copyTable(FAILURE_COLOR)
+			elseif(states[id]:upper() == "STOPPED") then
+				color = copyTable(STOPPED_COLOR)
+				stoppedNodeId = id
+				Spring.SendCommands("pause")
 			else
 				Logger.log("communication", "Uknown state received from AI, for node id: ", id)
 			end
@@ -416,6 +612,8 @@ local function updateStatesMessage(params)
 		nodeWindow.backgroundColor[4] = alpha
 		nodeWindow:Invalidate()
 	end
+	
+	showCurrentBlackboard(params.blackboard)
 end
 
 local function generateScriptNodes(heightSum, nodes) 
@@ -549,9 +747,21 @@ function listenerOnClickOnCanvas()
 	end
 end
 
+function listenerOnResizeBtCreator(self)
+	if(nodePoolPanel) then
+		nodePoolPanel:SetPos(self.x - nodePoolPanel.width, self.y, nil, self.height)
+	end
+	if(buttonPanel) then
+		buttonPanel:SetPos(self.x, self.y - 30, self.width)
+	end
+	if(minimizeButton) then
+		minimizeButton:SetPos(self.width - 45)
+	end
+end
+
 function createRoot()
 	return Chili.TreeNode:New{
-		parent = windowBtCreator,
+		parent = btCreatorWindow,
 		nodeType = "Root",
 		y = '35%',
 		x = 5,
@@ -573,7 +783,7 @@ function widget:Initialize()
 		return
 	end
 	
-	BtEvaluator = WG.BtEvaluator
+	BtEvaluator = sanitizer:Import(WG.BtEvaluator)
 	
 	BtEvaluator.OnNodeDefinitions = generateNodePoolNodes
 	BtEvaluator.OnUpdateStates = updateStatesMessage
@@ -614,7 +824,7 @@ function widget:Initialize()
 	nodePoolPanel.width = maxNodeWidth
 	nodePoolPanel:RequestUpdate()
 	 -- Create the window
-	windowBtCreator = Chili.Window:New{
+	btCreatorWindow = Chili.Window:New{
 		parent = Screen0,
 		x = nodePoolPanel.width + 22,
 		y = '56%',
@@ -625,7 +835,8 @@ function widget:Initialize()
 		resizable=true,
 		skinName='DarkGlass',
 		backgroundColor = {1,1,1,1},
-		OnClick = { listenerOnClickOnCanvas }
+		OnClick = { sanitizer:AsHandler(listenerOnClickOnCanvas) },
+		OnResize = { sanitizer:AsHandler(listenerOnResizeBtCreator) },
 		-- OnMouseDown = { listenerStartSelectingNodes },
 		-- OnMouseUp = { listenerEndSelectingNodes },
 	}	
@@ -633,89 +844,110 @@ function widget:Initialize()
 	addNodeToCanvas( createRoot() )
 	
 	newTreeButton = Chili.Button:New{
-		x = windowBtCreator.x,
-		y = windowBtCreator.y - 30,
+		x = 0,
+		y = 0,
 		width = 90,
 		height = 30,
 		caption = "New Tree",
 		skinName = "DarkGlass",
 		focusColor = {0.5,0.5,0.5,0.5},
-		OnClick = { listenerClickOnNewTree },
+		OnClick = { sanitizer:AsHandler(listenerClickOnNewTree) },
 	}
 	saveTreeButton = Chili.Button:New{
 		x = newTreeButton.x + newTreeButton.width,
-		y = newTreeButton.y,
+		y = 0,
 		width = 90,
 		height = 30,
 		caption = "Save Tree",
 		skinName = "DarkGlass",
 		focusColor = {0.5,0.5,0.5,0.5},
-		OnClick = { listenerClickOnSaveTree},
+		OnClick = { sanitizer:AsHandler(listenerClickOnSaveTree) },
 	}
 	loadTreeButton = Chili.Button:New{
 		x = saveTreeButton.x + saveTreeButton.width,
-		y = saveTreeButton.y,
+		y = 0,
 		width = 90,
 		height = 30,
 		caption = "Load Tree",
 		skinName = "DarkGlass",
 		focusColor = {0.5,0.5,0.5,0.5},
-		OnClick = { listenerClickOnLoadTree },
+		OnClick = { sanitizer:AsHandler(listenerClickOnLoadTree) },
 	}
 	roleManagerButton = Chili.Button:New{
 		x = loadTreeButton.x + loadTreeButton.width,
-		y = loadTreeButton.y,
-		width = 150,
+		y = 0,
+		width = 130,
 		height = 30,
 		caption = "Role manager",
 		skinName = "DarkGlass",
 		focusColor = {0.5,0.5,0.5,0.5},
-		OnClick = { listenerClickOnRoleManager },
+		OnClick = { sanitizer:AsHandler(listenerClickOnRoleManager) },
 	}
 	showSensorsButton = Chili.Button:New{
 		x = roleManagerButton.x + roleManagerButton.width,
-		y = roleManagerButton.y,
+		y = 0,
 		width = 90,
 		height = 30,
 		caption = "Sensors",
 		skinName = "DarkGlass",
 		focusColor = {0.5,0.5,0.5,0.5},
-		OnClick = { listenerClickOnShowSensors },
+		OnClick = { sanitizer:AsHandler(listenerClickOnShowSensors) },
 	}
 	showBlackboardButton = Chili.Button:New{
 		x = showSensorsButton.x + showSensorsButton.width,
-		y = showSensorsButton.y,
+		y = 0,
 		width = 110,
 		height = 30,
 		caption = "Blackboard",
 		skinName = "DarkGlass",
 		focusColor = {0.5,0.5,0.5,0.5},
-		OnClick = { listenerClickOnShowBlackboard },
+		OnClick = { sanitizer:AsHandler(listenerClickOnShowBlackboard) },
 	}
+	breakpointButton = Chili.Button:New{
+		x = showBlackboardButton.x + showBlackboardButton.width,
+		y = 0,
+		width = 110,
+		height = 30,
+		caption = "Set Breakpoint",
+		skinName = "DarkGlass",
+		focusColor = {0.5,0.5,0.5,0.5},
+		OnClick = { sanitizer:AsHandler(listenerClickOnBreakpoint) },
+	}
+	continueButton = Chili.Button:New{
+		x = breakpointButton.x + breakpointButton.width,
+		y = 0,
+		width = 110,
+		height = 30,
+		caption = "Continue",
+		skinName = "DarkGlass",
+		focusColor = {0.5,0.5,0.5,0.5},
+		OnClick = { sanitizer:AsHandler(listenerClickOnContinue) },
+	}
+	
 	buttonPanel = Chili.Control:New{
 		parent = Screen0,
-		x = 0,
-		y = 0,
-		width = '100%',
-		height = '100%',
-		children = { newTreeButton, saveTreeButton, loadTreeButton, roleManagerButton, showSensorsButton, showBlackboardButton }
+		x = btCreatorWindow.x,
+		y = btCreatorWindow.y - 30,
+		width = btCreatorWindow.width,
+		height = 40,
+		children = { newTreeButton, saveTreeButton, loadTreeButton, roleManagerButton, showSensorsButton, showBlackboardButton, breakpointButton, continueButton }
 	}
 	
 	
 	minimizeButton = Chili.Button:New{
 		parent = buttonPanel,
-		x = buttonPanel.width - 50,
+		x = btCreatorWindow.width - 45,
 		y = loadTreeButton.y,
 		width = 35,
 		height = 30,
 		caption = "_",
 		skinName = "DarkGlass",
 		focusColor = {0.5,0.5,0.5,0.5},
-		OnClick = { listenerClickOnMinimize },
+		OnClick = { sanitizer:AsHandler(listenerClickOnMinimize) },
 	}
 	
 	treeNameEditbox = Chili.EditBox:New{
-		parent = windowBtCreator,
+		parent = btCreatorWindow,
 		text = "02-flipEcho",
 		width = '33%',
 		x = '40%',
@@ -731,6 +963,13 @@ function widget:Initialize()
 	WG.BtCreator = BtCreator
 	Dependency.fill(Dependency.BtCreator)
 end 
+
+function widget:Shutdown()
+	WG.clearSelection()
+	clearCanvas()
+	Dependency.clear(Dependency.BtCreator)
+end
+
 
 function widget:KeyPress(key)
 	if(Spring.GetKeySymbol(key) == "delete") then -- Delete was pressed
@@ -756,40 +995,7 @@ local fieldsToSerialize = {
 	'parameters',
 }
 
---- Contains IDs of nodes as keys - stores IDs of serialized tree, the one with name serializedTree
-local serializedIDs = {}
-
-local function updateSerializedIDs()
-	serializedIDs = {}
-	for id,_ in pairs(WG.nodeList) do
-		serializedIDs[id] = true
-	end
-end
-
---- Assumes that id is present in WG.nodeList
-local function reGenerateTreenodeID(id)
-	if(WG.nodeList[id]) then
-		WG.nodeList[id]:ReGenerateID()
-	end
-	local newID = WG.nodeList[id].id
-	if(id == rootID) then
-		rootID = newID
-	end
-	WG.nodeList[newID] = WG.nodeList[id]
-	WG.nodeList[id] = nil
-end
-
 function formBehaviourTree()
-	-- on tree Save() regenerate IDs of nodes already present in loaded tree
-	if(serializedTreeName and serializedTreeName ~= treeNameEditbox.text) then
-		--regenerate all IDs from loaded Tree
-		for id,_ in pairs(serializedIDs) do
-			if(WG.nodeList[id]) then
-				reGenerateTreenodeID(id)
-			end
-		end
-		updateSerializedIDs()
-	end
 	-- Validate every treenode - when editing editBox parameter and immediately serialize, 
 	-- the last edited parameter doesnt have to be updated
 	for _,node in pairs(WG.nodeList) do
@@ -860,9 +1066,9 @@ function clearCanvas(omitRoot)
 end
 
 local function loadBehaviourNode(bt, btNode)
-	if(not btNode)then return nil end
+	if(not btNode or btNode.nodeType == "empty_tree")then return nil end
 	local params = {}
-	local info
+	local info = {}
 	
 	Logger.log("save-and-load", "loadBehaviourNode - nodeType: ", btNode.nodeType, " scriptName: ", btNode.scriptName, " info: ", nodeDefinitionInfo)
 	if (btNode.scriptName ~= nil) then
@@ -884,6 +1090,10 @@ local function loadBehaviourNode(bt, btNode)
 			Logger.log("save-and-load", "params: ", params, ", params.parameters: ", params.parameters, "v[3]: ", v[3])
 			for i=1,#v do
 				if (v[i].name ~= "scriptName") then
+					if(params.parameters[i].name ~= v[i].name)then
+						Logger.error("save-and-load", "Parameter names do not match: ", params.parameters[i].name, " != ", v[i].name)
+					end
+				
 					Logger.log("save-and-load", "params.parameters[i]: ", params.parameters[i], ", v[i]: ", v[i])
 					params.parameters[i].value = v[i].value
 				end
@@ -897,7 +1107,7 @@ local function loadBehaviourNode(bt, btNode)
 	end
 	params.children = nil
 	params.name = nil
-	params.parent = windowBtCreator
+	params.parent = btCreatorWindow
 	params.connectable = true
 	params.draggable = true
 	
@@ -941,105 +1151,7 @@ function loadBehaviourTree(bt)
 	end
 end                
 
---------------------------------------------------------------------------------------------------------------------------
---- ROLE MANAGEMENT ------------------------------------------------------------------------------------------------------
-
-local function loadStandardCategories()	
-	unitCategories = {}
-	local transports = {}
-	local immobile = {}
-	local buildings = {}
-	local builders = {}
-	local mobileBuilders = {}
-	local groundUnits = {}
-	local airUnits = {}
-	local airFighters = {}
-	local airBombers = {}
-	
-	for _,unitDef in pairs(UnitDefs) do
-		if(unitDef.isTransport ) then
-			table.insert(transports, { id = unitDef.id, name = unitDef.name, humanName = unitDef.humanName})
-		end
-		if(unitDef.isImmobile ) then
-			table.insert(immobile, { id = unitDef.id, name = unitDef.name, humanName = unitDef.humanName})
-		end
-		if(unitDef.isBuilding ) then
-			table.insert(buildings, { id = unitDef.id, name = unitDef.name, humanName = unitDef.humanName})
-		end
-		if(unitDef.isBuilder ) then
-			table.insert(builders, { id = unitDef.id, name = unitDef.name, humanName = unitDef.humanName})
-		end
-		if(unitDef.isMobileBuilder ) then
-			table.insert(mobileBuilders, { id = unitDef.id, name = unitDef.name, humanName = unitDef.humanName})
-		end
-		if(unitDef.isGroundUnit ) then
-			table.insert(groundUnits, { id = unitDef.id, name = unitDef.name, humanName = unitDef.humanName})
-		end
-		if(unitDef.isAirUnit ) then
-			table.insert(airUnits, { id = unitDef.id, name = unitDef.name, humanName = unitDef.humanName})
-		end
-		if(unitDef.isFighterAirUnit ) then
-			table.insert(airFighters, { id = unitDef.id, name = unitDef.name, humanName = unitDef.humanName})
-		end
-		if(unitDef.isBomberAirUnit ) then
-			table.insert(airBombers, { id = unitDef.id, name = unitDef.name, humanName = unitDef.humanName})
-		end
-	end
-	table.insert(unitCategories, {name = "transports", types = transports})
-	table.insert(unitCategories, {name = "immobile", types = immobile})
-	table.insert(unitCategories, {name = "buildings", types = buildings})
-	table.insert(unitCategories, {name = "builders", types = builders})
-	table.insert(unitCategories, {name = "mobileBuilders", types = mobileBuilders})
-	table.insert(unitCategories, {name = "groundUnits", types = groundUnits})
-	table.insert(unitCategories, {name = "airUnits", types = airUnits})
-	table.insert(unitCategories, {name = "fighterAirUnits", types = airFighters})
-	table.insert(unitCategories, {name = "bomberAirUnits", types = airBombers})
-end
-
-
--- This method will load unit categories into one object. 
-local function loadUnitCategories()
-	unitCategories = {}
-	----[[
-	local file = io.open(UNIT_CATHEGORIES_DIRNAME .. UNIT_CATHEGORIES_FILE , "r")
-	if(not file)then
-			unitCategories = {}
-	end
-	local text = file:read("*all")
-	unitCategories = JSON:decode(text)
-	file:close()
-	--]]
-end
-
-local function saveUnitCategories()
-	if(unitCategories == nil) then
-		Logger.log("roles", "unitCategories = nill")
-		unitCategories = {}
-	end
-	
-	local text = JSON:encode(unitCategories, nil, { pretty = true, indent = "\t" })
-	Spring.CreateDir(UNIT_CATHEGORIES_DIRNAME)
-	local file = io.open(UNIT_CATHEGORIES_DIRNAME .. UNIT_CATHEGORIES_FILE, "w")
-	if(not file)then
-		return nil
-	end
-	file:write(text)
-	file:close()	
-	return true
-end
--- This method returns unitTypes in given role in  rolesOfCurrentTree.
-function getRoleData(roleName)
-	for _,roleData in pairs(rolesOfCurrentTree) do 
-			if(roleData.name == roleName) then
-				return roleData
-			end
-	end
-end
-
-
-
 function showCategoryDefinitionWindow()
-	loadStandardCategories()
 	rolesWindow:Hide()
 	categoryDefinitionWindow = Chili.Window:New{
 		parent = Screen0,
@@ -1061,16 +1173,16 @@ function showCategoryDefinitionWindow()
 		x = nameEditBox.x + nameEditBox.width,
 		y = 0,
 		caption = "DONE",
-		OnClick = {doneCategoryDefinition}, 
+		OnClick = {sanitizer:AsHandler(doneCategoryDefinition)}, 
 	}
-	categoryDoneButton.UnitCategories = unitCategories
+	--categoryDoneButton.UnitCategories = unitCategories
 	
 	local categoryCancelButton = Chili.Button:New{
 		parent =  categoryDefinitionWindow,
 		x = categoryDoneButton.x + categoryDoneButton.width,
 		y = 0,
 		caption = "CANCEL",
-		OnClick = {cancelCategoryDefinition}, 
+		OnClick = {sanitizer:AsHandler(cancelCategoryDefinition)}, 
 	} 
 	local categoryScrollPanel = Chili.ScrollPanel:New{
 		parent = categoryDefinitionWindow,
@@ -1125,8 +1237,8 @@ function doneCategoryDefinition(self)
 		name = self.CategoryNameEditBox.text,
 		types = unitTypes,
 	}
-	table.insert(unitCategories, newCategory)
-	saveUnitCategories()
+	Utils.UnitCategories.redefineCategories(newCategory)
+
 	categoryDefinitionWindow:Hide()
 	showRoleManagementWindow()
 end
@@ -1134,7 +1246,7 @@ function cancelCategoryDefinition(self)
 	categoryDefinitionWindow:Hide()
 	showRoleManagementWindow()
 end
-
+--[[
 local function findCategoryData(categoryName)
 	for _,catData in pairs(unitCategories) do 
 		if(catData.name == categoryName) then
@@ -1142,7 +1254,7 @@ local function findCategoryData(categoryName)
 		end
 	end
 end
-
+--]]
 
 local function isInTable(value, t)
 	for i=1,#t do
@@ -1178,8 +1290,8 @@ end
 function showRoleManagementWindow(mode) 	
 	local tree = formBehaviourTree()
 	-- find out how many roles we need:
-	local roleCount = 1
-	local function visit(node)
+	local roleCount = maxRoleSplit(tree)
+	--[[local function visit(node)
 		if(not node) then
 			return
 		end
@@ -1191,7 +1303,7 @@ function showRoleManagementWindow(mode)
 		end
 	end
 	visit(tree.root)
-	
+	--]]
 	
 	--[[ RESET UNIT CATHEGORIES
 	loadStandardCategories()
@@ -1216,7 +1328,7 @@ function showRoleManagementWindow(mode)
 		x = 0,
 		y = 0,
 		caption = "DONE",
-		OnClick = {doneRoleManagerWindow}, 
+		OnClick = {sanitizer:AsHandler(doneRoleManagerWindow)}, 
 	}
 	roleManagementDoneButton.Mode = mode
 	
@@ -1226,7 +1338,7 @@ function showRoleManagementWindow(mode)
 		y = 0,
 		width = 150,
 		caption = "Define new Category",
-		OnClick = {showCategoryDefinitionWindow},
+		OnClick = {sanitizer:AsHandler(showCategoryDefinitionWindow)},
 	}
 
 	
@@ -1289,9 +1401,6 @@ function showRoleManagementWindow(mode)
 		local roleCategories = {}
 		roleCategories["NameEditBox"] = nameEditBox
 		roleCategories["CheckBoxes"] = categoryCheckBoxes
-		--if(keepOldAssignment ~= nil) then
-		--	roleCategories["OldUnitTypes"] = keepOldAssignment
-		--end
 		table.insert(rolesCategoriesCB,roleCategories)
 	end	
 	roleManagementDoneButton.RolesData = rolesCategoriesCB
@@ -1301,4 +1410,5 @@ end
 --------------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------
 
-Dependency.deferWidget(widget, Dependency.BtEvaluator)
+sanitizer:SanitizeWidget()
+return Dependency.deferWidget(widget, Dependency.BtEvaluator)

@@ -3,35 +3,35 @@
 	"defaultRole": "Default role",
 	"inputs": [],
 	"properties": {
-		"FDpus7cSm0m70J9cguYrrirBO7XWF6h3": {
+		"K2ZEY9szVXA6XUUnWR5lMBP9AoTh8T3R": {
 			"height": 90,
 			"width": 110,
-			"x": 335,
-			"y": 309
+			"x": 343,
+			"y": 20
 		},
-		"Gxo2uBsXAW4UIzJVBJrDKJVg43FYpeqe": {
-			"height": 90,
-			"width": 110,
-			"x": 322,
-			"y": 218
-		},
-		"Mdoai1yfNkBoBedl8uUGuywIG7hu8MmZ": {
+		"PhVzZ4N4vehUHFfZEqovKYQUnpagwAM2": {
 			"height": 60,
 			"width": 110,
 			"x": 166,
 			"y": 144
 		},
-		"Rvxuq8fh7dqxy9PJP6lAHSmRZJE30shr": {
+		"SmX78WhgYwHwHm4L0kHS9cUgf9oVHkUp": {
 			"height": 90,
 			"width": 110,
-			"x": 327,
-			"y": 119
+			"x": 359,
+			"y": 233
 		},
-		"fPx8tP4IiEWnBEJ6E1oXfV6SokM2wAHp": {
+		"TSAD3xcg5FQKT8cQfGNR6FJB2sZGmwz0": {
+			"height": 90,
+			"width": 110,
+			"x": 354,
+			"y": 326
+		},
+		"YNSFyIIF1O2KuZQUpQd7DX4Kcs7nUKjT": {
 			"height": 90,
 			"width": 110,
 			"x": 341,
-			"y": 28
+			"y": 122
 		}
 	},
 	"roles": [ {
@@ -42,66 +42,54 @@
 	"root": {
 		"children": [ {
 			"children": [],
-			"id": "fPx8tP4IiEWnBEJ6E1oXfV6SokM2wAHp",
+			"id": "K2ZEY9szVXA6XUUnWR5lMBP9AoTh8T3R",
 			"nodeType": "luaCommand",
 			"parameters": [ {
-				"name": "x",
-				"value": 100
-			}, {
-				"name": "y",
-				"value": 0
+				"name": "dist",
+				"value": "{ x = 500, z = 0}"
 			}, {
 				"name": "scriptName",
-				"value": "move.lua"
+				"value": "relativeMove.lua"
 			} ],
-			"scriptName": "move.lua"
+			"scriptName": "relativeMove.lua"
 		}, {
 			"children": [],
-			"id": "Rvxuq8fh7dqxy9PJP6lAHSmRZJE30shr",
+			"id": "YNSFyIIF1O2KuZQUpQd7DX4Kcs7nUKjT",
 			"nodeType": "luaCommand",
-			"parameters": [ {
-				"name": "x",
-				"value": 0
-			}, {
-				"name": "y",
-				"value": 100
+			"parameters": [  {
+				"name": "dist",
+				"value": "{ x = 0, z = 500}"
 			}, {
 				"name": "scriptName",
-				"value": "move.lua"
+				"value": "relativeMove.lua"
 			} ],
-			"scriptName": "move.lua"
+			"scriptName": "relativeMove.lua"
 		}, {
 			"children": [],
-			"id": "Gxo2uBsXAW4UIzJVBJrDKJVg43FYpeqe",
+			"id": "SmX78WhgYwHwHm4L0kHS9cUgf9oVHkUp",
 			"nodeType": "luaCommand",
 			"parameters": [ {
-				"name": "x",
-				"value": -100
-			}, {
-				"name": "y",
-				"value": 0
+				"name": "dist",
+				"value": "{ x = -500, z = 0}"
 			}, {
 				"name": "scriptName",
-				"value": "move.lua"
+				"value": "relativeMove.lua"
 			} ],
-			"scriptName": "move.lua"
+			"scriptName": "relativeMove.lua"
 		}, {
 			"children": [],
-			"id": "FDpus7cSm0m70J9cguYrrirBO7XWF6h3",
+			"id": "TSAD3xcg5FQKT8cQfGNR6FJB2sZGmwz0",
 			"nodeType": "luaCommand",
 			"parameters": [ {
-				"name": "x",
-				"value": 0
-			}, {
-				"name": "y",
-				"value": -100
+				"name": "dist",
+				"value": "{ x = 0, z = -500}"
 			}, {
 				"name": "scriptName",
-				"value": "move.lua"
+				"value": "relativeMove.lua"
 			} ],
-			"scriptName": "move.lua"
+			"scriptName": "relativeMove.lua"
 		} ],
-		"id": "Mdoai1yfNkBoBedl8uUGuywIG7hu8MmZ",
+		"id": "PhVzZ4N4vehUHFfZEqovKYQUnpagwAM2",
 		"nodeType": "sequence",
 		"parameters": []
 	}

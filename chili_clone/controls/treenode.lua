@@ -139,6 +139,7 @@ function TreeNode:New(obj)
 		skinName = 'DarkGlass',
 		borderThickness = 0,
 		backgroundColor = {0,0,0,0},
+		autosize = true,
 	}
 	if(obj.nodeType:lower() == "root") then
 		local label = Label:New{
@@ -165,8 +166,8 @@ function TreeNode:New(obj)
 			OnClick = { listenerRemoveInput },
 		}
 	end
-	obj.nodeWindow.minWidth = math.max(obj.nodeWindow.minWidth, obj.nameEditBox.font:GetTextWidth(obj.nameEditBox.text) + 33)
-	obj.nodeWindow.minHeight = obj.nodeWindow.height
+	-- obj.nodeWindow.minWidth = math.max(obj.nodeWindow.minWidth, obj.nameEditBox.font:GetTextWidth(obj.nameEditBox.text) + 33)
+	-- obj.nodeWindow.minHeight = obj.nodeWindow.height
 
 	obj.parameterObjects = {}
 	for i=1,#obj.parameters do
@@ -178,8 +179,35 @@ function TreeNode:New(obj)
 	if(#obj.parameters ~= #obj.parameterObjects) then
 		error("#obj.parameters="..#obj.parameters.."  ~= #obj.parameterObjects="..#obj.parameterObjects)
 	end
-
+	obj:UpdateDimensions()
+	if( obj.hasConnectionOut ) then
+		obj.connectionOut:SetPos(obj.nodeWindow.width - 18)
+	end
   return obj
+end
+
+function TreeNode:UpdateDimensions()
+	local maxWidth = self.nodeWindow.width
+	local maxHeight = self.nodeWindow.height
+	local p = self.parameterObjects
+	for i=1,#p do
+		if(p[i].componentType == "checkBox") then
+			maxWidth = math.max(maxWidth, p[i].checkBox.width + 50)
+		elseif(p[i].componentType == "editBox") then
+			maxWidth = math.max(maxWidth, p[i].editBox.width + p[i].label.width + 40)
+		elseif(p[i].componentType == "comboBox") then
+			maxWidth = math.max(maxWidth, p[i].label.width + p[i].comboBox.width + 40)
+		end
+	end
+	if(self.nodeType == "Root") then
+		local inputs = self.inputs or {}
+		maxHeight = math.max(maxHeight, #inputs * 21 + 55)
+	end
+	self.nodeWindow:SetPos(nil, nil, maxWidth, maxHeight)
+	self.width = maxWidth
+	self.height = maxHeight
+	listenerNodeResize(self.nodeWindow)
+	-- Spring.Echo("Updating dimensions. ")
 end
 
 --- Transforms obj.parameters[i] into obj.parametersObjects[i] -> adds label and editbox
@@ -219,8 +247,8 @@ function createNextParameterObject(obj)
 			backgroundColor = {0,0,0,0},
 			variableType = param["variableType"],
 			index = i, -- to be able to index editbox from treenode, to update treenode.parameters[i].value
+			autosize = true,
 		}
-		obj.nodeWindow.minWidth = math.max(obj.nodeWindow.minWidth, obj.nodeWindow.font:GetTextWidth(param["value"])+ 48 + obj.nodeWindow.font:GetTextWidth(param["name"]))
 	--- CheckBox componentType
 	elseif(param["componentType"] and param["componentType"]:lower() == "checkbox") then
 		result.componentType = "checkBox"
@@ -271,14 +299,6 @@ function createNextParameterObject(obj)
 		result.comboBox:Select(defaultIndex)
 	end
 	return result
-end
-
-function TreeNode:CreateNextParameterObject()
-	local i = #self.parameterObjects + 1
-	self.parameterObjects[i] = createNextParameterObject(self)
-	-- Do not serialize unnecessary(dependent on nodeType) parameter fields, those are stored in nodeDefinitionInfo
-	self.parameters[i]["variableType"] = nil
-	self.parameters[i]["componentType"] = nil
 end
 
 --- Returns a table of children in order of y-coordinate(first is the one with the smallest one)
@@ -418,6 +438,7 @@ function listenerAddInput(obj)
 		--skinName = 'DarkGlass',
 		borderThickness = 0,
 		backgroundColor = {0,0,0,0},
+		autosize = true,
 	}
 	local comboBox = ComboBox:New{
 			caption = "",
@@ -430,6 +451,7 @@ function listenerAddInput(obj)
 			items = {"Position", "Area", "UnitID"},
 		}
 	table.insert(inputs, { editBox, comboBox })
+	obj.parent.treeNode:UpdateDimensions()
 	return true
 end
 
@@ -493,7 +515,7 @@ function listenerClickOnConnectionPanel(self)
 end
 
 -- called also after move!
-function listenerNodeResize(self, x, y)
+function listenerNodeResize(self)
 	-- Spring.Echo("Resizing treenode window.. ")
 	-- Spring.Echo("x="..self.treeNode.x..", y="..self.treeNode.y)
 	-- Update position of connectionOut
@@ -579,6 +601,7 @@ function TreeNode:UpdateParameterValues()
 			comboBox.parent.treeNode.parameters[comboBox.index].value = tostring(comboBox.items[comboBox.selected])
 		end
 	end
+	self:UpdateDimensions()
 end
 
 local function removeNodeFromSelection(nodeWindow)

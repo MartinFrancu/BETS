@@ -30,13 +30,8 @@ return Utils:Assign("UnitCategories", function()
 	UnitCategories.categories = loadCategories()
 	
 	-- This function saves given table into file fo unit categories
-	local function saveCategories(categories)
-		if(unitCategories == nil) then
-			Logger.log("roles", "BtUtils:SaveUnitCategories: categories = nill")
-			unitCategories = {}
-		end
-	
-		local text = JSON:encode(unitCategories, nil, { pretty = true, indent = "\t" })
+	local function saveCategories(categories)	
+		local text = JSON:encode(UnitCategories.categories, nil, { pretty = true, indent = "\t" })
 		Spring.CreateDir(UNIT_CATHEGORIES_DIRNAME)
 		local file = io.open(UNIT_CATHEGORIES_DIRNAME .. UNIT_CATHEGORIES_FILE, "w")
 		if(not file)then
@@ -47,13 +42,6 @@ return Utils:Assign("UnitCategories", function()
 		return true
 	end
 	
-	--[[
-	local function initCategories()
-		if(UnitCategories.categories == nil) then
-			UnitCategories.categories = loadCategories()
-		end 
-	end
-	--]]
 	-- Returns table of categories
 	function UnitCategories.getCategories()
 		return UnitCategories.categories
@@ -77,7 +65,7 @@ return Utils:Assign("UnitCategories", function()
 	
 	function UnitCategories.redefineCategories(newCategory) 
 		-- here would be a good moment for check if it makes sense?
-		table.insert(UnitCatheogires.categories, newCategory)
+		table.insert(UnitCategories.categories, newCategory)
 		saveCategories()
 	end
 	return UnitCategories

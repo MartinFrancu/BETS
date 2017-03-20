@@ -48,16 +48,13 @@
 			"id": "dEHOrJf8Xf2wEBZXy6hd0kcL56tqEc8z",
 			"nodeType": "luaCommand",
 			"parameters": [ {
-				"name": "x",
-				"value": "x"
-			}, {
-				"name": "y",
-				"value": "y"
+				"name": "dist",
+				"value": "{ x = x, z = y }"
 			}, {
 				"name": "scriptName",
-				"value": "move.lua"
+				"value": "relativeMove.lua"
 			} ],
-			"scriptName": "move.lua"
+			"scriptName": "relativeMove.lua"
 		} ],
 		"id": "gln4jU3MI4wh8mdRi69Voj0K5QkZRn1y",
 		"nodeType": "sequence",

@@ -15,7 +15,7 @@ return function()
 		return {}
 	end
 	
-	local centerX, _, centerZ = getPosition(units[1])
+	local centerX, centerY, centerZ = getPosition(units[1])
 	for i = 2, units.length do
 		local x, _, z = getPosition(units[i])
 		centerX = centerX + x
@@ -33,5 +33,5 @@ return function()
 		end
 	end
 	
-	return { center = { x = centerX, z = centerZ }, maxDistance = maxDistance }
+	return { center = Vec3(centerX, centerY, centerZ), maxDistance = maxDistance }
 end
