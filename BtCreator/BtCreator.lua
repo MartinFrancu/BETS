@@ -560,20 +560,34 @@ local DEFAULT_COLOR = {1,1,1,0.6}
 local RUNNING_COLOR = {1,0.5,0,0.6}
 local SUCCESS_COLOR = {0.5,1,0.5,0.6}
 local FAILURE_COLOR = {1,0.25,0.25,0.6}
-local STOPPED_COLOR = {0,0,1,0.6}
+local STOPPED_COLOR = {0.2,0.6,1,1}
+local BREAKPOINT_COLOR = {0,0,1,0.6}
+
+local breakpoints = {}
+
+local function setBackgroundColor(nodeWindow, color)
+	local alpha = nodeWindow.backgroundColor[4]
+	nodeWindow.backgroundColor = copyTable(color)
+	nodeWindow.backgroundColor[4] = alpha
+	nodeWindow:Invalidate()
+end
 
 local function listenerClickOnBreakpoint()
 	for nodeId,_ in pairs(WG.selectedNodes) do
-		BtEvaluator.setBreakpoint(treeInstanceId, nodeId)
-		local nodeWindow = WG.nodeList[nodeId].nodeWindow
-		local alpha = nodeWindow.backgroundColor[4]
-		nodeWindow.backgroundColor = copyTable(STOPPED_COLOR)
-		nodeWindow.backgroundColor[4] = alpha
-		nodeWindow:Invalidate()
+		local color
+		if(breakpoints[nodeId] == nil and nodeId ~= rootID) then
+			breakpoints[nodeId] = true
+			Logger.loggedCall("Errors", "BtCreator", "setting a breakpoint", BtEvaluator.setBreakpoint, treeInstanceId, nodeId)
+			color = BREAKPOINT_COLOR
+		else
+			breakpoints[nodeId] = nil
+			Logger.loggedCall("Errors", "BtCreator", "removing a breakpoint", BtEvaluator.removeBreakpoint, treeInstanceId, nodeId)
+			color = DEFAULT_COLOR
+		end
+		setBackgroundColor(WG.nodeList[nodeId].nodeWindow, color)
 	end
+	-- Spring.Echo("Breakpoints: "..dump(breakpoints))
 end
-
-local stoppedNodeId
 
 local function listenerClickOnContinue()
 	Spring.SendCommands("pause")
@@ -581,39 +595,37 @@ end
 
 local function updateStatesMessage(params)
 	local states = params.states
+	local shouldPause
 	for id, node in pairs(WG.nodeList) do
-		local color = copyTable(DEFAULT_COLOR);
+		local color = DEFAULT_COLOR;
+		-- set breakpoint color to all breakpoints, independent from current state
+		if(breakpoints[id]) then  --and ((states[id] and states[id]:upper() ~= "STOPPED") or states[id]==nil)) then
+			 color = BREAKPOINT_COLOR 
+		end
 		if(states[id] ~= nil) then
 			if(states[id]:upper() == "RUNNING") then
-				color = copyTable(RUNNING_COLOR)
+				color = RUNNING_COLOR
 			elseif(states[id]:upper() == "SUCCESS") then
-				color = copyTable(SUCCESS_COLOR)
+				color = SUCCESS_COLOR
 			elseif(states[id]:upper() == "FAILURE") then
-				color = copyTable(FAILURE_COLOR)
+				color = FAILURE_COLOR
 			elseif(states[id]:upper() == "STOPPED") then
-				color = copyTable(STOPPED_COLOR)
-				stoppedNodeId = id
-				Spring.SendCommands("pause")
+				color = STOPPED_COLOR
+				shouldPause = true
 			else
-				Logger.log("communication", "Uknown state received from AI, for node id: ", id)
+				Logger.error("communication", "Uknown state received from AI, for node id: ", id)
 			end
 		end
-		-- Do not change color alpha
-		local alpha = node.nodeWindow.backgroundColor[4]
-		node.nodeWindow.backgroundColor = color
-		node.nodeWindow.backgroundColor[4] = alpha
-		node.nodeWindow:Invalidate()
+		setBackgroundColor(node.nodeWindow, color)
 	end
 	local children = WG.nodeList[rootID]:GetChildren()
 	if(#children > 0) then
-		local nodeWindow = WG.nodeList[rootID].nodeWindow
-		local alpha = nodeWindow.backgroundColor[4]
-		nodeWindow.backgroundColor = copyTable(children[1].nodeWindow.backgroundColor)
-		nodeWindow.backgroundColor[4] = alpha
-		nodeWindow:Invalidate()
+		setBackgroundColor(WG.nodeList[rootID].nodeWindow, children[1].nodeWindow.backgroundColor)
 	end
-	
 	showCurrentBlackboard(params.blackboard)
+	if(shouldPause) then
+		Spring.SendCommands("pause")
+	end
 end
 
 local function generateScriptNodes(heightSum, nodes) 
@@ -906,9 +918,9 @@ function widget:Initialize()
 	breakpointButton = Chili.Button:New{
 		x = showBlackboardButton.x + showBlackboardButton.width,
 		y = 0,
-		width = 110,
+		width = 140,
 		height = 30,
-		caption = "Set Breakpoint",
+		caption = "Toggle Breakpoint",
 		skinName = "DarkGlass",
 		focusColor = {0.5,0.5,0.5,0.5},
 		OnClick = { sanitizer:AsHandler(listenerClickOnBreakpoint) },
