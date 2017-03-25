@@ -274,14 +274,13 @@ function listenerClickOnShowSensors()
 	local sensors = WG.SensorManager.getAvailableSensors()
 	local minWidth = 200
 	for i=1,#sensors do
-		minWidth = math.max(minWidth, showSensorsButton.font:GetTextWidth(sensors[i]) + 20)
+		minWidth = math.max(minWidth, showSensorsButton.font:GetTextWidth(sensors[i]) + 60)
 	end
 	if(sensorsWindow) then
 		sensorsWindow:Dispose()
 		sensorsWindow = nil
 		return
 	end
-	local x,y = Screen0:ClientToScreen(showSensorsButton.x, showSensorsButton.y)
 	sensorsWindow = Chili.Window:New{
 		parent = Screen0,
 		name = "SensorsWindow",
@@ -584,7 +583,9 @@ local function listenerClickOnBreakpoint()
 			Logger.loggedCall("Errors", "BtCreator", "removing a breakpoint", BtEvaluator.removeBreakpoint, treeInstanceId, nodeId)
 			color = DEFAULT_COLOR
 		end
-		setBackgroundColor(WG.nodeList[nodeId].nodeWindow, color)
+		if(nodeId ~= rootID) then
+			setBackgroundColor(WG.nodeList[nodeId].nodeWindow, color)
+		end
 	end
 	-- Spring.Echo("Breakpoints: "..dump(breakpoints))
 end
@@ -628,7 +629,30 @@ local function updateStatesMessage(params)
 	end
 end
 
-local function generateScriptNodes(heightSum, nodes) 
+-- Renames the field 'defaultValue' to 'value' if it present, for all the parameters,
+-- also saves parameters, hasConnectionIn, hasConnectionOut into 'nodeDefinitionInfo'.
+local function processTreenodeParameters(nodeType, parameters, hasConnectionIn, hasConnectionOut)
+	for i=1,#parameters do
+		if(parameters[i]["defaultValue"]) then
+			parameters[i]["value"] = parameters[i]["defaultValue"]
+			parameters[i]["defaultValue"] = nil
+		end
+	end
+	nodeDefinitionInfo[nodeType] = {}
+	nodeDefinitionInfo[nodeType]["parameters"] = copyTable(parameters)
+	nodeDefinitionInfo[nodeType]["hasConnectionIn"]  = hasConnectionIn
+	nodeDefinitionInfo[nodeType]["hasConnectionOut"] = hasConnectionOut
+end
+
+local function addNodeIntoNodepool(treenodeParams)
+	if(nodePoolPanel:GetChildByName(treenodeParams.name)) then
+		local treenode = nodePoolPanel:GetChildByName(treenodeParams.name)
+		nodePoolPanel:RemoveChild(treenode)
+	end
+	table.insert(nodePoolList, Chili.TreeNode:New(treenodeParams))
+end
+
+local function populateNodePoolWithTreeNodes(heightSum, nodes) 
 	for i=1,#nodes do
 		if (nodes[i].nodeType ~= "luaCommand") then
 			local nodeParams = {
@@ -643,35 +667,17 @@ local function generateScriptNodes(heightSum, nodes)
 				connectable = false,
 				onMouseDown = { listenerStartCopyingNode },
 				onMouseUp = { listenerEndCopyingNode },
-				parameters = nodes[i]["parameters"],
+				parameters = copyTable(nodes[i]["parameters"]),
 			}
 			-- Make value field from defaultValue. 
-			for i=1,#nodeParams.parameters do
-				if(nodeParams.parameters[i]["defaultValue"]) then
-					nodeParams.parameters[i]["value"] = nodeParams.parameters[i]["defaultValue"]
-					nodeParams.parameters[i]["defaultValue"] = nil
-				end
-			end
-			nodeDefinitionInfo[nodeParams.nodeType] = {}
-			nodeDefinitionInfo[nodeParams.nodeType]["parameters"] = copyTable(nodeParams.parameters)
-			nodeDefinitionInfo[nodeParams.nodeType]["hasConnectionIn"]  = nodeParams.hasConnectionIn
-			nodeDefinitionInfo[nodeParams.nodeType]["hasConnectionOut"] = nodeParams.hasConnectionOut
-			if(nodes[i].defaultWidth) then
-				local minWidth = 110
-				if(#nodes[i]["parameters"] > 0) then
-					for k=1,#nodes[i]["parameters"] do
-						minWidth = math.max(minWidth, nodePoolPanel.font:GetTextWidth(nodes[i]["parameters"][k]["value"]) + nodePoolPanel.font:GetTextWidth(nodes[i]["parameters"][k]["name"]) + 40)
-						--nodes[i]["parameters"][k]["defaultValue"]:len()
-					end
-					
-				end
-				nodeParams.width = math.max(minWidth, nodes[i].defaultWidth)
-			end
+			processTreenodeParameters(nodeParams.nodeType, nodeParams.parameters, nodeParams.hasConnectionIn, nodeParams.hasConnectionOut)
+			
 			if(nodes[i].defaultHeight) then
-				nodeParams.height = math.max(50 + #nodes[i]["parameters"]*20, nodes[i].defaultHeight)
+				nodeParams.height = math.max(50 + #nodeParams["parameters"]*20, nodes[i].defaultHeight)
 			end
 			heightSum = heightSum + (nodeParams.height or 60)
-			table.insert(nodePoolList, Chili.TreeNode:New(nodeParams))
+			
+			addNodeIntoNodepool(nodeParams)
 		end
 	end
 	return heightSum
@@ -681,7 +687,7 @@ local function getFileExtension(filename)
   return filename:match("^.+(%..+)$")
 end
 
-local function getParameterDefinitions()
+local function getParameterDefinitionsForLuaCommands()
 	local directoryName = LUAUI_DIRNAME .. "Widgets/BtCommandScripts" 
 	local folderContent = VFS.DirList(directoryName)
 	local paramsDefs = {}
@@ -708,12 +714,13 @@ local function getParameterDefinitions()
 	return paramsDefs
 end
 
-local function generateNodePoolNodes(nodes)
-	Logger.log("communication", "NODES DECODED:  ", nodes)
+local function fillNodePoolWithNodes(nodes)
+	nodePoolList = {}
+	nodeDefinitionInfo = {}
 	local heightSum = 30 -- skip NodePoolLabel
-  heightSum = generateScriptNodes(heightSum, nodes)
+  heightSum = populateNodePoolWithTreeNodes(heightSum, nodes) -- others than lua script commands
 	-- load lua commands
-	local paramDefs = getParameterDefinitions()
+	local paramDefs = getParameterDefinitionsForLuaCommands()
 	for scriptName, params in pairs(paramDefs) do
 		local nodeParams = {
 			name = scriptName,
@@ -727,26 +734,14 @@ local function generateNodePoolNodes(nodes)
 			connectable = false,
 			onMouseDown = { listenerStartCopyingNode },
 			onMouseUp = { listenerEndCopyingNode },
-			parameters = params,
+			parameters = copyTable(params),
 		}
-		-- Make value field from defaultValue. 
-		for i=1,#nodeParams.parameters do
-			if(nodeParams.parameters[i]["defaultValue"]) then
-				nodeParams.parameters[i]["value"] = nodeParams.parameters[i]["defaultValue"]
-				nodeParams.parameters[i]["defaultValue"] = nil
-			end
-		end
-		nodeDefinitionInfo[scriptName] = {}
-		nodeDefinitionInfo[scriptName]["parameters"] = copyTable(nodeParams.parameters)
-		nodeDefinitionInfo[scriptName]["hasConnectionIn"]  = nodeParams.hasConnectionIn
-		nodeDefinitionInfo[scriptName]["hasConnectionOut"] = nodeParams.hasConnectionOut
-		
+		processTreenodeParameters(nodeParams.nodeType, nodeParams.parameters, nodeParams.hasConnectionIn, nodeParams.hasConnectionOut)
 		isScript[scriptName] = true
-
 		nodeParams.width = 110
 		nodeParams.height = 50 + #nodeParams.parameters * 20
 		heightSum = heightSum + (nodeParams.height or 60)
-		table.insert(nodePoolList, Chili.TreeNode:New(nodeParams))
+		addNodeIntoNodepool(nodeParams)
 	end
 	
 	nodePoolPanel:RequestUpdate()
@@ -788,7 +783,9 @@ function createRoot()
 	}
 end
 
-function widget:Initialize()	
+function widget:Initialize()
+	Logger.log("reloading", "BtCreator widget:Initialize start. ")
+	
 	if (not WG.ChiliClone) then
 		-- don't run if we can't find Chili
 		widgetHandler:RemoveWidget()
@@ -797,7 +794,7 @@ function widget:Initialize()
 	
 	BtEvaluator = sanitizer:Import(WG.BtEvaluator)
 	
-	BtEvaluator.OnNodeDefinitions = generateNodePoolNodes
+	BtEvaluator.OnNodeDefinitions = fillNodePoolWithNodes
 	BtEvaluator.OnUpdateStates = updateStatesMessage
 	
 	-- Get ready to use Chili
@@ -827,6 +824,10 @@ function widget:Initialize()
 	
 	Logger.loggedCall("Errors", "BtCreator", "requesting node definitions", 
 			BtEvaluator.requestNodeDefinitions)
+	
+		
+	Logger.log("reloading", "BtCreator widget:Initialize after requestNodeDefinitions. nodeDefinitionInfo: "..dump(nodeDefinitionInfo, 3))
+	
 	local maxNodeWidth = 125
 	for i=1,#nodePoolList do
 		if(nodePoolList[i].width + 21 > maxNodeWidth) then
@@ -851,7 +852,7 @@ function widget:Initialize()
 		OnResize = { sanitizer:AsHandler(listenerOnResizeBtCreator) },
 		-- OnMouseDown = { listenerStartSelectingNodes },
 		-- OnMouseUp = { listenerEndSelectingNodes },
-	}	
+	}
 	
 	addNodeToCanvas( createRoot() )
 	
@@ -974,12 +975,28 @@ function widget:Initialize()
 	
 	WG.BtCreator = BtCreator
 	Dependency.fill(Dependency.BtCreator)
+	Logger.log("reloading", "BtCreator widget:Initialize end. ")
 end 
 
 function widget:Shutdown()
+	Logger.log("reloading", "BtCreator widget:Shutdown start. ")
+	if(btCreatorWindow) then
+		btCreatorWindow:Dispose()
+	end
+	for _,node in pairs(nodePoolList) do
+		node:Dispose()
+	end
+	nodePoolPanel:ClearChildren()
+	if(nodePoolPanel) then
+		nodePoolPanel:Dispose()
+	end
+	if(buttonPanel) then
+		buttonPanel:Dispose()
+	end
 	WG.clearSelection()
 	clearCanvas()
 	Dependency.clear(Dependency.BtCreator)
+	Logger.log("reloading", "BtCreator widget:shutdown end. ")
 end
 
 
@@ -1082,7 +1099,7 @@ local function loadBehaviourNode(bt, btNode)
 	local params = {}
 	local info = {}
 	
-	Logger.log("save-and-load", "loadBehaviourNode - nodeType: ", btNode.nodeType, " scriptName: ", btNode.scriptName, " info: ", nodeDefinitionInfo)
+	Logger.log("save-and-load", "loadBehaviourNode - nodeType: ", btNode.nodeType, " scriptName: ", btNode.scriptName, " info: ", dump(nodeDefinitionInfo[btNode.nodeType],2))
 	if (btNode.scriptName ~= nil) then
 		info = nodeDefinitionInfo[btNode.scriptName]
 	else

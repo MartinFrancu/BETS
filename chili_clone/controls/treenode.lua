@@ -210,7 +210,7 @@ function TreeNode:UpdateDimensions()
 	-- Spring.Echo("Updating dimensions. ")
 end
 
---- Transforms obj.parameters[i] into obj.parametersObjects[i] -> adds label and editbox
+--- Transforms obj.parameters[i] into obj.parametersObjects[i]
 -- Expects param to be a table with four values: name, value, variableType, componentType.
 function createNextParameterObject(obj)
 	local result = {}
