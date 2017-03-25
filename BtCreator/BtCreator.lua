@@ -9,10 +9,10 @@ function widget:GetInfo()
 		enabled = true
 	}
 end
- 
+
 local Chili, Screen0
 
-local BtEvaluator, BtCreator
+local BtEvaluator
 
 local btCreatorWindow
 local nodePoolLabel
@@ -28,7 +28,6 @@ local minimizeButton
 local roleManagerButton
 local newTreeButton
 
-
 local treeNameEditbox
 
 local rolesOfCurrentTree
@@ -43,19 +42,15 @@ local showCategoryDefinitionWindow
 local doneCategoryDefinition
 local cancelCategoryDefinition
 
-
-local UNIT_CATHEGORIES_DIRNAME = LUAUI_DIRNAME .. "Widgets/BtCreator/"
-local UNIT_CATHEGORIES_FILE = "BtUnitCategories.json"
-
---- Keys are node IDs, values are Treenode objects.  
+--- Keys are node IDs, values are Treenode objects.
 WG.nodeList = {}
 local nodePoolList = {}
---- Key into the nodeList. 
+--- Key into the nodeList.
 local rootID = nil
 
 local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
 
-local JSON = Utils.JSON
+-- local JSON = Utils.JSON
 local BehaviourTree = Utils.BehaviourTree
 local Dependency = Utils.Dependency
 local sanitizer = Utils.Sanitizer.forWidget(widget)
@@ -110,7 +105,7 @@ function BtCreator.hide()
 	end
 end
 
---- Adds Treenode to canvas, and also selects it. 
+--- Adds Treenode to canvas, and also selects it.
 local function addNodeToCanvas(node)
 	if next(WG.nodeList) == nil then
 		rootID = node.id
@@ -150,7 +145,7 @@ function listenerStartCopyingNode(node, x , y)
 	return node
 end
 
-function listenerEndCopyingNode(self, x , y)
+function listenerEndCopyingNode(_, x , y)
 	--y = y + startCopyingLocation.y
 	if(copyTreeNode and x - nodePoolPanel.width - startCopyingLocation.x > -20) then
 		local params = {
@@ -239,27 +234,27 @@ function listenerClickOnSaveTree()
 	-- are there enough roles?
 	local maxSplit = maxRoleSplit(resultTree)
 	local rolesCount = 0
-	for _,role in pairs(rolesOfCurrentTree) do		
+	for _,role in pairs(rolesOfCurrentTree) do
 		rolesCount = rolesCount + 1
 	end
 	if((maxSplit == rolesCount) and (rolesCount > 0) ) then --roles are plausible
 		resultTree.roles = rolesOfCurrentTree
 		resultTree.defaultRole = rolesOfCurrentTree[1].name
 		resultTree.inputs = {}
-		
+
 		local inputs = WG.nodeList[rootID].inputs
-		if(inputs ~= nil) then 
+		if(inputs ~= nil) then
 			for i=1,#inputs do
 				if (inputTypeMap[ inputs[i][2].items[ inputs[i][2].selected ] ] == nil) then
 					error("Uknown tree input type detected in BtCreator tree serialization. "..debug.traceback())
 				end
 				table.insert(resultTree.inputs, {["name"] = inputs[i][1].text, ["command"] = inputTypeMap[ inputs[i][2].items[ inputs[i][2].selected ] ],})
 			end
-		end 
+		end
 		resultTree:Save(treeNameEditbox.text)
 		WG.clearSelection()
 	else
-		-- we need to get user to define roles first: 
+		-- we need to get user to define roles first:
 		showRoleManagementWindow("save")
 	end
 end
@@ -322,7 +317,7 @@ local createRows, rowsMetatable
 do
 	local TEXT_HEIGHT = 20
 	local metapairs = Utils.metapairs
-	
+
 	local function makeCaption(k, v)
 		local strKey = tostring(k)
 		local strValue = tostring(v)
@@ -335,7 +330,7 @@ do
 			keyMap = {}
 			self.keyMap = keyMap
 		end
-		
+
 		local length = self.length or 0
 		local oldLength = length
 		local offset = 0
@@ -390,7 +385,7 @@ do
 					height = TEXT_HEIGHT,
 					Contract = function(row)
 						if(not row.panel)then return end
-					
+
 						self.expandTable[k] = nil
 						row.panel:Dispose()
 						row.panel = nil
@@ -399,7 +394,7 @@ do
 					end,
 					Expand = function(row)
 						if(row.panel)then return end
-					
+
 						row.panel = Chili.Control:New{
 							parent = row.control,
 							x = 0,
@@ -434,7 +429,7 @@ do
 			self[i] = nil
 		end
 		self.length = length
-		
+
 		self.height = top
 		if(self.sizeChangedCallback)then
 			self.sizeChangedCallback(self, top)
@@ -446,18 +441,18 @@ do
 			row = self[i]
 			row.control:SetPos(0, top)
 			top = top + row.height
-		end		
-		
+		end
+
 		self.height = top
 		if(self.sizeChangedCallback)then
 			self.sizeChangedCallback(self, top)
 		end
 	end
-	
+
 	rowsMetatable = {
 		__index = rowsPrototype
 	}
-	
+
 	function createRows(wrapper, expandTable, sizeChangedCallback)
 		return setmetatable({
 			length = 0,
@@ -467,14 +462,14 @@ do
 		}, rowsMetatable)
 	end
 end
-local expandedVariablesMap = {} 
+local expandedVariablesMap = {}
 
 local function showCurrentBlackboard(blackboardState)
 	currentBlackboardState = blackboardState
 	if(not blackboardWindowState)then
 		return
 	end
-	
+
 	blackboardWindowState.rows:SetTable(blackboardState)
 end
 local function listenerClickOnShowBlackboard()
@@ -483,9 +478,9 @@ local function listenerClickOnShowBlackboard()
 		blackboardWindowState = nil
 		return
 	end
-	
+
 	blackboardWindowState = {}
-	
+
 	local height = 60+10*20
 	local window = Chili.Window:New{
 		parent = Screen0,
@@ -498,7 +493,7 @@ local function listenerClickOnShowBlackboard()
 		caption = "Blackboard:",
 	}
 	blackboardWindowState.window = window
-	
+
 	blackboardWindowState.contentWrapper = Chili.ScrollPanel:New{
 		parent = window,
 		x = 0,
@@ -506,9 +501,9 @@ local function listenerClickOnShowBlackboard()
 		width = '100%',
 		height = '100%',
 	}
-	
+
 	blackboardWindowState.rows = createRows(blackboardWindowState.contentWrapper, expandedVariablesMap)
-	
+
 	if(currentBlackboardState)then
 		showCurrentBlackboard(currentBlackboardState)
 	end
@@ -601,7 +596,7 @@ local function updateStatesMessage(params)
 		local color = DEFAULT_COLOR;
 		-- set breakpoint color to all breakpoints, independent from current state
 		if(breakpoints[id]) then  --and ((states[id] and states[id]:upper() ~= "STOPPED") or states[id]==nil)) then
-			 color = BREAKPOINT_COLOR 
+			 color = BREAKPOINT_COLOR
 		end
 		if(states[id] ~= nil) then
 			if(states[id]:upper() == "RUNNING") then
@@ -658,7 +653,7 @@ local function populateNodePoolWithTreeNodes(heightSum, nodes)
 		if (nodes[i].nodeType ~= "luaCommand") then
 			local nodeParams = {
 				name = nodes[i].name,
-				hasConnectionOut = (nodes[i].children == null) or (type(nodes[i].children) == "table" and #nodes[i].children ~= 0),
+				hasConnectionOut = (nodes[i].children == nil) or (type(nodes[i].children) == "table" and #nodes[i].children ~= 0),
 				nodeType = nodes[i].name, -- TODO use name parameter instead of nodeType
 				parent = nodePoolPanel,
 				y = heightSum,
@@ -670,14 +665,14 @@ local function populateNodePoolWithTreeNodes(heightSum, nodes)
 				onMouseUp = { listenerEndCopyingNode },
 				parameters = copyTable(nodes[i]["parameters"]),
 			}
-			-- Make value field from defaultValue. 
+			-- Make value field from defaultValue.
 			processTreenodeParameters(nodeParams.nodeType, nodeParams.parameters, nodeParams.hasConnectionIn, nodeParams.hasConnectionOut)
-			
+
 			if(nodes[i].defaultHeight) then
 				nodeParams.height = math.max(50 + #nodeParams["parameters"]*20, nodes[i].defaultHeight)
 			end
 			heightSum = heightSum + (nodeParams.height or 60)
-			
+
 			addNodeIntoNodepool(nodeParams)
 		end
 	end
@@ -689,7 +684,7 @@ local function getFileExtension(filename)
 end
 
 local function getParameterDefinitionsForLuaCommands()
-	local directoryName = LUAUI_DIRNAME .. "Widgets/BtCommandScripts" 
+	local directoryName = LUAUI_DIRNAME .. "Widgets/BtCommandScripts"
 	local folderContent = VFS.DirList(directoryName)
 	local paramsDefs = {}
 	
@@ -702,12 +697,12 @@ local function getParameterDefinitionsForLuaCommands()
 	for _,scriptName in ipairs(folderContent)do
 		if getFileExtension(scriptName) == ".lua" then
 			Logger.log("script-load", "Loading definition from file: ", scriptName)
-			
+
 			local nameComment = "--[[" .. scriptName .. "]] "
 			local code = nameComment .. VFS.LoadFile(scriptName) .. "; return getInfo()"
 			local shortName = string.sub(scriptName, string.len(directoryName) + 2)
 			local script = assert(loadstring(code))
-		
+
 			local success, info = pcall(script)
 
 			if success then
@@ -764,7 +759,7 @@ local function fillNodePoolWithNodes(nodes)
 		heightSum = heightSum + (nodeParams.height or 60)
 		addNodeIntoNodepool(nodeParams)
 	end
-	
+
 	nodePoolPanel:RequestUpdate()
 end
 
@@ -806,24 +801,24 @@ end
 
 function widget:Initialize()
 	Logger.log("reloading", "BtCreator widget:Initialize start. ")
-	
+
 	if (not WG.ChiliClone) then
 		-- don't run if we can't find Chili
 		widgetHandler:RemoveWidget()
 		return
 	end
-	
+
 	BtEvaluator = sanitizer:Import(WG.BtEvaluator)
-	
+
 	BtEvaluator.OnNodeDefinitions = fillNodePoolWithNodes
 	BtEvaluator.OnUpdateStates = updateStatesMessage
-	
+
 	-- Get ready to use Chili
 	Chili = WG.ChiliClone
-	Screen0 = Chili.Screen0	
-	
+	Screen0 = Chili.Screen0
+
 	connectionLine.initialize()
-	
+
 	nodePoolPanel = Chili.ScrollPanel:New{
 		parent = Screen0,
 		y = '56%',
@@ -841,14 +836,14 @@ function widget:Initialize()
 		height = '10%',
 		caption = "Node Pool",
 		skinName='DarkGlass',
-	} 
-	
-	Logger.loggedCall("Errors", "BtCreator", "requesting node definitions", 
+	}
+
+	Logger.loggedCall("Errors", "BtCreator", "requesting node definitions",
 			BtEvaluator.requestNodeDefinitions)
-	
-		
+
+
 	Logger.log("reloading", "BtCreator widget:Initialize after requestNodeDefinitions. nodeDefinitionInfo: "..dump(nodeDefinitionInfo, 3))
-	
+
 	local maxNodeWidth = 125
 	for i=1,#nodePoolList do
 		if(nodePoolList[i].width + 21 > maxNodeWidth) then
@@ -863,7 +858,7 @@ function widget:Initialize()
 		x = nodePoolPanel.width + 22,
 		y = '56%',
 		width  = Screen0.width - nodePoolPanel.width - 25,
-		height = '42%',	
+		height = '42%',
 		padding = {10,10,10,10},
 		draggable=true,
 		resizable=true,
@@ -874,9 +869,9 @@ function widget:Initialize()
 		-- OnMouseDown = { listenerStartSelectingNodes },
 		-- OnMouseUp = { listenerEndSelectingNodes },
 	}
-	
+
 	addNodeToCanvas( createRoot() )
-	
+
 	newTreeButton = Chili.Button:New{
 		x = 0,
 		y = 0,
@@ -957,7 +952,7 @@ function widget:Initialize()
 		focusColor = {0.5,0.5,0.5,0.5},
 		OnClick = { sanitizer:AsHandler(listenerClickOnContinue) },
 	}
-	
+
 	buttonPanel = Chili.Control:New{
 		parent = Screen0,
 		x = btCreatorWindow.x,
@@ -966,8 +961,8 @@ function widget:Initialize()
 		height = 40,
 		children = { newTreeButton, saveTreeButton, loadTreeButton, roleManagerButton, showSensorsButton, showBlackboardButton, breakpointButton, continueButton }
 	}
-	
-	
+
+
 	minimizeButton = Chili.Button:New{
 		parent = buttonPanel,
 		x = btCreatorWindow.width - 45,
@@ -979,7 +974,7 @@ function widget:Initialize()
 		focusColor = {0.5,0.5,0.5,0.5},
 		OnClick = { sanitizer:AsHandler(listenerClickOnMinimize) },
 	}
-	
+
 	treeNameEditbox = Chili.EditBox:New{
 		parent = btCreatorWindow,
 		text = "02-flipEcho",
@@ -993,11 +988,11 @@ function widget:Initialize()
 	}
 	-- treeNameEditbox.font.size = 16
 	listenerClickOnMinimize()
-	
+
 	WG.BtCreator = BtCreator
 	Dependency.fill(Dependency.BtCreator)
 	Logger.log("reloading", "BtCreator widget:Initialize end. ")
-end 
+end
 
 function widget:Shutdown()
 	Logger.log("reloading", "BtCreator widget:Shutdown start. ")
@@ -1030,7 +1025,7 @@ function widget:KeyPress(key)
 		end
 		return true;
 	end
-	
+
 end
 
 local fieldsToSerialize = {
@@ -1046,12 +1041,12 @@ local fieldsToSerialize = {
 }
 
 function formBehaviourTree()
-	-- Validate every treenode - when editing editBox parameter and immediately serialize, 
+	-- Validate every treenode - when editing editBox parameter and immediately serialize,
 	-- the last edited parameter doesnt have to be updated
 	for _,node in pairs(WG.nodeList) do
 		node:UpdateParameterValues()
 	end
-	
+
 	local bt = BehaviourTree:New()
 	local nodeMap = {}
 	for id,node in pairs(WG.nodeList) do
@@ -1081,11 +1076,11 @@ function formBehaviourTree()
 				params.nodeType = "luaCommand"
 				params.scriptName = scriptName
 			end
-			
+
 			nodeMap[node] = bt:NewNode(params)
 		end
 	end
-	
+
 	for id,node in pairs(WG.nodeList) do
 		local btNode = nodeMap[node]
 		local children = node:GetChildren()
@@ -1098,7 +1093,7 @@ function formBehaviourTree()
 			end
 		end
 	end
-	
+
 	return bt
 end
 
@@ -1109,7 +1104,7 @@ function clearCanvas(omitRoot)
 	end
 	WG.nodeList = {}
 	WG.selectedNodes = {}
-	
+
 	if(not omitRoot)then
 		addNodeToCanvas( createRoot() )
 	end
@@ -1118,15 +1113,15 @@ end
 local function loadBehaviourNode(bt, btNode)
 	if(not btNode or btNode.nodeType == "empty_tree")then return nil end
 	local params = {}
-	local info = {}
-	
+	local info
+
 	Logger.log("save-and-load", "loadBehaviourNode - nodeType: ", btNode.nodeType, " scriptName: ", btNode.scriptName, " info: ", dump(nodeDefinitionInfo[btNode.nodeType],2))
 	if (btNode.scriptName ~= nil) then
 		info = nodeDefinitionInfo[btNode.scriptName]
 	else
 		info = nodeDefinitionInfo[btNode.nodeType]
 	end
-	
+
 	for k,v in pairs(info) do
 		if(type(v) == "table") then
 			params[k] = copyTable(v)
@@ -1136,14 +1131,14 @@ local function loadBehaviourNode(bt, btNode)
 	end
 	for k, v in pairs(btNode) do
 		if(k=="parameters") then
-		
+
 			Logger.log("save-and-load", "params: ", params, ", params.parameters: ", params.parameters, "v[3]: ", v[3])
 			for i=1,#v do
 				if (v[i].name ~= "scriptName") then
 					if(params.parameters[i].name ~= v[i].name)then
 						Logger.error("save-and-load", "Parameter names do not match: ", params.parameters[i].name, " != ", v[i].name)
 					end
-				
+
 					Logger.log("save-and-load", "params.parameters[i]: ", params.parameters[i], ", v[i]: ", v[i])
 					params.parameters[i].value = v[i].value
 				end
@@ -1160,11 +1155,11 @@ local function loadBehaviourNode(bt, btNode)
 	params.parent = btCreatorWindow
 	params.connectable = true
 	params.draggable = true
-	
+
 	if (btNode.scriptName ~= nil) then
 		params.nodeType = btNode.scriptName
 	end
-	
+
 	local node = Chili.TreeNode:New(params)
 	addNodeToCanvas(node)
 	for _, btChild in ipairs(btNode.children) do
@@ -1199,7 +1194,7 @@ function loadBehaviourTree(bt)
 			end
 		end
 	end
-end                
+end
 
 function showCategoryDefinitionWindow()
 	rolesWindow:Hide()
@@ -1223,17 +1218,17 @@ function showCategoryDefinitionWindow()
 		x = nameEditBox.x + nameEditBox.width,
 		y = 0,
 		caption = "DONE",
-		OnClick = {sanitizer:AsHandler(doneCategoryDefinition)}, 
+		OnClick = {sanitizer:AsHandler(doneCategoryDefinition)},
 	}
 	--categoryDoneButton.UnitCategories = unitCategories
-	
+
 	local categoryCancelButton = Chili.Button:New{
 		parent =  categoryDefinitionWindow,
 		x = categoryDoneButton.x + categoryDoneButton.width,
 		y = 0,
 		caption = "CANCEL",
-		OnClick = {sanitizer:AsHandler(cancelCategoryDefinition)}, 
-	} 
+		OnClick = {sanitizer:AsHandler(cancelCategoryDefinition)},
+	}
 	local categoryScrollPanel = Chili.ScrollPanel:New{
 		parent = categoryDefinitionWindow,
 		x = 0,
@@ -1259,7 +1254,7 @@ function showCategoryDefinitionWindow()
 		typeCheckBox.unitName = unitDef.name
 		typeCheckBox.unitHumanName = unitDef.humanName
 		xLocalOffSet = xLocalOffSet + 1
-		if(xLocalOffSet == 5) then 
+		if(xLocalOffSet == 5) then
 			xLocalOffSet = 0
 			yOffSet = yOffSet + 20
 		end
@@ -1273,7 +1268,7 @@ end
 
 
 
-function doneCategoryDefinition(self)	
+function doneCategoryDefinition(self)
 	-- add new category to unitCategories
 	local unitTypes = {}
 	for _,unitTypeCheckBox in pairs(self.Checkboxes) do
@@ -1298,22 +1293,13 @@ function cancelCategoryDefinition(self)
 end
 --[[
 local function findCategoryData(categoryName)
-	for _,catData in pairs(unitCategories) do 
+	for _,catData in pairs(unitCategories) do
 		if(catData.name == categoryName) then
 			return catData
 		end
 	end
 end
 --]]
-
-local function isInTable(value, t)
-	for i=1,#t do
-		if(t[i] == value) then
-			return true
-		end
-	end
-	return false
-end
 
 function doneRoleManagerWindow(self)
 	self.Window:Hide()
@@ -1331,13 +1317,13 @@ function doneRoleManagerWindow(self)
 		table.insert(result, roleResult)
 	end
 	rolesOfCurrentTree = result
-	
-	if((self.Mode ~= nil)  and (self.Mode == "save")) then 
+
+	if((self.Mode ~= nil)  and (self.Mode == "save")) then
 		listenerClickOnSaveTree()
 	end
 end
--- This shows the role manager window, mode is used to determine if tree should be saved on clicking "done" 
-function showRoleManagementWindow(mode) 	
+-- This shows the role manager window, mode is used to determine if tree should be saved on clicking "done"
+function showRoleManagementWindow(mode)
 	local tree = formBehaviourTree()
 	-- find out how many roles we need:
 	local roleCount = maxRoleSplit(tree)
@@ -1354,15 +1340,15 @@ function showRoleManagementWindow(mode)
 	end
 	visit(tree.root)
 	--]]
-	
+
 	--[[ RESET UNIT CATHEGORIES
 	loadStandardCategories()
 	saveUnitCategories()
 	--]]
-	
+
 	--unitCategories = BtUtils.UnitCategories.getCategories()
 
-	
+
 	rolesWindow = Chili.Window:New{
 		parent = Screen0,
 		x = 150,
@@ -1371,17 +1357,17 @@ function showRoleManagementWindow(mode)
 		height = 600,
 		skinName = 'DarkGlass'
 	}
-	
+
 	-- now I just need to save it
 	roleManagementDoneButton = Chili.Button:New{
 		parent =  rolesWindow,
 		x = 0,
 		y = 0,
 		caption = "DONE",
-		OnClick = {sanitizer:AsHandler(doneRoleManagerWindow)}, 
+		OnClick = {sanitizer:AsHandler(doneRoleManagerWindow)},
 	}
 	roleManagementDoneButton.Mode = mode
-	
+
 	newCategoryButton = Chili.Button:New{
 		parent = rolesWindow,
 		x = 150,
@@ -1391,7 +1377,7 @@ function showRoleManagementWindow(mode)
 		OnClick = {sanitizer:AsHandler(showCategoryDefinitionWindow)},
 	}
 
-	
+
 	local rolesScrollPanel = Chili.ScrollPanel:New{
 		parent = rolesWindow,
 		x = 0,
@@ -1404,8 +1390,8 @@ function showRoleManagementWindow(mode)
 	local xOffSet = 10
 	local yOffSet = 10
 	local xCheckBoxOffSet = 180
-	-- set up checkboxes for all roles and categories 
-	
+	-- set up checkboxes for all roles and categories
+
 	for roleIndex=0, roleCount -1 do
 		local nameEditBox = Chili.EditBox:New{
 			parent = rolesScrollPanel,
@@ -1416,12 +1402,12 @@ function showRoleManagementWindow(mode)
 		}
 		local checkedCategories = {}
 		if(rolesOfCurrentTree[roleIndex+1]) then
-			nameEditBox:SetText(rolesOfCurrentTree[roleIndex+1].name)	
+			nameEditBox:SetText(rolesOfCurrentTree[roleIndex+1].name)
 			for _,catName in pairs(rolesOfCurrentTree[roleIndex+1].categories) do
 				checkedCategories[catName] = 1
 			end
 		end
-		
+
 		local categoryNames = Utils.UnitCategories.getAllCategoryNames()
 		local categoryCheckBoxes = {}
 		local xLocalOffSet = 0
@@ -1438,23 +1424,23 @@ function showRoleManagementWindow(mode)
 				categoryCheckBox:Toggle()
 			end
 			xLocalOffSet = xLocalOffSet + 1
-			if(xLocalOffSet == 4) then 
+			if(xLocalOffSet == 4) then
 				xLocalOffSet = 0
 				yOffSet = yOffSet + 20
 			end
-			
+
 			table.insert(categoryCheckBoxes, categoryCheckBox)
 		end
-		
-		
+
+
 		yOffSet = yOffSet + 50
 		local roleCategories = {}
 		roleCategories["NameEditBox"] = nameEditBox
 		roleCategories["CheckBoxes"] = categoryCheckBoxes
 		table.insert(rolesCategoriesCB,roleCategories)
-	end	
+	end
 	roleManagementDoneButton.RolesData = rolesCategoriesCB
-	roleManagementDoneButton.Window = rolesWindow	
+	roleManagementDoneButton.Window = rolesWindow
 end
 
 --------------------------------------------------------------------------------------------------------------------------
