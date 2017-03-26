@@ -1137,6 +1137,7 @@ function widget:Initialize()
 		Dependency.BtCreator
 	)
 	
+	WG.BtControllerReloadTreeType = BtController.reloadTreeType
 	-- Create the window
    
 	setUpTreeControlWindow()
