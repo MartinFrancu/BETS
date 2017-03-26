@@ -652,7 +652,8 @@ local function addNodeIntoNodepool(treenodeParams)
 	table.insert(nodePoolList, Chili.TreeNode:New(treenodeParams))
 end
 
-local function populateNodePoolWithTreeNodes(heightSum, nodes) 
+local function populateNodePoolWithTreeNodes(heightSum, nodes)
+	table.sort(nodes, function(a, b) return a.name < b.name end)
 	for i=1,#nodes do
 		if (nodes[i].nodeType ~= "luaCommand") then
 			local nodeParams = {
@@ -691,6 +692,12 @@ local function getParameterDefinitionsForLuaCommands()
 	local directoryName = LUAUI_DIRNAME .. "Widgets/BtCommandScripts" 
 	local folderContent = VFS.DirList(directoryName)
 	local paramsDefs = {}
+	
+	local nameList = {}
+	
+	for _,scriptName in ipairs(folderContent)do
+		nameList[#nameList] = scriptName
+	end
 
 	for _,scriptName in ipairs(folderContent)do
 		if getFileExtension(scriptName) == ".lua" then
@@ -714,14 +721,28 @@ local function getParameterDefinitionsForLuaCommands()
 	return paramsDefs
 end
 
+local function sortedKeyList(t)
+	local keys = {}
+	local n = 0
+	for k,v in pairs(t) do
+	  n = n + 1
+	  keys[n] = k
+	end
+	table.sort(keys)
+	return keys
+end
+
 local function fillNodePoolWithNodes(nodes)
 	nodePoolList = {}
 	nodeDefinitionInfo = {}
 	local heightSum = 30 -- skip NodePoolLabel
-  heightSum = populateNodePoolWithTreeNodes(heightSum, nodes) -- others than lua script commands
+	heightSum = populateNodePoolWithTreeNodes(heightSum, nodes) -- others than lua script commands
 	-- load lua commands
 	local paramDefs = getParameterDefinitionsForLuaCommands()
-	for scriptName, params in pairs(paramDefs) do
+	local scriptList = sortedKeyList(paramDefs)
+	
+	for _, scriptName in ipairs(scriptList) do
+		local params = paramDefs[scriptName]
 		local nodeParams = {
 			name = scriptName,
 			hasConnectionOut = false,
