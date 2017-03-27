@@ -188,6 +188,7 @@ end
 
 function TreeNode:UpdateDimensions()
 	local maxWidth = self.nodeWindow.width
+	maxWidth = math.max(maxWidth, self.nodeWindow.font:GetTextWidth(self.nameEditBox.text) + 30)
 	local maxHeight = self.nodeWindow.height
 	local p = self.parameterObjects
 	for i=1,#p do
