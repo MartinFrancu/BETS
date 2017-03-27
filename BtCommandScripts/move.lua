@@ -7,6 +7,12 @@ function getInfo()
 				variableType = "expression",
 				componentType = "editBox",
 				defaultValue = "{x = 0, z = 0}",
+			},
+			{ 
+				name = "fight",
+				variableType = "expression",
+				componentType = "checkBox",
+				defaultValue = "false",
 			}
 		}
 	}
@@ -165,6 +171,8 @@ function Run(self, unitIds, parameter)
 		return FAILURE
 	end
 	
+	local springCmd = parameter.fight and CMD.FIGHT or CMD.MOVE
+	
 	
 	local firstTick = false
 	if not self.finalTargets[leader] then
@@ -172,7 +180,7 @@ function Run(self, unitIds, parameter)
 		InitTargetLocations(self, unitIds, parameter)
 		local leaderTar = self.finalTargets[self.leaderId]
 		Logger.log("move-command", "=== leaderTar: ", leaderTar)
-		giveOrderToUnit(self.leaderId, CMD.MOVE, leaderTar:AsSpringVector(), {})
+		giveOrderToUnit(self.leaderId, springCmd, leaderTar:AsSpringVector(), {})
 		firstTick = true
 	end
 	
@@ -227,7 +235,7 @@ function Run(self, unitIds, parameter)
 				-- go to the target location when leader reaches the target location
 				if issueFinalOrder then
 					--Logger.log("move-command", "=== Final order ", unitID)
-					giveOrderToUnit(unitID, CMD.MOVE, self.finalTargets[unitID]:AsSpringVector(), {})
+					giveOrderToUnit(unitID, springCmd, self.finalTargets[unitID]:AsSpringVector(), {})
 				end
 			elseif not curSubTar or UnitIdle(self, unitID) or (curSubTar - curPos):LengthSqr() < SUBTARGET_TOLEARANCE_SQ then --or not dirsEqual(leaderDir, curDir) then
 				-- otherwise move a small distance in the direction the leader is facing
@@ -240,7 +248,7 @@ function Run(self, unitIds, parameter)
 				local curSubTar = leaderDir + formationVect + curPos
 				
 				self.subTargets[unitID] = curSubTar
-				giveOrderToUnit(unitID, CMD.MOVE, curSubTar:AsSpringVector(), {})
+				giveOrderToUnit(unitID, springCmd, curSubTar:AsSpringVector(), {})
 			end
 		end
 	end
