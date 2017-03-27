@@ -157,7 +157,6 @@ function addTreeToTreeTabPanel(treeHandle)
 	treeTabPanel:AddTab(newTab)
 	highlightTab(newTab.name)
 	
-	-- Now I should add a listener to show proper tree:
 	-- get tabBar		
 	addFieldToBarItem(treeTabPanel, newTab.name, "MouseDown", sanitizer:AsHandler(tabBarItemMouseDownBETS) )
 	addFieldToBarItemList(treeTabPanel, newTab.name, "OnClick", sanitizer:AsHandler(listenerBarItemClick) )
@@ -563,15 +562,16 @@ function reloadTree(tabs, treeHandle)
 	local treeType = treeHandle.TreeType
 	local requireUnits = treeHandle.RequireUnits
 	local assignedUnits = {}
-	for _, roleData in pairs(treeHandle.roles) do
-		local unitsInRole = TreeHandle.unitsInTreeRoles(treeHandle.InstanceId, roleData.name)
+	for _,roleData in pairs(treeHandle.Tree.roles) do		
+		local unitsInRole = TreeHandle.unitsInTreeRole(treeHandle.InstanceId, roleData.name)
 		if( table.getn(unitsInRole) >= 1) then
 			assignedUnits[roleData.name] = unitsInRole
 		end
+		Logger.log("roles", "reload tree, role name : ", roleData.name, " units in role: ",table.getn(unitsInRole) )
 	end
 
 
-	removeTreeBtController(tabe, treeHandle)
+	removeTreeBtController(tabs, treeHandle)
 	-- getting a new tree, but no reporting it:
 	
 	local newTreeHandle = TreeHandle:New{
@@ -589,48 +589,86 @@ function reloadTree(tabs, treeHandle)
 	-- transfering user given data: 
 	
 	-- units assignment:
-	for _, roleData in pairs(newTreeHandle.roles) do
+	for _,roleData in pairs(newTreeHandle.Tree.roles) do
 		-- if the name is same, assign units in this role:
 		if( assignedUnits[roleData.name] ~= nil) then
 			for _,unitId in pairs(assignedUnits[roleData.name]) do
-				TreeHandle.assignUnitsToTree(unitId, newTreeHandle, roleData.name)
+				TreeHandle.assignUnitToTree(unitId, newTreeHandle, roleData.name)
 			end
 		end
 	end
 	
+	
+	
 	-- inputs:
+	local oldInputsCmd = {}
+	for _,inputSpec in pairs (treeHandle.Tree.inputs) do
+		oldInputsCmd[inputSpec.name] = inputSpec.command
+	end
+	-- collect old input command names:
 	for _, inputSpec in pairs (newTreeHandle.Tree.inputs) do
 		local inputName = inputSpec.name
-		local givenInput = treeHandle.Inputs[inputName]
-		local oldCommand = treeHandle.Tree.inputs[inputName].command
-		local newCommand = newTreeHandle.Tree.inputs[inputName].command
-		if (givenInput ~= nil) and (oldCommand == newCommand) then  
-			newTreeHandle:FillInInput(inputSpec.name, inputsOld[inputSpec.name])
-		end
+		if (oldInputsCmd[inputName] ~= nil) then		
+			local givenInput = treeHandle.Inputs[inputName]
+			local oldCommand = oldInputsCmd[inputName]
+			local newCommand = inputSpec.command
+			-- if input was given and it has the same type (colecting command name) then fill the data in
+			if (givenInput ~= nil) and (oldCommand == newCommand) then  
+				newTreeHandle:FillInInput(inputName, treeHandle.Inputs[inputName])
+			end
+		end 
 	end
 	
 	-- if tree is ready, initialize it in BtEvaluator
 	if(newTreeHandle:CheckReady()) then
 		createTreeInBtEvaluator(newTreeHandle)
-		--newTreeHandle.ReportTree(newTreeHandle)
 		newTreeHandle.Created = true
 		reportAssignedUnits(newTreeHandle)
-		--newTreeHandle.ReportUnits(newTreeHandle)
 	end
+	
+	newTreeHandle:UpdateTreeStatus()
+	--listenerBarItemClick({TreeHandle = treeHandle}, 0, 0, 1)
 end
 
 function BtController.reloadTreeType(treeTypeName)
 	-- make list of trees with this type:
 	local toReload = {}
-	for name,tab in pairs(treeTabPanel.tabIndexMapping) do
-		local treeTab = tab.TreeHandle
-		if(tab.TreeHandle.TreeType == treeTypeName)then
-			table.insert(toReload, tab.TreeHandle)
+	-- I should iterate over all tab bar items:
+	local tabBarChildIndex = 1
+	-- get tabBar
+	local tabBar = treeTabPanel.children[tabBarChildIndex]
+	-- find corresponding tabBarItems: 
+	local barItems = tabBar.children
+	for index,item in ipairs(barItems) do
+		-- if there is TreeHandle in this item and the tree type is right one:
+		if( (item.TreeHandle ~= nil) 
+			and (item.TreeHandle.TreeType == treeTypeName) )
+		then
+			table.insert(toReload, item.TreeHandle) 
 		end
 	end
+
 	for _,treeHandle in pairs(toReload) do
 		reloadTree(treeTabPanel, treeHandle)
 	end
+	
+	local currentTabName = tabBar.selected_obj.caption
+	local currentTreeHandle =  tabBar.selected_obj.TreeHandle
+	--local currentTab = treeTabPanel.tabIndexMapping[currentTabName]
+	--[[local currentTreeHandle
+	for index,tabBarItem in pairs(tabBar.children) do
+		if(tabBarItem.caption == currentTabName) then
+			currentTreeHandle = tabBarItem.TreeHandle
+		end
+	end]]
+	
+	-- if tree with this type is shown show BtCreator
+	Logger.log("roles", "tree type:" ,treeTypeName, " and " , currentTreeHandle.TreeType )
+	if treeTypeName == currentTreeHandle.TreeType then
+		
+		listenerBarItemClick({TreeHandle =  currentTreeHandle}, 0, 0, 1)
+	end
+	
 end
 
 function showErrorWindow(errorDecription)
@@ -758,7 +796,7 @@ end
 function listenerBarItemClick(self, x, y, button, ...)
 	if button == 1 then
 		-- select assigned units, if any
-		local unitsToSelect = unitsInTree(self.TreeHandle.InstanceId)
+		local unitsToSelect = TreeHandle.unitsInTree(self.TreeHandle.InstanceId)
 		Spring.SelectUnitArray(unitsToSelect)
 
 		self.TreeHandle:UpdateTreeStatus()

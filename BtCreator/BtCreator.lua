@@ -256,7 +256,10 @@ function listenerClickOnSaveTree()
 		resultTree:Save(treeNameEditbox.text)
 		WG.clearSelection()
 		
-		WG.BtControllerReloadTreeType(treeNameEditbox.text)
+		Logger.loggedCall("Errors", "BtCreator", 
+			"asking BtController to reload instances of saved tree type",
+			WG.BtControllerReloadTreeType,
+			treeNameEditbox.text)
 	else
 		-- we need to get user to define roles first:
 		showRoleManagementWindow("save")
