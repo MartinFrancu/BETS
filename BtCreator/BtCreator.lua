@@ -66,6 +66,8 @@ local BtCreator = {} -- if we need events, change to Sentry:New()
 
 -- connection lines functions
 local connectionLine = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/connection_line.lua", nil, VFS.RAW_FIRST)
+-- blackboard window
+local blackboard
 
 local treeInstanceId
 
@@ -309,208 +311,6 @@ function listenerClickOnShowSensors()
 	end
 end
 
--- ===============================================================
---   Blackboard showing
-
-local blackboardWindowState
-local createRows, rowsMetatable
-do
-	local TEXT_HEIGHT = 20
-	local metapairs = Utils.metapairs
-
-	local function makeCaption(k, v)
-		local strKey = tostring(k)
-		local strValue = tostring(v)
-		return strKey .. " = " .. (strValue == "<table>" and "{...}" or strValue)
-	end
-	local rowsPrototype = {}
-	function rowsPrototype:SetTable(t)
-		local keyMap = self.keyMap
-		if(not keyMap)then
-			keyMap = {}
-			self.keyMap = keyMap
-		end
-
-		local length = self.length or 0
-		local oldLength = length
-		local offset = 0
-		local top = 0
-		for i = 1, length do
-			local row = self[i]
-			if(t[row.key] == nil)then
-				row.control:Dispose()
-				keyMap[row.key] = nil
-				offset = offset + 1
-			else
-				self[i - offset] = row
-				row.index = i - offset
-				row.control:SetPos(0, top)
-				local v = t[row.key]
-				row.currentValue = v
-				row.control.children[1]:SetCaption(makeCaption(row.key, v))
-				if(row.subrows)then
-					row.subrows:SetTable(v)
-				end
-				top = top + row.height
-			end
-		end
-		length = length - offset
-		for k, v in metapairs(t) do
-			if(not keyMap[k])then
-				local row; row = {
-					key = k,
-					currentValue = v,
-					control = Chili.Control:New{
-						parent = self.wrapper,
-						x = 0,
-						y = top,
-						padding = {0,0,0,0},
-						width = '100%',
-						height = TEXT_HEIGHT*4,
-						children = { Chili.Label:New{
-							x = 0,
-							y = 0,
-							caption = makeCaption(k, v),
-							OnMouseUp = (type(v) == "table" and { sanitizer:AsHandler(function(control)
-								if(row.panel)then
-									row:Contract()
-								else
-									row:Expand()
-								end
-								self:Realign()
-								return control
-							end) }) or nil,
-						}, },
-					},
-					height = TEXT_HEIGHT,
-					Contract = function(row)
-						if(not row.panel)then return end
-
-						self.expandTable[k] = nil
-						row.panel:Dispose()
-						row.panel = nil
-						row.subrows = nil
-						row.height = TEXT_HEIGHT
-					end,
-					Expand = function(row)
-						if(row.panel)then return end
-
-						row.panel = Chili.Control:New{
-							parent = row.control,
-							x = 0,
-							y = TEXT_HEIGHT,
-							width = '100%',
-							padding = {10,0,0,0},
-						}
-						local innerExpandTable = self.expandTable[k]
-						if(not innerExpandTable)then
-							innerExpandTable = {}
-							self.expandTable[k] = innerExpandTable
-						end
-						row.subrows = createRows(row.panel, innerExpandTable, function(rows, height)
-							row.panel:SetPos(nil, nil, nil, height)
-							row.height = TEXT_HEIGHT + height
-							row.control:SetPos(nil, nil, nil, row.height)
-						end)
-						row.subrows:SetTable(row.currentValue)
-					end,
-				}
-				if(self.expandTable[k])then
-					row:Expand()
-				end
-				top = top + row.height
-				keyMap[k] = row
-				length = length + 1
-				self[length] = row
-				row.index = length
-			end
-		end
-		for i = length + 1, oldLength do
-			self[i] = nil
-		end
-		self.length = length
-
-		self.height = top
-		if(self.sizeChangedCallback)then
-			self.sizeChangedCallback(self, top)
-		end
-	end
-	function rowsPrototype:Realign()
-		local top = 0
-		for i = 1, self.length do
-			row = self[i]
-			row.control:SetPos(0, top)
-			top = top + row.height
-		end
-
-		self.height = top
-		if(self.sizeChangedCallback)then
-			self.sizeChangedCallback(self, top)
-		end
-	end
-
-	rowsMetatable = {
-		__index = rowsPrototype
-	}
-
-	function createRows(wrapper, expandTable, sizeChangedCallback)
-		return setmetatable({
-			length = 0,
-			wrapper = wrapper,
-			sizeChangedCallback = sizeChangedCallback,
-			expandTable = expandTable,
-		}, rowsMetatable)
-	end
-end
-local expandedVariablesMap = {}
-
-local function showCurrentBlackboard(blackboardState)
-	currentBlackboardState = blackboardState
-	if(not blackboardWindowState)then
-		return
-	end
-
-	blackboardWindowState.rows:SetTable(blackboardState)
-end
-local function listenerClickOnShowBlackboard()
-	if(blackboardWindowState)then
-		blackboardWindowState.window:Dispose()
-		blackboardWindowState = nil
-		return
-	end
-
-	blackboardWindowState = {}
-
-	local height = 60+10*20
-	local window = Chili.Window:New{
-		parent = Screen0,
-		name = "BlackboardWindow",
-		x = buttonPanel.x + showBlackboardButton.x - 5 - 130,
-		y = buttonPanel.y + showBlackboardButton.y - height + 5,
-		width = 400,
-		height = height,
-		skinName = 'DarkGlass',
-		caption = "Blackboard:",
-	}
-	blackboardWindowState.window = window
-
-	blackboardWindowState.contentWrapper = Chili.ScrollPanel:New{
-		parent = window,
-		x = 0,
-		y = 0,
-		width = '100%',
-		height = '100%',
-	}
-
-	blackboardWindowState.rows = createRows(blackboardWindowState.contentWrapper, expandedVariablesMap)
-
-	if(currentBlackboardState)then
-		showCurrentBlackboard(currentBlackboardState)
-	end
-end
-
--- ===============================================================
-
 function listenerClickOnNewTree()
 	local i = 0
 	local newTreeName = "New Tree " .. i
@@ -618,7 +418,7 @@ local function updateStatesMessage(params)
 	if(#children > 0) then
 		setBackgroundColor(WG.nodeList[rootID].nodeWindow, children[1].nodeWindow.backgroundColor)
 	end
-	showCurrentBlackboard(params.blackboard)
+	blackboard.showCurrentBlackboard(params.blackboard)
 	if(shouldPause) then
 		Spring.SendCommands("pause")
 	end
@@ -818,6 +618,7 @@ function widget:Initialize()
 	Screen0 = Chili.Screen0
 
 	connectionLine.initialize()
+	blackboard = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/blackboard.lua", nil, VFS.RAW_FIRST)
 
 	nodePoolPanel = Chili.ScrollPanel:New{
 		parent = Screen0,
@@ -872,7 +673,16 @@ function widget:Initialize()
 
 	addNodeToCanvas( createRoot() )
 
+	buttonPanel = Chili.Control:New{
+		parent = Screen0,
+		x = btCreatorWindow.x,
+		y = btCreatorWindow.y - 30,
+		width = btCreatorWindow.width,
+		height = 40,
+		--children = { newTreeButton, saveTreeButton, loadTreeButton, roleManagerButton, showSensorsButton, showBlackboardButton, breakpointButton, continueButton }
+	}
 	newTreeButton = Chili.Button:New{
+		parent = buttonPanel,
 		x = 0,
 		y = 0,
 		width = 90,
@@ -883,6 +693,7 @@ function widget:Initialize()
 		OnClick = { sanitizer:AsHandler(listenerClickOnNewTree) },
 	}
 	saveTreeButton = Chili.Button:New{
+		parent = buttonPanel,
 		x = newTreeButton.x + newTreeButton.width,
 		y = 0,
 		width = 90,
@@ -893,6 +704,7 @@ function widget:Initialize()
 		OnClick = { sanitizer:AsHandler(listenerClickOnSaveTree) },
 	}
 	loadTreeButton = Chili.Button:New{
+		parent = buttonPanel,
 		x = saveTreeButton.x + saveTreeButton.width,
 		y = 0,
 		width = 90,
@@ -903,6 +715,7 @@ function widget:Initialize()
 		OnClick = { sanitizer:AsHandler(listenerClickOnLoadTree) },
 	}
 	roleManagerButton = Chili.Button:New{
+		parent = buttonPanel,
 		x = loadTreeButton.x + loadTreeButton.width,
 		y = 0,
 		width = 130,
@@ -913,6 +726,7 @@ function widget:Initialize()
 		OnClick = { sanitizer:AsHandler(listenerClickOnRoleManager) },
 	}
 	showSensorsButton = Chili.Button:New{
+		parent = buttonPanel,
 		x = roleManagerButton.x + roleManagerButton.width,
 		y = 0,
 		width = 90,
@@ -923,6 +737,7 @@ function widget:Initialize()
 		OnClick = { sanitizer:AsHandler(listenerClickOnShowSensors) },
 	}
 	showBlackboardButton = Chili.Button:New{
+		parent = buttonPanel,
 		x = showSensorsButton.x + showSensorsButton.width,
 		y = 0,
 		width = 110,
@@ -930,9 +745,18 @@ function widget:Initialize()
 		caption = "Blackboard",
 		skinName = "DarkGlass",
 		focusColor = {0.5,0.5,0.5,0.5},
-		OnClick = { sanitizer:AsHandler(listenerClickOnShowBlackboard) },
+		OnClick = { sanitizer:AsHandler(
+			function()
+				blackboard.setWindowPosition(
+					buttonPanel.x + showSensorsButton.x + showSensorsButton.width - 5 - 130,
+					buttonPanel.y - (60+10*20) + 5
+				)
+				blackboard.listenerClickOnShowBlackboard()
+			end )
+			},
 	}
 	breakpointButton = Chili.Button:New{
+		parent = buttonPanel,
 		x = showBlackboardButton.x + showBlackboardButton.width,
 		y = 0,
 		width = 140,
@@ -943,6 +767,7 @@ function widget:Initialize()
 		OnClick = { sanitizer:AsHandler(listenerClickOnBreakpoint) },
 	}
 	continueButton = Chili.Button:New{
+		parent = buttonPanel,
 		x = breakpointButton.x + breakpointButton.width,
 		y = 0,
 		width = 110,
@@ -952,16 +777,6 @@ function widget:Initialize()
 		focusColor = {0.5,0.5,0.5,0.5},
 		OnClick = { sanitizer:AsHandler(listenerClickOnContinue) },
 	}
-
-	buttonPanel = Chili.Control:New{
-		parent = Screen0,
-		x = btCreatorWindow.x,
-		y = btCreatorWindow.y - 30,
-		width = btCreatorWindow.width,
-		height = 40,
-		children = { newTreeButton, saveTreeButton, loadTreeButton, roleManagerButton, showSensorsButton, showBlackboardButton, breakpointButton, continueButton }
-	}
-
 
 	minimizeButton = Chili.Button:New{
 		parent = buttonPanel,
