@@ -202,6 +202,8 @@ function TreeNode:UpdateDimensions()
 	if(self.nodeType == "Root") then
 		local inputs = self.inputs or {}
 		maxHeight = math.max(maxHeight, #inputs * 21 + 55)
+	else
+		maxHeight = math.max(maxHeight, #p * 20 + 50)
 	end
 	self.nodeWindow:SetPos(nil, nil, maxWidth, maxHeight)
 	self.width = maxWidth
