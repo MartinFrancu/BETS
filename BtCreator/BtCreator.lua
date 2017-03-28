@@ -798,13 +798,14 @@ function widget:Initialize()
 	treeNameEditbox = Chili.EditBox:New{
 		parent = btCreatorWindow,
 		text = "02-flipEcho",
-		width = '33%',
+		width = 70,
 		x = '40%',
 		y = 5,
 		align = 'left',
 		skinName = 'DarkGlass',
 		borderThickness = 0,
 		backgroundColor = {0,0,0,0},
+		autosize = true,
 	}
 	-- treeNameEditbox.font.size = 16
 	listenerClickOnMinimize()
@@ -822,8 +823,8 @@ function widget:Shutdown()
 	for _,node in pairs(nodePoolList) do
 		node:Dispose()
 	end
-	nodePoolPanel:ClearChildren()
 	if(nodePoolPanel) then
+		nodePoolPanel:ClearChildren()
 		nodePoolPanel:Dispose()
 	end
 	if(buttonPanel) then
