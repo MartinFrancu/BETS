@@ -226,9 +226,9 @@ function reloadTree(tabs, treeHandle)
 	local newTreeHandle = TreeHandle:New{
 		Name = instanceName,
 		TreeType = treeType,
-		AssignUnitListener = listenerAssignUnitsButton,
-		InputButtonListener = listenerInputButton,
-		RestartTreeListener =  restartTreeListener,
+		AssignUnitListener = sanitizer:AsHandler(listenerAssignUnitsButton),
+		InputButtonListener = sanitizer:AsHandler(listenerInputButton),
+		RestartTreeListener =  sanitizer:AsHandler(restartTreeListener),
 	}
 	
 	addTreeToTreeTabPanel(newTreeHandle)
@@ -573,9 +573,9 @@ function instantiateTree(treeType, instanceName, requireUnits)
 	local newTreeHandle = TreeHandle:New{
 		Name = instanceName,
 		TreeType = treeType,
-		AssignUnitListener = listenerAssignUnitsButton,
-		InputButtonListener = listenerInputButton,
-		RestartTreeListener =  restartTreeListener,
+		AssignUnitListener = sanitizer:AsHandler(listenerAssignUnitsButton),
+		InputButtonListener = sanitizer:AsHandler(listenerInputButton),
+		RestartTreeListener =  sanitizer:AsHandler(restartTreeListener),
 	}
 	
 	local selectedUnits = spGetSelectedUnits()
@@ -815,6 +815,9 @@ function widget:Initialize()
 	-- Get ready to use Chili
 	Chili = WG.ChiliClone
 	Screen0 = Chili.Screen0	
+	
+	--TreeHandle = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtController/BtTreeHandle.lua", newGlobal, VFS.RAW_FIRST)
+	TreeHandle.initialize()
   
 	BtEvaluator = sanitizer:Import(WG.BtEvaluator)
 	-- extract BtCreator into a local variable once available

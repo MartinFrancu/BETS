@@ -1,5 +1,29 @@
+local Chili
+local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
+local BehaviourTree = Utils.BehaviourTree
+
+local Debug = Utils.Debug;
+local Logger = Debug.Logger
+local dump = Debug.dump
+
+CONSTANTS = {
+	rolesXOffset = 10,
+	rolesYOffset = 30,
+	buttonHeight = 22,
+	singleButtonModifier = 10,
+	labelToButtonYModifier = 5, -- chili feature/bug
+	minRoleLabelWidth = 70,
+	minRoleAssingWidth = 100,
+	minUnitCountWidth = 50,
+	inputGap = 30,
+	notGivenColor = {0.8,0.1,0.1,1},
+	minInputButtonWidth = 150,
+}
 
 TreeHandle = {}
+function TreeHandle.initialize()
+	Chili = WG.Chili	
+end
 TreeHandle.unitsToTreesMap = {}
 --[[
 TreeHandle = {
@@ -80,6 +104,116 @@ function TreeHandle.selectUnitsInRolesListener(button, ...)
 	Spring.SelectUnitArray(unitsInThisRole)
 end
 
+-- This method will set up and load in all chili components corresponding to 
+-- roles in given tree. It returns maximal x-coordinate of components
+function createChiliComponentsRoles(obj)
+	local rolesEndX
+	local roleInd = 0 
+	local roleCount = #obj.Tree.roles
+	
+	for _,roleData in pairs(obj.Tree.roles) do
+		local roleName = roleData.name
+		local roleNameLabel = Chili.Label:New{
+			x = CONSTANTS.rolesXOffset ,
+			y = CONSTANTS.rolesYOffset + CONSTANTS.labelToButtonYModifier  + ( CONSTANTS.buttonHeight ) * roleInd,
+			height = (roleCount == 1 and CONSTANTS.buttonHeight + CONSTANTS.singleButtonModifier or CONSTANTS.buttonHeight),
+			width = '20%',
+			minWidth = CONSTANTS.minRoleLabelWidth,
+			caption = roleName,
+			skinName = "DarkGlass",
+			focusColor = {0.5,0.5,0.5,0.5},
+			tooltip = "Role name",
+		}
+		table.insert(obj.ChiliComponents, roleNameLabel)
+		
+		local roleAssignmentButton = Chili.Button:New{
+			x = CONSTANTS.rolesXOffset + roleNameLabel.width + 50,
+			y = CONSTANTS.rolesYOffset + CONSTANTS.buttonHeight * roleInd,
+			height = roleCount == 1 and CONSTANTS.buttonHeight + CONSTANTS.singleButtonModifier or CONSTANTS.buttonHeight,
+			width = '10%',
+			minWidth = CONSTANTS.minRoleAssingWidth,
+			caption = "Assign",
+			OnClick = {obj.AssignUnitListener}, 
+			skinName = "DarkGlass",
+			focusColor = {0.5,0.5,0.5,0.5},
+			TreeHandle = obj,
+			Role = roleName,
+			roleIndex = roleInd,
+			instanceId = obj.InstanceId,
+			tooltip = "Assigns currently selected units to this role",
+		}
+		table.insert(obj.ChiliComponents, roleAssignmentButton)
+		
+		local unitCountButton = Chili.Button:New{
+			x = roleAssignmentButton.x + roleAssignmentButton.width ,
+			y = CONSTANTS.rolesYOffset + CONSTANTS.buttonHeight * roleInd,
+			height = roleCount == 1 and CONSTANTS.buttonHeight + CONSTANTS.singleButtonModifier or CONSTANTS.buttonHeight,
+			width = '10%',
+			minWidth = CONSTANTS.minUnitCountWidth,
+			caption = 0, 
+			skinName = "DarkGlass",
+			focusColor = {0.5,0.5,0.5,0.5},
+			instanceId = obj.InstanceId,
+			tooltip = "How many units are in tree currently, click selects them.",
+			TreeHandle = obj,
+			Role = roleName,
+			OnClick = {TreeHandle.selectUnitsInRolesListener},
+		}
+		table.insert(obj.ChiliComponents, unitCountButton)
+		
+		rolesEndX = unitCountButton.x + unitCountButton.width 
+		-- get the role unit types:
+		local roleUnitTypes = {}
+		for _,catName in pairs(roleData.categories) do
+			local unitTypes = BtUtils.UnitCategories.getCategoryTypes(catName)		
+			for _,unitType in pairs(unitTypes) do
+				roleUnitTypes[unitType.name] = 1
+			end
+		end
+		
+		obj.Roles[roleName]={
+			assignButton = roleAssignmentButton,
+			unitCountButton = unitCountButton,
+			roleIndex = roleInd,
+			unitTypes = roleUnitTypes
+		}
+		roleInd = roleInd +1
+	end
+	return rolesEndX
+end
+
+-- This method will set up and load in all chili components corresponding to 
+-- inputs of given tree. It returns maximal x-coordinate of components.
+function createChiliComponentsInput(obj, xOffSet)
+	local inputXOffset = xOffSet + CONSTANTS.inputGap
+	local inputYOffset =  CONSTANTS.rolesYOffset
+	local inputInd = 0
+	local inputCount = table.getn(obj.Tree.inputs)
+	
+	for _,input in pairs(obj.Tree.inputs) do
+		local inputName = input.name
+		local inputButton = Chili.Button:New{
+			x = inputXOffset,
+			y = inputYOffset + CONSTANTS.buttonHeight * inputInd,
+			height = inputCount == 1 and CONSTANTS.buttonHeight +  CONSTANTS.singleButtonModifier or CONSTANTS.buttonHeight,
+			width = '25%',
+			minWidth = CONSTANTS.minInputButtonWidth,
+			caption =" " .. inputName .. " (" .. WG.BtCommandsInputHumanNames[input.command].. ")",
+			OnClick = {obj.InputButtonListener}, 
+			skinName = "DarkGlass",
+			focusColor = {0.5,0.5,0.5,0.5},
+			TreeHandle = obj,
+			InputName = inputName,
+			CommandName = input.command,
+			InstanceId = obj.InstanceId,
+			backgroundColor = notGivenColor,
+			tooltip = "Give required input (red = not given yet, green = given)",
+		}
+		inputInd = inputInd + 1
+		table.insert(obj.ChiliComponents, inputButton )
+		table.insert(obj.InputButtons, inputButton) 
+	end
+end
 
 --[[ It is expected from obj that ti contains following records:
 	AssignUnitListener
@@ -120,7 +254,7 @@ function TreeHandle:New(obj)
 		width =  100,
 		minWidth = 50,
 		caption =  "Restart tree",
-		OnClick = {sanitizer:AsHandler(obj.RestartTreeListener)}, 
+		OnClick = {obj.RestartTreeListener}, 
 		TreeHandle = obj,
 		skinName = "DarkGlass",
 		tooltip = "Restarts evalution of this tree",
@@ -130,7 +264,7 @@ function TreeHandle:New(obj)
 	local roleInd = 0 
 	local roleCount = #obj.Tree.roles
 	
-	local rolesXOffset = 10
+--[[	local rolesXOffset = 10
 	local rolesYOffset = 30
 	local buttonHeight = 22
 	local singleButtonModifier = 10
@@ -140,9 +274,11 @@ function TreeHandle:New(obj)
 	local minUnitCountWidth = 50
 	local inputGap = 30
 	local notGivenColor = {0.8,0.1,0.1,1}
-	local rolesEndX -- to be computed
-	local minInputButtonWidth = 150
-	
+
+	local minInputButtonWidth = 150 ]]--
+	local rolesEndX = createChiliComponentsRoles(obj)
+	-- to be computed
+	--[[
 	for _,roleData in pairs(obj.Tree.roles) do
 		local roleName = roleData.name
 		local roleNameLabel = Chili.Label:New{
@@ -165,7 +301,7 @@ function TreeHandle:New(obj)
 			width = '10%',
 			minWidth = minRoleAssingWidth,
 			caption = "Assign",
-			OnClick = {sanitizer:AsHandler(obj.AssignUnitListener)}, 
+			OnClick = {obj.AssignUnitListener}, 
 			skinName = "DarkGlass",
 			focusColor = {0.5,0.5,0.5,0.5},
 			TreeHandle = obj,
@@ -211,13 +347,14 @@ function TreeHandle:New(obj)
 		}
 		roleInd = roleInd +1
 	end
-	
-	local inputXOffset = rolesEndX + inputGap
-	local inputYOffset =  rolesYOffset
-	local inputInd = 0
-	local inputCount = table.getn(obj.Tree.inputs)
+--	]]
+--	local inputXOffset = rolesEndX + inputGap
+--	local inputYOffset =  rolesYOffset
+--	local inputInd = 0
+--	local inputCount = table.getn(obj.Tree.inputs)
 	--
-	for _,input in pairs(obj.Tree.inputs) do
+	 createChiliComponentsInput(obj, rolesEndX)
+--[[	for _,input in pairs(obj.Tree.inputs) do
 		local inputName = input.name
 		local inputButton = Chili.Button:New{
 			x = inputXOffset,
@@ -226,7 +363,7 @@ function TreeHandle:New(obj)
 			width = '25%',
 			minWidth = minInputButtonWidth,
 			caption =" " .. inputName .. " (" .. WG.BtCommandsInputHumanNames[input.command].. ")",
-			OnClick = {sanitizer:AsHandler(obj.InputButtonListener)}, 
+			OnClick = {obj.InputButtonListener}, 
 			skinName = "DarkGlass",
 			focusColor = {0.5,0.5,0.5,0.5},
 			TreeHandle = obj,
@@ -240,8 +377,8 @@ function TreeHandle:New(obj)
 		table.insert(obj.ChiliComponents, inputButton )
 		table.insert(obj.InputButtons, inputButton) 
 	end
-	-- check if this tree is ready from start, probably not, maybe we want to finalize it first:
-	-- TreeHandle.CheckReady(obj)
+	--]]
+	
 	return obj
 end
 
@@ -346,5 +483,9 @@ function TreeHandle.unitsInTree(instanceId)
 	return unitsInThisTree
 end
 
+-- This function reload tree again from file, but keeps user input if possible. 
+function TreeHandle:ReloadTree()
+
+end
 
 return TreeHandle
