@@ -34,7 +34,7 @@ local Debug = Utils.Debug;
 local Logger = Debug.Logger
 local dump = Debug.dump
 
-local TreeHandle = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtController/BtTreeHandle.lua", nil, VFS.RAW_FIRST)
+local TreeHandle --= VFS.Include(LUAUI_DIRNAME .. "Widgets/BtController/BtTreeHandle.lua", BtController, VFS.RAW_FIRST)
 
 --------------------------------------------------------------------------------
 local treeControlWindow
@@ -816,8 +816,15 @@ function widget:Initialize()
 	Chili = WG.ChiliClone
 	Screen0 = Chili.Screen0	
 	
-	--TreeHandle = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtController/BtTreeHandle.lua", newGlobal, VFS.RAW_FIRST)
-	TreeHandle.initialize()
+	local environmentTreeHandle = BtController
+	environmentTreeHandle["Chili"] = Chili
+	environmentTreeHandle["Utils"] = Utils
+	
+	Logger.log("separation", "utils", dump(environmentTreeHandle["Utils"],2 ))
+	
+	TreeHandle = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtController/BtTreeHandle.lua", environmentTreeHandle , VFS.RAW_FIRST)
+	
+	--TreeHandle.initialize()
   
 	BtEvaluator = sanitizer:Import(WG.BtEvaluator)
 	-- extract BtCreator into a local variable once available
