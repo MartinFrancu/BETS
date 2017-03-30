@@ -18,6 +18,22 @@ function widget:GetInfo()
   }
 end
 
+
+	CONSTANTS = {
+		rolesXOffset = 10,
+		rolesYOffset = 30,
+		buttonHeight = 22,
+		singleButtonModifier = 10,
+		labelToButtonYModifier = 5, -- chili feature/bug
+		minRoleLabelWidth = 70,
+		minRoleAssingWidth = 100,
+		minUnitCountWidth = 50,
+		inputGap = 30,
+		FAILURE_COLOR = {1,0.25,0.25,0.6},
+		SUCCESS_COLOR = {0.5,1,0.5,0.6},
+		minInputButtonWidth = 150,
+	}
+
 local Chili, Screen0
 local BtController = widget
 
@@ -819,6 +835,7 @@ function widget:Initialize()
 	local environmentTreeHandle = BtController
 	environmentTreeHandle["Chili"] = Chili
 	environmentTreeHandle["Utils"] = Utils
+	environmentTreeHandle["CONSTANTS"] = CONSTANTS
 	
 	Logger.log("separation", "utils", dump(environmentTreeHandle["Utils"],2 ))
 	

@@ -8,20 +8,6 @@
 	local Logger = Debug.Logger
 	local dump = Debug.dump
 
-	CONSTANTS = {
-		rolesXOffset = 10,
-		rolesYOffset = 30,
-		buttonHeight = 22,
-		singleButtonModifier = 10,
-		labelToButtonYModifier = 5, -- chili feature/bug
-		minRoleLabelWidth = 70,
-		minRoleAssingWidth = 100,
-		minUnitCountWidth = 50,
-		inputGap = 30,
-		notGivenColor = {0.8,0.1,0.1,1},
-		minInputButtonWidth = 150,
-	}
-
 
 
 
@@ -212,7 +198,7 @@
 				InputName = inputName,
 				CommandName = input.command,
 				InstanceId = obj.InstanceId,
-				backgroundColor = CONSTANTS.notGivenColor,
+				backgroundColor = CONSTANTS.FAILURE_COLOR,
 				tooltip = "Give required input (red = not given yet, green = given)",
 			}
 			inputInd = inputInd + 1
@@ -419,7 +405,7 @@
 		-- I should change color of input
 		for _,inputButton in pairs(self.InputButtons) do
 			if(inputButton.InputName == inputName) then
-				inputButton.backgroundColor = {0.1,0.6,0.1,1}
+				inputButton.backgroundColor = CONSTANTS.SUCCESS_COLOR
 				
 				local transformedData = Logger.loggedCall("Error", "BtController", 
 						"fill in input value",
