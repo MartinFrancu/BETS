@@ -7,7 +7,7 @@
 	} ],
 	"properties": {
 		"yykifcvKSzNXd8dc23648VrhONkTvdy2": {
-			"height": 70,
+			"height": 90,
 			"width": 125.214294,
 			"x": 431,
 			"y": 218
@@ -25,6 +25,9 @@
 		"parameters": [ {
 			"name": "pos",
 			"value": "moveTo"
+		}, {
+			"name": "fight",
+			"value": "false"
 		}, {
 			"name": "scriptName",
 			"value": "move.lua"

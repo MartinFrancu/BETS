@@ -8,7 +8,19 @@
 	local Logger = Debug.Logger
 	local dump = Debug.dump
 
-
+	CONSTANTS = {
+		rolesXOffset = 10,
+		rolesYOffset = 30,
+		buttonHeight = 22,
+		singleButtonModifier = 10,
+		labelToButtonYModifier = 5, -- chili feature/bug
+		minRoleLabelWidth = 70,
+		minRoleAssingWidth = 100,
+		minUnitCountWidth = 50,
+		inputGap = 30,
+		notGivenColor = {0.8,0.1,0.1,1},
+		minInputButtonWidth = 150,
+	}
 
 
 
@@ -23,14 +35,16 @@
 				TreeType = "no_tree_type", 
 				InstanceId = "default", 
 				Tree = "no_tree", 
-				ChiliComponents = {},
+				ChiliComponentsGeneral = {},
+				ChiliComponentsRoles = {},
+				ChiliComponentsInputs = {},
 				Roles = {},
 				RequireUnits = true,
 				AssignedUnitsCount = 0,
 				InputButtons = {},
 				Ready = false,
 				Created = false,
-				Inputs = {}
+				Inputs = {},
 				} 
 	--]]			
 	--[[-----------------------------------------------------------------------------------
@@ -44,6 +58,8 @@
 	--				AssignedUnits = table of records of a following shape: {name = unit ID, 	
 	--				InputButtons = List of chili buttons which are responsible for collecting
 	--				Ready = indicator if this tree is ready to be send to BtEvaluator
+	--				Created = indicator if BtEvalutor is told about this tree
+	--				Inputs =
 
 	-----------------------------------------------------------------------------------]]--
 
@@ -70,7 +86,7 @@
 		if(soFarOk == false) then
 		result = result .. ", missing input: " .. missingInputs
 		end
-		self.ChiliComponents[1]:SetCaption(self.TreeType .. " (" .. result .. ")") 
+		self.ChiliComponentsGeneral[1]:SetCaption(self.TreeType .. " (" .. result .. ")") 
 	end
 
 	-- this function will check if all required inputs are given. 
@@ -98,7 +114,7 @@
 
 	-- This method will set up and load in all chili components corresponding to 
 	-- roles in given tree. It returns maximal x-coordinate of components
-	function TreeHandle.createChiliComponentsRoles(obj)
+	function createChiliComponentsRoles(obj)
 		local rolesEndX
 		local roleInd = 0 
 		local roleCount = #obj.Tree.roles
@@ -116,7 +132,7 @@
 				focusColor = {0.5,0.5,0.5,0.5},
 				tooltip = "Role name",
 			}
-			table.insert(obj.ChiliComponents, roleNameLabel)
+			table.insert(obj.ChiliComponentsRoles, roleNameLabel)
 			
 			local roleAssignmentButton = Chili.Button:New{
 				x = CONSTANTS.rolesXOffset + roleNameLabel.width + 50,
@@ -134,7 +150,7 @@
 				instanceId = obj.InstanceId,
 				tooltip = "Assigns currently selected units to this role",
 			}
-			table.insert(obj.ChiliComponents, roleAssignmentButton)
+			table.insert(obj.ChiliComponentsRoles, roleAssignmentButton)
 			
 			local unitCountButton = Chili.Button:New{
 				x = roleAssignmentButton.x + roleAssignmentButton.width ,
@@ -151,7 +167,7 @@
 				Role = roleName,
 				OnClick = {TreeHandle.selectUnitsInRolesListener},
 			}
-			table.insert(obj.ChiliComponents, unitCountButton)
+			table.insert(obj.ChiliComponentsRoles, unitCountButton)
 			
 			rolesEndX = unitCountButton.x + unitCountButton.width 
 			-- get the role unit types:
@@ -176,7 +192,7 @@
 
 	-- This method will set up and load in all chili components corresponding to 
 	-- inputs of given tree. It returns maximal x-coordinate of components.
-	function TreeHandle.createChiliComponentsInput(obj, xOffSet)
+	function createChiliComponentsInput(obj, xOffSet)
 		local inputXOffset = xOffSet + CONSTANTS.inputGap
 		local inputYOffset =  CONSTANTS.rolesYOffset
 		local inputInd = 0
@@ -202,7 +218,7 @@
 				tooltip = "Give required input (red = not given yet, green = given)",
 			}
 			inputInd = inputInd + 1
-			table.insert(obj.ChiliComponents, inputButton )
+			table.insert(obj.ChiliComponentsInputs, inputButton )
 			table.insert(obj.InputButtons, inputButton) 
 		end
 	end
@@ -218,7 +234,9 @@
 		obj.InstanceId = generateID()
 		obj.Tree = BehaviourTree.load(obj.TreeType)
 		
-		obj.ChiliComponents = {}
+		obj.ChiliComponentsGeneral = {}
+		obj.ChiliComponentsRoles = {}
+		obj.ChiliComponentsInputs = {}
 		obj.Roles = {}
 		obj.InputButtons = {}
 		obj.RequireUnits = true
@@ -238,7 +256,7 @@
 		}
 		
 		-- Order of these childs is sort of IMPORTANT as other entities needs to access children
-		table.insert(obj.ChiliComponents, treeTypeLabel)
+		table.insert(obj.ChiliComponentsGeneral, treeTypeLabel)
 		local resetTreeButton = Chili.Button:New{
 			x = 370,
 			y = 0,
@@ -251,7 +269,7 @@
 			skinName = "DarkGlass",
 			tooltip = "Restarts evalution of this tree",
 		}
-		table.insert(obj.ChiliComponents, resetTreeButton)
+		table.insert(obj.ChiliComponentsGeneral, resetTreeButton)
 		
 		local roleInd = 0 
 		local roleCount = #obj.Tree.roles
@@ -268,7 +286,7 @@
 		local notGivenColor = {0.8,0.1,0.1,1}
 
 		local minInputButtonWidth = 150 ]]--
-		local rolesEndX = TreeHandle.createChiliComponentsRoles(obj)
+		local rolesEndX = createChiliComponentsRoles(obj)
 		-- to be computed
 		--[[
 		for _,roleData in pairs(obj.Tree.roles) do
@@ -345,7 +363,7 @@
 	--	local inputInd = 0
 	--	local inputCount = table.getn(obj.Tree.inputs)
 		--
-		TreeHandle.createChiliComponentsInput(obj, rolesEndX)
+		createChiliComponentsInput(obj, rolesEndX)
 	--[[	for _,input in pairs(obj.Tree.inputs) do
 			local inputName = input.name
 			local inputButton = Chili.Button:New{
@@ -477,9 +495,80 @@
 
 	-- This function reload tree again from file, but keeps user input if possible. 
 	function TreeHandle:ReloadTree()
+		-- remember all units assigned in this tree
+		local assignedUnits = {}
+		for _,roleData in pairs(self.Tree.roles) do		
+			local unitsInRole = TreeHandle.unitsInTreeRole(self.InstanceId, roleData.name)
+			if( table.getn(unitsInRole) >= 1) then
+				assignedUnits[roleData.name] = unitsInRole
+			end
+			Logger.log("roles", "reload tree, role name : ", roleData.name, " units in role: ",table.getn(unitsInRole) )
+		end
+		
+		-- inputs:
+		-- collect cmd corresponding to inputs:
+		local oldInputsCmd = {}
+		for _,inputSpec in pairs (self.Tree.inputs) do
+			oldInputsCmd[inputSpec.name] = inputSpec.command
+		end
+		
+		local oldInputs = self.Inputs	
+		self.Inputs = {}
+				
+		-- getting a new tree:
+		self.Tree = BehaviourTree.load(self.TreeType)
+		
+		-- reload UI:---------------------------------------------------------------------
+		
+		-- remove old components 
+		self.ChiliComponentsRoles = {}
+		self.ChiliComponentsInputs = {}
+		-- add new components: roles
+		local xOffSet = createChiliComponentsRoles(self)
+		-- add new components: inputs
+		createChiliComponentsInput(self, xOffSet)
+		
+		-- transfering user given data: 
+		
+		-- units assignment:
+		for _,roleData in pairs(self.Tree.roles) do
+			-- if the name is same, assign units in this role:
+			if(assignedUnits[roleData.name] ~= nil) then
+				for _,unitId in pairs(assignedUnits[roleData.name]) do
+					TreeHandle.assignUnitToTree(unitId, self, roleData.name)
+				end
+			end
+		end
+		
+		
+		-- collect old inputs:
+		for _, inputSpec in pairs (self.Tree.inputs) do
+			local inputName = inputSpec.name
+			if (oldInputsCmd[inputName] ~= nil) then		
+				local givenInput = oldInputs[inputName]
+				local oldCommand = oldInputsCmd[inputName]
+				local newCommand = inputSpec.command
+				-- if input was given and it has the same type (colecting command name) then fill the data in
+				if (givenInput ~= nil) and (oldCommand == newCommand) then  
+					newTreeHandle:FillInInput(inputName, oldInputs[inputName])
+				end
+			end 
+		end
+		
+		self:UpdateTreeStatus()
+		
+		
+		--[[ this should be done in BtController
+		-- if tree is ready, initialize it in BtEvaluator
+		if(self:CheckReady()) then
+			createTreeInBtEvaluator(newTreeHandle)
+			newTreeHandle.Created = true
+			reportAssignedUnits(newTreeHandle)
+		end
+		]]
 
 	end
-	return TreeHandle
+return TreeHandle
 --end)
 
 --return WG.TreeHandle

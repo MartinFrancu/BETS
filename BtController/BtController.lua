@@ -19,20 +19,7 @@ function widget:GetInfo()
 end
 
 
-	CONSTANTS = {
-		rolesXOffset = 10,
-		rolesYOffset = 30,
-		buttonHeight = 22,
-		singleButtonModifier = 10,
-		labelToButtonYModifier = 5, -- chili feature/bug
-		minRoleLabelWidth = 70,
-		minRoleAssingWidth = 100,
-		minUnitCountWidth = 50,
-		inputGap = 30,
-		FAILURE_COLOR = {1,0.25,0.25,0.6},
-		SUCCESS_COLOR = {0.5,1,0.5,0.6},
-		minInputButtonWidth = 150,
-	}
+
 
 local Chili, Screen0
 local BtController = widget
@@ -170,7 +157,14 @@ function addFieldToBarItemList(tabs, tabName, atributName, atribut)
 end
 
 function addTreeToTreeTabPanel(treeHandle)
-	local newTab =  {name = treeHandle.Name, children = treeHandle.ChiliComponents}
+	local chiliComponents = treeHandle.ChiliComponentsGeneral
+	for _,component in pairs (treeHandle.ChiliComponentsRoles) do
+		table.insert(chiliComponents,component)
+	end
+	for _,component in pairs (treeHandle.ChiliComponentsInputs) do
+		table.insert(chiliComponents,component)
+	end
+	local newTab =  {name = treeHandle.Name, children = chiliComponents}
 	-- if TabPanel is not inialized I have to initalize it:
 	treeTabPanel:AddTab(newTab)
 	highlightTab(newTab.name)
@@ -223,7 +217,37 @@ end
 local instantiateTree
 
 function reloadTree(tabs, treeHandle)
-	local instanceName = treeHandle.Name
+	
+	if(treeHandle.Created) then
+		-- remove send message to BtEvaluator
+		Logger.loggedCall("Errors", "BtController", "removing tree fromBbtEvaluator", 
+			BtEvaluator.removeTree, treeHandle.InstanceId)
+	end
+	treeHandle:ReloadTree()
+	local tabFrame = tabs.tabIndexMapping[treeHandle.Name]
+	tabFrame:ClearChildren()
+	for _,component in pairs(treeHandle.ChiliComponentsGeneral)do
+		tabFrame:AddChild(component)
+	end
+	for _,component in pairs(treeHandle.ChiliComponentsRoles)do
+		tabFrame:AddChild(component)
+	end
+	for _,component in pairs(treeHandle.ChiliComponentsInputs)do
+		tabFrame:AddChild(component)
+	end
+	
+	
+	-- if tree is ready, initialize it in BtEvaluator
+	if(treeHandle:CheckReady()) then
+		createTreeInBtEvaluator(treeHandle)
+		treeHandle.Created = true
+		reportAssignedUnits(treeHandle)
+	end
+	
+	treeHandle:UpdateTreeStatus()
+	
+	-- I need to find 
+--[[	local instanceName = treeHandle.Name
 	local treeType = treeHandle.TreeType
 	local requireUnits = treeHandle.RequireUnits
 	local assignedUnits = {}
@@ -293,11 +317,12 @@ function reloadTree(tabs, treeHandle)
 	
 	newTreeHandle:UpdateTreeStatus()
 	--listenerBarItemClick({TreeHandle = treeHandle}, 0, 0, 1)
+	--]]
 end
 
 function BtController.reloadTreeType(treeTypeName)
 	-- make list of trees with this type:
-	local toReload = {}
+	--local toReload = {}
 	-- I should iterate over all tab bar items:
 	local tabBarChildIndex = 1
 	-- get tabBar
@@ -309,10 +334,12 @@ function BtController.reloadTreeType(treeTypeName)
 		if( (item.TreeHandle ~= nil) 
 			and (item.TreeHandle.TreeType == treeTypeName) )
 		then
-			table.insert(toReload, item.TreeHandle) 
+			--table.insert(toReload, item.TreeHandle)
+			BtController.reloadTree(treeTabPanel, item.TreeHandle)
 		end
 	end
 
+	--[[
 	for _,treeHandle in pairs(toReload) do
 		reloadTree(treeTabPanel, treeHandle)
 	end
@@ -320,12 +347,12 @@ function BtController.reloadTreeType(treeTypeName)
 	local currentTabName = tabBar.selected_obj.caption
 	local currentTreeHandle =  tabBar.selected_obj.TreeHandle
 	--local currentTab = treeTabPanel.tabIndexMapping[currentTabName]
-	--[[local currentTreeHandle
+	local currentTreeHandle
 	for index,tabBarItem in pairs(tabBar.children) do
 		if(tabBarItem.caption == currentTabName) then
 			currentTreeHandle = tabBarItem.TreeHandle
 		end
-	end]]
+	end
 	
 	-- if tree with this type is shown show BtCreator
 	Logger.log("roles", "tree type:" ,treeTypeName, " and " , currentTreeHandle.TreeType )
@@ -333,7 +360,7 @@ function BtController.reloadTreeType(treeTypeName)
 		
 		listenerBarItemClick({TreeHandle =  currentTreeHandle}, 0, 0, 1)
 	end
-	
+	--]]
 end
 
 function showErrorWindow(errorDecription)
@@ -835,7 +862,6 @@ function widget:Initialize()
 	local environmentTreeHandle = BtController
 	environmentTreeHandle["Chili"] = Chili
 	environmentTreeHandle["Utils"] = Utils
-	environmentTreeHandle["CONSTANTS"] = CONSTANTS
 	
 	Logger.log("separation", "utils", dump(environmentTreeHandle["Utils"],2 ))
 	
