@@ -18,7 +18,8 @@
 		minRoleAssingWidth = 100,
 		minUnitCountWidth = 50,
 		inputGap = 30,
-		notGivenColor = {0.8,0.1,0.1,1},
+		SUCCESS_COLOR = {0.5,1,0.5,0.6},
+		FAILURE_COLOR = {1,0.25,0.25,0.6},
 		minInputButtonWidth = 150,
 	}
 
@@ -248,7 +249,7 @@
 			x = 7,
 			y = 7,
 			height = 30,
-			width =  300,
+			width =  '95%',
 			minWidth = 50,
 			caption =  obj.TreeType .. " (initializing)",
 			skinName = "DarkGlass",
@@ -257,7 +258,7 @@
 		
 		-- Order of these childs is sort of IMPORTANT as other entities needs to access children
 		table.insert(obj.ChiliComponentsGeneral, treeTypeLabel)
-		local resetTreeButton = Chili.Button:New{
+	--[[local resetTreeButton = Chili.Button:New{
 			x = 370,
 			y = 0,
 			height = 30,
@@ -270,6 +271,7 @@
 			tooltip = "Restarts evalution of this tree",
 		}
 		table.insert(obj.ChiliComponentsGeneral, resetTreeButton)
+		]]
 		
 		local roleInd = 0 
 		local roleCount = #obj.Tree.roles

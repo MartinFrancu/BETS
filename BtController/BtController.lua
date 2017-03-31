@@ -42,9 +42,9 @@ local TreeHandle --= VFS.Include(LUAUI_DIRNAME .. "Widgets/BtController/BtTreeHa
 --------------------------------------------------------------------------------
 local treeControlWindow
 local controllerLabel
-local selectTreeButton
 local treeTabPanel
 local showTreeCheckbox
+local reloadAllButton
 --------------------------------------------------------------------------------
 local treeSelectionPanel
 local treeSelectionLabel
@@ -217,15 +217,21 @@ end
 local instantiateTree
 
 function reloadTree(tabs, treeHandle)
-	
+	-- remove tree instance in BtEvaluator if it is created:
 	if(treeHandle.Created) then
 		-- remove send message to BtEvaluator
 		Logger.loggedCall("Errors", "BtController", "removing tree fromBbtEvaluator", 
 			BtEvaluator.removeTree, treeHandle.InstanceId)
 	end
+	
+	-- get the new tree specification and GUI components:
 	treeHandle:ReloadTree()
+	
+	-- GUI components:
 	local tabFrame = tabs.tabIndexMapping[treeHandle.Name]
+	-- remove old GUI components:
 	tabFrame:ClearChildren()
+	-- now attach new ones:
 	for _,component in pairs(treeHandle.ChiliComponentsGeneral)do
 		tabFrame:AddChild(component)
 	end
@@ -235,7 +241,6 @@ function reloadTree(tabs, treeHandle)
 	for _,component in pairs(treeHandle.ChiliComponentsInputs)do
 		tabFrame:AddChild(component)
 	end
-	
 	
 	-- if tree is ready, initialize it in BtEvaluator
 	if(treeHandle:CheckReady()) then
@@ -321,8 +326,7 @@ function reloadTree(tabs, treeHandle)
 end
 
 function BtController.reloadTreeType(treeTypeName)
-	-- make list of trees with this type:
-	--local toReload = {}
+
 	-- I should iterate over all tab bar items:
 	local tabBarChildIndex = 1
 	-- get tabBar
@@ -363,12 +367,33 @@ function BtController.reloadTreeType(treeTypeName)
 	--]]
 end
 
+-- This method will reload all tree instances currently present in BtController.
+-- Later should be added reload of sensorst etc..
+function reloadAll()
+	-- reload cache in BtEvaluator:
+	Logger.loggedCall("Error", "BtController", "asking BtEvaluator to clear cache.",
+		BtEvaluator.reloadCaches)
+	-- I should iterate over all tab bar items:
+	local tabBarChildIndex = 1
+	-- get tabBar
+	local tabBar = treeTabPanel.children[tabBarChildIndex]
+	-- find corresponding tabBarItems: 
+	local barItems = tabBar.children
+	for index,item in ipairs(barItems) do
+		BtController.reloadTree(treeTabPanel, item.TreeHandle)
+	end
+end
+--[[ This method pop up simple error window. Currently used if user tries 
+to create tree with already used name.
+]]
 function showErrorWindow(errorDecription)
 	errorLabel.caption = errorDecription
 	errorWindow:Show()
 end
 
-
+--[[ Loggs assignment of units, for Debugging.
+ Probably should be moved to TreeHandle. 
+]]
 function logUnitsToTreesMap(category)
 	Logger.log(category, " ***** unitsToTreesMapLog: *****" )
 	for unitId, unitData in pairs(TreeHandle.unitsToTreesMap) do
@@ -424,16 +449,13 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 end
 
 
-
-function createTreeInBtEvaluator(treeHandle) 
-	-- create the tree immediately when the tab is created
-	-- CHANGE this to proper tree reporting
-	Logger.log("commands", "reporting tree")
-	
+-- Calls required functions to create tree in BtEvaluator
+function createTreeInBtEvaluator(treeHandle) 	
 	Logger.loggedCall("Errors", "BtController", "instantiating new tree in BtEvaluator", 
 		BtEvaluator.createTree, treeHandle.InstanceId, treeHandle.Tree, treeHandle.Inputs)
 end
 
+-- Reports units assigned to all roles to BtEvaluator
 function reportAssignedUnits(treeHandle)
 	local originallySelectedUnits = spGetSelectedUnits()
 	for name,roleData in pairs(treeHandle.Roles) do
@@ -446,6 +468,7 @@ function reportAssignedUnits(treeHandle)
 	Spring.SelectUnitArray(originallySelectedUnits)
 end
 
+-- Reports users input for given input slot to BtEvaluator.
 function reportInputToBtEval(treeHandle, inputName)
 	Logger.loggedCall("Errors", "BtController", "reporting changed input", 
 		BtEvaluator.setInput, treeHandle.InstanceId , inputName, treeHandle.Inputs[inputName]) 
@@ -576,7 +599,7 @@ function listenerErrorOk(self)
 	errorWindow:Hide()
 end
 
-
+--[[
 function restartTreeListener(self, x,y, button)
 	if(button == 1) then
 		if(self.TreeHandle:CheckReady()) then
@@ -586,6 +609,7 @@ function restartTreeListener(self, x,y, button)
 		end
 	end 
 end 
+]]
 
 -- Listener for button in treeSelectionTab which creates new tree.
 local function listenerClickOnSelectedTreeDoneButton(self, x, y, button)
@@ -789,14 +813,24 @@ function setUpTreeControlWindow()
 		skinName='DarkGlass',
 	}
 	showTreeCheckbox = Chili.Checkbox:New{
-	parent = treeControlWindow,
-	caption = "show tree",
-	checked = false,
-	x = '80%',
-	y = 0,
-	width = 80,
-	skinName='DarkGlass',
-	tooltip = "Determines, whether BtCreator will be shown on instance assignment. ",
+		parent = treeControlWindow,
+		caption = "show tree",
+		checked = false,
+		x = '80%',
+		y = 0,
+		width = 80,
+		skinName='DarkGlass',
+		tooltip = "Determines, whether BtCreator will be shown on instance assignment. ",
+	}
+	reloadAllButton = Chili.Button:New{
+		parent = treeControlWindow,
+		caption = "Reload All",
+		x = '60%',
+		y = 0,
+		width = 90,
+		skinName='DarkGlass',
+		tooltip = "Reloads all trees from drive.",
+		OnClick = {}
 	}
 
 	setUpTreeSelectionTab()
