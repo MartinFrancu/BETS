@@ -83,6 +83,7 @@ end
 -- @return currentMap [array] updated version of map
 -- @comment map is supposed to be stored
 return function(currentMap, tileRadius, currentPosition)
+	if (units == nil or #units < 1) then return currentMap end
 	if (currentMap == nil) then
 		currentMap = {}
 		local x = -TILE_SIZE
