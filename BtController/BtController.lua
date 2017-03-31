@@ -43,7 +43,7 @@ local TreeHandle --= VFS.Include(LUAUI_DIRNAME .. "Widgets/BtController/BtTreeHa
 local treeControlWindow
 local controllerLabel
 local treeTabPanel
-local showTreeCheckbox
+local showBtCreatorButton
 local reloadAllButton
 --------------------------------------------------------------------------------
 local treeSelectionPanel
@@ -380,7 +380,9 @@ function reloadAll()
 	-- find corresponding tabBarItems: 
 	local barItems = tabBar.children
 	for index,item in ipairs(barItems) do
-		BtController.reloadTree(treeTabPanel, item.TreeHandle)
+		if(item.caption ~= "+")then -- exclude addtab item from reloading...
+			BtController.reloadTree(treeTabPanel, item.TreeHandle)
+		end
 	end
 end
 --[[ This method pop up simple error window. Currently used if user tries 
@@ -499,7 +501,7 @@ end
 ---------------------------------------LISTENERS
 -- This listener is called when AddTreeTab becomes active to update directory 
 -- content and default instance name.
-local function refreshTreeSelectionPanel(self)
+function refreshTreeSelectionPanel(self)
 	names = getTreeNamesInDirectory(BehavioursDirectory) --Utils.dirList(BehavioursDirectory, "*.json") --getNamesInDirectory(BehavioursDirectory, ".json")
 	treeSelectionComboBox.items = names 
 	treeSelectionComboBox:RequestUpdate()
@@ -515,7 +517,7 @@ function listenerBarItemClick(self, x, y, button, ...)
 		Spring.SelectUnitArray(unitsToSelect)
 
 		self.TreeHandle:UpdateTreeStatus()
-		
+		--[[
 		if((showTreeCheckbox.checked) and BtCreator) then
 			if(self.TreeHandle.Created) then 
 				Logger.loggedCall("Error", "BtController", 
@@ -527,6 +529,7 @@ function listenerBarItemClick(self, x, y, button, ...)
 				"making BtCreator show selected tree",
 				BtCreator.show, self.TreeHandle.TreeType, self.TreeHandle.InstanceId )
 		end
+		]]
 		
 		-- ORIGINAL LISTENER FORM BarItem:
 		if not self.parent then return end
@@ -594,6 +597,10 @@ function listenerInputButton(self,x,y,button, ...)
 	end
 end
 
+-- Listener for reload all button 
+function listenerReloadAll(self, x, y, ...)
+	reloadAll()
+end 
 -- Listener for closing error window.
 function listenerErrorOk(self)
 	errorWindow:Hide()
@@ -628,6 +635,32 @@ local function listenerClickOnSelectedTreeDoneButton(self, x, y, button)
 	end
 end
 
+-- This function show currently selected tree in BtCreator. If add tree tab is selected
+local function listenerClickBtCreator(self, x, y, button)
+	-- get the selected tab from tabs:	
+	local tabBarChildIndex = 1
+	tabBar = treeTabPanel.children[tabBarChildIndex]
+	local barItem = tabBar.selected_obj
+	-- if it is not + then show BtCreator (send him message)
+	if(barItem.caption ~= "+") then
+		-- tree tab is selected (not add tree tab)
+			if(barItem.TreeHandle.Created) then 
+				Logger.loggedCall("Error", "BtController", 
+					"asking BtEvaluator to report tree to BtEvaluator",
+					BtEvaluator.reportTree, barItem.TreeHandle.InstanceId
+				)
+			end
+			Logger.loggedCall("Error", "BtController", 
+				"making BtCreator show selected tree",
+				BtCreator.show, barItem.TreeHandle.TreeType, barItem.TreeHandle.InstanceId )
+		
+	else
+		-- add tree tab is selected
+		Logger.loggedCall("Error", "BtController", 
+				"making BtCreator show new tree",
+				BtCreator.showNewTree)
+	end
+end
 ---------------------------------------LISTENERS END
 
 -- This is the method to create new tree instance, 
@@ -812,16 +845,20 @@ function setUpTreeControlWindow()
     caption = "BtController",
 		skinName='DarkGlass',
 	}
-	showTreeCheckbox = Chili.Checkbox:New{
+	showBtCreatorButton = Chili.Button:New{
 		parent = treeControlWindow,
-		caption = "show tree",
+		caption = "BtCreator",
 		checked = false,
 		x = '80%',
 		y = 0,
 		width = 80,
 		skinName='DarkGlass',
 		tooltip = "Determines, whether BtCreator will be shown on instance assignment. ",
+		OnClick = {sanitizer:AsHandler(listenerClickBtCreator)}
 	}
+	
+	showBtCreatorButton.tabs = treeTabPanel
+	
 	reloadAllButton = Chili.Button:New{
 		parent = treeControlWindow,
 		caption = "Reload All",
@@ -830,7 +867,7 @@ function setUpTreeControlWindow()
 		width = 90,
 		skinName='DarkGlass',
 		tooltip = "Reloads all trees from drive.",
-		OnClick = {}
+		OnClick = {sanitizer:AsHandler(listenerReloadAll)}
 	}
 
 	setUpTreeSelectionTab()

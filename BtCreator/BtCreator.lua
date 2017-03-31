@@ -86,12 +86,28 @@ function BtCreator.show(tree, instanceId)
 	listenerClickOnLoadTree()
 end
 
+function BtCreator.showNewTree()
+	if(not btCreatorWindow.visible) then
+		btCreatorWindow:Show()
+	end
+	if(not nodePoolPanel.visible) then
+		nodePoolPanel:Show()
+	end
+	if(not buttonPanel.visible) then
+		buttonPanel:Show()
+	end
+	listenerClickOnNewTree()
+end
+
 function BtCreator.hide()
 	if(rolesWindow and rolesWindow.visible) then
 		rolesWindow:Hide()
 	end
 	if(sensorsWindow and sensorsWindow.visible) then
 		sensorsWindow:Hide()
+	end
+	if(categoryDefinitionWindow and categoryDefinitionWindow.visible) then
+		categoryDefinitionWindow:Hide()
 	end
 	if(blackboardWindowState and blackboardWindowState.visible) then
 		blackboardWindowState:Hide()
