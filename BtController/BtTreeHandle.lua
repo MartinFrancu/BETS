@@ -306,6 +306,15 @@ function TreeHandle:FillInInput(inputName, data)
 	self:UpdateTreeStatus()	
 end
 
+-- this will remove all units from given tree and adjust gui componnets
+function TreeHandle.removeUnitsFromTree(instanceId)
+	for unitId, unitData in pairs(TreeHandle.unitsToTreesMap) do
+		if(unitData.InstanceId == instanceId) then
+			unitData.TreeHandle:DecreaseUnitCount(unitData.Role)
+			TreeHandle.unitsToTreesMap[unitId] = nil
+		end
+	end
+end
 
 -- this will remove given unit from its current tree and adjust the gui componnets
 function TreeHandle.removeUnitFromCurrentTree(unitId)	
