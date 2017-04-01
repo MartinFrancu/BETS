@@ -662,9 +662,9 @@ end
 local lastClicked = Spring.GetTimer()
 
 function listenerOnMouseDownMoveNode(self, x ,y, button)
-	if(clickedConnection) then -- check if we are connecting nodes
-		return
-	end
+	-- if(clickedConnection) then -- check if we are connecting nodes
+		-- return
+	-- end
 	local childName = self:HitTest(x, y).name
 	-- Check if the connectionIn or connectionOut was clicked
 	if((self.treeNode.connectionIn and childName == self.treeNode.connectionIn.name) or (self.treeNode.connectionOut and childName == self.treeNode.connectionOut.name)) then
@@ -739,9 +739,6 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 end
 
 function listenerOnMouseUpMoveNode(self, x ,y)
-	self.x = math.max(0, self.x)
-	self.y = math.max(0, self.y)
-	self.treeNode:UpdateConnectionLines()
 	self.treeNode.x = self.x
 	self.treeNode.y = self.y
 	self:Invalidate()

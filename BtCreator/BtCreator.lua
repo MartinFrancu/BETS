@@ -71,6 +71,10 @@ local blackboard
 
 local treeInstanceId
 
+local moveAllNodes
+local moveFrom
+local moveCanvasImg
+
 function BtCreator.show(tree, instanceId)
 	if(not btCreatorWindow.visible) then
 		btCreatorWindow:Show()
@@ -607,7 +611,7 @@ function createRoot()
 	return Chili.TreeNode:New{
 		parent = btCreatorWindow,
 		nodeType = "Root",
-		y = '35%',
+		y = btCreatorWindow.height*0.5 - 40,
 		x = 5,
 		width = 210,
 		height = 80,
@@ -690,6 +694,12 @@ function widget:Initialize()
 		OnResize = { sanitizer:AsHandler(listenerOnResizeBtCreator) },
 		-- OnMouseDown = { listenerStartSelectingNodes },
 		-- OnMouseUp = { listenerEndSelectingNodes },
+		onMouseWheel = {
+			function(self, x, y, a)
+				Spring.Echo("mouse wheel: "..dump(a))
+				return self
+			end,
+		},
 	}
 
 	addNodeToCanvas( createRoot() )
@@ -823,6 +833,53 @@ function widget:Initialize()
 		backgroundColor = {0,0,0,0},
 		autosize = true,
 	}
+	moveCanvasImg = Chili.Image:New{
+		parent = btCreatorWindow,
+		x = 20,
+		y = 7,
+		width = 30,
+		height = 30,
+		file = LUAUI_DIRNAME.."Widgets/BtCreator/move_orange.png",
+		onMouseDown = { 
+			function(self, x, y)
+				moveTimer = os.clock()
+				self.file = LUAUI_DIRNAME.."Widgets/BtCreator/move_grey.png"
+				moveAllNodes = true
+				moveFrom = {x, y}
+				self:Invalidate()
+				return self
+			end,
+			},
+		onClick = { 
+			function(self)
+				return self
+			end,
+			},
+		onMouseUp = {
+			function(self, x, y)
+				self.file = LUAUI_DIRNAME.."Widgets/BtCreator/move_orange.png"
+				moveAllNodes = false
+				self:Invalidate()
+				return self
+			end,
+			},
+		onMouseMove = {
+			function(self, x, y)
+				if(moveAllNodes) then
+					local diffx = - x + moveFrom[1]
+					local diffy = - y + moveFrom[2]
+					for id,node in pairs(WG.nodeList) do
+						node.x = node.x + diffx
+						node.y = node.y + diffy
+						node.nodeWindow:SetPos(node.x + diffx, node.y + diffy)
+					end
+					moveFrom = {x, y}
+					btCreatorWindow:Invalidate()
+				end
+			end,
+		},
+	}	
+	
 	-- treeNameEditbox.font.size = 16
 	listenerClickOnMinimize()
 
