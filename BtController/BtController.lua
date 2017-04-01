@@ -844,11 +844,11 @@ function widget:Initialize()
 	if(VFS.FileExists(configPath)) then
 		local f = assert(VFS.LoadFile(configPath))
 		local config = loadstring(f)()
-		if(config.showTree == "true") then
-			if(not showTreeCheckbox.checked) then
-				showTreeCheckbox:Toggle()
-			end
-		end
+		-- if(config.showTree == "true") then
+			-- if(not showTreeCheckbox.checked) then
+				-- showTreeCheckbox:Toggle()
+			-- end
+		-- end
 		if(config.treeType) then
 			for i=1,#treeSelectionComboBox.items do
 				if(treeSelectionComboBox.items[i] == config.treeType) then
