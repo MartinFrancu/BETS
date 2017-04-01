@@ -317,12 +317,6 @@ function TreeHandle.removeUnitFromCurrentTree(unitId)
 	role = TreeHandle.unitsToTreesMap[unitId].Role
 	treeHandle:DecreaseUnitCount(role)
 	TreeHandle.unitsToTreesMap[unitId] = nil
-	
-	-- if the tree has no more units:
-	if (treeHandle.AssignedUnitsCount < 1) and (treeHandle.RequireUnits) then
-		-- remove this tree
-		removeTreeBtController(treeTabPanel, treeHandle)
-	end
 end
 
 function TreeHandle.unitsInTreeRole(instanceId,roleName)

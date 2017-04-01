@@ -202,7 +202,7 @@ function removeTreeBtController(tabs,treeHandle)
 	moveToEndAddTab(tabs)
 	
 	-- remove records of unit assignment:
-	removeUnitsFromTree(treeHandle.InstanceId)
+	TreeHandle.removeUnitsFromTree(treeHandle.InstanceId)
 	
 	if(treeHandle.Created) then
 		-- remove send message to BtEvaluator
@@ -350,6 +350,8 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 			Logger.log("roles", "could not find UnitDefs entry for: ",  unitId )
 		end
 	end
+	Logger.log("commands", "automatic assignment")
+	removeTreesWithoutUnitsRequiringUnits()
 end
 
 
@@ -378,15 +380,30 @@ function reportInputToBtEval(treeHandle, inputName)
 		BtEvaluator.setInput, treeHandle.InstanceId , inputName, treeHandle.Inputs[inputName]) 
 end 
 
--- this will remove all units from given tree and adjust gui componnets
-function removeUnitsFromTree(instanceId)
-	for unitId, unitData in pairs(TreeHandle.unitsToTreesMap) do
-		if(unitData.InstanceId == instanceId) then
-			unitData.TreeHandle:DecreaseUnitCount(unitData.Role)
-			TreeHandle.unitsToTreesMap[unitId] = nil
+-- Remove trees without units which require units.
+function removeTreesWithoutUnitsRequiringUnits()
+	local tabBarChildIndex = 1
+	local tabBar = treeTabPanel.children[tabBarChildIndex]
+	local barItems = tabBar.children
+	-- get trees to remove
+	local treesToRemove = {}
+	for index,item in ipairs(barItems) do
+		Logger.log("commands", "treehandle: ", item.TreeHandle)
+		if  (item.caption ~= "+") then-- exclude add tree tab
+			Logger.log("commands", "req: ", item.TreeHandle.RequireUnits, " assigned: ", (item.TreeHandle.AssignedUnitsCount ))
+			if (item.TreeHandle.RequireUnits) and  (item.TreeHandle.AssignedUnitsCount < 1) then
+				-- if there are no units, remove this tree:
+				table.insert(treesToRemove,  item.TreeHandle)
+			end
 		end
 	end
+	-- remove all trees without units which require units
+	for _,treeHandle in ipairs(treesToRemove) do 
+		removeTreeBtController(treeTabPanel, treeHandle)
+	end
 end
+
+
 
 
 
@@ -439,32 +456,30 @@ function listenerAssignUnitsButton(self,x,y, ...)
 	-- deselect units in current role
 	-- Here I am deassigning all units, that might destroy some tree:
 
-	local requireUnitsOriginal = self.TreeHandle.RequireUnits
-	Logger.log("roles", "orig require units: ", requireUnitsOriginal)
-	self.TreeHandle.RequireUnits = false
 	for unitId,treeAndRole in pairs(TreeHandle.unitsToTreesMap) do	
 		if(treeAndRole.InstanceId == self.TreeHandle.InstanceId) and (treeAndRole.Role == self.Role) then
 			TreeHandle.removeUnitFromCurrentTree(unitId)
+				-- if the tree has no more units:
 		end
 	end
 	
 	local selectedUnits = spGetSelectedUnits()
-	for _,Id in pairs(selectedUnits) do
+	for _,Id in pairs(selectedUnits) do	
 		TreeHandle.assignUnitToTree(Id, self.TreeHandle, self.Role)
 	end
 	-- check if tree is empty and if it require units
 	if(self.TreeHandle:CheckReady() ) then
-		Logger.log("roles", "tree is ready i guess, is it reported? ", self.TreeHandle.Created)
+		if(self.TreeHandle.Created == false) then
+			createTreeInBtEvaluator(self.TreeHandle)
+			self.TreeHandle.Created = true
+			reportAssignedUnits(self.TreeHandle)
+		end
 		Logger.loggedCall("Errors", "BtController", "assigning units to tree", 
 		BtEvaluator.assignUnits, selectedUnits, self.TreeHandle.InstanceId, self.roleIndex)
 	end
-	self.TreeHandle.RequireUnits = requireUnitsOriginal
 	-- now I should check if there are units in this tree
-		-- if the tree has no more units:
-	if (self.TreeHandle.AssignedUnitsCount < 1) and (self.TreeHandle.RequireUnits) then
-		-- remove this tree
-		removeTreeBtController(treeTabPanel, self.TreeHandle)
-	end
+	-- if the tree has no more units:
+	removeTreesWithoutUnitsRequiringUnits()
 end
 
 function listenerInputButton(self,x,y,button, ...)
@@ -871,7 +886,10 @@ end
 
 function widget:UnitDestroyed(unitId)
 	if(TreeHandle.unitsToTreesMap[unitId] ~= nil) then
+		local treeHandle =  TreeHandle.unitsToTreesMap[unitId].TreeHandle
 		TreeHandle.removeUnitFromCurrentTree(unitId)
+		-- if the tree has no more units:
+		removeTreesWithoutUnitsRequiringUnits()
 	end
 end
 
