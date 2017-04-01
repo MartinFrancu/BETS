@@ -410,7 +410,6 @@ function TreeHandle:ReloadTree()
 		end
 	end
 	
-	
 	-- collect old inputs:
 	for _, inputSpec in pairs (self.Tree.inputs) do
 		local inputName = inputSpec.name
@@ -420,7 +419,7 @@ function TreeHandle:ReloadTree()
 			local newCommand = inputSpec.command
 			-- if input was given and it has the same type (colecting command name) then fill the data in
 			if (givenInput ~= nil) and (oldCommand == newCommand) then  
-				newTreeHandle:FillInInput(inputName, oldInputs[inputName])
+				self:FillInInput(inputName, oldInputs[inputName])
 			end
 		end 
 	end
