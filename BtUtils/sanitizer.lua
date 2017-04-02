@@ -14,8 +14,15 @@ return Utils:Assign("Sanitizer", function()
 	local Debug = Utils.Debug
 	local Logger = Debug.Logger
 	
-	function sanitize(widget, f, rethrow)
-		return function(...)
+	local sanitizationEnvironment = {
+		xpcall = xpcall,
+		unpack = unpack,
+		table = table,
+		error = error,
+	}
+	
+	local function sanitize(widget, f, rethrow)
+		return setfenv(function(...)
 			local p = {...}
 			local err
 			local r = { xpcall(function() return f(unpack(p)) end, function(e) Logger.error(widget:GetInfo().name, e) err = e end) }
@@ -30,7 +37,7 @@ return Utils:Assign("Sanitizer", function()
 				end
 				return nil
 			end
-		end
+		end, sanitizationEnvironment)
 	end
 
 	
@@ -108,6 +115,26 @@ return Utils:Assign("Sanitizer", function()
 				widget[k] = sanitize(widget, v, k == "Shutdown")
 			end
 		end
+	end
+
+	--- Sanitizes the specified function automatically.
+	-- It uses the environment that we get through @{getfenv} to find out which widget the function is coming from.
+	-- @func f The function to sanitize.
+	-- @treturn function The sanitized function @{f}.
+	function Sanitizer.sanitize(f)
+		local widget = getfenv(f)
+		
+		-- check whether the function is not already sanitized
+		if(widget == sanitizationEnvironment)then
+			return f
+		end
+		
+		-- check that the environemnt is truly a widget
+		if(not widget.widgetHandler)then
+			error("The environment of the function is not a widget and cannot be automatically sanitized.")
+		end
+		
+		return sanitize(widget, f);
 	end
 	
 	return Sanitizer

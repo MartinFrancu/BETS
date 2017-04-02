@@ -30,6 +30,7 @@ local JSON = Utils.JSON
 local BehaviourTree = Utils.BehaviourTree
 local Dependency = Utils.Dependency
 local sanitizer = Utils.Sanitizer.forWidget(widget)
+local Timer = Utils.Timer;
 
 local Debug = Utils.Debug;
 local Logger = Debug.Logger
@@ -61,6 +62,7 @@ local expectedInput
 local spGetCmdDescIndex = Spring.GetCmdDescIndex
 local spSetActiveCommand = Spring.SetActiveCommand
 local spGetSelectedUnits = Spring.GetSelectedUnits
+local spSelectUnits = Spring.SelectUnitArray
 
 local inputCommandsTable = WG.InputCommands
 local treeCommandsTable = WG.BtCommands
@@ -383,11 +385,11 @@ function reportAssignedUnits(treeHandle)
 	for name,roleData in pairs(treeHandle.Roles) do
 		-- now I need to share information with the BtEvaluator
 		local unitsInThisRole = TreeHandle.unitsInTreeRole(treeHandle.InstanceId, name)
-		Spring.SelectUnitArray(unitsInThisRole)
+		spSelectUnits(unitsInThisRole)
 		Logger.loggedCall("Errors", "BtController", "reporting assigned units, reporting role: ".. name, 
 			BtEvaluator.assignUnits, unitsInThisRole, treeHandle.InstanceId, roleData.roleIndex)
 	end
-	Spring.SelectUnitArray(originallySelectedUnits)
+	spSelectUnits(originallySelectedUnits)
 end
 
 -- Reports users input for given input slot to BtEvaluator.
@@ -449,7 +451,7 @@ function listenerBarItemClick(self, x, y, button, ...)
 	if button == 1 then
 		-- select assigned units, if any
 		local unitsToSelect = TreeHandle.unitsInTree(self.TreeHandle.InstanceId)
-		Spring.SelectUnitArray(unitsToSelect)
+		spSelectUnits(unitsToSelect)
 
 		self.TreeHandle:UpdateTreeStatus()
 		
@@ -506,6 +508,12 @@ function listenerAssignUnitsButton(self,x,y, ...)
 	removeTreesWithoutUnitsRequiringUnits()
 end
 
+-- this returns one ally unit. 
+local function getDummyAllyUnit()
+	local allUnits = Spring.GetTeamUnits(Spring.GetMyTeamID())
+	return allUnits[1]
+end
+
 function listenerInputButton(self,x,y,button, ...)
 	if(not inputCommandsTable or not treeCommandsTable) then		
 		--WG.fillCustomCommandIDs()
@@ -520,10 +528,24 @@ function listenerInputButton(self,x,y,button, ...)
 		CommandName = self.CommandName,
 		InstanceId = self.InstanceId,
 	}
-	local ret = spSetActiveCommand(  spGetCmdDescIndex(inputCommandsTable[ expectedInput.CommandName ]) ) 
-	if(ret == false ) then 
-		Logger.log("commands", "Unable to set command active: " , expectedInput.CommandName) 
+	
+	local f = function()
+		local ret = spSetActiveCommand(  spGetCmdDescIndex(inputCommandsTable[ expectedInput.CommandName ]) ) 
+		if(ret == false ) then 
+			Logger.log("commands", "Unable to set command active: " , expectedInput.CommandName) 
+		end
 	end
+	
+	-- if there are no units selected, ...
+	if(not spGetSelectedUnits()[1])then
+		-- select one
+		spSelectUnits({ getDummyAllyUnit() })
+		-- wait until return to Spring to execute f
+		Timer.delay(f)
+	else
+		f() -- execute synchronously
+	end
+	
 end
 
 -- Listener for reload all button 
@@ -1017,5 +1039,6 @@ function saveAllUnitDefs()
 	end
 end
 
+Timer.injectWidget(widget)
 sanitizer:SanitizeWidget()
 return Dependency.deferWidget(widget, Dependency.BtEvaluator, Dependency.BtCommands)

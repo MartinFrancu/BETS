@@ -18,6 +18,7 @@ WG.BtUtils = WG.BtUtils or (function()
 		metapairs = { "meta-iteration", 2 }, -- @{metapairs}
 		Vec3 = "Vector3",
 		Sanitizer = "sanitizer", -- @{Sanitizer}
+		Timer = "timer", -- @{Timer}
 	}
 	
 	local LOCAL_PATH = LUAUI_DIRNAME .. "Widgets/BtUtils/"
