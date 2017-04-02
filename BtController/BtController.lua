@@ -748,7 +748,7 @@ function setUpTreeControlWindow()
 		y = 0,
 		width = 80,
 		skinName='DarkGlass',
-		tooltip = "Determines, whether BtCreator will be shown on instance assignment. ",
+		tooltip = "Show currently selected tree in BtCreator, new tree if '+' tab",
 		OnClick = {sanitizer:AsHandler(listenerClickBtCreator)}
 	}
 	if(not BtCreator)then
