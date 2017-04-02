@@ -737,6 +737,7 @@ function setUpTreeControlWindow()
 		parent = treeControlWindow,
 		caption = "BtCreator",
 		checked = false,
+		visible = false,
 		x = '80%',
 		y = 0,
 		width = 80,
@@ -744,6 +745,9 @@ function setUpTreeControlWindow()
 		tooltip = "Determines, whether BtCreator will be shown on instance assignment. ",
 		OnClick = {sanitizer:AsHandler(listenerClickBtCreator)}
 	}
+	if(not BtCreator)then
+		showBtCreatorButton:Hide()
+	end
 	
 	showBtCreatorButton.tabs = treeTabPanel
 	
@@ -829,8 +833,20 @@ function widget:Initialize()
 	BtEvaluator = sanitizer:Import(WG.BtEvaluator)
 	-- extract BtCreator into a local variable once available
 	Dependency.defer(
-		function() BtCreator = WG.BtCreator end,
-		function() BtCreator = nil end,
+		function()
+			BtCreator = WG.BtCreator
+			if(showBtCreatorButton)then
+				showBtCreatorButton:SetParent(treeControlWindow) -- workaround for a bug, showBtCreatorButton seems lose its parent somehow
+				showBtCreatorButton:Show()
+			end
+		end,
+		function()
+			BtCreator = nil
+			if(showBtCreatorButton)then
+				showBtCreatorButton:SetParent(treeControlWindow) -- workaround for a bug, showBtCreatorButton seems lose its parent somehow
+				showBtCreatorButton:Hide()
+			end
+		end,
 		Dependency.BtCreator
 	)
 	

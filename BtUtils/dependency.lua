@@ -19,7 +19,8 @@ return Utils:Assign("Dependency", function()
 	local dependencies = {}
 
 	--- Postpones the execution of a function until all specified dependencies are fulfilled.
-	-- @func f Function, that should be executed.
+	-- @func onFill Function, that should be executed once all dependencies are fulfilled.
+	-- @func onClear Optinal parameter; function, that should be executed after onFill has been called and at least one dependency is cleared.
 	-- @tparam Dependency ... A list of dependencies that need to be fulfilled.
 	-- @remark If all dependencies are fulfilled at the time of the call, the function is executed synchronously. Otherwise, it is executed once the last dependency gets fulfilled.
 	function Dependency.defer(onFill, onClear, ...)
@@ -35,7 +36,7 @@ return Utils:Assign("Dependency", function()
 				local clearedAlready = false
 				local function clearDeferer()
 					if(not clearedAlready)then
-						if(onClear())then
+						if(onClear() ~= false)then -- don't repeat only if the onClear method explicitly disables it
 							Dependency.defer(onFill, onClear, unpack(dependencies))
 						end
 						clearedAlready = true
@@ -84,7 +85,7 @@ return Utils:Assign("Dependency", function()
 	end
 	
 	--- Postpones the initialization and execution of a widget until all specified dependencies are fulfilled.
-	-- 
+	-- Also automatically removes the widget once the dependency is cleared.
 	-- This function has to be called only after all other widget setup code gets executed, which usually means the end of the script.
 	-- @tparam Widget widget Widget that is dependent to the dependencies.
 	-- @tparam Dependency ... A list of dependencies that need to be fulfilled.
@@ -122,6 +123,7 @@ return Utils:Assign("Dependency", function()
 		end, function()
 			Logger.log("dependency", "Removing widget ", widget:GetInfo().name, ".")
 			widget.widgetHandler:RemoveWidget(widget) -- we cannot use widgetHandler directly, because that would be a proxy to widgetHandler of the widget that runs this file (which may be a different one)
+			return false -- disable repeating of the onFill handler
 		end, ...)
 		
 		return widget
