@@ -54,9 +54,6 @@ local errorWindow
 local errorLabel
 local errorOkButton
 --------------------------------------------------------------------------------
--- This table is indexed by unitId and contains structures:
--- {InstanceId = "", Role = "", TreeHandle = treehandle} 
--- local unitsToTreesMap
 
 -- If we are in state of expecting input we will make store this information here
 local expectedInput 
@@ -64,6 +61,9 @@ local expectedInput
 local spGetCmdDescIndex = Spring.GetCmdDescIndex
 local spSetActiveCommand = Spring.SetActiveCommand
 local spGetSelectedUnits = Spring.GetSelectedUnits
+
+local inputCommandsTable = WG.InputCommands
+local treeCommandsTable = WG.BtCommands
 
 local function getTreeNamesInDirectory(directoryName)
    local ending = ".json"
@@ -483,9 +483,11 @@ function listenerAssignUnitsButton(self,x,y, ...)
 end
 
 function listenerInputButton(self,x,y,button, ...)
-	if(not WG.InputCommands or not WG.BtCommands) then
+	if(notinputCommandsTable or not treeCommandsTable) then
 		-- TODO Do a proper initialization, only once. 
 		WG.fillCustomCommandIDs()
+		inputCommandsTable = WG.InputCommands
+		treeCommandsTable = WG.BtCommands
 	end
 	-- should I do something more when reseting the input que?
 	-- I need to store record what we are expecting
@@ -495,7 +497,7 @@ function listenerInputButton(self,x,y,button, ...)
 		CommandName = self.CommandName,
 		InstanceId = self.InstanceId,
 	}
-	local ret = spSetActiveCommand(  spGetCmdDescIndex(WG.InputCommands[ expectedInput.CommandName ]) ) 
+	local ret = spSetActiveCommand(  spGetCmdDescIndex(inputCommandsTable[ expectedInput.CommandName ]) ) 
 	if(ret == false ) then 
 		Logger.log("commands", "Unable to set command active: " , expectedInput.CommandName) 
 	end
@@ -895,19 +897,36 @@ end
 
 function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 	-- Check for custom commands, first input commands
-	if(not WG.InputCommands or not WG.BtCommands) then
+	if(not inputCommandsTable or not treeCommandsTable) then
 		-- TODO Do a proper initialization, only once. 
 		WG.fillCustomCommandIDs()
-		if(not WG.InputCommands)then
+		inputCommandsTable = WG.InputCommands
+		treeCommandsTable = WG.BtCommands
+		if(not inputCommandsTable)then
 			return false -- if the problem persists, end
 		end
 	end
-	if(WG.InputCommands[cmdID]) then
+	if(inputCommandsTable[cmdID]) then
 		if(expectedInput ~= nil) then
 			-- I should insert given input to tree:
 			local tH = expectedInput.TreeHandle 
 			local inpName = expectedInput.InputName
-			tH:FillInInput(inpName, cmdParams)
+			local commandType = expectedInput.CommandName
+			-- I should check if the the command type is same, with expected?
+			if(inputCommandsTable[cmdID] ~= commandType)then
+				Logger.log("Error", "BtController.CommandNotify : Unexpected input command type.", 
+							" Expected: ", commandType, 
+							", got: ",inputCommandsTable[cmdID] )
+				return false
+			end
+			
+			local transformedData = Logger.loggedCall("Error", "BtController", 
+					"fill in input value, tranforming data",
+					WG.BtCommandsTransformData, 
+					cmdParams,
+					commandType)
+			
+			tH:FillInInput(inpName, transformedData)
 			expectedInput = nil
 			-- if tree is ready we should report it to BtEvaluator
 			if(tH:CheckReady()) then 
@@ -926,14 +945,14 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 				end	
 			end
 		else
-			Logger.log("commands", "Received input command while not expecting!!!")
+			Logger.log("commands", "Received input command while not expecting one!!!")
 		end
 		return true -- true is for deleting command and not sending it further according to documentation		
 	end
 	-- check for custom commands - Bt behaviour assignments
-	if(WG.BtCommands[cmdID]) then
+	if(treeCommandsTable[cmdID]) then
 		-- setting up a behaviour tree :
-		local treeHandle = instantiateTree(WG.BtCommands[cmdID].treeName, "Instance"..instanceIdCount , true)
+		local treeHandle = instantiateTree(treeCommandsTable[cmdID].treeName, "Instance"..instanceIdCount , true)
 		
 		listenerBarItemClick({TreeHandle = treeHandle}, x, y, 1)
 		

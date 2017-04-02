@@ -113,7 +113,7 @@ local function fillCustomCommandIDs()
 			local cmdID = commandsNameToID[cmdName]
 			if (cmdID ~= nil) then
 				-- make the WG.InputCommands bidirectional
-				WG.InputCommands[ cmdID ] = true
+				WG.InputCommands[ cmdID ] = cmdName
 				WG.InputCommands[ cmdName ] = cmdID
 			else
 				Logger.log("commands", tostring(name) .. "command ID is not available")

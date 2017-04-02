@@ -23,6 +23,8 @@ CONSTANTS = {
 
 
 TreeHandle = {}
+-- This table is indexed by unitId and contains structures:
+-- {InstanceId = "", Role = "", TreeHandle = treehandle} 
 TreeHandle.unitsToTreesMap = {}
 --[[
 TreeHandle = {
@@ -286,18 +288,14 @@ function TreeHandle:SetUnitCount(whichRole, number)
 	roleData.unitCountButton:SetCaption(number)
 	self.AssignedUnitsCount = self.AssignedUnitsCount + number
 end
+-- this function sets input to be given and records data to tree. It expects data transformed 
+-- in our format. 
 function TreeHandle:FillInInput(inputName, data)
 	-- I should change color of input
 	for _,inputButton in pairs(self.InputButtons) do
 		if(inputButton.InputName == inputName) then
 			inputButton.backgroundColor = CONSTANTS.SUCCESS_COLOR
-			
-			local transformedData = Logger.loggedCall("Error", "BtController", 
-					"fill in input value",
-					WG.BtCommandsTransformData, 
-					data,
-					inputButton.CommandName)
-			self.Inputs[inputName] = transformedData
+			self.Inputs[inputName] = data
 			inputButton:Invalidate()
 			inputButton:RequestUpdate()	
 		end
@@ -383,11 +381,11 @@ function TreeHandle:ReloadTree()
 	end
 	
 	local oldInputs = self.Inputs	
+	
 	self.Inputs = {}
 			
 	-- getting a new tree:
 	self.Tree = BehaviourTree.load(self.TreeType)
-	
 	-- reload UI:---------------------------------------------------------------------
 	
 	-- remove old components 
@@ -409,7 +407,6 @@ function TreeHandle:ReloadTree()
 			end
 		end
 	end
-	
 	-- collect old inputs:
 	for _, inputSpec in pairs (self.Tree.inputs) do
 		local inputName = inputSpec.name
@@ -419,11 +416,10 @@ function TreeHandle:ReloadTree()
 			local newCommand = inputSpec.command
 			-- if input was given and it has the same type (colecting command name) then fill the data in
 			if (givenInput ~= nil) and (oldCommand == newCommand) then  
-				self:FillInInput(inputName, oldInputs[inputName])
+				self:FillInInput(inputName, givenInput)
 			end
 		end 
 	end
-	
 	self:UpdateTreeStatus()
 
 end
