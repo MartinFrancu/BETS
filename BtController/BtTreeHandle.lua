@@ -262,7 +262,6 @@ end
 
 -- Following three methods are shortcut for increasing and decreassing role counts.
 function TreeHandle:DecreaseUnitCount(whichRole)
-	Logger.log("roles", "decrease: ")
 	local roleData = self.Roles[whichRole]
 	-- this is the current role and tree
 	local currentCount = tonumber(roleData.unitCountButton.caption)
@@ -366,11 +365,12 @@ function TreeHandle:ReloadTree()
 	local assignedUnits = {}
 	for _,roleData in pairs(self.Tree.roles) do		
 		local unitsInRole = TreeHandle.unitsInTreeRole(self.InstanceId, roleData.name)
-		if( table.getn(unitsInRole) >= 1) then
+		if( table.getn(unitsInRole) > 0) then
 			assignedUnits[roleData.name] = unitsInRole
 		end
-		Logger.log("roles", "reload tree, role name : ", roleData.name, " units in role: ",table.getn(unitsInRole) )
 	end
+	-- free all units
+	 TreeHandle.removeUnitsFromTree(self.InstanceId)
 	
 	-- inputs:
 	-- collect cmd corresponding to inputs:
@@ -385,7 +385,7 @@ function TreeHandle:ReloadTree()
 			
 	-- getting a new tree:
 	self.Tree = BehaviourTree.load(self.TreeType)
-	-- reload UI:---------------------------------------------------------------------
+	-- reload UI:---------------------------------------------------------------
 	
 	-- remove old components 
 	self.ChiliComponentsRoles = {}
@@ -397,7 +397,7 @@ function TreeHandle:ReloadTree()
 	
 	-- transfering user given data: 
 	
-	-- units assignment:
+	-- units assignment: -------------------------------------------------------
 	for _,roleData in pairs(self.Tree.roles) do
 		-- if the name is same, assign units in this role:
 		if(assignedUnits[roleData.name] ~= nil) then

@@ -155,19 +155,24 @@ function addFieldToBarItemList(tabs, tabName, atributName, atribut)
 end
 
 function addTreeToTreeTabPanel(treeHandle)
-	local chiliComponents = treeHandle.ChiliComponentsGeneral
+	-- collect all chili components corresponding to this tree
+	local chiliComponents = {}
+	for _,component in pairs (treeHandle.ChiliComponentsGeneral) do
+		table.insert(chiliComponents,component)
+	end
 	for _,component in pairs (treeHandle.ChiliComponentsRoles) do
 		table.insert(chiliComponents,component)
 	end
 	for _,component in pairs (treeHandle.ChiliComponentsInputs) do
 		table.insert(chiliComponents,component)
 	end
+
+	
 	local newTab =  {name = treeHandle.Name, children = chiliComponents}
-	-- if TabPanel is not inialized I have to initalize it:
 	treeTabPanel:AddTab(newTab)
 	highlightTab(newTab.name)
 	
-	-- get tabBar		
+	-- add all required properties:	
 	addFieldToBarItem(treeTabPanel, newTab.name, "MouseDown", sanitizer:AsHandler(tabBarItemMouseDownBETS) )
 	addFieldToBarItemList(treeTabPanel, newTab.name, "OnClick", sanitizer:AsHandler(listenerBarItemClick) )
 	addFieldToBarItem(treeTabPanel, newTab.name, "TreeHandle", treeHandle)
@@ -221,15 +226,16 @@ function reloadTree(tabs, treeHandle)
 		Logger.loggedCall("Errors", "BtController", "removing tree fromBbtEvaluator", 
 			BtEvaluator.removeTree, treeHandle.InstanceId)
 	end
-	
 	-- get the new tree specification and GUI components:
 	treeHandle:ReloadTree()
-	
 	-- GUI components:
 	local tabFrame = tabs.tabIndexMapping[treeHandle.Name]
 	-- remove old GUI components:
 	tabFrame:ClearChildren()
+	tabFrame:RequestUpdate()
 	-- now attach new ones:
+	----[[
+	
 	for _,component in pairs(treeHandle.ChiliComponentsGeneral)do
 		tabFrame:AddChild(component)
 	end
@@ -239,7 +245,7 @@ function reloadTree(tabs, treeHandle)
 	for _,component in pairs(treeHandle.ChiliComponentsInputs)do
 		tabFrame:AddChild(component)
 	end
-	
+	--]]
 	-- if tree is ready, initialize it in BtEvaluator
 	if(treeHandle:CheckReady()) then
 		createTreeInBtEvaluator(treeHandle)
@@ -264,7 +270,7 @@ function BtController.reloadTreeType(treeTypeName)
 			and (item.TreeHandle.TreeType == treeTypeName) )
 		then
 			--table.insert(toReload, item.TreeHandle)
-			BtController.reloadTree(treeTabPanel, item.TreeHandle)
+			reloadTree(treeTabPanel, item.TreeHandle)
 		end
 	end
 end
@@ -282,8 +288,8 @@ function reloadAll()
 	-- find corresponding tabBarItems: 
 	local barItems = tabBar.children
 	for index,item in ipairs(barItems) do
-		if(item.caption ~= "+")then -- exclude addtab item from reloading...	
-			BtController.reloadTree(treeTabPanel, item.TreeHandle)
+		if(item.caption ~= "+")then -- exclude addtab item from reloading...
+			reloadTree(treeTabPanel, item.TreeHandle)
 		end
 	end
 end
@@ -335,7 +341,6 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 			if(unitIdRoleTable[name] ~= nil) then
 				local unitRoles = unitIdRoleTable[name]
 				local currentRoleData = unitRoles.roles[unitRoles.currentIndex]
-				Logger.log("roles", "assigning to role", currentRoleData)
 				TreeHandle.assignUnitToTree(unitId, treeHandle, currentRoleData.assignButton.Role)
 				-- now, I should shift the index:
 				unitRoles.currentIndex = unitRoles.currentIndex + 1 
@@ -577,11 +582,14 @@ function instantiateTree(treeType, instanceName, requireUnits)
 		return newTreeHandle
 	end
 	
+	
 	-- create tab
 	addTreeToTreeTabPanel(newTreeHandle)
 		
 	-- now, auto assign units to tree
 	automaticRoleAssignment(newTreeHandle, selectedUnits)
+	
+	
 	
 	if(newTreeHandle:CheckReady()) then
 		createTreeInBtEvaluator(newTreeHandle)
@@ -823,8 +831,6 @@ function widget:Initialize()
 	local environmentTreeHandle = BtController
 	environmentTreeHandle["Chili"] = Chili
 	environmentTreeHandle["Utils"] = Utils
-	
-	Logger.log("separation", "utils", dump(environmentTreeHandle["Utils"],2 ))
 	
 	TreeHandle = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtController/BtTreeHandle.lua", environmentTreeHandle , VFS.RAW_FIRST)
   
