@@ -171,6 +171,12 @@ end
 function BtEvaluator.resetTree(instanceId)
 	return BtEvaluator.resetTrees({ instanceId })
 end
+function BtEvaluator.tickTrees(instanceIds)
+	return BtEvaluator.sendMessage("TICK_TREES", instanceIds)
+end
+function BtEvaluator.tickTree(instanceId)
+	return BtEvaluator.tickTrees({ instanceId })
+end
 function BtEvaluator.assignUnits(units, instanceId, roleId)
 	roleId = roleId + 1
 	local instance = treeInstances[instanceId]

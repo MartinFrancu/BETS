@@ -404,11 +404,11 @@ local function listenerClickOnBreakpoint()
 		local color
 		if(breakpoints[nodeId] == nil and nodeId ~= rootID) then
 			breakpoints[nodeId] = true
-			Logger.loggedCall("Errors", "BtCreator", "setting a breakpoint", BtEvaluator.setBreakpoint, treeInstanceId, nodeId)
+			BtEvaluator.setBreakpoint(treeInstanceId, nodeId)
 			color = BREAKPOINT_COLOR
 		else
 			breakpoints[nodeId] = nil
-			Logger.loggedCall("Errors", "BtCreator", "removing a breakpoint", BtEvaluator.removeBreakpoint, treeInstanceId, nodeId)
+			BtEvaluator.removeBreakpoint(treeInstanceId, nodeId)
 			color = DEFAULT_COLOR
 		end
 		if(nodeId ~= rootID) then
@@ -418,8 +418,12 @@ local function listenerClickOnBreakpoint()
 	-- Spring.Echo("Breakpoints: "..dump(breakpoints))
 end
 
+local pausedByBtCreator = false
 local function listenerClickOnContinue()
-	Spring.SendCommands("pause")
+	BtEvaluator.tickTree(treeInstanceId)
+	if(not pausedByBtCreator)then
+		Spring.SendCommands("pause")
+	end
 end
 
 local function updateStatesMessage(params)
@@ -453,7 +457,12 @@ local function updateStatesMessage(params)
 	end
 	blackboard.showCurrentBlackboard(params.blackboard)
 	if(shouldPause) then
-		Spring.SendCommands("pause")
+		if(not pausedByBtCreator)then
+			Spring.SendCommands("pause")
+			pausedByBtCreator = true
+		end
+	else
+		pausedByBtCreator = false
 	end
 end
 
