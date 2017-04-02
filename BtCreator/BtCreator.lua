@@ -243,7 +243,10 @@ end
 function listenerClickOnSaveTree()
 	Logger.log("save-and-load", "Save Tree clicked on. ")
 		-- on tree Save() regenerate IDs of nodes already present in loaded tree
-	if(serializedTreeName and serializedTreeName ~= treeNameEditbox.text) then
+	
+	local  treeName = treeNameEditbox.text
+	
+	if(serializedTreeName and serializedTreeName ~= treeName) then
 		--regenerate all IDs from loaded Tree
 		for id,_ in pairs(serializedIDs) do
 			if(WG.nodeList[id]) then
@@ -273,13 +276,18 @@ function listenerClickOnSaveTree()
 				table.insert(resultTree.inputs, {["name"] = inputs[i][1].text, ["command"] = inputTypeMap[ inputs[i][2].items[ inputs[i][2].selected ] ],})
 			end
 		end
-		resultTree:Save(treeNameEditbox.text)
+		resultTree:Save(treeName)
 		WG.clearSelection()
 		
 		Logger.loggedCall("Errors", "BtCreator", 
 			"asking BtController to reload instances of saved tree type",
 			WG.BtControllerReloadTreeType,
-			treeNameEditbox.text)
+			treeName)
+			
+		Logger.loggedCall("Errors", "BtCreator",
+			"registering command for new tree",
+			WG.BtRegisterCommandForTree,
+			treeName)
 	else
 		-- we need to get user to define roles first:
 		showRoleManagementWindow("save")

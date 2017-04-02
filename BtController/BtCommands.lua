@@ -212,10 +212,31 @@ end
 
 WG.BtCommandsTransformData = transformCommandData
 
+local function registerCommandForTree(treeName)
+	-- should I check if there is such file??
+	local commandName =  "BT_" ..  treeName
+		local description = {
+			type = CMDTYPE.ICON,
+			name = commandName,
+			cursor = 'Attack',
+			action = 'Attack',
+			tooltip = fileName,
+			hidden = false,
+			UIoverride = {caption = treeName, texture = 'LuaUI/Images/commands/guard.png' }
+			--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
+		}
+		registerCommand(description) 
+end
+
+WG.BtRegisterCommandForTree = registerCommandForTree
+
 local function registerCommandsForBehaviours()
 	local fileNames = BtUtils.dirList(BehavioursDirectory, "*.json")--".+%.json$")
 	for _,fileName in pairs(fileNames) do
 		local treeName = fileName:gsub("%.json","")
+		
+		registerCommandForTree(treeName)
+		--[[
 		local commandName =  "BT_" ..  treeName
 		local description = {
 			type = CMDTYPE.ICON,
@@ -228,6 +249,7 @@ local function registerCommandsForBehaviours()
 			--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
 		}
 		registerCommand(description) --sendCustomMessage.RegisterCustomCommand(description)
+		]]
 	end
 end
 
@@ -262,61 +284,6 @@ function widget:Shutdown()
 	Dependency.clear(Dependency.BtCommands)
 end
 
--- local function getCommandIDsForBehaviours()
-	-- local rawCommandsNameToID = Spring.GetGameRulesParam("customCommandsNameToID")
-	-- if (rawCommandsNameToID ~= nil) then
-		-- treeCommandNameToID = {}
-		-- local commandsNameToID = message.Decode(rawCommandsNameToID)
-		-- local fileNames = BtUtils.dirList(BehavioursDirectory, "*.json")--".+%.json$")
-		-- for i,fileName in pairs(fileNames) do
-			-- local treeName = fileName:gsub("%.json","")
-			-- local commandName =  "BT_" ..  treeName 
-			-- if (commandsNameToID[commandName] ~= nil) then
-				-- treeCommandNameToID[commandName] = commandsNameToID[commandName]
-			-- else
-				-- Logger.log("commands", tostring(commandName) .. "command ID is not available")
-			-- end
-		-- end
-	-- else	
-		-- Logger.log("commands", "customCommandsNameToID is not available.")
-	-- end
--- end
-
--- local function getCommandIDToName()
-	-- -- do input commands: 
-	-- local rawCommandsNameToID = Spring.GetGameRulesParam("customCommandsNameToID")
-	-- if (rawCommandsNameToID ~= nil) then
-		-- commandIDToName = {}
-		-- local commandsNameToID = message.Decode(rawCommandsNameToID)
-		-- -- input commands
-		-- for name, record in pairs(inputCommandDesc) do 
-			-- if (commandsNameToID[name] ~= nil) then
-				-- commandIDToName[commandsNameToID[name] ] = {cmdName = name
-				-- }
-			-- else
-				-- Logger.log("commands", tostring(name) .. "command ID is not available")
-			-- end
-		-- end
-		-- -- tree commands
-		-- local fileNames = BtUtils.dirList(BehavioursDirectory, "*.json")--".+%.json$")
-		-- for i,fileName in pairs(fileNames) do
-			-- local treeName = fileName:gsub("%.json","")
-			-- local commandName =  "BETS_TREE_" ..  treeName 
-			-- if (commandsNameToID[commandName] ~= nil) then
-				-- commandIDToName[commandsNameToID[commandName] ] = {
-					-- cmdName = commandName,
-					-- name = treeName,
-					-- }
-			-- else
-				-- Logger.log("commands", tostring(commandName) .. "command ID is not available")
-			-- end
-		-- end
-	-- else	
-		-- Logger.log("commands", "customCommandsNameToID is not available.")
-	-- end
--- end
-
----------------------------------------COMMANDS-END-
 
 sanitizer:SanitizeWidget()
 --Dependency.deferWidget(widget)
