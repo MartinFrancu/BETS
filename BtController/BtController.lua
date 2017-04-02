@@ -350,7 +350,6 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 			Logger.log("roles", "could not find UnitDefs entry for: ",  unitId )
 		end
 	end
-	Logger.log("commands", "automatic assignment")
 	removeTreesWithoutUnitsRequiringUnits()
 end
 
@@ -388,15 +387,14 @@ function removeTreesWithoutUnitsRequiringUnits()
 	-- get trees to remove
 	local treesToRemove = {}
 	for index,item in ipairs(barItems) do
-		Logger.log("commands", "treehandle: ", item.TreeHandle)
 		if  (item.caption ~= "+") then-- exclude add tree tab
-			Logger.log("commands", "req: ", item.TreeHandle.RequireUnits, " assigned: ", (item.TreeHandle.AssignedUnitsCount ))
 			if (item.TreeHandle.RequireUnits) and  (item.TreeHandle.AssignedUnitsCount < 1) then
 				-- if there are no units, remove this tree:
 				table.insert(treesToRemove,  item.TreeHandle)
 			end
 		end
 	end
+	
 	-- remove all trees without units which require units
 	for _,treeHandle in ipairs(treesToRemove) do 
 		removeTreeBtController(treeTabPanel, treeHandle)
@@ -564,26 +562,26 @@ end
 -- it return the new treeHandle
 function instantiateTree(treeType, instanceName, requireUnits)
 	
+	
 	local newTreeHandle = TreeHandle:New{
 		Name = instanceName,
 		TreeType = treeType,
 		AssignUnitListener = sanitizer:AsHandler(listenerAssignUnitsButton),
 		InputButtonListener = sanitizer:AsHandler(listenerInputButton),
+		RequireUnits = requireUnits,
 	}
 	
 	local selectedUnits = spGetSelectedUnits()
-	if ((table.getn(selectedUnits) < 1 ) and requireUnits) then
+	if ((table.getn(selectedUnits) < 1 ) and newTreeHandle.RequireUnits) then
 		Logger.log("Errors", "BtController: instantiateTree: tree is requiring units and no unit is selected.")
 		return newTreeHandle
 	end
 	
 	-- create tab
 	addTreeToTreeTabPanel(newTreeHandle)
-			
+		
 	-- now, auto assign units to tree
 	automaticRoleAssignment(newTreeHandle, selectedUnits)
-	
-	newTreeHandle.RequireUnits = requireUnits
 	
 	if(newTreeHandle:CheckReady()) then
 		createTreeInBtEvaluator(newTreeHandle)

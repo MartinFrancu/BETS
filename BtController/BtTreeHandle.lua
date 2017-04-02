@@ -235,7 +235,6 @@ function TreeHandle:New(obj)
 	obj.ChiliComponentsInputs = {}
 	obj.Roles = {}
 	obj.InputButtons = {}
-	obj.RequireUnits = true
 	obj.AssignedUnitsCount = 0
 	obj.Created = false
 	obj.Inputs = {}
