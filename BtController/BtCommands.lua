@@ -83,6 +83,8 @@ local inputCommandDesc = {
 	},
 }
 
+local registeredCommands = {}
+
 -- commandIDToName is used to identify command in command notify>
 local commandIDToName
 local commandNameToHumanName
@@ -140,53 +142,6 @@ local function createCommandHumanNameTable()
 		commandNameToHumanName[name] = data.humanName
 	end
 end
-
-
---[[
---- Fills WG.InputCommands, WG.BtCommands tables with custom commands IDs and othe needed data. Like behaviour inputs. 
-local function fillCustomCommandIDs()
-	local rawCommandsNameToID = Spring.GetTeamRulesParam(Spring.GetMyTeamID(), "CustomCommandsNameToID")
-	if (rawCommandsNameToID ~= nil) then
-		WG.InputCommands = {}
-		WG.BtCommands = {}
-		local commandsNameToID = message.Decode(rawCommandsNameToID)
-		for cmdName,_ in pairs(inputCommandDesc) do 
-			local cmdID = commandsNameToID[cmdName]
-			if (cmdID ~= nil) then
-				-- make the WG.InputCommands bidirectional
-				WG.InputCommands[ cmdID ] = cmdName
-				WG.InputCommands[ cmdName ] = cmdID
-			else
-				Logger.log("commands", tostring(name) .. "command ID is not available")
-			end
-		end
-		
-		local fileNames = BtUtils.dirList(BehavioursDirectory, "*.json")--".+%.json$")
-		for _,fileName in pairs(fileNames) do
-			local treeName = fileName:gsub("%.json","")
-			local cmdName =  "BT_" ..  treeName
-			local cmdID = commandsNameToID[cmdName]
-			if (cmdID ~= nil) then
-				-- read serialized behaviour inputs
-				local bt = BehaviourTree.load(treeName)
-				WG.BtCommands[ cmdID ] = {
-					treeName = treeName,
-					inputs = bt.inputs,
-				}
-			else
-				Logger.log("commands", tostring(cmdName) .. "command ID is not available")
-			end
-		end
-		
-		
-	else	
-		Logger.log("commands", "rawCommandsNameToID is not availible.")
-		-- should I add
-	end
-end
-
-WG.fillCustomCommandIDs = fillCustomCommandIDs
-]]
 
 --[[ 
 The following function is used to tranform spring-based representation of 
@@ -253,7 +208,7 @@ local function registerCommandsForBehaviours()
 	end
 end
 
--- EVENT HANDLING SYSTEM EXAMPLE
+--Event handler
 function CustomCommandRegistered(cmdName, cmdID)
 	Logger.log("commands", "Command [" .. cmdName .. "] was registered under ID [" .. cmdID .. "]")
 	fillInCommandID(cmdName, cmdID)
@@ -276,6 +231,12 @@ function widget:Shutdown()
 	for _, cmdDesc in pairs(inputCommandDesc) do
 		sendCustomMessage.DeregisterCustomCommand(cmdDesc.name)
 	end
+	-- I guess there is missing deregistration of trees we have registered..
+	
+	for cmdName, cmdData in pairs(WG.BtCommands) do
+		sendCustomMessage.DeregisterCustomCommand(cmdName)
+	end
+	
 	WG.fillCustomCommandIDs = nil
 	WG.BtCommandsInputHumanNames = nil
 	WG.BtCommandsTransformData = nil
