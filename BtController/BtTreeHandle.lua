@@ -247,7 +247,7 @@ function TreeHandle:New(obj)
 		minWidth = 50,
 		caption =  obj.TreeType .. " (initializing)",
 		skinName = "DarkGlass",
-		tooltip = "Name of tree type",
+		tooltip = "Name of tree type, (state)",
 	}
 	
 	-- Order of these childs is sort of IMPORTANT as other entities needs to access children
