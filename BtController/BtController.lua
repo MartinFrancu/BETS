@@ -486,9 +486,8 @@ function listenerAssignUnitsButton(self,x,y, ...)
 end
 
 function listenerInputButton(self,x,y,button, ...)
-	if(notinputCommandsTable or not treeCommandsTable) then
-		-- TODO Do a proper initialization, only once. 
-		WG.fillCustomCommandIDs()
+	if(not inputCommandsTable or not treeCommandsTable) then		
+		--WG.fillCustomCommandIDs()
 		inputCommandsTable = WG.InputCommands
 		treeCommandsTable = WG.BtCommands
 	end
@@ -919,7 +918,7 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 	-- Check for custom commands, first input commands
 	if(not inputCommandsTable or not treeCommandsTable) then
 		-- TODO Do a proper initialization, only once. 
-		WG.fillCustomCommandIDs()
+		--WG.fillCustomCommandIDs()
 		inputCommandsTable = WG.InputCommands
 		treeCommandsTable = WG.BtCommands
 		if(not inputCommandsTable)then

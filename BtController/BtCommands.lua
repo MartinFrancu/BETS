@@ -45,7 +45,7 @@ local inputCommandDesc = {
 		--action = 'Convoy',
 		tooltip = 'Collects a position input from player.',
 		hidden = true,
-		buttonName = "Position",
+		humanName = "Position",
 		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
 	},
 	["BETS_AREA"] = {
@@ -55,7 +55,7 @@ local inputCommandDesc = {
 		--action = 'SAD',
 		tooltip = 'Collects an area input from player.',
 		hidden = true,
-		buttonName = "Area",
+		humanName = "Area",
 		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
 		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sad.png' },
 	},
@@ -66,7 +66,7 @@ local inputCommandDesc = {
 		--action = 'SAD',
 		tooltip = 'Collects unit input from player.',
 		hidden = true,
-		buttonName = "Unit",
+		humanName = "Unit",
 		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
 		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sad.png' },
 	},
@@ -77,7 +77,7 @@ local inputCommandDesc = {
 		--action = 'SAD',
 		tooltip = 'Ends the user input.',
 		hidden = true,
-		buttonName = "End",
+		humanName = "End",
 		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
 		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sad.png' },
 	},
@@ -87,10 +87,49 @@ local inputCommandDesc = {
 local commandIDToName
 local commandNameToHumanName
 
+
+local function registerCommand(cmdDesc)
+	sendCustomMessage.RegisterCustomCommand(cmdDesc)
+end
+
+local function fillInCommandID(cmdName, cmdID)
+	if (WG.InputCommands == nil) then 
+		WG.InputCommands = {}
+	end
+	if (WG.BtCommands == nil) then 
+		WG.BtCommands = {}
+	end
+	-- if it is our command, we should remember its cmdID
+	
+	-- is it input command?
+	for inputCmdName,_ in pairs(inputCommandDesc) do 
+		if (inputCmdName == cmdName) then
+			-- make the WG.InputCommands bidirectional
+			WG.InputCommands[ cmdID ] = cmdName
+			WG.InputCommands[ cmdName ] = cmdID
+		end
+	end
+	
+	-- is it command corresponding to some behaviour?
+	local fileNames = BtUtils.dirList(BehavioursDirectory, "*.json")
+	for _,fileName in pairs(fileNames) do
+		local treeName = fileName:gsub("%.json","")
+		local treeCmdName =  "BT_" ..  treeName
+		if (treeCmdName == cmdName) then
+			-- read serialized behaviour inputs
+			local bt = BehaviourTree.load(treeName)
+			WG.BtCommands[ cmdID ] = {
+				treeName = treeName,
+				inputs = bt.inputs,
+			}
+		end
+	end
+end
+
 local function registerInputCommands()
 	-- we need to register our custom commands
 	for _, cmdDesc in pairs(inputCommandDesc) do
-		sendCustomMessage.RegisterCustomCommand(cmdDesc)
+		registerCommand(cmdDesc) --sendCustomMessage.RegisterCustomCommand(cmdDesc)
 	end
 end
 
@@ -98,10 +137,12 @@ end
 local function createCommandHumanNameTable()
 	commandNameToHumanName = {}
 	for name,data in pairs(inputCommandDesc) do
-		commandNameToHumanName[name] = data.buttonName
+		commandNameToHumanName[name] = data.humanName
 	end
 end
 
+
+--[[
 --- Fills WG.InputCommands, WG.BtCommands tables with custom commands IDs and othe needed data. Like behaviour inputs. 
 local function fillCustomCommandIDs()
 	local rawCommandsNameToID = Spring.GetTeamRulesParam(Spring.GetMyTeamID(), "CustomCommandsNameToID")
@@ -145,6 +186,7 @@ local function fillCustomCommandIDs()
 end
 
 WG.fillCustomCommandIDs = fillCustomCommandIDs
+]]
 
 --[[ 
 The following function is used to tranform spring-based representation of 
@@ -185,8 +227,14 @@ local function registerCommandsForBehaviours()
 			UIoverride = {caption = treeName, texture = 'LuaUI/Images/commands/guard.png' }
 			--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
 		}
-		sendCustomMessage.RegisterCustomCommand(description)
+		registerCommand(description) --sendCustomMessage.RegisterCustomCommand(description)
 	end
+end
+
+-- EVENT HANDLING SYSTEM EXAMPLE
+function CustomCommandRegistered(cmdName, cmdID)
+	Logger.log("commands", "Command [" .. cmdName .. "] was registered under ID [" .. cmdID .. "]")
+	fillInCommandID(cmdName, cmdID)
 end
 
 function widget:Initialize()
@@ -195,6 +243,9 @@ function widget:Initialize()
 	WG.BtCommandsInputHumanNames = commandNameToHumanName
 	-- register release commands !note: maybe move them into another refreshTreeSelectionPanel?
 	registerCommandsForBehaviours()
+	-- register event handler..
+	widgetHandler:RegisterGlobal('CustomCommandRegistered', CustomCommandRegistered)
+	
 	Dependency.fill(Dependency.BtCommands)
 end
 
