@@ -322,6 +322,7 @@ function TreeHandle.removeUnitFromCurrentTree(unitId)
 	role = TreeHandle.unitsToTreesMap[unitId].Role
 	treeHandle:DecreaseUnitCount(role)
 	TreeHandle.unitsToTreesMap[unitId] = nil
+	return treeHandle
 end
 
 function TreeHandle.unitsInTreeRole(instanceId,roleName)
@@ -336,7 +337,7 @@ end
 
 -- this will take note of assignment of a unit to given tree and adjust gui componnets
 function TreeHandle.assignUnitToTree(unitId, treeHandle, roleName)
-	if(TreeHandle.unitsToTreesMap[unitId] ~= nill) then
+	if(TreeHandle.unitsToTreesMap[unitId] ~= nil) then
 		-- unit is currently assigned elsewhere, need to remove it first
 		TreeHandle.removeUnitFromCurrentTree(unitId)
 	end

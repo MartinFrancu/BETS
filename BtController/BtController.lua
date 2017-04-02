@@ -334,8 +334,14 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 		end
 	end	
 	
+	local treeHandlesWithRemovedUnits = {}
+	
 	for i,unitId in pairs(selectedUnits) do
 		local unitDefId = Spring.GetUnitDefID(unitId)
+		local thWithRemovedUnit = TreeHandle.removeUnitFromCurrentTree(unitId)
+		if thWithRemovedUnit then
+			treeHandlesWithRemovedUnits[thWithRemovedUnit.InstanceId] = thWithRemovedUnit
+		end
 		if(UnitDefs[unitDefId] ~= nil)then  
 			local name = UnitDefs[unitDefId].name
 			if(unitIdRoleTable[name] ~= nil) then
@@ -355,6 +361,12 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 			Logger.log("roles", "could not find UnitDefs entry for: ",  unitId )
 		end
 	end
+	
+	-- notify BtEvaluator about removed units
+	for _,handle in pairs(treeHandlesWithRemovedUnits) do
+		reportAssignedUnits(handle)
+	end
+	
 	removeTreesWithoutUnitsRequiringUnits()
 end
 
@@ -393,6 +405,7 @@ function removeTreesWithoutUnitsRequiringUnits()
 	local treesToRemove = {}
 	for index,item in ipairs(barItems) do
 		if  (item.caption ~= "+") then-- exclude add tree tab
+			
 			if (item.TreeHandle.RequireUnits) and  (item.TreeHandle.AssignedUnitsCount < 1) then
 				-- if there are no units, remove this tree:
 				table.insert(treesToRemove,  item.TreeHandle)
@@ -458,12 +471,20 @@ function listenerAssignUnitsButton(self,x,y, ...)
 	-- self = chili:button
 	-- deselect units in current role
 	-- Here I am deassigning all units, that might destroy some tree:
-
+	
+	local treeHandlesWithRemovedUnits = {}
 	for unitId,treeAndRole in pairs(TreeHandle.unitsToTreesMap) do	
 		if(treeAndRole.InstanceId == self.TreeHandle.InstanceId) and (treeAndRole.Role == self.Role) then
-			TreeHandle.removeUnitFromCurrentTree(unitId)
+			local thWithRemovedUnit = TreeHandle.removeUnitFromCurrentTree(unitId)
+			if thWithRemovedUnit then
+				treeHandlesWithRemovedUnits[thWithRemovedUnit.InstanceId] = thWithRemovedUnit
+			end
 				-- if the tree has no more units:
 		end
+	end
+	-- notify BtEvaluator about removed units
+	for _,handle in pairs(treeHandlesWithRemovedUnits) do
+		reportAssignedUnits(handle)
 	end
 	
 	local selectedUnits = spGetSelectedUnits()
