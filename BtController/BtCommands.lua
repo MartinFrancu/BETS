@@ -169,16 +169,27 @@ WG.BtCommandsTransformData = transformCommandData
 
 local function registerCommandForTree(treeName)
 	-- should I check if there is such file??
+	
+	-- is there icon:
+	local iconFileName = BehavioursDirectory .. "/" .. treeName .. ".png"
+	local gotIcon = VFS.FileExists(iconFileName)
+	
+	local UIover
+	if gotIcon then
+		UIover = {texture = iconFileName }
+	else
+		UIover = {caption = treeName, texture = 'LuaUI/Images/commands/bold/restore.png' }
+	end
+	
 	local commandName =  "BT_" ..  treeName
 		local description = {
 			type = CMDTYPE.ICON,
 			name = commandName,
 			cursor = 'Attack',
 			action = 'Attack',
-			tooltip = fileName,
+			tooltip = "Behaviour " .. treeName,
 			hidden = false,
-			UIoverride = {caption = treeName, texture = 'LuaUI/Images/commands/guard.png' }
-			--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
+			UIoverride = UIover
 		}
 		registerCommand(description) 
 end
