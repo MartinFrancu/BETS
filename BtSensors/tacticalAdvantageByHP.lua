@@ -7,6 +7,7 @@ local sensorInfo = {
 }
 
 local EVAL_PERIOD_DEFAULT = 0 -- this sensor is not caching any values, it evaluates itself on every request
+local HEALTH_IF_UNKNOWN = 300
 
 function getInfo()
 	return {
@@ -44,7 +45,8 @@ return function(center, radius, onlyOurGroup)
 	
 	for i=1, #allUnitsAround do
 		local thisUnitID = allUnitsAround[i]
-		local health, maxHealth = Spring.GetUnitHealth(thisUnitID)
+		local health = Spring.GetUnitHealth(thisUnitID)
+		if (health == nil) then health = HEALTH_IF_UNKNOWN end
 		local isAllied = Spring.IsUnitAllied(thisUnitID)
 		if (isAllied) then
 			-- in case of "onlyOurGroup", not all units in radius health is used - other allied units are ignored 

@@ -45,7 +45,7 @@ local inputCommandDesc = {
 		--action = 'Convoy',
 		tooltip = 'Collects a position input from player.',
 		hidden = true,
-		buttonName = "Position",
+		humanName = "Position",
 		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
 	},
 	["BETS_AREA"] = {
@@ -55,7 +55,7 @@ local inputCommandDesc = {
 		--action = 'SAD',
 		tooltip = 'Collects an area input from player.',
 		hidden = true,
-		buttonName = "Area",
+		humanName = "Area",
 		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
 		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sad.png' },
 	},
@@ -66,7 +66,7 @@ local inputCommandDesc = {
 		--action = 'SAD',
 		tooltip = 'Collects unit input from player.',
 		hidden = true,
-		buttonName = "Unit",
+		humanName = "Unit",
 		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
 		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sad.png' },
 	},
@@ -77,20 +77,61 @@ local inputCommandDesc = {
 		--action = 'SAD',
 		tooltip = 'Ends the user input.',
 		hidden = true,
-		buttonName = "End",
+		humanName = "End",
 		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
 		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sad.png' },
 	},
 }
 
+local registeredCommands = {}
+
 -- commandIDToName is used to identify command in command notify>
 local commandIDToName
 local commandNameToHumanName
 
+
+local function registerCommand(cmdDesc)
+	sendCustomMessage.RegisterCustomCommand(cmdDesc)
+end
+
+local function fillInCommandID(cmdName, cmdID)
+	if (WG.InputCommands == nil) then 
+		WG.InputCommands = {}
+	end
+	if (WG.BtCommands == nil) then 
+		WG.BtCommands = {}
+	end
+	-- if it is our command, we should remember its cmdID
+	
+	-- is it input command?
+	for inputCmdName,_ in pairs(inputCommandDesc) do 
+		if (inputCmdName == cmdName) then
+			-- make the WG.InputCommands bidirectional
+			WG.InputCommands[ cmdID ] = cmdName
+			WG.InputCommands[ cmdName ] = cmdID
+		end
+	end
+	
+	-- is it command corresponding to some behaviour?
+	local fileNames = BtUtils.dirList(BehavioursDirectory, "*.json")
+	for _,fileName in pairs(fileNames) do
+		local treeName = fileName:gsub("%.json","")
+		local treeCmdName =  "BT_" ..  treeName
+		if (treeCmdName == cmdName) then
+			-- read serialized behaviour inputs
+			local bt = BehaviourTree.load(treeName)
+			WG.BtCommands[ cmdID ] = {
+				treeName = treeName,
+				inputs = bt.inputs,
+			}
+		end
+	end
+end
+
 local function registerInputCommands()
 	-- we need to register our custom commands
 	for _, cmdDesc in pairs(inputCommandDesc) do
-		sendCustomMessage.RegisterCustomCommand(cmdDesc)
+		registerCommand(cmdDesc) --sendCustomMessage.RegisterCustomCommand(cmdDesc)
 	end
 end
 
@@ -98,53 +139,9 @@ end
 local function createCommandHumanNameTable()
 	commandNameToHumanName = {}
 	for name,data in pairs(inputCommandDesc) do
-		commandNameToHumanName[name] = data.buttonName
+		commandNameToHumanName[name] = data.humanName
 	end
 end
-
---- Fills WG.InputCommands, WG.BtCommands tables with custom commands IDs and othe needed data. Like behaviour inputs. 
-local function fillCustomCommandIDs()
-	local rawCommandsNameToID = Spring.GetTeamRulesParam(Spring.GetMyTeamID(), "CustomCommandsNameToID")
-	if (rawCommandsNameToID ~= nil) then
-		WG.InputCommands = {}
-		WG.BtCommands = {}
-		local commandsNameToID = message.Decode(rawCommandsNameToID)
-		for cmdName,_ in pairs(inputCommandDesc) do 
-			local cmdID = commandsNameToID[cmdName]
-			if (cmdID ~= nil) then
-				-- make the WG.InputCommands bidirectional
-				WG.InputCommands[ cmdID ] = true
-				WG.InputCommands[ cmdName ] = cmdID
-			else
-				Logger.log("commands", tostring(name) .. "command ID is not available")
-			end
-		end
-		
-		local fileNames = BtUtils.dirList(BehavioursDirectory, "*.json")--".+%.json$")
-		for _,fileName in pairs(fileNames) do
-			local treeName = fileName:gsub("%.json","")
-			local cmdName =  "BT_" ..  treeName
-			local cmdID = commandsNameToID[cmdName]
-			if (cmdID ~= nil) then
-				-- read serialized behaviour inputs
-				local bt = BehaviourTree.load(treeName)
-				WG.BtCommands[ cmdID ] = {
-					treeName = treeName,
-					inputs = bt.inputs,
-				}
-			else
-				Logger.log("commands", tostring(cmdName) .. "command ID is not available")
-			end
-		end
-		
-		
-	else	
-		Logger.log("commands", "rawCommandsNameToID is not availible.")
-		-- should I add
-	end
-end
-
-WG.fillCustomCommandIDs = fillCustomCommandIDs
 
 --[[ 
 The following function is used to tranform spring-based representation of 
@@ -170,10 +167,42 @@ end
 
 WG.BtCommandsTransformData = transformCommandData
 
+local function registerCommandForTree(treeName)
+	-- should I check if there is such file??
+	
+	-- is there icon:
+	local iconFileName = BehavioursDirectory .. "/" .. treeName .. ".png"
+	local gotIcon = VFS.FileExists(iconFileName)
+	
+	local UIover
+	if gotIcon then
+		UIover = {texture = iconFileName }
+	else
+		UIover = {caption = treeName, texture = 'LuaUI/Images/commands/bold/restore.png' }
+	end
+	
+	local commandName =  "BT_" ..  treeName
+		local description = {
+			type = CMDTYPE.ICON,
+			name = commandName,
+			cursor = 'Attack',
+			action = 'Attack',
+			tooltip = "Behaviour " .. treeName,
+			hidden = false,
+			UIoverride = UIover
+		}
+		registerCommand(description) 
+end
+
+WG.BtRegisterCommandForTree = registerCommandForTree
+
 local function registerCommandsForBehaviours()
 	local fileNames = BtUtils.dirList(BehavioursDirectory, "*.json")--".+%.json$")
 	for _,fileName in pairs(fileNames) do
 		local treeName = fileName:gsub("%.json","")
+		
+		registerCommandForTree(treeName)
+		--[[
 		local commandName =  "BT_" ..  treeName
 		local description = {
 			type = CMDTYPE.ICON,
@@ -185,8 +214,15 @@ local function registerCommandsForBehaviours()
 			UIoverride = {caption = treeName, texture = 'LuaUI/Images/commands/guard.png' }
 			--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
 		}
-		sendCustomMessage.RegisterCustomCommand(description)
+		registerCommand(description) --sendCustomMessage.RegisterCustomCommand(description)
+		]]
 	end
+end
+
+--Event handler
+function CustomCommandRegistered(cmdName, cmdID)
+	Logger.log("commands", "Command [" .. cmdName .. "] was registered under ID [" .. cmdID .. "]")
+	fillInCommandID(cmdName, cmdID)
 end
 
 function widget:Initialize()
@@ -195,6 +231,9 @@ function widget:Initialize()
 	WG.BtCommandsInputHumanNames = commandNameToHumanName
 	-- register release commands !note: maybe move them into another refreshTreeSelectionPanel?
 	registerCommandsForBehaviours()
+	-- register event handler..
+	widgetHandler:RegisterGlobal('CustomCommandRegistered', CustomCommandRegistered)
+	
 	Dependency.fill(Dependency.BtCommands)
 end
 
@@ -203,6 +242,12 @@ function widget:Shutdown()
 	for _, cmdDesc in pairs(inputCommandDesc) do
 		sendCustomMessage.DeregisterCustomCommand(cmdDesc.name)
 	end
+	-- I guess there is missing deregistration of trees we have registered..
+	
+	for cmdName, cmdData in pairs(WG.BtCommands) do
+		sendCustomMessage.DeregisterCustomCommand(cmdName)
+	end
+	
 	WG.fillCustomCommandIDs = nil
 	WG.BtCommandsInputHumanNames = nil
 	WG.BtCommandsTransformData = nil
@@ -211,61 +256,6 @@ function widget:Shutdown()
 	Dependency.clear(Dependency.BtCommands)
 end
 
--- local function getCommandIDsForBehaviours()
-	-- local rawCommandsNameToID = Spring.GetGameRulesParam("customCommandsNameToID")
-	-- if (rawCommandsNameToID ~= nil) then
-		-- treeCommandNameToID = {}
-		-- local commandsNameToID = message.Decode(rawCommandsNameToID)
-		-- local fileNames = BtUtils.dirList(BehavioursDirectory, "*.json")--".+%.json$")
-		-- for i,fileName in pairs(fileNames) do
-			-- local treeName = fileName:gsub("%.json","")
-			-- local commandName =  "BT_" ..  treeName 
-			-- if (commandsNameToID[commandName] ~= nil) then
-				-- treeCommandNameToID[commandName] = commandsNameToID[commandName]
-			-- else
-				-- Logger.log("commands", tostring(commandName) .. "command ID is not available")
-			-- end
-		-- end
-	-- else	
-		-- Logger.log("commands", "customCommandsNameToID is not available.")
-	-- end
--- end
-
--- local function getCommandIDToName()
-	-- -- do input commands: 
-	-- local rawCommandsNameToID = Spring.GetGameRulesParam("customCommandsNameToID")
-	-- if (rawCommandsNameToID ~= nil) then
-		-- commandIDToName = {}
-		-- local commandsNameToID = message.Decode(rawCommandsNameToID)
-		-- -- input commands
-		-- for name, record in pairs(inputCommandDesc) do 
-			-- if (commandsNameToID[name] ~= nil) then
-				-- commandIDToName[commandsNameToID[name] ] = {cmdName = name
-				-- }
-			-- else
-				-- Logger.log("commands", tostring(name) .. "command ID is not available")
-			-- end
-		-- end
-		-- -- tree commands
-		-- local fileNames = BtUtils.dirList(BehavioursDirectory, "*.json")--".+%.json$")
-		-- for i,fileName in pairs(fileNames) do
-			-- local treeName = fileName:gsub("%.json","")
-			-- local commandName =  "BETS_TREE_" ..  treeName 
-			-- if (commandsNameToID[commandName] ~= nil) then
-				-- commandIDToName[commandsNameToID[commandName] ] = {
-					-- cmdName = commandName,
-					-- name = treeName,
-					-- }
-			-- else
-				-- Logger.log("commands", tostring(commandName) .. "command ID is not available")
-			-- end
-		-- end
-	-- else	
-		-- Logger.log("commands", "customCommandsNameToID is not available.")
-	-- end
--- end
-
----------------------------------------COMMANDS-END-
 
 sanitizer:SanitizeWidget()
 --Dependency.deferWidget(widget)

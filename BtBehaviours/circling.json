@@ -5,33 +5,33 @@
 	"properties": {
 		"K2ZEY9szVXA6XUUnWR5lMBP9AoTh8T3R": {
 			"height": 90,
-			"width": 110,
-			"x": 343,
-			"y": 20
+			"width": 169.000015,
+			"x": 387,
+			"y": 17
 		},
 		"PhVzZ4N4vehUHFfZEqovKYQUnpagwAM2": {
 			"height": 60,
 			"width": 110,
-			"x": 166,
-			"y": 144
+			"x": 227,
+			"y": 124
 		},
 		"SmX78WhgYwHwHm4L0kHS9cUgf9oVHkUp": {
 			"height": 90,
-			"width": 110,
-			"x": 359,
-			"y": 233
+			"width": 173.000031,
+			"x": 416,
+			"y": 212
 		},
 		"TSAD3xcg5FQKT8cQfGNR6FJB2sZGmwz0": {
 			"height": 90,
-			"width": 110,
-			"x": 354,
-			"y": 326
+			"width": 173.000015,
+			"x": 398,
+			"y": 323
 		},
 		"YNSFyIIF1O2KuZQUpQd7DX4Kcs7nUKjT": {
 			"height": 90,
-			"width": 110,
-			"x": 341,
-			"y": 122
+			"width": 169.000015,
+			"x": 404,
+			"y": 115
 		}
 	},
 	"roles": [ {
@@ -48,6 +48,9 @@
 				"name": "dist",
 				"value": "{ x = 500, z = 0}"
 			}, {
+				"name": "fight",
+				"value": "false"
+			}, {
 				"name": "scriptName",
 				"value": "relativeMove.lua"
 			} ],
@@ -56,9 +59,12 @@
 			"children": [],
 			"id": "YNSFyIIF1O2KuZQUpQd7DX4Kcs7nUKjT",
 			"nodeType": "luaCommand",
-			"parameters": [  {
+			"parameters": [ {
 				"name": "dist",
 				"value": "{ x = 0, z = 500}"
+			}, {
+				"name": "fight",
+				"value": "false"
 			}, {
 				"name": "scriptName",
 				"value": "relativeMove.lua"
@@ -72,6 +78,9 @@
 				"name": "dist",
 				"value": "{ x = -500, z = 0}"
 			}, {
+				"name": "fight",
+				"value": "false"
+			}, {
 				"name": "scriptName",
 				"value": "relativeMove.lua"
 			} ],
@@ -83,6 +92,9 @@
 			"parameters": [ {
 				"name": "dist",
 				"value": "{ x = 0, z = -500}"
+			}, {
+				"name": "fight",
+				"value": "false"
 			}, {
 				"name": "scriptName",
 				"value": "relativeMove.lua"

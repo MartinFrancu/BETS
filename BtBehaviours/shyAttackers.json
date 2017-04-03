@@ -3,23 +3,35 @@
 	"defaultRole": "gang",
 	"inputs": [],
 	"properties": {
+		"1VUO5lBn6bE8m7EZrbEMux6Vnoa8TpvG": {
+			"height": 60,
+			"width": 110,
+			"x": 63,
+			"y": 105
+		},
 		"2A1iS15hsvvY7uSUJvRbpzJi0mbwlep7": {
 			"height": 70,
-			"width": 189.500015,
-			"x": 825,
-			"y": 261
+			"width": 196.399994,
+			"x": 791,
+			"y": 297
 		},
 		"DL7IYrvIeHaGttn9xvKgwpbClF1hYux3": {
 			"height": 103,
 			"width": 455,
-			"x": 288,
-			"y": 148
+			"x": 220,
+			"y": 203
 		},
 		"XEQ3LW7Vdsh5tt0rtBoiUi8Unpr243Vc": {
 			"height": 70,
-			"width": 189.500015,
-			"x": 826,
-			"y": 72
+			"width": 199.399994,
+			"x": 792,
+			"y": 202
+		},
+		"cjoe4lgG0b3aqbWiqBuGZFqr3ZP3Knsm": {
+			"height": 108,
+			"width": 572.400024,
+			"x": 218,
+			"y": 87
 		}
 	},
 	"roles": [ {
@@ -29,29 +41,49 @@
 	"root": {
 		"children": [ {
 			"children": [],
-			"id": "XEQ3LW7Vdsh5tt0rtBoiUi8Unpr243Vc",
-			"nodeType": "echo",
+			"id": "cjoe4lgG0b3aqbWiqBuGZFqr3ZP3Knsm",
+			"nodeType": "luaCommand",
 			"parameters": [ {
-				"name": "message",
-				"value": "We feel brave!"
-			} ]
+				"name": "var",
+				"value": "threatMap"
+			}, {
+				"name": "value",
+				"value": "privateThreatAreasByHP(threatMap, 6)"
+			}, {
+				"name": "scriptName",
+				"value": "store.lua"
+			} ],
+			"scriptName": "store.lua"
 		}, {
-			"children": [],
-			"id": "2A1iS15hsvvY7uSUJvRbpzJi0mbwlep7",
-			"nodeType": "echo",
+			"children": [ {
+				"children": [],
+				"id": "XEQ3LW7Vdsh5tt0rtBoiUi8Unpr243Vc",
+				"nodeType": "echo",
+				"parameters": [ {
+					"name": "message",
+					"value": "We feel brave!"
+				} ]
+			}, {
+				"children": [],
+				"id": "2A1iS15hsvvY7uSUJvRbpzJi0mbwlep7",
+				"nodeType": "echo",
+				"parameters": [ {
+					"name": "message",
+					"value": "We feel weak."
+				} ]
+			} ],
+			"id": "DL7IYrvIeHaGttn9xvKgwpbClF1hYux3",
+			"nodeType": "luaExpression",
 			"parameters": [ {
-				"name": "message",
-				"value": "We feel weak."
+				"name": "expression",
+				"value": "tacticalAdvantageByHPForGroundAttack(1000)"
+			}, {
+				"name": "repeat",
+				"value": "false"
 			} ]
 		} ],
-		"id": "DL7IYrvIeHaGttn9xvKgwpbClF1hYux3",
-		"nodeType": "luaExpression",
-		"parameters": [ {
-			"name": "expression",
-			"value": "tacticalAdvantageByHPForGroundAttack(1000)"
-		}, {
-			"name": "repeat",
-			"value": "false"
-		} ]
+		"id": "1VUO5lBn6bE8m7EZrbEMux6Vnoa8TpvG",
+		"nodeType": "sequence",
+		"parameters": []
 	}
 }

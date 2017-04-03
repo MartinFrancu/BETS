@@ -1,0 +1,72 @@
+{
+	"additionalNodes": [],
+	"defaultRole": "Default role",
+	"inputs": [ {
+		"command": "BETS_POSITION",
+		"name": "pos1"
+	}, {
+		"command": "BETS_POSITION",
+		"name": "pos2"
+	} ],
+	"properties": {
+		"4fJhWE0au3Cj9V5wF0WTk8WyRfufTxa9": {
+			"height": 90,
+			"width": 152.400009,
+			"x": 485.5,
+			"y": 77
+		},
+		"PhVzZ4N4vehUHFfZEqovKYQUnpagwAM2": {
+			"height": 50,
+			"width": 160,
+			"x": 240,
+			"y": 117
+		},
+		"QbA1BnFYVVpCff9JHl01i77aeWTH4K4q": {
+			"height": 90,
+			"width": 152.400009,
+			"x": 486.5,
+			"y": 190
+		}
+	},
+	"roles": [ {
+		"categories": [],
+		"name": "Default role",
+		"types": []
+	} ],
+	"root": {
+		"children": [ {
+			"children": [],
+			"id": "4fJhWE0au3Cj9V5wF0WTk8WyRfufTxa9",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "pos",
+				"value": "pos1"
+			}, {
+				"name": "fight",
+				"value": "true"
+			}, {
+				"name": "scriptName",
+				"value": "move.lua"
+			} ],
+			"scriptName": "move.lua"
+		}, {
+			"children": [],
+			"id": "QbA1BnFYVVpCff9JHl01i77aeWTH4K4q",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "pos",
+				"value": "pos2"
+			}, {
+				"name": "fight",
+				"value": "true"
+			}, {
+				"name": "scriptName",
+				"value": "move.lua"
+			} ],
+			"scriptName": "move.lua"
+		} ],
+		"id": "PhVzZ4N4vehUHFfZEqovKYQUnpagwAM2",
+		"nodeType": "sequence",
+		"parameters": []
+	}
+}

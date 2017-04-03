@@ -5,31 +5,31 @@
 	"properties": {
 		"32TuIXgrlQJ6AMAECYuzTDDqFrJ29AS4": {
 			"height": 90,
-			"width": 110,
+			"width": 195.000015,
 			"x": 1304,
 			"y": 162
 		},
 		"4kTzE0e6W464qLGis1srSo8k3yEemxbB": {
 			"height": 90,
-			"width": 110,
+			"width": 348,
 			"x": 658,
 			"y": 194
 		},
 		"8PQLBonaER6Pl09B2yyoqCTYmPlgYwZg": {
-			"height": 70,
+			"height": 90,
 			"width": 273.642822,
 			"x": 429,
 			"y": 362
 		},
 		"BzjDnJgka35oqHOZuvkhEY2pg5XofMXt": {
-			"height": 70,
-			"width": 110,
+			"height": 90,
+			"width": 113,
 			"x": 699,
 			"y": 46
 		},
 		"FH1lxDcV6Qgsf6cr9XmhYwmXM72OgR4x": {
 			"height": 70,
-			"width": 152.000015,
+			"width": 200.400009,
 			"x": 430,
 			"y": 237
 		},
@@ -41,7 +41,7 @@
 		},
 		"JwDZTBGPLJs2wCsRxldqDdp8gDDBt5f5": {
 			"height": 90,
-			"width": 110,
+			"width": 216.000031,
 			"x": 139,
 			"y": 0
 		},
@@ -59,7 +59,7 @@
 		},
 		"OCZ2lFSv0iB2lUiVfcxIwI09iD2RWtQF": {
 			"height": 90,
-			"width": 110,
+			"width": 177.000031,
 			"x": 1504,
 			"y": 260
 		},
@@ -71,43 +71,43 @@
 		},
 		"Tk40jHYcTFxytQOJXcmQ1rvwMCfrsOIT": {
 			"height": 70,
-			"width": 110,
+			"width": 117,
 			"x": 692,
 			"y": 116
 		},
 		"TlXFjAQRMSxOfk0MPz5FUoYH1rSyMbyP": {
 			"height": 90,
-			"width": 110,
+			"width": 223.000046,
 			"x": 1187,
 			"y": 350
 		},
 		"WKUnB5ApLk9bD5Fvrq97UETVuyonA4Zx": {
 			"height": 90,
-			"width": 110,
+			"width": 173.000015,
 			"x": 1504,
 			"y": 178
 		},
 		"WuBB9yqsocnYsFfO5q6HplXlDpCq9TvF": {
 			"height": 90,
-			"width": 110,
+			"width": 233.000046,
 			"x": 427,
 			"y": 22
 		},
 		"Z4prghjNNr8JF8TwvKlxI6g9MiaVWkt1": {
 			"height": 70,
-			"width": 159.000015,
+			"width": 200.400009,
 			"x": 861,
 			"y": 355
 		},
 		"bak1ITf04QgoGXDtoz10PkJAGv8qdwO9": {
 			"height": 90,
-			"width": 110,
+			"width": 173.000031,
 			"x": 1504,
 			"y": 92
 		},
 		"eE1Fh0Li6FMWGooEx2T4sSCFhPq7ycvg": {
 			"height": 90,
-			"width": 110,
+			"width": 181.000015,
 			"x": 1505,
 			"y": 352
 		},
@@ -119,19 +119,19 @@
 		},
 		"ozjggjRWrtRmeTo59RhZWythb5swMfNX": {
 			"height": 70,
-			"width": 159.000015,
+			"width": 200.400009,
 			"x": 443,
 			"y": 112
 		},
 		"sUoOxerR7VThCokqM1Z0XitnQWzTXjdr": {
 			"height": 70,
-			"width": 110,
+			"width": 117,
 			"x": 1304,
 			"y": 87
 		},
 		"uClz1vl9p6zlLSXAkRnOfe5yrfQlu5FV": {
-			"height": 70,
-			"width": 110,
+			"height": 90,
+			"width": 115,
 			"x": 661,
 			"y": 312
 		},
@@ -191,6 +191,9 @@
 							"name": "pos",
 							"value": "target"
 						}, {
+							"name": "fight",
+							"value": "false"
+						}, {
 							"name": "scriptName",
 							"value": "move.lua"
 						} ],
@@ -234,6 +237,9 @@
 							"name": "pos",
 							"value": "defLoc"
 						}, {
+							"name": "fight",
+							"value": "false"
+						}, {
 							"name": "scriptName",
 							"value": "move.lua"
 						} ],
@@ -264,6 +270,9 @@
 									"name": "dist",
 									"value": "{ x = -150, z = -150 }"
 								}, {
+									"name": "fight",
+									"value": "false"
+								}, {
 									"name": "scriptName",
 									"value": "relativeMove.lua"
 								} ],
@@ -278,6 +287,9 @@
 											"name": "dist",
 											"value": "{ x = 300, z = 0 }"
 										}, {
+											"name": "fight",
+											"value": "false"
+										}, {
 											"name": "scriptName",
 											"value": "relativeMove.lua"
 										} ],
@@ -289,6 +301,9 @@
 										"parameters": [ {
 											"name": "dist",
 											"value": "{ x = 0, z = 300 }"
+										}, {
+											"name": "fight",
+											"value": "false"
 										}, {
 											"name": "scriptName",
 											"value": "relativeMove.lua"
@@ -302,6 +317,9 @@
 											"name": "dist",
 											"value": "{ x = -300, z = 0 }"
 										}, {
+											"name": "fight",
+											"value": "false"
+										}, {
 											"name": "scriptName",
 											"value": "relativeMove.lua"
 										} ],
@@ -313,6 +331,9 @@
 										"parameters": [ {
 											"name": "dist",
 											"value": "{ x = -0, z = -300 }"
+										}, {
+											"name": "fight",
+											"value": "false"
 										}, {
 											"name": "scriptName",
 											"value": "relativeMove.lua"

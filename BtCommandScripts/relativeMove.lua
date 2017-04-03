@@ -14,6 +14,12 @@ function getInfo()
 				variableType = "expression",
 				componentType = "editBox",
 				defaultValue = "{x = 0, z = 0}",
+			},
+			{ 
+				name = "fight",
+				variableType = "expression",
+				componentType = "checkBox",
+				defaultValue = "false",
 			}
 		}
 	}
@@ -31,7 +37,8 @@ function Run(self, unitIds, parameter)
 		pos = { 
 			x = parameter.dist.x + center.x,
 			z = parameter.dist.z + center.z
-		} 
+		},
+		fight = parameter.fight
 	}
 	
 	return oldRun(self, unitIds, absParam)

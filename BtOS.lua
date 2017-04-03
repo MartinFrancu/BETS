@@ -13,7 +13,7 @@ end
 
 local _G = loadstring("return _G")()
 local KEYSYMS = _G.KEYSYMS
-local DISABLE_KEY = KEYSYMS.F10
+local SHOW_KEY = KEYSYMS.F10
 
 local Chili, ChiliRoot
 local getFrame = Spring.GetGameFrame
@@ -41,9 +41,10 @@ local TEXT_HEIGHT = 20
 
 local initializeDependencyHooks, injectErrorReporter
 
+local visualiseAlways = false
 local visualiser;
 local function updateVisualiser()
-	local show = false
+	local show = visualiseAlways
 	for widgetName in pairs(widgets) do
 		if(state[widgetName] == false)then
 			show = true
@@ -332,10 +333,14 @@ end
 
 function widget:KeyPress(key, modifiers, isRepeat)
 	if (not isRepeat) then
-		if (key == DISABLE_KEY) then
+		if (key == SHOW_KEY) then
+			visualiseAlways = not visualiseAlways
+			updateVisualiser()
+			--[[
 			for widgetName in pairs(widgets) do
 				widgetHandler:DisableWidget(widgetName)
 			end
+			]]
 		end
 	end
 end

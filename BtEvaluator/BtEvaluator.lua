@@ -171,6 +171,12 @@ end
 function BtEvaluator.resetTree(instanceId)
 	return BtEvaluator.resetTrees({ instanceId })
 end
+function BtEvaluator.tickTrees(instanceIds)
+	return BtEvaluator.sendMessage("TICK_TREES", instanceIds)
+end
+function BtEvaluator.tickTree(instanceId)
+	return BtEvaluator.tickTrees({ instanceId })
+end
 function BtEvaluator.assignUnits(units, instanceId, roleId)
 	roleId = roleId + 1
 	local instance = treeInstances[instanceId]
@@ -215,6 +221,7 @@ function BtEvaluator.assignUnits(units, instanceId, roleId)
 		unitToRoleMap[role[i]] = nil
 		role[i] = nil
 	end
+	role.length = 0
 	for i, id in ipairs(units) do
 		role.length = i
 		role[i] = id

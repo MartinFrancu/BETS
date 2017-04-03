@@ -12,6 +12,8 @@ return Utils:Assign("Dependency", function()
 	-- @field A_Z__name__ Any key with a capital first letter represents a @{Dependency} that can be used to track what dependencies are fulfilled and allows the postponing of execution of functions and widgets.
 	local Dependency = {}
 
+	local Sanitizer = Utils.Sanitizer
+	
 	local Logger = Utils.Debug.Logger
 	local dump = Utils.Debug.dump
 	
@@ -19,23 +21,26 @@ return Utils:Assign("Dependency", function()
 	local dependencies = {}
 
 	--- Postpones the execution of a function until all specified dependencies are fulfilled.
-	-- @func f Function, that should be executed.
+	-- @func onFill Function, that should be executed once all dependencies are fulfilled.
+	-- @func onClear Optional parameter; function, that should be executed after @{onFill} has been called and at least one dependency is cleared.
 	-- @tparam Dependency ... A list of dependencies that need to be fulfilled.
-	-- @remark If all dependencies are fulfilled at the time of the call, the function is executed synchronously. Otherwise, it is executed once the last dependency gets fulfilled.
+	-- @remark If all dependencies are fulfilled at the time of the call, the @{onFill} function is executed synchronously. Otherwise, it is executed once the last dependency gets fulfilled. The @{onClear} function is executed only if the @{onFill} function was already called, meaning it is not called if the dependencies are not fulfilled initially. Once at least one dependancy is cleared, the @{onFill} function may again be called once it is fulfilled again. If you want to disable this behaviour, you can do that be returning `false` in the {onClear} function.
 	function Dependency.defer(onFill, onClear, ...)
 		local f, dependencies
+		onFill = Sanitizer.sanitize(onFill)
 		if(type(onClear) ~= "function")then
 			dependencies = { onClear, ... }
 			f = onFill
 		else
 			dependencies = { ... }
+			onClear = Sanitizer.sanitize(onClear)
 			f = function()
 				onFill()
 				
 				local clearedAlready = false
 				local function clearDeferer()
 					if(not clearedAlready)then
-						if(onClear())then
+						if(onClear() ~= false)then -- don't repeat only if the onClear method explicitly disables it
 							Dependency.defer(onFill, onClear, unpack(dependencies))
 						end
 						clearedAlready = true
@@ -46,7 +51,7 @@ return Utils:Assign("Dependency", function()
 				end
 			end
 		end
-		-- TODO: correctly deal with multiple dependencies and both onFill and onClear: right now, if any dependency is already filled and is later cleared, it is not identified properly
+		-- TODO: correctly deal with multiple dependencies and both `onFill` and `onClear`: right now, if any dependency is already filled and is later cleared, it is not identified properly
 		
 		local unfulfilledCount = 0
 		local unfulfilled = {}
@@ -84,7 +89,7 @@ return Utils:Assign("Dependency", function()
 	end
 	
 	--- Postpones the initialization and execution of a widget until all specified dependencies are fulfilled.
-	-- 
+	-- Also automatically removes the widget once the dependency is cleared.
 	-- This function has to be called only after all other widget setup code gets executed, which usually means the end of the script.
 	-- @tparam Widget widget Widget that is dependent to the dependencies.
 	-- @tparam Dependency ... A list of dependencies that need to be fulfilled.
@@ -111,7 +116,9 @@ return Utils:Assign("Dependency", function()
 			end
 		end
 		
-		Dependency.defer(function()
+		local sanitizer = Sanitizer.forWidget(widget)
+		
+		Dependency.defer(sanitizer:Sanitize(function()
 			dependenciesFulfilled = true
 			if(initializeTriggered)then
 				Logger.log("dependency", "Deferred widget ", widget:GetInfo().name, " initialization due to dependency.")
@@ -119,10 +126,11 @@ return Utils:Assign("Dependency", function()
 			else
 				Logger.log("dependency", "Widget ", widget:GetInfo().name, " dependency fulfilled before initialization.")
 			end
-		end, function()
+		end), sanitizer:Sanitize(function()
 			Logger.log("dependency", "Removing widget ", widget:GetInfo().name, ".")
 			widget.widgetHandler:RemoveWidget(widget) -- we cannot use widgetHandler directly, because that would be a proxy to widgetHandler of the widget that runs this file (which may be a different one)
-		end, ...)
+			return false -- disable repeating of the onFill handler
+		end), ...)
 		
 		return widget
 	end

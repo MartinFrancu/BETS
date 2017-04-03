@@ -7,6 +7,12 @@ function getInfo()
 				variableType = "expression",
 				componentType = "editBox",
 				defaultValue = "{x = 0, z = 0}",
+			},
+			{ 
+				name = "fight",
+				variableType = "expression",
+				componentType = "checkBox",
+				defaultValue = "false",
 			}
 		}
 	}
@@ -63,7 +69,7 @@ end
 
 
 local function ClearState(self)
-	Logger.log("move-command", "Lua command ClearState")
+	--Logger.log("move-command", "Lua command ClearState")
 	self.leaderTarget = nil
 	self.lastPositions = {}
 	self.leaderId = nil
@@ -80,22 +86,26 @@ end
 function New(self)
 	Logger.log("move-command", "Running New in move")
 	ClearState(self)
-	--[[self.lastPositions = {}
-	self.subTargets = {}
-	self.finalTargets = {}
-	self.formationDiffs = {}
-	self.leaderWaypoints = {}
-	self.stuckForTicks = 0
-	self.lastPositions = {}
-	--]]
 end
 
 local function EnsureLeader(self, unitIds)
-	Logger.log("move-command", "EnsureLeader")
+	--Logger.log("move-command", "EnsureLeader")
 
+	-- check if the leader is still part of this group (i.e. he hasn't been assigned to another tree)
+	local leaderInGroup = false
+	if self.leaderId then
+		for _,unitID in ipairs(unitIds) do
+			if self.leaderId == unitID then
+				leaderInGroup = true
+				break
+			end
+		end
+	end
+	Logger.log("move-command", "leaderInGroup - ", leaderInGroup)
+	
 	local leaderPos = getUnitPos(self.leaderId)
 	local leaderTar = self.finalTargets[self.leaderId]
-	if self.leaderId and not unitIsDead(self.leaderId) and leaderPos ~= nil and leaderTar ~= nil and (leaderPos - leaderTar):LengthSqr() > TOLERANCE_SQ then
+	if leaderInGroup and self.leaderId and not unitIsDead(self.leaderId) and leaderPos ~= nil and leaderTar ~= nil and (leaderPos - leaderTar):LengthSqr() > TOLERANCE_SQ then
 		return self.leaderId
 	end
 	
@@ -113,7 +123,7 @@ local function EnsureLeader(self, unitIds)
 end
 
 local function InitTargetLocations(self, unitIds, parameter)
-	Logger.log("move-command", "InitTargetLocations")
+	--Logger.log("move-command", "InitTargetLocations")
 	self.finalTargets = {}
 	for i = 1, #unitIds do
 		local id = unitIds[i]
@@ -128,7 +138,7 @@ local function InitTargetLocations(self, unitIds, parameter)
 end
 
 local function InitFormationDiffs(self, unitIds)
-	Logger.log("move-command", "InitFormationDiffs")
+	--Logger.log("move-command", "InitFormationDiffs")
 	
 	--[[
 	local sum = Vec3(0,0,0)
@@ -165,21 +175,23 @@ function Run(self, unitIds, parameter)
 		return FAILURE
 	end
 	
+	local springCmd = parameter.fight and CMD.FIGHT or CMD.MOVE
+	
 	
 	local firstTick = false
 	if not self.finalTargets[leader] then
 		InitFormationDiffs(self, unitIds)
 		InitTargetLocations(self, unitIds, parameter)
 		local leaderTar = self.finalTargets[self.leaderId]
-		Logger.log("move-command", "=== leaderTar: ", leaderTar)
-		giveOrderToUnit(self.leaderId, CMD.MOVE, leaderTar:AsSpringVector(), {})
+		--Logger.log("move-command", "=== leaderTar: ", leaderTar)
+		giveOrderToUnit(self.leaderId, springCmd, leaderTar:AsSpringVector(), {})
 		firstTick = true
 	end
 	
 	local leaderPos = getUnitPos(leader)
 	local waypoints = self.leaderWaypoints
 	
-	Logger.log("move-command", "waypoints - ", waypoints)
+	--Logger.log("move-command", "waypoints - ", waypoints)
 	if (#waypoints == 0 or (leaderPos - waypoints[#waypoints]):LengthSqr() > WAYPOINTS_DIST_SQ) then
 		addToList(waypoints, leaderPos)
 	end
@@ -227,7 +239,7 @@ function Run(self, unitIds, parameter)
 				-- go to the target location when leader reaches the target location
 				if issueFinalOrder then
 					--Logger.log("move-command", "=== Final order ", unitID)
-					giveOrderToUnit(unitID, CMD.MOVE, self.finalTargets[unitID]:AsSpringVector(), {})
+					giveOrderToUnit(unitID, springCmd, self.finalTargets[unitID]:AsSpringVector(), {})
 				end
 			elseif not curSubTar or UnitIdle(self, unitID) or (curSubTar - curPos):LengthSqr() < SUBTARGET_TOLEARANCE_SQ then --or not dirsEqual(leaderDir, curDir) then
 				-- otherwise move a small distance in the direction the leader is facing
@@ -240,7 +252,7 @@ function Run(self, unitIds, parameter)
 				local curSubTar = leaderDir + formationVect + curPos
 				
 				self.subTargets[unitID] = curSubTar
-				giveOrderToUnit(unitID, CMD.MOVE, curSubTar:AsSpringVector(), {})
+				giveOrderToUnit(unitID, springCmd, curSubTar:AsSpringVector(), {})
 			end
 		end
 	end

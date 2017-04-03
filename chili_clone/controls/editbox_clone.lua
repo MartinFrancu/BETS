@@ -90,7 +90,7 @@ function EditBox:UpdateLayout()
 
   --FIXME
   if (self.autosize) then
-    local w = font:GetTextWidth(self.text);
+    local w = math.max(font:GetTextWidth(self.text), 40);
     local h, d, numLines = font:GetTextHeight(self.text);
 
     if (self.autoObeyLineHeight) then
@@ -99,6 +99,7 @@ function EditBox:UpdateLayout()
       h = math.ceil(h-d)
     end
 
+    h = math.max(h, 16)
     local x = self.x
     local y = self.y
 

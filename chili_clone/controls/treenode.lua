@@ -180,21 +180,20 @@ function TreeNode:New(obj)
 		error("#obj.parameters="..#obj.parameters.."  ~= #obj.parameterObjects="..#obj.parameterObjects)
 	end
 	obj:UpdateDimensions()
-	if( obj.hasConnectionOut ) then
-		obj.connectionOut:SetPos(obj.nodeWindow.width - 18)
-	end
+	obj.nodeWindow:RequestUpdate()
   return obj
 end
 
 function TreeNode:UpdateDimensions()
 	local maxWidth = self.nodeWindow.width
+	maxWidth = math.max(maxWidth, self.nodeWindow.font:GetTextWidth(self.nameEditBox.text) + 30)
 	local maxHeight = self.nodeWindow.height
 	local p = self.parameterObjects
 	for i=1,#p do
 		if(p[i].componentType == "checkBox") then
 			maxWidth = math.max(maxWidth, p[i].checkBox.width + 50)
 		elseif(p[i].componentType == "editBox") then
-			maxWidth = math.max(maxWidth, p[i].editBox.width + p[i].label.width + 40)
+			maxWidth = math.max(maxWidth, math.max(40, self.nodeWindow.font:GetTextWidth(p[i].editBox.text)) + self.nodeWindow.font:GetTextWidth(p[i].label.caption) + 50)
 		elseif(p[i].componentType == "comboBox") then
 			maxWidth = math.max(maxWidth, p[i].label.width + p[i].comboBox.width + 40)
 		end
@@ -202,15 +201,20 @@ function TreeNode:UpdateDimensions()
 	if(self.nodeType == "Root") then
 		local inputs = self.inputs or {}
 		maxHeight = math.max(maxHeight, #inputs * 21 + 55)
+	else
+		maxHeight = math.max(maxHeight, #p * 20 + 50)
 	end
 	self.nodeWindow:SetPos(nil, nil, maxWidth, maxHeight)
 	self.width = maxWidth
 	self.height = maxHeight
-	listenerNodeResize(self.nodeWindow)
-	-- Spring.Echo("Updating dimensions. ")
+	--listenerNodeResize(self.nodeWindow)
+	if( self.hasConnectionOut ) then
+		self.connectionOut:SetPos(self.nodeWindow.width - 18)
+	end
+	self:UpdateConnectionLines()
 end
 
---- Transforms obj.parameters[i] into obj.parametersObjects[i] -> adds label and editbox
+--- Transforms obj.parameters[i] into obj.parametersObjects[i]
 -- Expects param to be a table with four values: name, value, variableType, componentType.
 function createNextParameterObject(obj)
 	local result = {}
@@ -238,7 +242,7 @@ function createNextParameterObject(obj)
 			parent = obj.nodeWindow,
 			text = tostring(param["value"]),
 			validatedValue = tostring(param["value"]),
-			width = math.max(obj.nodeWindow.font:GetTextWidth(param["value"])+10, 35),
+			-- width = math.max(obj.nodeWindow.font:GetTextWidth(param["value"])+10, 45),
 			x = obj.nodeWindow.font:GetTextWidth(param["name"]) + 25,
 			y = 10 + i*20,
 			align = 'left',
@@ -256,7 +260,8 @@ function createNextParameterObject(obj)
 			parent = obj.nodeWindow,
 			caption = param.name,
 			checked = (param.value == "true"),
-			x = 25,
+			width = obj.nodeWindow.font:GetTextWidth(param.name) + 20,
+			x = 18,
 			y = 10 + i*20,
 			index = i, -- to be able to index editbox from treenode, to update treenode.parameters[i].value
 		}
@@ -264,12 +269,12 @@ function createNextParameterObject(obj)
 		local items = {}
 		local defaultIndex = 0
 		local k = 1
-		local width = 100
+		local width = 70
 		for word in param.variableType:gmatch('([^,]+)') do
 			if(word == param.value) then
 				defaultIndex = k
 			end
-			width = math.min(obj.nodeWindow.font:GetTextWidth(word), width)
+			width = math.max(obj.nodeWindow.font:GetTextWidth(word)+5, width)
 			k = k + 1
 			table.insert(items, word)
 		end
@@ -657,9 +662,9 @@ end
 local lastClicked = Spring.GetTimer()
 
 function listenerOnMouseDownMoveNode(self, x ,y, button)
-	if(clickedConnection) then -- check if we are connecting nodes
-		return
-	end
+	-- if(clickedConnection) then -- check if we are connecting nodes
+		-- return
+	-- end
 	local childName = self:HitTest(x, y).name
 	-- Check if the connectionIn or connectionOut was clicked
 	if((self.treeNode.connectionIn and childName == self.treeNode.connectionIn.name) or (self.treeNode.connectionOut and childName == self.treeNode.connectionOut.name)) then
@@ -734,9 +739,6 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 end
 
 function listenerOnMouseUpMoveNode(self, x ,y)
-	self.x = math.max(0, self.x)
-	self.y = math.max(0, self.y)
-	self.treeNode:UpdateConnectionLines()
 	self.treeNode.x = self.x
 	self.treeNode.y = self.y
 	self:Invalidate()
