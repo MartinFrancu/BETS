@@ -221,6 +221,7 @@ function BtEvaluator.assignUnits(units, instanceId, roleId)
 		unitToRoleMap[role[i]] = nil
 		role[i] = nil
 	end
+	role.length = 0
 	for i, id in ipairs(units) do
 		role.length = i
 		role[i] = id
