@@ -1131,7 +1131,6 @@ function showCategoryDefinitionWindow()
 		caption = "DONE",
 		OnClick = {sanitizer:AsHandler(doneCategoryDefinition)},
 	}
-	--categoryDoneButton.UnitCategories = unitCategories
 
 	local categoryCancelButton = Chili.Button:New{
 		parent =  categoryDefinitionWindow,
@@ -1152,7 +1151,17 @@ function showCategoryDefinitionWindow()
 	yOffSet = 30
 	local typesCheckboxes = {}
 	local xLocalOffSet = 0
+	local unitsD = {}
 	for _,unitDef in pairs(UnitDefs) do
+		table.insert(unitsD, unitDef)
+	end 
+	
+	local humanNameOrder  = function (a,b)
+		return a.humanName < b.humanName
+	end
+	table.sort(unitsD, humanNameOrder)
+	
+	for _,unitDef in ipairs(unitsD) do
 		local typeCheckBox = Chili.Checkbox:New{
 			parent = categoryScrollPanel,
 			x = xOffSet + (xLocalOffSet * 250),
