@@ -1153,7 +1153,9 @@ function showCategoryDefinitionWindow()
 	local xLocalOffSet = 0
 	local unitsD = {}
 	for _,unitDef in pairs(UnitDefs) do
-		table.insert(unitsD, unitDef)
+		if(unitDef.isFeature == false) then -- exclude walls and roads...
+			table.insert(unitsD, unitDef)
+		end
 	end 
 	
 	local humanNameOrder  = function (a,b)
@@ -1180,6 +1182,14 @@ function showCategoryDefinitionWindow()
 		end
 		table.insert(typesCheckboxes, typeCheckBox)
 	end
+	-- add small placeholder at end:
+	local placeholder = Chili.Label:New{
+		parent = categoryScrollPanel,
+		x = xOffSet,
+		y = yOffSet + 50,
+		caption = "=== end ===",
+		skinName='DarkGlass',
+	}
 	-- check old checked checkboxes:
 	categoryDoneButton.Checkboxes = typesCheckboxes
 	categoryDoneButton.CategoryNameEditBox = nameEditBox
