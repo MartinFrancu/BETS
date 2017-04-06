@@ -195,8 +195,7 @@ function removeTreeBtController(tabs,treeHandle)
 	
 	-- is it currently shown?
 	if treeHandle.Name == tabBar.selected_obj.caption and BtCreator then
-		Logger.loggedCall("Call", "BtController", 
-			"hiding BtController which is showing removed tree", BtCreator.hide)
+		BtCreator.hide()
 	end
 	
 	tabBar:Remove(treeHandle.Name)
@@ -583,21 +582,13 @@ local function listenerClickBtCreator(self, x, y, button)
 	-- if it is not + then show BtCreator (send him message)
 	if(barItem.caption ~= "+") then
 		-- tree tab is selected (not add tree tab)
-			if(barItem.TreeHandle.Created) then 
-				Logger.loggedCall("Error", "BtController", 
-					"asking BtEvaluator to report tree to BtEvaluator",
-					BtEvaluator.reportTree, barItem.TreeHandle.InstanceId
-				)
-			end
-			Logger.loggedCall("Error", "BtController", 
-				"making BtCreator show selected tree",
-				BtCreator.show, barItem.TreeHandle.TreeType, barItem.TreeHandle.InstanceId )
-		
+		if(barItem.TreeHandle.Created) then 
+			BtEvaluator.reportTree(barItem.TreeHandle.InstanceId)
+		end
+		BtCreator.show(barItem.TreeHandle.TreeType, barItem.TreeHandle.InstanceId)
 	else
 		-- add tree tab is selected
-		Logger.loggedCall("Error", "BtController", 
-				"making BtCreator show new tree",
-				BtCreator.showNewTree)
+		BtCreator.showNewTree()
 	end
 end
 ---------------------------------------LISTENERS END
@@ -880,7 +871,7 @@ function widget:Initialize()
 	-- extract BtCreator into a local variable once available
 	Dependency.defer(
 		function()
-			BtCreator = WG.BtCreator
+			BtCreator = sanitizer:Import(WG.BtCreator)
 			if(showBtCreatorButton)then
 				showBtCreatorButton:SetParent(treeControlWindow) -- workaround for a bug, showBtCreatorButton seems lose its parent somehow
 				showBtCreatorButton:Show()

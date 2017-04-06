@@ -681,8 +681,7 @@ function widget:Initialize()
 		skinName='DarkGlass',
 	}
 
-	Logger.loggedCall("Errors", "BtCreator", "requesting node definitions",
-			BtEvaluator.requestNodeDefinitions)
+	BtEvaluator.requestNodeDefinitions()
 
 
 	Logger.log("reloading", "BtCreator widget:Initialize after requestNodeDefinitions. nodeDefinitionInfo: "..dump(nodeDefinitionInfo, 3))
@@ -900,7 +899,7 @@ function widget:Initialize()
 	-- treeNameEditbox.font.size = 16
 	listenerClickOnMinimize()
 
-	WG.BtCreator = BtCreator
+	WG.BtCreator = sanitizer:Export(BtCreator)
 	Dependency.fill(Dependency.BtCreator)
 	Logger.log("reloading", "BtCreator widget:Initialize end. ")
 end
