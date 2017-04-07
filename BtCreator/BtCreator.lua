@@ -32,6 +32,9 @@ local treeNameEditbox
 
 local rolesOfCurrentTree
 
+local roleManager
+
+--[[
 local rolesWindow
 local showRoleManagementWindow
 local roleManagementDoneButton
@@ -41,6 +44,7 @@ local categoryDefinitionWindow
 local showCategoryDefinitionWindow
 local doneCategoryDefinition
 local cancelCategoryDefinition
+]]--
 
 --- Keys are node IDs, values are Treenode objects.
 WG.nodeList = {}
@@ -290,7 +294,7 @@ function listenerClickOnSaveTree()
 			treeName)
 	else
 		-- we need to get user to define roles first:
-		showRoleManagementWindow("save")
+		roleManager.showRoleManagementWindow(Screen0, resultTree, rolesOfCurrentTree, listenerClickOnSaveTree)
 	end
 end
 
@@ -371,7 +375,9 @@ function listenerClickOnLoadTree()
 end
 
 function listenerClickOnRoleManager()
-	showRoleManagementWindow()
+	local currentTree = formBehaviourTree()
+	roleManager.showRoleManagementWindow(Screen0, currentTree, rolesOfCurrentTree)
+	--showRoleManagementWindow()
 end
 
 function listenerClickOnMinimize()
@@ -649,19 +655,32 @@ function widget:Initialize()
 		widgetHandler:RemoveWidget()
 		return
 	end
+	
+	-- Get ready to use Chili
+	Chili = WG.ChiliClone
+	Screen0 = Chili.Screen0
+	
+	Logger.log("separation", "before environment")
+	
+	local environment = BtCreator
+	environment["Chili"] = Chili
+	environment["sanitizer"] = sanitizer
+	Logger.log("separation", "before roleManager import")
+	
+	roleManager = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/role_manager.lua", environment , VFS.RAW_FIRST)
 
+	Logger.log("separation", "after roleManager import")
 	BtEvaluator = sanitizer:Import(WG.BtEvaluator)
 
 	BtEvaluator.OnNodeDefinitions = fillNodePoolWithNodes
 	BtEvaluator.OnUpdateStates = updateStatesMessage
 
-	-- Get ready to use Chili
-	Chili = WG.ChiliClone
-	Screen0 = Chili.Screen0
+	
 
 	connectionLine.initialize()
 	blackboard = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/blackboard.lua", nil, VFS.RAW_FIRST)
 
+	Logger.log("separation", "chili components")
 	nodePoolPanel = Chili.ScrollPanel:New{
 		parent = Screen0,
 		y = '56%',
@@ -726,7 +745,6 @@ function widget:Initialize()
 		y = btCreatorWindow.y - 30,
 		width = btCreatorWindow.width,
 		height = 40,
-		--children = { newTreeButton, saveTreeButton, loadTreeButton, roleManagerButton, showSensorsButton, showBlackboardButton, breakpointButton, continueButton }
 	}
 	newTreeButton = Chili.Button:New{
 		parent = buttonPanel,
@@ -896,12 +914,16 @@ function widget:Initialize()
 		},
 	}	
 	
+	Logger.log("separation", "chili components end")
+	
 	-- treeNameEditbox.font.size = 16
 	listenerClickOnMinimize()
-
+	Logger.log("separation", "1")
 	WG.BtCreator = sanitizer:Export(BtCreator)
+	Logger.log("separation", "2")
 	Dependency.fill(Dependency.BtCreator)
 	Logger.log("reloading", "BtCreator widget:Initialize end. ")
+	Logger.log("separation", "initialize end")
 end
 
 function widget:Shutdown()
@@ -1105,7 +1127,7 @@ function loadBehaviourTree(bt)
 		end
 	end
 end
-
+--[[
 function showCategoryDefinitionWindow()
 	rolesWindow:Hide()
 	categoryDefinitionWindow = Chili.Window:New{
@@ -1220,15 +1242,6 @@ function cancelCategoryDefinition(self)
 	categoryDefinitionWindow:Hide()
 	showRoleManagementWindow()
 end
---[[
-local function findCategoryData(categoryName)
-	for _,catData in pairs(unitCategories) do
-		if(catData.name == categoryName) then
-			return catData
-		end
-	end
-end
---]]
 
 function doneRoleManagerWindow(self)
 	self.Window:Hide()
@@ -1256,24 +1269,8 @@ function showRoleManagementWindow(mode)
 	local tree = formBehaviourTree()
 	-- find out how many roles we need:
 	local roleCount = maxRoleSplit(tree)
-	--[[local function visit(node)
-		if(not node) then
-			return
-		end
-		if(node.nodeType == "roleSplit" and roleCount < #node.children)then
-				roleCount = #node.children
-		end
-		for _, child in ipairs(node.children) do
-				visit(child)
-		end
-	end
-	visit(tree.root)
-	--]]
+	
 
-	--[[ RESET UNIT CATHEGORIES
-	loadStandardCategories()
-	saveUnitCategories()
-	--]]
 
 	--unitCategories = BtUtils.UnitCategories.getCategories()
 
@@ -1371,6 +1368,7 @@ function showRoleManagementWindow(mode)
 	roleManagementDoneButton.RolesData = rolesCategoriesCB
 	roleManagementDoneButton.Window = rolesWindow
 end
+--]]
 
 --------------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------

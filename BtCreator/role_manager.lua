@@ -1,20 +1,9 @@
 
 local roleManager = {}
 
-roleManager.rolesWindow
-roleManager.showRoleManagementWindow
-roleManager.roleManagementDoneButton
-roleManager.newCategoryButton
-
-roleManager.categoryDefinitionWindow
-roleManager.showCategoryDefinitionWindow
-roleManager.doneCategoryDefinition
-roleManager.cancelCategoryDefinition
-
-
-function showCategoryDefinitionWindow(parent)
-	rolesWindow:Hide()
-	categoryDefinitionWindow = Chili.Window:New{
+function roleManager.showCategoryDefinitionWindow(parent)
+	roleManager.rolesWindow:Hide()
+	roleManager.categoryDefinitionWindow = Chili.Window:New{
 		parent = parent,
 		x = 150,
 		y = 300,
@@ -98,12 +87,12 @@ function showCategoryDefinitionWindow(parent)
 	-- check old checked checkboxes:
 	categoryDoneButton.Checkboxes = typesCheckboxes
 	categoryDoneButton.CategoryNameEditBox = nameEditBox
-	categoryDoneButton.Window = categoryDefinitionWindow
+	categoryDoneButton.Window = roleManager.categoryDefinitionWindow
 end
 
 
 
-function doneCategoryDefinition(self)
+function roleManager.doneCategoryDefinition(self)
 	-- add new category to unitCategories
 	local unitTypes = {}
 	for _,unitTypeCheckBox in pairs(self.Checkboxes) do
@@ -120,16 +109,12 @@ function doneCategoryDefinition(self)
 	Utils.UnitCategories.redefineCategories(newCategory)
 
 	categoryDefinitionWindow:Hide()
-	showRoleManagementWindow()
+	roleManager.showRoleManagementWindow()
 end
-function cancelCategoryDefinition(self)
-	categoryDefinitionWindow:Hide()
-	showRoleManagementWindow()
+function roleManager.cancelCategoryDefinition(self)
+	roleManager.categoryDefinitionWindow:Hide()
+	roleManager.showRoleManagementWindow()
 end
-
-
-
-
 
 function doneRoleManagerWindow(self)
 	self.Window:Hide()
@@ -147,19 +132,34 @@ function doneRoleManagerWindow(self)
 		table.insert(result, roleResult)
 	end
 	rolesOfCurrentTree = result
-
-	if((self.Mode ~= nil)  and (self.Mode == "save")) then
-		listenerClickOnSaveTree()
+	
+	-- call 
+	if( self.callOnDone ~= nil) then
+		sanitizer:AsHandler(callOnDone)
 	end
 end
+
+local function maxRoleSplit(tree)
+	local roleCount = 1
+	local function visit(node)
+		if(not node) then
+			return
+		end
+		if(node.nodeType == "roleSplit" and roleCount < #node.children)then
+				roleCount = #node.children
+		end
+		for _, child in ipairs(node.children) do
+				visit(child)
+		end
+	end
+	visit(tree.root)
+	return roleCount
+end
+
+
 -- This shows the role manager window, callOnDone is used to determine a method which shloud be called after clicking "done"
-function showRoleManagementWindow(parent, callOnDone)
-	local tree = formBehaviourTree()
-	-- find out how many roles we need:
-	local roleCount = maxRoleSplit(tree)
-	
-	
-	rolesWindow = Chili.Window:New{
+function roleManager.showRoleManagementWindow(parent, tree, rolesOfCurrentTree, callOnDone)	
+	roleManger.rolesWindow = Chili.Window:New{
 		parent = parent,
 		x = 150,
 		y = 300,
@@ -167,7 +167,6 @@ function showRoleManagementWindow(parent, callOnDone)
 		height = 600,
 		skinName = 'DarkGlass'
 	}
-
 	-- now I just need to save it
 	roleManagementDoneButton = Chili.Button:New{
 		parent =  rolesWindow,
@@ -175,8 +174,8 @@ function showRoleManagementWindow(parent, callOnDone)
 		y = 0,
 		caption = "DONE",
 		OnClick = {sanitizer:AsHandler(doneRoleManagerWindow)},
+		callOnDone = callOnDone,
 	}
-	roleManagementDoneButton.Mode = mode
 
 	newCategoryButton = Chili.Button:New{
 		parent = rolesWindow,
@@ -201,6 +200,8 @@ function showRoleManagementWindow(parent, callOnDone)
 	local yOffSet = 10
 	local xCheckBoxOffSet = 180
 	-- set up checkboxes for all roles and categories
+	
+	local roleCount = maxRoleSplit(tree)
 
 	for roleIndex=0, roleCount -1 do
 		local nameEditBox = Chili.EditBox:New{
@@ -250,5 +251,7 @@ function showRoleManagementWindow(parent, callOnDone)
 		table.insert(rolesCategoriesCB,roleCategories)
 	end
 	roleManagementDoneButton.RolesData = rolesCategoriesCB
-	roleManagementDoneButton.Window = rolesWindow
+	roleManagementDoneButton.Window = roleManger.rolesWindow
 end
+
+return roleManager
