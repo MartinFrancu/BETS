@@ -316,7 +316,7 @@ local focusColor = {0.8,0.5,0.2,0.3}
 function listenerClickOnShowSensors()
 	showSensorsButton.backgroundColor , bgrColor = bgrColor, showSensorsButton.backgroundColor
 	showSensorsButton.focusColor, focusColor = focusColor, showSensorsButton.focusColor
-	local sensors = WG.SensorManager.getAvailableSensors()
+	local sensors = BtEvaluator.SensorManager.getAvailableSensors()
 	local minWidth = 200
 	for i=1,#sensors do
 		minWidth = math.max(minWidth, showSensorsButton.font:GetTextWidth(sensors[i]) + 60)

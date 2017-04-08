@@ -122,6 +122,7 @@ end
 -- ==== BtEvaluator interface definitions ====
 local BtEvaluator = Sentry:New()
 local lastResponse = nil
+
 function BtEvaluator.sendMessage(messageType, messageData)
 	local payload = "BETS " .. messageType;
 	if(messageData)then
@@ -281,6 +282,9 @@ function BtEvaluator.reloadCaches()
 	SensorManager.reload()
 	BtEvaluator.scripts = {}
 end
+
+
+BtEvaluator.SensorManager = SensorManager
 
 
 -- ==== luaCommand handling ====
