@@ -32,6 +32,9 @@ local sensorEnvironmentMetatable = {
 local smInstance = {}
 
 local SensorManager = {}
+
+SensorManager.contentType = sensorContentType
+
 function SensorManager.loadSensor(...)
 	local path, parameters = ProjectManager.findFile(sensorContentType, ...)
 	if(not path)then -- if we tried to load a sensor from a non-existant project
