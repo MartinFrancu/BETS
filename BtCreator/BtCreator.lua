@@ -670,11 +670,7 @@ function widget:Initialize()
 	-- Get ready to use Chili
 	Chili = WG.ChiliClone
 	Screen0 = Chili.Screen0
-	
-	Logger.log("separation", "before environment")
-	
 
-	Logger.log("separation", "after roleManager import")
 	BtEvaluator = sanitizer:Import(WG.BtEvaluator)
 
 	BtEvaluator.OnNodeDefinitions = fillNodePoolWithNodes
@@ -685,7 +681,6 @@ function widget:Initialize()
 	connectionLine.initialize()
 	blackboard = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/blackboard.lua", nil, VFS.RAW_FIRST)
 
-	Logger.log("separation", "chili components")
 	nodePoolPanel = Chili.ScrollPanel:New{
 		parent = Screen0,
 		y = '56%',
@@ -922,11 +917,9 @@ function widget:Initialize()
 		},
 	}	
 	
-	Logger.log("separation", "chili components end")
 	
 	-- treeNameEditbox.font.size = 16
 	listenerClickOnMinimize()
-	Logger.log("separation", "1", dump(BtCreator,4))
 	WG.BtCreator = sanitizer:Export(BtCreator)
 	
 	local newEntries = {}
@@ -934,14 +927,11 @@ function widget:Initialize()
 	newEntries["sanitizer"] = sanitizer
 	newEntries["Utils"] = Utils
 	local environment = setmetatable(newEntries ,{__index = widget})
-	Logger.log("separation", "before roleManager import",dump( widget.Chili,2))
 	
 	roleManager = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/role_manager.lua", environment , VFS.RAW_FIRST)
 	
-	Logger.log("separation", "2")
 	Dependency.fill(Dependency.BtCreator)
 	Logger.log("reloading", "BtCreator widget:Initialize end. ")
-	Logger.log("separation", "initialize end")
 end
 
 function widget:Shutdown()
