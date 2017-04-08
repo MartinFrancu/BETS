@@ -359,9 +359,8 @@ end
 
 
 -- Calls required functions to create tree in BtEvaluator
-function createTreeInBtEvaluator(treeHandle) 	
-	Logger.loggedCall("Errors", "BtController", "instantiating new tree in BtEvaluator", 
-		BtEvaluator.createTree, treeHandle.InstanceId, treeHandle.Tree, treeHandle.Inputs)
+function createTreeInBtEvaluator(treeHandle)
+	BtEvaluator.createTree(treeHandle.InstanceId, treeHandle.Tree, treeHandle.Inputs)
 end
 
 -- Reports units assigned to all roles to BtEvaluator
@@ -745,7 +744,7 @@ function setUpTreeControlWindow()
 		draggable=true,
 		resizable=true,
 		skinName='DarkGlass',
-		backgroundColor = {0.1,0.1,0.1,1},
+		backgroundColor = {1,1,1,1},
 	}
   
 	controllerLabel = Chili.Label:New{

@@ -33,9 +33,10 @@ local parentReference = {}
 local treeInstances = {}
 WG.unitToRoleMap = unitToRoleMap
 
-local function makeInstance(instanceId, roles)
+local function makeInstance(instanceId, project, roles)
 	local instance = {
 		id = instanceId,
+		project = project,
 		inputs = {},
 		roles = {},
 		nodes = {},
@@ -231,7 +232,7 @@ function BtEvaluator.assignUnits(units, instanceId, roleId)
 	end
 end
 function BtEvaluator.createTree(instanceId, treeDefinition, inputs)
-	local instance = makeInstance(instanceId, treeDefinition.roles)
+	local instance = makeInstance(instanceId, treeDefinition.project, treeDefinition.roles)
 	local result, message = BtEvaluator.sendMessage("CREATE_TREE", { instanceId = instanceId, roleCount = #(treeDefinition.roles or {}), root = treeDefinition.root })
 	
 	for k, v in pairs(inputs or {}) do
@@ -354,7 +355,7 @@ local function createExpression(expression)
 		setGroup = function(g)
 			if(group == g)then return end
 			group = g
-			sensorManager = SensorManager.forGroup(g)
+			sensorManager = SensorManager.forGroup(g, g[parentReference].project)
 		end,
 	}
 end
@@ -382,7 +383,7 @@ function BtEvaluator.OnCommand(params)
 			end
 		end
 		
-		command.Sensors = SensorManager.forGroup(units)
+		command.Sensors = SensorManager.forGroup(units, instance.project)
 		local result, output = command:BaseRun(units, parameters)
 		
 		if(output)then

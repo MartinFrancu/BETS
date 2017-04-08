@@ -131,7 +131,13 @@ return Utils:Assign("ProjectManager", function()
 		end
 		]]
 
-		return path, { exists = VFS.FileExists(path), readonly = project.isArchive }
+		return path, {
+			project = projectName,
+			name = name,
+			qualifiedName = projectName .. "." .. name,
+			exists = VFS.FileExists(path),
+			readonly = project.isArchive
+		}
 	end
 	
 	local function listProjectInternal(result, i, project, contentType)
@@ -142,7 +148,7 @@ return Utils:Assign("ProjectManager", function()
 				name = name,
 				qualifiedName = project.name .. "." .. name,
 				filename = v,
-				path = project.path .. v,
+				path = project.path .. (contentType.directoryName and (contentType.directoryName .. "/") or "") .. v,
 			}
 			i = i + 1
 		end

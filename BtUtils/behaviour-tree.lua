@@ -162,6 +162,7 @@ return Utils:Assign("BehaviourTree", function()
 		for _, node in ipairs(bt.additionalNodes) do
 			load_setupNode(bt, node)
 		end
+		bt.project = parameters.project
 		
 		return bt
 	end
@@ -173,7 +174,10 @@ return Utils:Assign("BehaviourTree", function()
 			bt, -- the tree which to save
 			name -- name under which to save, must not contain path-illegal characters
 		)
+		local temp = bt.project
+		bt.project = nil
 		local text = JSON:encode(bt, nil, { pretty = true, indent = "\t" })
+		bt.project = temp
 		
 		local path, parameters = ProjectManager.findFile(behavioursContentType, name)
 		if(not path)then
