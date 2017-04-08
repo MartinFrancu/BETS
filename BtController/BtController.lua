@@ -585,7 +585,7 @@ local function listenerClickBtCreator(self, x, y, button)
 		if(barItem.TreeHandle.Created) then 
 			BtEvaluator.reportTree(barItem.TreeHandle.InstanceId)
 		end
-		BtCreator.show(barItem.TreeHandle.TreeType, barItem.TreeHandle.InstanceId)
+		BtCreator.showTree(barItem.TreeHandle.TreeType, barItem.TreeHandle.InstanceId)
 	else
 		-- add tree tab is selected
 		BtCreator.showNewTree()
