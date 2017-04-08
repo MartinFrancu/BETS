@@ -70,9 +70,9 @@
 				"value": "false"
 			}, {
 				"name": "scriptName",
-				"value": "move.lua"
+				"value": "Common.move"
 			} ],
-			"scriptName": "move.lua"
+			"scriptName": "Common.move"
 		}, {
 			"children": [],
 			"id": "yRVLAarGZy7eoSBdzzL6o0608BbqmjDm",
