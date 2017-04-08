@@ -861,11 +861,12 @@ function widget:Initialize()
 	Chili = WG.ChiliClone
 	Screen0 = Chili.Screen0	
 	
-	local environmentTreeHandle = BtController
-	environmentTreeHandle["Chili"] = Chili
-	environmentTreeHandle["Utils"] = Utils
+	local newEntries = {}
+	newEntries["Chili"] = Chili
+	newEntries["Utils"] = Utils
+	local environment = setmetatable(newEntries ,{__index = widget})
 	
-	TreeHandle = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtController/BtTreeHandle.lua", environmentTreeHandle , VFS.RAW_FIRST)
+	TreeHandle = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtController/BtTreeHandle.lua", environment , VFS.RAW_FIRST)
   
 	BtEvaluator = sanitizer:Import(WG.BtEvaluator)
 	-- extract BtCreator into a local variable once available
