@@ -550,17 +550,17 @@ end
 
 -- called also after move!
 function listenerNodeWindowOnResize(self)
-	if (self.resizable) then
-		if(self.treeNode.connectionIn) then
-			self.treeNode.connectionIn:SetPos(nil, self.height*0.35)
-		end
-		if(self.treeNode.connectionOut) then
-			self.treeNode.connectionOut:SetPos(self.width-18, self.height*0.35)
-		end
-		self.treeNode.width = self.width
-		self.treeNode.height = self.height
-		self.treeNode:UpdateConnectionLines()
+	-- if (self.resizable) then
+	if(self.treeNode.connectionIn) then
+		self.treeNode.connectionIn:SetPos(nil, self.height*0.35)
 	end
+	if(self.treeNode.connectionOut) then
+		self.treeNode.connectionOut:SetPos(self.width-18, self.height*0.35)
+	end
+	self.treeNode.width = self.width
+	self.treeNode.height = self.height
+	self.treeNode:UpdateConnectionLines()
+	-- end
 	--return true
 end
 
