@@ -40,9 +40,9 @@
 				"value": "y"
 			}, {
 				"name": "scriptName",
-				"value": "randomVector.lua"
+				"value": "Common.randomVector"
 			} ],
-			"scriptName": "randomVector.lua"
+			"scriptName": "Common.randomVector"
 		}, {
 			"children": [],
 			"id": "dEHOrJf8Xf2wEBZXy6hd0kcL56tqEc8z",
@@ -52,9 +52,9 @@
 				"value": "{ x = x, z = y }"
 			}, {
 				"name": "scriptName",
-				"value": "relativeMove.lua"
+				"value": "Common.relativeMove"
 			} ],
-			"scriptName": "relativeMove.lua"
+			"scriptName": "Common.relativeMove"
 		} ],
 		"id": "gln4jU3MI4wh8mdRi69Voj0K5QkZRn1y",
 		"nodeType": "sequence",

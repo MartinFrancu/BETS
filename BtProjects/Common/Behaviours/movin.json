@@ -55,9 +55,9 @@
 				"value": "y"
 			}, {
 				"name": "scriptName",
-				"value": "randomVector.lua"
+				"value": "Common.randomVector"
 			} ],
-			"scriptName": "randomVector.lua"
+			"scriptName": "Common.randomVector"
 		}, {
 			"children": [],
 			"id": "vcLWOsXXlUOGVkS7XH4zS7lFHelFTHc0",
@@ -85,9 +85,9 @@
 				"value": "false"
 			}, {
 				"name": "scriptName",
-				"value": "move.lua"
+				"value": "Common.move"
 			} ],
-			"scriptName": "move.lua"
+			"scriptName": "Common.move"
 		} ],
 		"id": "SHPfjg6JsJT9RMGYHkPnCDoZijfGuEdt",
 		"nodeType": "sequence",

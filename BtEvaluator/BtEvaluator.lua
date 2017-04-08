@@ -289,9 +289,13 @@ BtEvaluator.SensorManager = SensorManager
 
 -- ==== luaCommand handling ====
 
+
 BtEvaluator.scripts = {}
 
-local baseCommandClass = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtEvaluator/command.lua", nil, VFS.RAW_FIRST)
+local CommandManager = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtEvaluator/command.lua", nil, VFS.RAW_FIRST)
+BtEvaluator.CommandManager = CommandManager
+baseCommandClass = CommandManager.baseClass
+
 
 local function getCommandClass(name)
 	c = BtEvaluator.scripts[name]
