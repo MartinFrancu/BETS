@@ -40,7 +40,7 @@ TreeNode = Control:Inherit{
 local this = TreeNode
 local inherited = this.inherited
 
-local listenerNodeResize
+local listenerNodeWindowOnResize
 local listenerStartConnection
 local listenerEndConnection
 local listenerMouseOver
@@ -88,7 +88,7 @@ function TreeNode:New(obj)
 		borderThickness = obj.borderThickness,
 		backgroundColor = {1,1,1,0.6},
 		skinName = 'DarkGlass',
-		OnResize = { listenerNodeResize },
+		OnResize = { listenerNodeWindowOnResize },
 		treeNode = obj,
 		connectable = obj.connectable,
 		disableChildrenHitTest = true,
@@ -103,7 +103,7 @@ function TreeNode:New(obj)
 	local connectionOptions = {
 		parent = obj.nodeWindow,
 		x = obj.nodeWindow.width-18,
-    y = '35%',
+    y = obj.nodeWindow.height * 0.35,
     width  = 15,
     height = 15,
 		minWidth = 15,
@@ -143,6 +143,7 @@ function TreeNode:New(obj)
 	}
 	if(obj.nodeType:lower() == "root") then
 		local label = Label:New{
+			name = "Inputs",
 			parent = obj.nodeWindow,
 			x = 18,
 			y = 24,
@@ -151,6 +152,7 @@ function TreeNode:New(obj)
 			caption = "Inputs",
 		}
 		obj.addButton = Button:New{
+			name = "AddInputs",
 			parent = obj.nodeWindow,
 			x = label.x + label.width + 6,
 			y = label.y,
@@ -159,6 +161,7 @@ function TreeNode:New(obj)
 			OnClick = { listenerAddInput },
 		}
 		obj.removeButton = Button:New{
+			name = "RemoveInputs",
 			parent = obj.nodeWindow,
 			x = obj.addButton.x + obj.addButton.width + 6,
 			y = label.y,
@@ -204,14 +207,12 @@ function TreeNode:UpdateDimensions()
 	else
 		maxHeight = math.max(maxHeight, #p * 20 + 50)
 	end
-	self.nodeWindow:SetPos(nil, nil, maxWidth, maxHeight)
+	if(self.parent.zoomedOut == nil or self.parent.zoomedOut == false) then
+		self.nodeWindow:SetPos(nil, nil, maxWidth, maxHeight)
+	end
 	self.width = maxWidth
 	self.height = maxHeight
-	--listenerNodeResize(self.nodeWindow)
-	if( self.hasConnectionOut ) then
-		self.connectionOut:SetPos(self.nodeWindow.width - 18)
-	end
-	self:UpdateConnectionLines()
+	self.nodeWindow:CallListeners( self.nodeWindow.OnResize )
 end
 
 --- Transforms obj.parameters[i] into obj.parametersObjects[i]
@@ -304,6 +305,34 @@ function createNextParameterObject(obj)
 		result.comboBox:Select(defaultIndex)
 	end
 	return result
+end
+
+function TreeNode:ShowParameterObjects()
+	for i=1,#self.parameterObjects do
+		local obj = self.parameterObjects[i]
+		if(obj.componentType == "editBox") then
+			obj.label:Show()
+			obj.editBox:Show()
+		elseif(obj.componentType == "comboBox") then
+			obj.comboBox:Show()
+		elseif(obj.componentType == "checkBox") then
+			obj.checkBox:Show()
+		end
+	end
+end
+
+function TreeNode:HideParameterObjects()
+	for i=1,#self.parameterObjects do
+		local obj = self.parameterObjects[i]
+		if(obj.componentType == "editBox") then
+			obj.label:Hide()
+			obj.editBox:Hide()
+		elseif(obj.componentType == "comboBox") then
+			obj.comboBox:Hide()
+		elseif(obj.componentType == "checkBox") then
+			obj.checkBox:Hide()
+		end
+	end
 end
 
 --- Returns a table of children in order of y-coordinate(first is the one with the smallest one)
@@ -520,17 +549,16 @@ function listenerClickOnConnectionPanel(self)
 end
 
 -- called also after move!
-function listenerNodeResize(self)
-	-- Spring.Echo("Resizing treenode window.. ")
-	-- Spring.Echo("x="..self.treeNode.x..", y="..self.treeNode.y)
-	-- Update position of connectionOut
+function listenerNodeWindowOnResize(self)
 	if (self.resizable) then
-		if (self.treeNode.connectionOut and self.treeNode.nodeWindow) then
-			self.treeNode.connectionOut.x = self.treeNode.nodeWindow.width-18
-			self.treeNode.width = self.treeNode.nodeWindow.width
-			self.treeNode.height = self.treeNode.nodeWindow.height
+		if(self.treeNode.connectionIn) then
+			self.treeNode.connectionIn:SetPos(nil, self.height*0.35)
 		end
-		
+		if(self.treeNode.connectionOut) then
+			self.treeNode.connectionOut:SetPos(self.width-18, self.height*0.35)
+		end
+		self.treeNode.width = self.width
+		self.treeNode.height = self.height
 		self.treeNode:UpdateConnectionLines()
 	end
 	--return true

@@ -163,7 +163,7 @@ end
 
 function listenerEndCopyingNode(_, x , y)
 	--y = y + startCopyingLocation.y
-	if(copyTreeNode and x - nodePoolPanel.width - startCopyingLocation.x > -20) then
+	if(btCreatorWindow.zoomedOut==false and copyTreeNode and x - nodePoolPanel.width - startCopyingLocation.x > -20) then
 		local params = {
 			parent = btCreatorWindow,
 			nodeType = copyTreeNode.nodeType,
@@ -725,13 +725,70 @@ function widget:Initialize()
 		resizable=true,
 		skinName='DarkGlass',
 		backgroundColor = {1,1,1,1},
+		zoomedOut = false,
 		OnClick = { sanitizer:AsHandler(listenerOnClickOnCanvas) },
 		OnResize = { sanitizer:AsHandler(listenerOnResizeBtCreator) },
-		-- OnMouseDown = { listenerStartSelectingNodes },
-		-- OnMouseUp = { listenerEndSelectingNodes },
 		onMouseWheel = {
-			function(self, x, y, a)
-				Spring.Echo("mouse wheel: "..dump(a))
+			function(self, x, y, zoomIn)
+				-- local zoomedOut = false
+				local scale = 2
+				-- if(zoomIn) then
+				if(zoomIn and self.zoomedOut) then
+					self.zoomedOut = false
+					for _,node in pairs(WG.nodeList) do
+						local nodeWindow = node.nodeWindow
+						local nameEditBox = node.nameEditBox
+						node:ShowParameterObjects()
+						nodeWindow.font.size = nodeWindow.font.size * scale
+						nameEditBox.font.size = nameEditBox.font.size * scale
+						nameEditBox:SetPos(nil,nameEditBox.y*scale)
+						nodeWindow.minWidth = nodeWindow.minWidth * scale
+						nodeWindow.minHeight = nodeWindow.minHeight * scale
+						local translatedX = x + (nodeWindow.x - x)*scale
+						local translatedY = y + (nodeWindow.y - y)*scale
+						nodeWindow:SetPos(translatedX, translatedY, nodeWindow.width*scale, nodeWindow.height*scale)
+						node.width = nodeWindow.width*scale
+						node.height = nodeWindow.height*scale
+						nodeWindow:CallListeners( nodeWindow.OnResize )
+					end
+					local inputs = WG.nodeList[rootID].inputs
+					if(inputs) then
+						for i=1,#inputs do
+							inputs[i][1]:Show()
+							inputs[i][2]:Show()
+						end
+					end
+					WG.nodeList[rootID].nodeWindow:GetChildByName("Inputs"):Show()
+					WG.nodeList[rootID].nodeWindow:GetChildByName("AddInputs"):Show()
+					WG.nodeList[rootID].nodeWindow:GetChildByName("RemoveInputs"):Show()
+				elseif(not zoomIn and not self.zoomedOut) then
+					self.zoomedOut = true
+					for _,node in pairs(WG.nodeList) do
+						local nodeWindow = node.nodeWindow
+						local nameEditBox = node.nameEditBox
+						node:HideParameterObjects()
+						nodeWindow.font.size = nodeWindow.font.size / scale
+						nameEditBox.font.size = nameEditBox.font.size / scale
+						nameEditBox:SetPos(nil,nameEditBox.y/scale)
+						nodeWindow.minWidth = nodeWindow.minWidth / scale
+						nodeWindow.minHeight = nodeWindow.minHeight / scale
+						local translatedX = x + (nodeWindow.x - x)/scale
+						local translatedY = y + (nodeWindow.y - y)/scale
+						nodeWindow:SetPos(translatedX, translatedY, nodeWindow.width/scale, nodeWindow.height/scale)
+						nodeWindow:CallListeners( nodeWindow.OnResize )						
+					end
+					local inputs = WG.nodeList[rootID].inputs
+					if(inputs) then
+						for i=1,#inputs do
+							inputs[i][1]:Hide()
+							inputs[i][2]:Hide()
+						end
+					end
+					WG.nodeList[rootID].nodeWindow:GetChildByName("Inputs"):Hide()
+					WG.nodeList[rootID].nodeWindow:GetChildByName("AddInputs"):Hide()
+					WG.nodeList[rootID].nodeWindow:GetChildByName("RemoveInputs"):Hide()
+					
+				end
 				return self
 			end,
 		},
