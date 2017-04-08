@@ -999,7 +999,7 @@ local fieldsToSerialize = {
 	'id',
 	'nodeType',
 	'scriptName',
-	'text',
+	'title',
 	'x',
 	'y',
 	'width',
@@ -1175,7 +1175,7 @@ local function loadBehaviourNode(bt, btNode)
 	if (btNode.scriptName ~= nil) then
 		params.nodeType = btNode.scriptName
 	end
-
+	
 	local node = Chili.TreeNode:New(params)
 	addNodeToCanvas(node)
 	for _, btChild in ipairs(btNode.children) do

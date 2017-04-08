@@ -136,7 +136,7 @@ function TreeNode:New(obj)
 	end
 	obj.nameEditBox = EditBox:New{
 		parent = obj.nodeWindow,
-		text = obj.nodeType,
+		text = obj.title or obj.nodeType,
 		defaultWidth = '80%',
 		x = '10%',
 		y = 6,
@@ -714,6 +714,7 @@ function TreeNode:UpdateParameterValues()
 			comboBox.parent.treeNode.parameters[comboBox.index].value = tostring(comboBox.items[comboBox.selected])
 		end
 	end
+	self.title = self.nameEditBox.text
 	self:UpdateDimensions()
 end
 
