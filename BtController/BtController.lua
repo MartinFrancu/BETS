@@ -67,6 +67,7 @@ local spSelectUnits = Spring.SelectUnitArray
 local inputCommandsTable = WG.InputCommands
 local treeCommandsTable = WG.BtCommands
 
+-- TODO: remove, no longer used
 local function getTreeNamesInDirectory(directoryName)
    local ending = ".json"
    local folderContent = Utils.dirList(directoryName, "*"..ending) --VFS.DirList(directoryName)
@@ -441,7 +442,7 @@ end
 -- This listener is called when AddTreeTab becomes active to update directory 
 -- content and default instance name.
 function refreshTreeSelectionPanel()
-	names = getTreeNamesInDirectory(BehavioursDirectory) --Utils.dirList(BehavioursDirectory, "*.json") --getNamesInDirectory(BehavioursDirectory, ".json")
+	names = BehaviourTree.list()
 	treeSelectionComboBox.items = names 
 	treeSelectionComboBox:RequestUpdate()
 	treeNameEditBox.text = "Instance"..instanceIdCount
@@ -685,7 +686,7 @@ function setUpTreeSelectionTab()
 		skinName='DarkGlass',
 	}
 	
-	local availableTreeTypes = getTreeNamesInDirectory(BehavioursDirectory) 
+	local availableTreeTypes = BehaviourTree.list()
 	
 	treeSelectionComboBox = Chili.ComboBox:New{
 		items = availableTreeTypes,

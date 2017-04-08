@@ -11,7 +11,9 @@ WG.BtUtils = WG.BtUtils or (function()
 		JSON = "JSON", -- @{JSON}
 		Dependency = "dependency", -- @{Dependency}
 		BehaviourTree = "behaviour-tree", -- @{BehaviourTree}
-		dirList = "dir-list", -- @{dirList}
+		removeExtension = "remove-extension", -- @{removeExtension}
+		dirList = { "dir-list", 1 }, -- @{dirList}
+		subDirs = { "dir-list", 2 }, -- @{subDirs}
 		Debug = "debug_utils/", -- @{BtUtils.Debug}
 		UnitCategories = "categories",
 		metanext = { "meta-iteration", 1 }, -- @{metanext}
@@ -19,6 +21,7 @@ WG.BtUtils = WG.BtUtils or (function()
 		Vec3 = "Vector3",
 		Sanitizer = "sanitizer", -- @{Sanitizer}
 		Timer = "timer", -- @{Timer}
+		ProjectManager = "project-manager", -- @{ProjectManager}
 	}
 	
 	local LOCAL_PATH = LUAUI_DIRNAME .. "Widgets/BtUtils/"

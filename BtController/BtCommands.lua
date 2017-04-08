@@ -113,13 +113,13 @@ local function fillInCommandID(cmdName, cmdID)
 	end
 	
 	-- is it command corresponding to some behaviour?
-	local fileNames = BtUtils.dirList(BehavioursDirectory, "*.json")
-	for _,fileName in pairs(fileNames) do
-		local treeName = fileName:gsub("%.json","")
+	local qualifiedNames = BehaviourTree.list()
+	for _,treeName in pairs(qualifiedNames) do
 		local treeCmdName =  "BT_" ..  treeName
 		if (treeCmdName == cmdName) then
 			-- read serialized behaviour inputs
-			local bt = BehaviourTree.load(treeName)
+			local bt, msg = BehaviourTree.load(treeName)
+
 			WG.BtCommands[ cmdID ] = {
 				treeName = treeName,
 				inputs = bt.inputs,
@@ -197,10 +197,8 @@ end
 WG.BtRegisterCommandForTree = registerCommandForTree
 
 local function registerCommandsForBehaviours()
-	local fileNames = BtUtils.dirList(BehavioursDirectory, "*.json")--".+%.json$")
-	for _,fileName in pairs(fileNames) do
-		local treeName = fileName:gsub("%.json","")
-		
+	local qualifiedNames = BehaviourTree.list()
+	for _,treeName in pairs(qualifiedNames) do
 		registerCommandForTree(treeName)
 		--[[
 		local commandName =  "BT_" ..  treeName

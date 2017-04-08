@@ -17,7 +17,18 @@ return Utils:Assign("BehaviourTree", function()
 	local BEHAVIOURS_DIRNAME = LUAUI_DIRNAME .. "Widgets/BtBehaviours/"
 	
 	local JSON = Utils.JSON
-
+	local ProjectManager = Utils.ProjectManager
+	
+	local behavioursContentType = {
+		directoryName = "Behaviours",
+		fileMask = "*.json",
+		nameToFile = function(name) return name .. ".json" end,
+		fileToName = Utils.removeExtension,
+	}
+	
+	BehaviourTree.ContentType = behavioursContentType
+	
+	
 	local function removeItem(t, item)
 		for i, v in ipairs(t) do
 			if(v == item)then
@@ -109,13 +120,38 @@ return Utils:Assign("BehaviourTree", function()
 		end
 	end
 	
+	--- Lists all available BehaviourTrees.
+	-- @static
+	-- @treturn {string} Array of behaviour tree names
+	function BehaviourTree.list(project)
+		local list
+		if(project)then
+			list = ProjectManager.listProject(project, behavioursContentType)
+		else
+			list = ProjectManager.listAll(behavioursContentType)
+		end
+
+		local result, i = {}, 1
+		for i, data in ipairs(list) do
+			result[i] = data.qualifiedName
+			i = i + 1
+		end
+		return result
+	end
+	
 	--- Loads a previously saved tree.
 	-- @static
 	-- @treturn BehaviourTree loaded tree if found, `nil` otherwise
 	function BehaviourTree.load(
 			name -- name under which to look for the tree
 		)
-		local file = io.open(BEHAVIOURS_DIRNAME .. name .. ".json", "r")
+		
+		local path, msg = ProjectManager.findFile(behavioursContentType, name)
+		if(not path)then
+			return nil, msg
+		end
+		
+		local file = io.open(path, "r")
 		if(not file)then
 			return nil
 		end
@@ -147,8 +183,13 @@ return Utils:Assign("BehaviourTree", function()
 		)
 		local text = JSON:encode(bt, nil, { pretty = true, indent = "\t" })
 		
-		Spring.CreateDir(BEHAVIOURS_DIRNAME)
-		local file = io.open(BEHAVIOURS_DIRNAME .. name .. ".json", "w")
+		local path, msg = ProjectManager.findFile(behavioursContentType, name)
+		if(not path)then
+			return nil, msg
+		end
+		
+		Spring.CreateDir(path:match("^(.+)/"))
+		local file = io.open(path, "w")
 		if(not file)then
 			return nil
 		end

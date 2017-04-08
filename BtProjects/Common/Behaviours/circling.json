@@ -1,0 +1,108 @@
+{
+	"additionalNodes": [],
+	"defaultRole": "Default role",
+	"inputs": [],
+	"properties": {
+		"K2ZEY9szVXA6XUUnWR5lMBP9AoTh8T3R": {
+			"height": 90,
+			"width": 169.000015,
+			"x": 387,
+			"y": 17
+		},
+		"PhVzZ4N4vehUHFfZEqovKYQUnpagwAM2": {
+			"height": 60,
+			"width": 110,
+			"x": 227,
+			"y": 124
+		},
+		"SmX78WhgYwHwHm4L0kHS9cUgf9oVHkUp": {
+			"height": 90,
+			"width": 173.000031,
+			"x": 416,
+			"y": 212
+		},
+		"TSAD3xcg5FQKT8cQfGNR6FJB2sZGmwz0": {
+			"height": 90,
+			"width": 173.000015,
+			"x": 398,
+			"y": 323
+		},
+		"YNSFyIIF1O2KuZQUpQd7DX4Kcs7nUKjT": {
+			"height": 90,
+			"width": 169.000015,
+			"x": 404,
+			"y": 115
+		}
+	},
+	"roles": [ {
+		"categories": [],
+		"name": "Default role",
+		"types": []
+	} ],
+	"root": {
+		"children": [ {
+			"children": [],
+			"id": "K2ZEY9szVXA6XUUnWR5lMBP9AoTh8T3R",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "dist",
+				"value": "{ x = 500, z = 0}"
+			}, {
+				"name": "fight",
+				"value": "false"
+			}, {
+				"name": "scriptName",
+				"value": "relativeMove.lua"
+			} ],
+			"scriptName": "relativeMove.lua"
+		}, {
+			"children": [],
+			"id": "YNSFyIIF1O2KuZQUpQd7DX4Kcs7nUKjT",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "dist",
+				"value": "{ x = 0, z = 500}"
+			}, {
+				"name": "fight",
+				"value": "false"
+			}, {
+				"name": "scriptName",
+				"value": "relativeMove.lua"
+			} ],
+			"scriptName": "relativeMove.lua"
+		}, {
+			"children": [],
+			"id": "SmX78WhgYwHwHm4L0kHS9cUgf9oVHkUp",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "dist",
+				"value": "{ x = -500, z = 0}"
+			}, {
+				"name": "fight",
+				"value": "false"
+			}, {
+				"name": "scriptName",
+				"value": "relativeMove.lua"
+			} ],
+			"scriptName": "relativeMove.lua"
+		}, {
+			"children": [],
+			"id": "TSAD3xcg5FQKT8cQfGNR6FJB2sZGmwz0",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "dist",
+				"value": "{ x = 0, z = -500}"
+			}, {
+				"name": "fight",
+				"value": "false"
+			}, {
+				"name": "scriptName",
+				"value": "relativeMove.lua"
+			} ],
+			"scriptName": "relativeMove.lua"
+		} ],
+		"id": "PhVzZ4N4vehUHFfZEqovKYQUnpagwAM2",
+		"nodeType": "sequence",
+		"parameters": []
+	}
+}
