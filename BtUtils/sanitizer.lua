@@ -47,25 +47,40 @@ return Utils:Assign("Sanitizer", function()
 	function sanitizerPrototype:Sanitize(f)
 		return sanitize(self.widget, f)
 	end
-	function sanitizerPrototype:Export(t)
+	local function exportInternal(self, t, seen)
+		if(seen[t])then
+			return seen[t]
+		end
+	
+		local exported = {}
+		seen[t] = exported
+		
 		local result = {}
 		for k, v in pairs(t) do
 			if(type(v) == "function")then
 				result[k] = self:Sanitize(v)
-			elseif(type(v) == "table")then
-				result[k] = self:Export(v)
+			elseif(type(v) == "table" and v[originalKey] == nil)then
+				result[k] = exportInternal(self, v, seen)
 			else
 				result[k] = v
 			end
 		end
 		
-		return {
-			[originalKey] = t,
-			[exportKey] = result,
-			Get = function() return result end -- for debug purposes
-		}
+		exported[originalKey] = t
+		exported[exportKey] = result
+		exported.Get = function() return result end -- for debug purposes
+		
+		return exported;
 	end
-	function sanitizerPrototype:Import(foreign)
+	function sanitizerPrototype:Export(t)
+		return exportInternal(self, t, {})
+	end
+	
+	local function importInternal(self, foreign, seen)
+		if(seen[foreign])then
+			return seen[foreign]
+		end	
+
 		local exportTable = foreign[exportKey]
 		if(not exportTable)then
 			Logger.error("sanitizer", "Attempt to import a table that was not exported before.")
@@ -73,9 +88,10 @@ return Utils:Assign("Sanitizer", function()
 		local original = foreign[originalKey]
 		
 		local result = {}
+		seen[foreign] = result
 		for k, v in pairs(exportTable) do
 			if(type(v) == "table")then
-				result[k] = self:Import(v)
+				result[k] = importInternal(self, v, seen)
 			else
 				result[k] = v
 			end
@@ -94,6 +110,10 @@ return Utils:Assign("Sanitizer", function()
 		
 		return result
 	end
+	function sanitizerPrototype:Import(foreign)
+		return importInternal(self, foreign, {})
+	end
+	
 	sanitizerPrototype.AsHandler = sanitizerPrototype.Sanitize
 	function sanitizerPrototype:SanitizeWidget()
 		return Sanitizer.sanitizeWidget(self.widget)
@@ -130,9 +150,12 @@ return Utils:Assign("Sanitizer", function()
 		end
 		
 		-- check that the environemnt is truly a widget
-		if(not widget.widgetHandler)then
-			error("The environment of the function is not a widget and cannot be automatically sanitized.")
+		if(not widget.widget or not widget.widgetHandler)then
+			error("The environment of the function is not a widget and cannot be automatically sanitized. You can sanitize it yourself using sanitizer:Sanitize().")
 		end
+
+		-- acquire the true widget, as the environment may only be "inheriting" from it
+		widget = widget.widget
 		
 		return sanitize(widget, f);
 	end
