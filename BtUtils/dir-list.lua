@@ -7,13 +7,13 @@ local function normalizePath(path)
 	return path:gsub("\\", "/")
 end
 
-local function directoryListing(path, mask, listingFunction)
+local function directoryListing(path, mask, mode, listingFunction)
 	path = normalizePath(path)
 	local pathLen = path:len();
 	
 	local maskPattern = mask and "^" .. mask:gsub("([-+.])", "%%%1"):gsub("*", ".-"):gsub("?", ".") .. "$" or ".-"
 	
-	local result = listingFunction(path)
+	local result = listingFunction(path, nil, mode)
 	local count = #result;
 	local j = 1;
 	for i = 1, count do
@@ -47,8 +47,8 @@ local dirList
 -- @string path The directory to list.
 -- @string mask The mask of the files to be returned.
 -- @treturn [string] The names of the files within the directory
-function dirList(path, mask)
-	return directoryListing(path, mask, VFS.DirList)
+function dirList(path, mask, mode)
+	return directoryListing(path, mask, mode, VFS.DirList)
 end
 
 local subDirs
@@ -56,8 +56,8 @@ local subDirs
 -- @string path The directory to list.
 -- @string mask The mask of the subdirectories to be returned.
 -- @treturn [string] The names of the subdirectories within the directory
-function subDirs(path, mask)
-	return directoryListing(path, mask, VFS.SubDirs)
+function subDirs(path, mask, mode)
+	return directoryListing(path, mask, mode, VFS.SubDirs)
 
 end
 

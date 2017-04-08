@@ -50,6 +50,7 @@ return Utils:Assign("ProjectManager", function()
 					projects[projectName] = {
 						name = projectName,
 						path = path,
+						isArchive = not subDirs(projectsRoot, projectName, VFS.RAW)[1], -- check whether the subdirectory exists outside of an archive
 					}
 				end
 			end
@@ -130,7 +131,7 @@ return Utils:Assign("ProjectManager", function()
 		end
 		]]
 
-		return path
+		return path, { exists = VFS.FileExists(path), readonly = project.isArchive }
 	end
 	
 	local function listProjectInternal(result, i, project, contentType)
@@ -163,6 +164,15 @@ return Utils:Assign("ProjectManager", function()
 			result, i = listProjectInternal(result, i, project, contentType)
 		end
 		return result
+	end
+
+	function ProjectManager.makeRegularContentType(subdirectory, extension)
+		return {
+			directoryName = subdirectory,
+			fileMask = "*." .. extension,
+			nameToFile = function(name) return name .. "." .. extension end,
+			fileToName = Utils.removeExtension,
+		}
 	end
 	
 	ProjectManager.load()

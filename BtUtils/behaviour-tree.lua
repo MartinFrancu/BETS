@@ -19,15 +19,8 @@ return Utils:Assign("BehaviourTree", function()
 	local JSON = Utils.JSON
 	local ProjectManager = Utils.ProjectManager
 	
-	local behavioursContentType = {
-		directoryName = "Behaviours",
-		fileMask = "*.json",
-		nameToFile = function(name) return name .. ".json" end,
-		fileToName = Utils.removeExtension,
-	}
-	
-	BehaviourTree.ContentType = behavioursContentType
-	
+	local behavioursContentType = ProjectManager.makeRegularContentType("Behaviours", "json")
+	BehaviourTree.contentType = behavioursContentType
 	
 	local function removeItem(t, item)
 		for i, v in ipairs(t) do
@@ -146,17 +139,16 @@ return Utils:Assign("BehaviourTree", function()
 			name -- name under which to look for the tree
 		)
 		
-		local path, msg = ProjectManager.findFile(behavioursContentType, name)
+		local path, parameters = ProjectManager.findFile(behavioursContentType, name)
 		if(not path)then
-			return nil, msg
+			return nil, parameters
 		end
 		
-		local file = io.open(path, "r")
-		if(not file)then
-			return nil
+		local data = VFS.LoadFile(path)
+		if(not data)then
+			return nil, "File not found"
 		end
-		local bt = JSON:decode(file:read("*all"))
-		file:close()
+		local bt = JSON:decode(data)
 		
 		bt.additionalNodes = bt.additionalNodes or {}
 		bt.properties = bt.properties or {}
@@ -183,9 +175,13 @@ return Utils:Assign("BehaviourTree", function()
 		)
 		local text = JSON:encode(bt, nil, { pretty = true, indent = "\t" })
 		
-		local path, msg = ProjectManager.findFile(behavioursContentType, name)
+		local path, parameters = ProjectManager.findFile(behavioursContentType, name)
 		if(not path)then
-			return nil, msg
+			return nil, parameters
+		end
+		
+		if(parameters.readonly)then
+			return nil, "Behaviour " .. tostring(name) .. " is read-only."
 		end
 		
 		Spring.CreateDir(path:match("^(.+)/"))

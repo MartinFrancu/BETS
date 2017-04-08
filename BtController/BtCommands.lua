@@ -14,6 +14,7 @@ end
 
 local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
 
+local ProjectManager = Utils.ProjectManager
 local BehaviourTree = Utils.BehaviourTree
 local Debug = Utils.Debug;
 local Logger = Debug.Logger
@@ -167,31 +168,32 @@ end
 
 WG.BtCommandsTransformData = transformCommandData
 
+local BehaviourImageContentType = ProjectManager.makeRegularContentType(BehaviourTree.contentType.directoryName, "png")
 local function registerCommandForTree(treeName)
 	-- should I check if there is such file??
 	
 	-- is there icon:
-	local iconFileName = BehavioursDirectory .. "/" .. treeName .. ".png"
+	local iconFileName = ProjectManager.findFile(BehaviourImageContentType, treeName)
 	local gotIcon = VFS.FileExists(iconFileName)
 	
 	local UIover
 	if gotIcon then
 		UIover = {texture = iconFileName }
 	else
-		UIover = {caption = treeName, texture = 'LuaUI/Images/commands/bold/restore.png' }
+		UIover = {caption = treeName:gsub("%.", "\n"), texture = 'LuaUI/Images/commands/bold/restore.png' }
 	end
 	
 	local commandName =  "BT_" ..  treeName
-		local description = {
-			type = CMDTYPE.ICON,
-			name = commandName,
-			cursor = 'Attack',
-			action = 'Attack',
-			tooltip = "Behaviour " .. treeName,
-			hidden = false,
-			UIoverride = UIover
-		}
-		registerCommand(description) 
+	local description = {
+		type = CMDTYPE.ICON,
+		name = commandName,
+		cursor = 'Attack',
+		action = 'Attack',
+		tooltip = "Behaviour " .. treeName,
+		hidden = false,
+		UIoverride = UIover
+	}
+	registerCommand(description) 
 end
 
 WG.BtRegisterCommandForTree = registerCommandForTree

@@ -264,7 +264,7 @@ local function saveTree()
 			table.insert(protoTree.inputs, {["name"] = inputs[i][1].text, ["command"] = inputTypeMap[ inputs[i][2].items[ inputs[i][2].selected ] ],})
 		end
 	end
-	protoTree:Save(treeName)
+	Logger.assert("save-and-load", protoTree:Save(treeName))
 	WG.clearSelection()
 	
 	Logger.loggedCall("Errors", "BtCreator", 
