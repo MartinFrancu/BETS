@@ -1,10 +1,10 @@
 
 local roleManager = {}
 
-function roleManager.showCategoryDefinitionWindow(parent)
+function roleManager.showCategoryDefinitionWindow()
 	roleManager.rolesWindow:Hide()
 	roleManager.categoryDefinitionWindow = Chili.Window:New{
-		parent = parent,
+		parent = roleManager.rolesWindow.parent,
 		x = 150,
 		y = 300,
 		width = 1250,
@@ -12,29 +12,29 @@ function roleManager.showCategoryDefinitionWindow(parent)
 		skinName = 'DarkGlass'
 	}
 	local nameEditBox = Chili.EditBox:New{
-			parent = categoryDefinitionWindow,
+			parent = roleManager.categoryDefinitionWindow,
 			x = 0,
 			y = 0,
 			text = "New unit category",
 			width = 150
 	}
 	local categoryDoneButton = Chili.Button:New{
-		parent =  categoryDefinitionWindow,
+		parent =  roleManager.categoryDefinitionWindow,
 		x = nameEditBox.x + nameEditBox.width,
 		y = 0,
 		caption = "DONE",
-		OnClick = {sanitizer:AsHandler(doneCategoryDefinition)},
+		OnClick = {sanitizer:AsHandler(roleManager.doneCategoryDefinition)},
 	}
 
 	local categoryCancelButton = Chili.Button:New{
-		parent =  categoryDefinitionWindow,
+		parent =  roleManager.categoryDefinitionWindow,
 		x = categoryDoneButton.x + categoryDoneButton.width,
 		y = 0,
 		caption = "CANCEL",
-		OnClick = {sanitizer:AsHandler(cancelCategoryDefinition)},
+		OnClick = {sanitizer:AsHandler(roleManager.cancelCategoryDefinition)},
 	}
 	local categoryScrollPanel = Chili.ScrollPanel:New{
-		parent = categoryDefinitionWindow,
+		parent = roleManager.categoryDefinitionWindow,
 		x = 0,
 		y = 30,
 		width  = '100%',
@@ -108,7 +108,7 @@ function roleManager.doneCategoryDefinition(self)
 	}
 	Utils.UnitCategories.redefineCategories(newCategory)
 
-	categoryDefinitionWindow:Hide()
+	roleManager.categoryDefinitionWindow:Hide()
 	roleManager.showRoleManagementWindow()
 end
 function roleManager.cancelCategoryDefinition(self)
@@ -134,8 +134,9 @@ function doneRoleManagerWindow(self)
 	rolesOfCurrentTree = result
 	
 	-- call 
+	Utils.Debug.Logger.log("separation", "Calling callOnDone: ", self.callOnDone)
 	if( self.callOnDone ~= nil) then
-		sanitizer:AsHandler(callOnDone)
+		self.callOnDone()
 	end
 end
 
@@ -156,10 +157,19 @@ local function maxRoleSplit(tree)
 	return roleCount
 end
 
+local parent, tree, rolesOfCurrentTree, callOnDone
 
 -- This shows the role manager window, callOnDone is used to determine a method which shloud be called after clicking "done"
-function roleManager.showRoleManagementWindow(parent, tree, rolesOfCurrentTree, callOnDone)	
-	roleManger.rolesWindow = Chili.Window:New{
+function roleManager.showRoleManagementWindow(parentIn, treeIn, rolesOfCurrentTreeIn, callOnDoneIn)	
+	if(parentIn and parentIn and treeIn and rolesOfCurrentTreeIn) then
+		parent, tree, rolesOfCurrentTree  = parentIn, treeIn, rolesOfCurrentTreeIn
+	end
+	if(callOnDoneIn) then
+		callOnDone = callOnDoneIn
+	end
+	
+	
+	roleManager.rolesWindow = Chili.Window:New{
 		parent = parent,
 		x = 150,
 		y = 300,
@@ -169,7 +179,7 @@ function roleManager.showRoleManagementWindow(parent, tree, rolesOfCurrentTree, 
 	}
 	-- now I just need to save it
 	roleManagementDoneButton = Chili.Button:New{
-		parent =  rolesWindow,
+		parent =  roleManager.rolesWindow,
 		x = 0,
 		y = 0,
 		caption = "DONE",
@@ -178,17 +188,17 @@ function roleManager.showRoleManagementWindow(parent, tree, rolesOfCurrentTree, 
 	}
 
 	newCategoryButton = Chili.Button:New{
-		parent = rolesWindow,
+		parent = roleManager.rolesWindow,
 		x = 150,
 		y = 0,
 		width = 150,
 		caption = "Define new Category",
-		OnClick = {sanitizer:AsHandler(showCategoryDefinitionWindow)},
+		OnClick = {sanitizer:AsHandler(roleManager.showCategoryDefinitionWindow)},
 	}
 
 
 	local rolesScrollPanel = Chili.ScrollPanel:New{
-		parent = rolesWindow,
+		parent = roleManager.rolesWindow,
 		x = 0,
 		y = 30,
 		width  = '100%',
@@ -208,7 +218,7 @@ function roleManager.showRoleManagementWindow(parent, tree, rolesOfCurrentTree, 
 			parent = rolesScrollPanel,
 			x = xOffSet,
 			y = yOffSet,
-			text = "Role ".. tostring(roleIndex),
+			text = "Role ".. roleIndex,
 			width = 150
 		}
 		local checkedCategories = {}
@@ -251,7 +261,7 @@ function roleManager.showRoleManagementWindow(parent, tree, rolesOfCurrentTree, 
 		table.insert(rolesCategoriesCB,roleCategories)
 	end
 	roleManagementDoneButton.RolesData = rolesCategoriesCB
-	roleManagementDoneButton.Window = roleManger.rolesWindow
+	roleManagementDoneButton.Window = roleManager.rolesWindow
 end
 
 return roleManager

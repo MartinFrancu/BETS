@@ -662,12 +662,6 @@ function widget:Initialize()
 	
 	Logger.log("separation", "before environment")
 	
-	local environment = BtCreator
-	environment["Chili"] = Chili
-	environment["sanitizer"] = sanitizer
-	Logger.log("separation", "before roleManager import")
-	
-	roleManager = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/role_manager.lua", environment , VFS.RAW_FIRST)
 
 	Logger.log("separation", "after roleManager import")
 	BtEvaluator = sanitizer:Import(WG.BtEvaluator)
@@ -918,8 +912,18 @@ function widget:Initialize()
 	
 	-- treeNameEditbox.font.size = 16
 	listenerClickOnMinimize()
-	Logger.log("separation", "1")
+	Logger.log("separation", "1", dump(BtCreator,4))
 	WG.BtCreator = sanitizer:Export(BtCreator)
+	
+	local newEntries = {}
+	newEntries["Chili"] = Chili
+	newEntries["sanitizer"] = sanitizer
+	newEntries["Utils"] = Utils
+	local environment = setmetatable(newEntries ,{__index = widget})
+	Logger.log("separation", "before roleManager import",dump( widget.Chili,2))
+	
+	roleManager = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/role_manager.lua", environment , VFS.RAW_FIRST)
+	
 	Logger.log("separation", "2")
 	Dependency.fill(Dependency.BtCreator)
 	Logger.log("reloading", "BtCreator widget:Initialize end. ")
