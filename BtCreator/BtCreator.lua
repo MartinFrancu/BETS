@@ -1107,6 +1107,45 @@ function clearCanvas(omitRoot)
 	end
 end
 
+local sensorAutocompleteTable = nil
+
+local function loadSensorAutocompleteTable()
+	sensorAutocompleteTable = {}
+	local sensors = WG.SensorManager.getAvailableSensors()
+	
+	-- Logger.log("save-and-load", "Sensor info - ", info)
+	for _, name in ipairs(sensors) do
+		local file = SENSOR_DIRNAME .. name .. ".lua"
+		if(not VFS.FileExists(file))then
+			return nil
+		end
+		
+		local key = name .. "()"
+		local fieldTable = {}
+		
+		local sensorCode = VFS.LoadFile(file)
+		sensorCode = sensorCode:match("function +getInfo.-end") 
+		--Logger.log("save-and-load", "Sensor - ", name,"; getInfo code - ", sensorCode)
+		
+		if sensorCode ~= nil then
+			local getInfo = loadstring("--[[" .. name .. "]] " .. sensorCode .. "; return getInfo")()
+			local info = getInfo()
+			Logger.log("save-and-load", "Sensor getInfo - ", info)
+			
+			if info.fields then
+				for _,v in ipairs(info.fields) do
+					fieldTable[v] = {}
+				end
+			end
+		end
+		
+		
+		sensorAutocompleteTable[key] = fieldTable
+	end
+	
+	-- Logger.log("save-and-load", "Sensor autocompleteTable - ", dump(sensorAutocompleteTable, 3))
+end
+
 local function loadBehaviourNode(bt, btNode)
 	if(not btNode or btNode.nodeType == "empty_tree")then return nil end
 	local params = {}
@@ -1152,6 +1191,12 @@ local function loadBehaviourNode(bt, btNode)
 	params.parent = btCreatorWindow
 	params.connectable = true
 	params.draggable = true
+	
+	if not sensorAutocompleteTable then
+		loadSensorAutocompleteTable()
+	end
+
+	params.autocompleteTable = sensorAutocompleteTable
 
 	if (btNode.scriptName ~= nil) then
 		params.nodeType = btNode.scriptName

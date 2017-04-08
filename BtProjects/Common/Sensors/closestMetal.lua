@@ -1,3 +1,9 @@
+function getInfo()
+	return {
+		fields = { "pos" }
+	}
+end
+
 local function distanceSquare(p1, p2)
 	return (p1.x - p2.x)*(p1.x - p2.x) + (p1.z - p2.z)*(p1.z - p2.z)
 end

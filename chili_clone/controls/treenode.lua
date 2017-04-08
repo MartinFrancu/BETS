@@ -37,6 +37,9 @@ TreeNode = Control:Inherit{
 	attachedLines = {}
 }
 
+local _G = loadstring("return _G")()
+local KEYSYMS = _G.KEYSYMS
+
 local this = TreeNode
 local inherited = this.inherited
 
@@ -55,7 +58,7 @@ local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyT
 
 local generateID
 local usedIDs = {}
-
+local autocompleteTable
 local createNextParameterObject
 
 -- ////////////////////////////////////////////////////////////////////////////
@@ -63,7 +66,9 @@ local createNextParameterObject
 -- ////////////////////////////////////////////////////////////////////////////
 
 function TreeNode:New(obj)
-  obj = inherited.New(self,obj)
+	autocompleteTable = obj.autocompleteTable or {}
+	obj = inherited.New(self,obj)
+	
 	if(not obj.id) then
 		obj.id = generateID()
 	else
@@ -215,6 +220,70 @@ function TreeNode:UpdateDimensions()
 	self.nodeWindow:CallListeners( self.nodeWindow.OnResize )
 end
 
+-- === Textbox autocomplete ===
+local function resolveAutocompleteCandidates(textBox)
+	local cursor = textBox.cursor
+	local beforeCursor = textBox.text:sub(1, cursor - 1)
+	local partialProperty = beforeCursor:match("[_%w%.%(%)]+$") or ""
+	
+	local container = autocompleteTable
+	local get = function(t, key) return t[key] end
+	for key, separator in partialProperty:gmatch("([_%w%(%)]+)([%.])") do
+		container = get(container, key) --:sub(1, key:len() - 1)
+		if not container then
+			return false
+		end
+	end
+	
+	local partialKey = string.lower(partialProperty:match("[_%w%(%)]*$") or "")
+	local partialLength = partialKey:len()
+	textBox.autocompleteCandidates = {}
+	local candidateSet, candidateCount = {}, 0
+	for k, v in pairs(container) do
+		if (type(k) == "string" and string.lower(k:sub(1, partialLength)) == partialKey and not candidateSet[k]) then
+			table.insert(textBox.autocompleteCandidates, k)
+			candidateSet[k] = true
+			candidateCount = candidateCount + 1
+		end
+	end
+end
+
+local function fillInSensor(textBox)
+	if not textBox.autocompleteCandidates then
+		resolveAutocompleteCandidates(textBox)
+		textBox.nextAutocompleteIndex = 1
+	end
+	
+	local cursor = textBox.cursor
+	local beforeCursor = textBox.text:sub(1, cursor - 1)
+	local partialProperty = beforeCursor:match("[_%w%.%(%)]+$") or ""
+	local partialKey = string.lower(partialProperty:match("[_%w%(%)]*$") or "")
+	local partialLength = partialKey:len()
+	
+	local candidates = textBox.autocompleteCandidates
+	local index = textBox.nextAutocompleteIndex
+	
+	--Logger.log("treeNode", "beforeCursor - ", beforeCursor, "; candidates - ", candidates)
+	if(#candidates == 0)then
+		return false
+	else
+		local afterCursor = textBox.text:sub(cursor)
+		textBox:SetText(beforeCursor:sub(1, -partialLength - 1) .. candidates[index] .. afterCursor)
+		textBox.cursor = cursor + candidates[index]:len() - partialLength
+		textBox.nextAutocompleteIndex = index + 1
+		if textBox.nextAutocompleteIndex > #textBox.autocompleteCandidates then
+			textBox.nextAutocompleteIndex = 1
+		end
+	end
+end
+
+local function resetAutocomplete(textBox)
+	textBox.autocompleteCandidates = nil
+	textBox.nextAutocompleteIndex = nil
+end
+
+-- =======
+
 --- Transforms obj.parameters[i] into obj.parametersObjects[i]
 -- Expects param to be a table with four values: name, value, variableType, componentType.
 function createNextParameterObject(obj)
@@ -253,6 +322,17 @@ function createNextParameterObject(obj)
 			variableType = param["variableType"],
 			index = i, -- to be able to index editbox from treenode, to update treenode.parameters[i].value
 			autosize = true,
+			OnKeyPress = {
+				function(element, key)
+					if(key == KEYSYMS.TAB)then
+						Logger.log("treeNode", dump(autocompleteTable, 3))
+						fillInSensor(element)
+					else
+						resetAutocomplete(element)
+					end
+					return true
+				end
+			},
 		}
 	--- CheckBox componentType
 	elseif(param["componentType"] and param["componentType"]:lower() == "checkbox") then

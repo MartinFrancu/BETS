@@ -1,6 +1,7 @@
 function getInfo()
 	return {
-		period = 60
+		period = 60,
+		fields = { "any", "north", "west", "south", "east"}
 	}
 end
 
