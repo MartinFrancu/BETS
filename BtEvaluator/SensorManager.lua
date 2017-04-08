@@ -90,7 +90,7 @@ function SensorManager.loadSensor(...)
 	return sensorConstructor
 end
 
-function SensorManager.forGroup(group, project)
+function SensorManager.forGroup(group, localProject)
 	local manager = group[smInstance];
 	if(not manager)then
 		manager = setmetatable({
@@ -110,7 +110,7 @@ function SensorManager.forGroup(group, project)
 			__index = function(self, key)
 				local sensorConstructor = sensors[key]
 				if(not sensorConstructor)then
-					sensorConstructor = SensorManager.loadSensor(project, key)
+					sensorConstructor = SensorManager.loadSensor(localProject, key)
 					if(not sensorConstructor)then
 						return nil
 					end

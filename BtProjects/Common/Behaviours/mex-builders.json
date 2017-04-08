@@ -23,7 +23,7 @@
 		},
 		"BzjDnJgka35oqHOZuvkhEY2pg5XofMXt": {
 			"height": 90,
-			"width": 113,
+			"width": 125.000008,
 			"x": 699,
 			"y": 46
 		},
@@ -131,9 +131,9 @@
 		},
 		"uClz1vl9p6zlLSXAkRnOfe5yrfQlu5FV": {
 			"height": 90,
-			"width": 115,
-			"x": 661,
-			"y": 312
+			"width": 125.000008,
+			"x": 663,
+			"y": 309
 		},
 		"xGxKkEQjEfMuUKa6jk4Ud6xUBWttESpC": {
 			"height": 60,
@@ -162,9 +162,9 @@
 				"value": "groupExtents().center"
 			}, {
 				"name": "scriptName",
-				"value": "store.lua"
+				"value": "Common.store"
 			} ],
-			"scriptName": "store.lua"
+			"scriptName": "Common.store"
 		}, {
 			"children": [ {
 				"children": [ {
@@ -179,9 +179,9 @@
 						"value": "closestMetal(center).pos"
 					}, {
 						"name": "scriptName",
-						"value": "store.lua"
+						"value": "Common.store"
 					} ],
-					"scriptName": "store.lua"
+					"scriptName": "Common.store"
 				}, {
 					"children": [ {
 						"children": [],
@@ -195,9 +195,9 @@
 							"value": "false"
 						}, {
 							"name": "scriptName",
-							"value": "move.lua"
+							"value": "Common.move"
 						} ],
-						"scriptName": "move.lua"
+						"scriptName": "Common.move"
 					}, {
 						"children": [],
 						"id": "Tk40jHYcTFxytQOJXcmQ1rvwMCfrsOIT",
@@ -226,9 +226,9 @@
 							"value": "(groupExtents() or { center = target}).center"
 						}, {
 							"name": "scriptName",
-							"value": "store.lua"
+							"value": "Common.store"
 						} ],
-						"scriptName": "store.lua"
+						"scriptName": "Common.store"
 					}, {
 						"children": [],
 						"id": "uClz1vl9p6zlLSXAkRnOfe5yrfQlu5FV",
@@ -241,9 +241,9 @@
 							"value": "false"
 						}, {
 							"name": "scriptName",
-							"value": "move.lua"
+							"value": "Common.move"
 						} ],
-						"scriptName": "move.lua"
+						"scriptName": "Common.move"
 					} ],
 					"id": "FH1lxDcV6Qgsf6cr9XmhYwmXM72OgR4x",
 					"nodeType": "roleSplit",
@@ -274,9 +274,9 @@
 									"value": "false"
 								}, {
 									"name": "scriptName",
-									"value": "relativeMove.lua"
+									"value": "Common.relativeMove"
 								} ],
-								"scriptName": "relativeMove.lua"
+								"scriptName": "Common.relativeMove"
 							}, {
 								"children": [ {
 									"children": [ {
@@ -291,9 +291,9 @@
 											"value": "false"
 										}, {
 											"name": "scriptName",
-											"value": "relativeMove.lua"
+											"value": "Common.relativeMove"
 										} ],
-										"scriptName": "relativeMove.lua"
+										"scriptName": "Common.relativeMove"
 									}, {
 										"children": [],
 										"id": "WKUnB5ApLk9bD5Fvrq97UETVuyonA4Zx",
@@ -306,9 +306,9 @@
 											"value": "false"
 										}, {
 											"name": "scriptName",
-											"value": "relativeMove.lua"
+											"value": "Common.relativeMove"
 										} ],
-										"scriptName": "relativeMove.lua"
+										"scriptName": "Common.relativeMove"
 									}, {
 										"children": [],
 										"id": "OCZ2lFSv0iB2lUiVfcxIwI09iD2RWtQF",
@@ -321,9 +321,9 @@
 											"value": "false"
 										}, {
 											"name": "scriptName",
-											"value": "relativeMove.lua"
+											"value": "Common.relativeMove"
 										} ],
-										"scriptName": "relativeMove.lua"
+										"scriptName": "Common.relativeMove"
 									}, {
 										"children": [],
 										"id": "eE1Fh0Li6FMWGooEx2T4sSCFhPq7ycvg",
@@ -336,9 +336,9 @@
 											"value": "false"
 										}, {
 											"name": "scriptName",
-											"value": "relativeMove.lua"
+											"value": "Common.relativeMove"
 										} ],
-										"scriptName": "relativeMove.lua"
+										"scriptName": "Common.relativeMove"
 									} ],
 									"id": "SL02Mj1PxVVCw8LPmhqwccMxzCwG3pz1",
 									"nodeType": "sequence",
@@ -363,9 +363,9 @@
 								"value": "\"mex\""
 							}, {
 								"name": "scriptName",
-								"value": "build.lua"
+								"value": "Common.build"
 							} ],
-							"scriptName": "build.lua"
+							"scriptName": "Common.build"
 						} ],
 						"id": "Z4prghjNNr8JF8TwvKlxI6g9MiaVWkt1",
 						"nodeType": "roleSplit",

@@ -2,18 +2,15 @@ local Logger = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/debug_utils/logger.
 
 local dump = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST).Debug.dump
 
-local COMMAND_DIRNAME = LUAUI_DIRNAME .. "Widgets/BtCommandScripts/"
-
 local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
+local ProjectManager = Utils.ProjectManager
 
 local System = Utils.Debug.clone(loadstring("return _G")().System)
 
 setmetatable(System, { 
 	__index = {
 		Logger = Logger,
-		COMMAND_DIRNAME = COMMAND_DIRNAME,
 		System = System,
-		Command = Command,
 		Vec3 = Utils.Vec3,
 		
 		SUCCESS = "S",
@@ -22,7 +19,11 @@ setmetatable(System, {
 	}
 })
 
-Command = {}
+local CommandManager = {}
+CommandManager.contentType = ProjectManager.makeRegularContentType("Commands", "lua")
+
+local Command = {}
+CommandManager.baseClass = Command
 
 local methodSignatures = {
 	New = "New(self)",
@@ -79,7 +80,7 @@ function Command:Extend(scriptName)
 		--Logger.log("script-load", "Loading method ", methodName, " into ", scriptName)
 		
 		local nameComment = "--[[" .. scriptName .. "]] "
-		local scriptStr = nameComment .. VFS.LoadFile(COMMAND_DIRNAME .. scriptName)
+		local scriptStr = nameComment .. VFS.LoadFile((ProjectManager.findFile(CommandManager.contentType, scriptName)))
 		local scriptChunk = assert(loadstring(scriptStr))
 		setfenv(scriptChunk, self)
 		scriptChunk()
@@ -221,4 +222,34 @@ function Command:UnitIdle(unitID)
 	return self.idleUnits[unitID]
 end
 
-return Command
+
+function CommandManager.getAvailableCommandScripts()
+	local commandList = ProjectManager.listAll(CommandManager.contentType)
+	local paramsDefs = {}
+	
+	local nameList = {}
+	
+	for _,data in ipairs(commandList)do
+		nameList[#nameList] = data.qualifiedName
+	end
+
+	for _,data in ipairs(commandList)do
+		Logger.log("script-load", "Loading definition from file: ", data.path)
+
+		local nameComment = "--[[" .. data.qualifiedName .. "]] "
+		local code = nameComment .. VFS.LoadFile(data.path) .. "; return getInfo()"
+		local script = assert(loadstring(code))
+
+		local success, info = pcall(script)
+
+		if success then
+			Logger.log("script-load", "Script: ", data.qualifiedName, ", Definitions loaded: ", info.parameterDefs)
+			paramsDefs[data.qualifiedName] = info.parameterDefs or {}
+		else
+			error("script-load".. "Script ".. data.qualifiedName .. " is missing the getInfo() function or it contains an error: ".. info)
+		end
+	end
+	return paramsDefs
+end
+
+return CommandManager

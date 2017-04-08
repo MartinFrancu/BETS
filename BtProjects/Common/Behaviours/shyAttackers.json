@@ -51,9 +51,9 @@
 				"value": "privateThreatAreasByHP(threatMap, 6)"
 			}, {
 				"name": "scriptName",
-				"value": "store.lua"
+				"value": "Common.store"
 			} ],
-			"scriptName": "store.lua"
+			"scriptName": "Common.store"
 		}, {
 			"children": [ {
 				"children": [],

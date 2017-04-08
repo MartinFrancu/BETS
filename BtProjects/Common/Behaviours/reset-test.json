@@ -112,9 +112,9 @@
 					"value": "{ x = 500, z = 0}"
 				}, {
 					"name": "scriptName",
-					"value": "relativeMove.lua"
+					"value": "Common.relativeMove"
 				} ],
-				"scriptName": "relativeMove.lua"
+				"scriptName": "Common.relativeMove"
 			}, {
 				"children": [],
 				"id": "c6xyIoabr5jFmV2uq4nAsZLBcLhH8wwT",
@@ -148,9 +148,9 @@
 					"value": "{ x = 0, z = 500}"
 				}, {
 					"name": "scriptName",
-					"value": "relativeMove.lua"
+					"value": "Common.relativeMove"
 				} ],
-				"scriptName": "relativeMove.lua"
+				"scriptName": "Common.relativeMove"
 			} ],
 			"id": "mAagdLhKdOrHZ8rlqriACJzFKnbae5Ee",
 			"nodeType": "roleSplit",
@@ -167,9 +167,9 @@
 					"value": "{ x = -250, z = -250}"
 				}, {
 					"name": "scriptName",
-					"value": "relativeMove.lua"
+					"value": "Common.relativeMove"
 				} ],
-			"scriptName": "relativeMove.lua"
+			"scriptName": "Common.relativeMove"
 		}, {
 			"children": [],
 			"id": "XXYR0P7NdG7SqOmFc7L5aOKcXmDnzJTB",
@@ -182,9 +182,9 @@
 				"value": "groupExtents().center"
 			}, {
 				"name": "scriptName",
-				"value": "store.lua"
+				"value": "Common.store"
 			} ],
-			"scriptName": "store.lua"
+			"scriptName": "Common.store"
 		}, {
 			"children": [ {
 				"children": [],
@@ -195,9 +195,9 @@
 					"value": "{ x = 500, z = 500}"
 				}, {
 					"name": "scriptName",
-					"value": "relativeMove.lua"
+					"value": "Common.relativeMove"
 				} ],
-				"scriptName": "relativeMove.lua"
+				"scriptName": "Common.relativeMove"
 			}, {
 				"children": [],
 				"id": "lIzU9cKCTvFAXYIZe6anFMsbQgIgtZ6T",
@@ -223,9 +223,9 @@
 					"value": "{ x = -500, z = -500}"
 				}, {
 					"name": "scriptName",
-					"value": "relativeMove.lua"
+					"value": "Common.relativeMove"
 				} ],
-				"scriptName": "relativeMove.lua"
+				"scriptName": "Common.relativeMove"
 			}, {
 				"children": [],
 				"id": "NpTMOTRztBqprQrWSy8TzLI88AH5OeRB",
