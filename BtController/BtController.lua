@@ -219,7 +219,7 @@ end
 
 
 local instantiateTree
-
+-- reloads given treehandle from given tabs
 function reloadTree(tabs, treeHandle)
 	-- remove tree instance in BtEvaluator if it is created:
 	if(treeHandle.Created) then
@@ -257,8 +257,11 @@ function reloadTree(tabs, treeHandle)
 	treeHandle:UpdateTreeStatus()
 end
 
-function BtController.reloadTreeType(treeTypeName)
 
+-- reloads all instances of give tree type in given tabs
+function BtController.reloadTreeType(treeTypeName)
+	-- refresh tree selection:
+	refreshTreeSelectionPanel()
 	-- I should iterate over all tab bar items:
 	local tabBarChildIndex = 1
 	-- get tabBar
@@ -437,7 +440,7 @@ end
 ---------------------------------------LISTENERS
 -- This listener is called when AddTreeTab becomes active to update directory 
 -- content and default instance name.
-function refreshTreeSelectionPanel(self)
+function refreshTreeSelectionPanel()
 	names = getTreeNamesInDirectory(BehavioursDirectory) --Utils.dirList(BehavioursDirectory, "*.json") --getNamesInDirectory(BehavioursDirectory, ".json")
 	treeSelectionComboBox.items = names 
 	treeSelectionComboBox:RequestUpdate()
@@ -673,7 +676,6 @@ function finalizeAddTreeBarItem(tabs)
 end
 
 function setUpTreeSelectionTab()
- 
 	treeSelectionLabel = Chili.Label:New{
 		x = 5,
 		y = 5,
@@ -861,11 +863,11 @@ function widget:Initialize()
 	Chili = WG.ChiliClone
 	Screen0 = Chili.Screen0	
 	
+	-- create environment for TreeHandle to be loaded in
 	local newEntries = {}
 	newEntries["Chili"] = Chili
 	newEntries["Utils"] = Utils
 	local environment = setmetatable(newEntries ,{__index = widget})
-	
 	TreeHandle = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtController/BtTreeHandle.lua", environment , VFS.RAW_FIRST)
   
 	BtEvaluator = sanitizer:Import(WG.BtEvaluator)
