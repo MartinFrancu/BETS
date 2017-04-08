@@ -1,0 +1,108 @@
+{
+	"name": "mobileBuilders",
+	"types": [ {
+		"humanName": "Longreach",
+		"id": 9,
+		"name": "armacar"
+	}, {
+		"humanName": "Adv. Construction Kbot",
+		"id": 10,
+		"name": "armack"
+	}, {
+		"humanName": "Construction Sub",
+		"id": 11,
+		"name": "armacsub"
+	}, {
+		"humanName": "MARS",
+		"id": 22,
+		"name": "armarspd"
+	}, {
+		"humanName": "Construction Aircraft",
+		"id": 39,
+		"name": "armca"
+	}, {
+		"humanName": "Wasp",
+		"id": 40,
+		"name": "armcarry"
+	}, {
+		"humanName": "Construction Hovercraft",
+		"id": 41,
+		"name": "armch"
+	}, {
+		"humanName": "Moho Engineer",
+		"id": 42,
+		"name": "armck"
+	}, {
+		"humanName": "Commander",
+		"id": 43,
+		"name": "armcom"
+	}, {
+		"humanName": "Commander",
+		"id": 44,
+		"name": "armcom2"
+	}, {
+		"humanName": "Construction Seaplane",
+		"id": 48,
+		"name": "armcsa"
+	}, {
+		"humanName": "Construction Vehicle",
+		"id": 50,
+		"name": "armcv"
+	}, {
+		"humanName": "FARCK",
+		"id": 61,
+		"name": "armfark"
+	}, {
+		"humanName": "Alpha Montro",
+		"id": 171,
+		"name": "bug1"
+	}, {
+		"humanName": "Moho Engineer",
+		"id": 212,
+		"name": "corack"
+	}, {
+		"humanName": "Construction Sub",
+		"id": 213,
+		"name": "coracsub"
+	}, {
+		"humanName": "Construction Aircraft",
+		"id": 232,
+		"name": "corca"
+	}, {
+		"humanName": "Shamshir",
+		"id": 234,
+		"name": "corcarry"
+	}, {
+		"humanName": "Construction Hovercraft",
+		"id": 235,
+		"name": "corch"
+	}, {
+		"humanName": "Construction Kbot",
+		"id": 236,
+		"name": "corck"
+	}, {
+		"humanName": "Commander",
+		"id": 237,
+		"name": "corcom"
+	}, {
+		"humanName": "Commander",
+		"id": 238,
+		"name": "corcom2"
+	}, {
+		"humanName": "Construction Seaplane",
+		"id": 242,
+		"name": "corcsa"
+	}, {
+		"humanName": "Construction Vehicle",
+		"id": 244,
+		"name": "corcv"
+	}, {
+		"humanName": "Necro",
+		"id": 315,
+		"name": "cornecro"
+	}, {
+		"humanName": "Truck",
+		"id": 357,
+		"name": "cortruck"
+	} ]
+}

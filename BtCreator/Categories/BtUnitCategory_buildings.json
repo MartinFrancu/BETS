@@ -1,0 +1,708 @@
+{
+	"name": "buildings",
+	"types": [ {
+		"humanName": "Adv Kbot Center",
+		"id": 2,
+		"name": "ahkbc"
+	}, {
+		"humanName": "Adv. Aircraft Plant",
+		"id": 8,
+		"name": "armaap"
+	}, {
+		"humanName": "Adv. Kbot Lab",
+		"id": 14,
+		"name": "armalab"
+	}, {
+		"humanName": "Ambusher",
+		"id": 15,
+		"name": "armamb"
+	}, {
+		"humanName": "Protector",
+		"id": 16,
+		"name": "armamd"
+	}, {
+		"humanName": "Annihilator",
+		"id": 20,
+		"name": "armanni"
+	}, {
+		"humanName": "Aircraft Plant",
+		"id": 21,
+		"name": "armap"
+	}, {
+		"humanName": "Air Support Pad",
+		"id": 25,
+		"name": "armasp"
+	}, {
+		"humanName": "Adv. Vehicle Plant",
+		"id": 28,
+		"name": "armavp"
+	}, {
+		"humanName": "Alien Beacon",
+		"id": 33,
+		"name": "armbeac"
+	}, {
+		"humanName": "Big Bertha",
+		"id": 36,
+		"name": "armbrtha"
+	}, {
+		"humanName": "Big Bertha",
+		"id": 37,
+		"name": "armbrtha_dgun"
+	}, {
+		"humanName": "Spitter",
+		"id": 45,
+		"name": "armcrach"
+	}, {
+		"humanName": "Shipyard",
+		"id": 49,
+		"name": "armcsy"
+	}, {
+		"humanName": "Implosion Device",
+		"id": 51,
+		"name": "armdev1"
+	}, {
+		"humanName": "Dragon's Teeth",
+		"id": 52,
+		"name": "armdrag"
+	}, {
+		"humanName": "Stunner",
+		"id": 56,
+		"name": "armemp"
+	}, {
+		"humanName": "Energy Storage",
+		"id": 57,
+		"name": "armestor"
+	}, {
+		"humanName": "Floating Dragon's Teeth",
+		"id": 64,
+		"name": "armfdrag"
+	}, {
+		"humanName": "Anti-gravity hangar",
+		"id": 65,
+		"name": "armfff"
+	}, {
+		"humanName": "Stingray",
+		"id": 66,
+		"name": "armfhlt"
+	}, {
+		"humanName": "Flakker",
+		"id": 69,
+		"name": "armflak"
+	}, {
+		"humanName": "Metal Extractor Platform",
+		"id": 72,
+		"name": "armfmex"
+	}, {
+		"humanName": "Floating Metal Maker",
+		"id": 73,
+		"name": "armfmkr"
+	}, {
+		"humanName": "Fortification Wall",
+		"id": 74,
+		"name": "armfort"
+	}, {
+		"humanName": "Fusion Reactor",
+		"id": 75,
+		"name": "armfus"
+	}, {
+		"humanName": "Geothermal Powerplant",
+		"id": 76,
+		"name": "armgeo"
+	}, {
+		"humanName": "Guardian",
+		"id": 77,
+		"name": "armguard"
+	}, {
+		"humanName": "Pod Factory",
+		"id": 81,
+		"name": "armhklab"
+	}, {
+		"humanName": "Sentinel",
+		"id": 82,
+		"name": "armhlt"
+	}, {
+		"humanName": "Hovercraft Platform",
+		"id": 85,
+		"name": "armhp"
+	}, {
+		"humanName": "Kbot Lab",
+		"id": 89,
+		"name": "armlab"
+	}, {
+		"humanName": "Orbital Laser",
+		"id": 92,
+		"name": "armlaunch"
+	}, {
+		"humanName": "Laser Tower",
+		"id": 93,
+		"name": "armllt"
+	}, {
+		"humanName": "Metal Maker",
+		"id": 95,
+		"name": "armmakr"
+	}, {
+		"humanName": "Metal Extractor",
+		"id": 102,
+		"name": "armmex"
+	}, {
+		"humanName": "Heavy Fusion Reactor",
+		"id": 103,
+		"name": "armmfus"
+	}, {
+		"humanName": "EG-3",
+		"id": 104,
+		"name": "armmine3"
+	}, {
+		"humanName": "EG-4",
+		"id": 105,
+		"name": "armmine4"
+	}, {
+		"humanName": "EG-5",
+		"id": 106,
+		"name": "armmine5"
+	}, {
+		"humanName": "EG-6",
+		"id": 107,
+		"name": "armmine6"
+	}, {
+		"humanName": "Moho Metal Maker",
+		"id": 110,
+		"name": "armmmkr"
+	}, {
+		"humanName": "Moho Mine",
+		"id": 111,
+		"name": "armmoho"
+	}, {
+		"humanName": "Metal Storage",
+		"id": 112,
+		"name": "armmstor"
+	}, {
+		"humanName": "Warp Gate",
+		"id": 116,
+		"name": "armplab"
+	}, {
+		"humanName": "Seaplane Platform",
+		"id": 117,
+		"name": "armplat"
+	}, {
+		"humanName": "Radar Tower",
+		"id": 123,
+		"name": "armrad"
+	}, {
+		"humanName": "Defender",
+		"id": 126,
+		"name": "armrl"
+	}, {
+		"humanName": "Salvo",
+		"id": 128,
+		"name": "armsalvo"
+	}, {
+		"humanName": "Skybus Factory",
+		"id": 137,
+		"name": "armshltx"
+	}, {
+		"humanName": "Retaliator",
+		"id": 138,
+		"name": "armsilo"
+	}, {
+		"humanName": "Solar Collector",
+		"id": 141,
+		"name": "armsolar"
+	}, {
+		"humanName": "Sonar Station",
+		"id": 142,
+		"name": "armsonar"
+	}, {
+		"humanName": "Tabitha",
+		"id": 146,
+		"name": "armtabi"
+	}, {
+		"humanName": "ARM Research Facility",
+		"id": 147,
+		"name": "armtarg"
+	}, {
+		"humanName": "Tidal Generator",
+		"id": 152,
+		"name": "armtide"
+	}, {
+		"humanName": "Torpedo Launcher",
+		"id": 153,
+		"name": "armtl"
+	}, {
+		"humanName": "Underwater Seaplane Support Station",
+		"id": 156,
+		"name": "armuwasp"
+	}, {
+		"humanName": "Underwater Metal Extractor",
+		"id": 157,
+		"name": "armuwmex"
+	}, {
+		"humanName": "Vehicle Plant",
+		"id": 159,
+		"name": "armvp"
+	}, {
+		"humanName": "Vulcan",
+		"id": 160,
+		"name": "armvulc"
+	}, {
+		"humanName": "Peewee Vulcan",
+		"id": 161,
+		"name": "armvulc_pw"
+	}, {
+		"humanName": "Wind Generator",
+		"id": 163,
+		"name": "armwin"
+	}, {
+		"humanName": "Building",
+		"id": 177,
+		"name": "build1"
+	}, {
+		"humanName": "Building",
+		"id": 178,
+		"name": "build10"
+	}, {
+		"humanName": "Building",
+		"id": 179,
+		"name": "build11"
+	}, {
+		"humanName": "Building",
+		"id": 180,
+		"name": "build12"
+	}, {
+		"humanName": "Building",
+		"id": 187,
+		"name": "build19"
+	}, {
+		"humanName": "Building",
+		"id": 188,
+		"name": "build2"
+	}, {
+		"humanName": "Building",
+		"id": 191,
+		"name": "build3"
+	}, {
+		"humanName": "Building",
+		"id": 192,
+		"name": "build4"
+	}, {
+		"humanName": "Building",
+		"id": 193,
+		"name": "build5"
+	}, {
+		"humanName": "Building",
+		"id": 194,
+		"name": "build6"
+	}, {
+		"humanName": "Building",
+		"id": 195,
+		"name": "build7"
+	}, {
+		"humanName": "Building",
+		"id": 196,
+		"name": "build8"
+	}, {
+		"humanName": "Building",
+		"id": 197,
+		"name": "build9"
+	}, {
+		"humanName": "Perforator",
+		"id": 198,
+		"name": "canon3g"
+	}, {
+		"humanName": "Spore Tower",
+		"id": 199,
+		"name": "chickend"
+	}, {
+		"humanName": "Concrete 6x6",
+		"id": 201,
+		"name": "concrete"
+	}, {
+		"humanName": "Concrete 1x1",
+		"id": 202,
+		"name": "concrete1x1"
+	}, {
+		"humanName": "Concrete 2x2",
+		"id": 203,
+		"name": "concrete2x2"
+	}, {
+		"humanName": "Concrete 3x3",
+		"id": 204,
+		"name": "concrete3x3"
+	}, {
+		"humanName": "Adv. Aircraft Plant",
+		"id": 210,
+		"name": "coraap"
+	}, {
+		"humanName": "Adv. Kbot Lab",
+		"id": 217,
+		"name": "coralab"
+	}, {
+		"humanName": "Aircraft Plant",
+		"id": 219,
+		"name": "corap"
+	}, {
+		"humanName": "Air Support Pad",
+		"id": 221,
+		"name": "corasp"
+	}, {
+		"humanName": "Adv. Vehicle Plant",
+		"id": 223,
+		"name": "coravp"
+	}, {
+		"humanName": "Buzzsaw",
+		"id": 230,
+		"name": "corbuzz"
+	}, {
+		"humanName": "AK Buzzsaw",
+		"id": 231,
+		"name": "corbuzz_ak"
+	}, {
+		"humanName": "Shipyard",
+		"id": 243,
+		"name": "corcsy"
+	}, {
+		"humanName": "Doomsday Machine",
+		"id": 248,
+		"name": "cordoom"
+	}, {
+		"humanName": "Dragon's Teeth",
+		"id": 249,
+		"name": "cordrag"
+	}, {
+		"humanName": "Energy Storage",
+		"id": 251,
+		"name": "corestor"
+	}, {
+		"humanName": "Thunderbolt",
+		"id": 259,
+		"name": "corfhlt"
+	}, {
+		"humanName": "Cobra",
+		"id": 261,
+		"name": "corflak"
+	}, {
+		"humanName": "Influence",
+		"id": 262,
+		"name": "corflu"
+	}, {
+		"humanName": "Fortitude Missile Defense",
+		"id": 263,
+		"name": "corfmd"
+	}, {
+		"humanName": "Metal Extractor Platform",
+		"id": 264,
+		"name": "corfmex"
+	}, {
+		"humanName": "Floating Metal Maker",
+		"id": 265,
+		"name": "corfmkr"
+	}, {
+		"humanName": "Fortification Wall",
+		"id": 266,
+		"name": "corfort"
+	}, {
+		"humanName": "Fusion Power Plant",
+		"id": 269,
+		"name": "corfus"
+	}, {
+		"humanName": "Krogoth Gantry",
+		"id": 273,
+		"name": "corgant"
+	}, {
+		"humanName": "Galactic Gate",
+		"id": 274,
+		"name": "corgate"
+	}, {
+		"humanName": "Geothermal Powerplant",
+		"id": 276,
+		"name": "corgeo"
+	}, {
+		"humanName": "Gaat Gun",
+		"id": 280,
+		"name": "corhlt"
+	}, {
+		"humanName": "Hovercraft Platform",
+		"id": 283,
+		"name": "corhp"
+	}, {
+		"humanName": "Intimidator",
+		"id": 287,
+		"name": "corint"
+	}, {
+		"humanName": "Intimidator",
+		"id": 288,
+		"name": "corint_dgun"
+	}, {
+		"humanName": "Kbot Lab",
+		"id": 290,
+		"name": "corlab"
+	}, {
+		"humanName": "Laser Tower",
+		"id": 292,
+		"name": "corllt"
+	}, {
+		"humanName": "Metal Maker",
+		"id": 296,
+		"name": "cormakr"
+	}, {
+		"humanName": "Metal Extractor",
+		"id": 299,
+		"name": "cormex"
+	}, {
+		"humanName": "Heavy Fusion Power Plant",
+		"id": 300,
+		"name": "cormfus"
+	}, {
+		"humanName": "M-113",
+		"id": 302,
+		"name": "cormine1"
+	}, {
+		"humanName": "M-303",
+		"id": 303,
+		"name": "cormine2"
+	}, {
+		"humanName": "M-515",
+		"id": 304,
+		"name": "cormine3"
+	}, {
+		"humanName": "M-610",
+		"id": 305,
+		"name": "cormine6"
+	}, {
+		"humanName": "Moho Metal Maker",
+		"id": 308,
+		"name": "cormmkr"
+	}, {
+		"humanName": "Moho Mine",
+		"id": 309,
+		"name": "cormoho"
+	}, {
+		"humanName": "Metal Storage",
+		"id": 314,
+		"name": "cormstor"
+	}, {
+		"humanName": "Warp Gate",
+		"id": 317,
+		"name": "corplab"
+	}, {
+		"humanName": "Immolator",
+		"id": 318,
+		"name": "corplas"
+	}, {
+		"humanName": "Seaplane Platform",
+		"id": 319,
+		"name": "corplat"
+	}, {
+		"humanName": "Punisher",
+		"id": 321,
+		"name": "corpun"
+	}, {
+		"humanName": "Radar Tower",
+		"id": 323,
+		"name": "corrad"
+	}, {
+		"humanName": "Pulverizer",
+		"id": 326,
+		"name": "corrl"
+	}, {
+		"humanName": "Silencer",
+		"id": 335,
+		"name": "corsilo"
+	}, {
+		"humanName": "Covert Ops Center",
+		"id": 336,
+		"name": "corslab"
+	}, {
+		"humanName": "Solar Collector",
+		"id": 338,
+		"name": "corsolar"
+	}, {
+		"humanName": "Sonar Station",
+		"id": 339,
+		"name": "corsonar"
+	}, {
+		"humanName": "Pinocchio",
+		"id": 346,
+		"name": "corsupergun"
+	}, {
+		"humanName": "Pinocchio",
+		"id": 347,
+		"name": "corsupergun_pyro"
+	}, {
+		"humanName": "Tidal Generator",
+		"id": 351,
+		"name": "cortide"
+	}, {
+		"humanName": "Torpedo Launcher",
+		"id": 353,
+		"name": "cortl"
+	}, {
+		"humanName": "Toaster",
+		"id": 354,
+		"name": "cortoast"
+	}, {
+		"humanName": "ScramJam",
+		"id": 356,
+		"name": "cortron"
+	}, {
+		"humanName": "Underwater Seaplane Support Station",
+		"id": 358,
+		"name": "coruwasp"
+	}, {
+		"humanName": "Underwater Metal Extractor",
+		"id": 359,
+		"name": "coruwmex"
+	}, {
+		"humanName": "Valkyrie Factory",
+		"id": 361,
+		"name": "corvalkfac"
+	}, {
+		"humanName": "Viper",
+		"id": 365,
+		"name": "corvipe"
+	}, {
+		"humanName": "Vehicle Plant",
+		"id": 367,
+		"name": "corvp"
+	}, {
+		"humanName": "Wind Generator",
+		"id": 371,
+		"name": "corwin"
+	}, {
+		"humanName": "Dark Swarm Unit",
+		"id": 373,
+		"name": "darkswarmunit"
+	}, {
+		"humanName": "DCA",
+		"id": 374,
+		"name": "dca"
+	}, {
+		"humanName": "Emper Unit",
+		"id": 375,
+		"name": "emperunit"
+	}, {
+		"humanName": "Warp Gate",
+		"id": 379,
+		"name": "hergate"
+	}, {
+		"humanName": "If attacked",
+		"id": 386,
+		"name": "ifaiatt"
+	}, {
+		"humanName": "Mercury",
+		"id": 388,
+		"name": "mercury"
+	}, {
+		"humanName": "Omega",
+		"id": 389,
+		"name": "omega"
+	}, {
+		"humanName": "Eye",
+		"id": 391,
+		"name": "pireye"
+	}, {
+		"humanName": "Roadway",
+		"id": 396,
+		"name": "road_corner"
+	}, {
+		"humanName": "Roadway",
+		"id": 397,
+		"name": "road_halfcurve"
+	}, {
+		"humanName": "Roadway",
+		"id": 398,
+		"name": "road_halfcurve2"
+	}, {
+		"humanName": "Roadway",
+		"id": 399,
+		"name": "road_halfcurve3"
+	}, {
+		"humanName": "Roadway",
+		"id": 400,
+		"name": "road_halfcurve4"
+	}, {
+		"humanName": "Roadway",
+		"id": 401,
+		"name": "road_slant1"
+	}, {
+		"humanName": "Roadway",
+		"id": 402,
+		"name": "road_slant2"
+	}, {
+		"humanName": "Roadway",
+		"id": 403,
+		"name": "road_straight"
+	}, {
+		"humanName": "Roadway",
+		"id": 404,
+		"name": "road_straight2"
+	}, {
+		"humanName": "Roadway",
+		"id": 405,
+		"name": "road_straight3"
+	}, {
+		"humanName": "Roadway",
+		"id": 406,
+		"name": "road_t"
+	}, {
+		"humanName": "Roadway",
+		"id": 407,
+		"name": "road_turn"
+	}, {
+		"humanName": "Roadway",
+		"id": 408,
+		"name": "road_turn2"
+	}, {
+		"humanName": "Roadway",
+		"id": 409,
+		"name": "road_x"
+	}, {
+		"humanName": "Hive",
+		"id": 410,
+		"name": "roost"
+	}, {
+		"humanName": "Hive",
+		"id": 411,
+		"name": "roost2"
+	}, {
+		"humanName": "Scramer Unit",
+		"id": 412,
+		"name": "scramerunit"
+	}, {
+		"humanName": "Shika",
+		"id": 413,
+		"name": "shika"
+	}, {
+		"humanName": "Spawner_Asteroid",
+		"id": 414,
+		"name": "spawner_asteroid"
+	}, {
+		"humanName": "spawner_kdart",
+		"id": 415,
+		"name": "spawner_kdart"
+	}, {
+		"humanName": "Spawner_nuke",
+		"id": 416,
+		"name": "spawner_nuke"
+	}, {
+		"humanName": "spawner_rockstorm",
+		"id": 417,
+		"name": "spawner_rockstorm"
+	}, {
+		"humanName": "Spit fire",
+		"id": 418,
+		"name": "spit3g"
+	}, {
+		"humanName": "targeting",
+		"id": 421,
+		"name": "targeting"
+	}, {
+		"humanName": "Weather Snow Storm",
+		"id": 423,
+		"name": "weather_snow_storm"
+	}, {
+		"humanName": "Plasma Worm",
+		"id": 424,
+		"name": "wormy"
+	} ]
+}

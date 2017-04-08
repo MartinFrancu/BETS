@@ -67,24 +67,6 @@ local spSelectUnits = Spring.SelectUnitArray
 local inputCommandsTable = WG.InputCommands
 local treeCommandsTable = WG.BtCommands
 
--- TODO: remove, no longer used
-local function getTreeNamesInDirectory(directoryName)
-   local ending = ".json"
-   local folderContent = Utils.dirList(directoryName, "*"..ending) --VFS.DirList(directoryName)
-   -- get just names .json files
-   local treeNames = {}
-   for _,treeName in ipairs(folderContent) do
-	table.insert(treeNames, treeName:sub(1, treeName:len() - ending:len()) ) 
-	--folderContent = getStringsWithoutSuffix(folderContent, ".json")
-   end 
-  --[[ -- Remove the path prefix of folder:
-   for i,v in ipairs(folderContent)do
-	folderContent[i] = string.sub(v, string.len( directoryName)+2 ) 
-	--THIS WILL MAKE TROUBLES WHEN DIRECTORY IS DIFFERENT: the slashes are sometimes counted once, sometimes twice!!!\\
-   end
-   --]]
-   return  treeNames
-end
 
 -- //////////////////////////////////////////////////////////////////////////////////////////////////////
 -- Id Generation

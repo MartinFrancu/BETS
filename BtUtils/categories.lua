@@ -5,40 +5,54 @@ if(not BtUtils)then VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil
 
 local Utils = BtUtils
 local Logger = Utils.Debug.Logger
+local dump = Utils.Debug.dump
 
 return Utils:Assign("UnitCategories", function()
 	local UnitCategories = {}
 	
-	local UNIT_CATHEGORIES_DIRNAME = LUAUI_DIRNAME .. "Widgets/BtCreator/"
-	local UNIT_CATHEGORIES_FILE = "BtUnitCategories.json"
+	local UNIT_CATEGORIES_DIRNAME = LUAUI_DIRNAME .. "Widgets/BtCreator/Categories/"
+	local UNIT_CATEGORIES_PREFIX = "BtUnitCategory_"
+	local UNIT_CATEGORIES_SUFFIX = ".json"
+	local UNIT_CATEGORIES_FILE = "BtUnitCategories.json"
+	
 	
 	local JSON = Utils.JSON
 	
 	-- This function load categories from given file and returns them as a table
 	local function loadCategories()
 		local unitCategories = {}
-		local file = io.open(UNIT_CATHEGORIES_DIRNAME .. UNIT_CATHEGORIES_FILE , "r")
-		if(not file)then
-			unitCategories = {}
+		local folderContent = Utils.dirList(UNIT_CATEGORIES_DIRNAME, "*".. UNIT_CATEGORIES_SUFFIX)
+		for _,fileName in pairs(folderContent) do
+			local file = io.open(UNIT_CATEGORIES_DIRNAME .. fileName, "r")
+			if(not file)then
+				return unitCategories
+			end
+			local text = file:read("*all")
+			file:close()
+			local data = JSON:decode(text)
+			-- should I check the category name??
+			--local catName = fileName:sub(UNIT_CATEGORIES_PREFIX:len()+1, fileName:len() - UNIT_CATEGORIES_SUFFIX:len())
+			table.insert(unitCategories, data)
 		end
-		local text = file:read("*all")
-		unitCategories = JSON:decode(text)
-		file:close()
 		return unitCategories
 	end
 	
 	UnitCategories.categories = loadCategories()
 	
 	-- This function saves given table into file fo unit categories
-	local function saveCategories(categories)	
-		local text = JSON:encode(UnitCategories.categories, nil, { pretty = true, indent = "\t" })
-		Spring.CreateDir(UNIT_CATHEGORIES_DIRNAME)
-		local file = io.open(UNIT_CATHEGORIES_DIRNAME .. UNIT_CATHEGORIES_FILE, "w")
-		if(not file)then
-			return nil
+	local function saveCategories()
+		Spring.CreateDir(UNIT_CATEGORIES_DIRNAME)
+		for _,catData in ipairs(UnitCategories.categories) do
+			local text = JSON:encode(catData, nil, { pretty = true, indent = "\t"})
+			local fileName = UNIT_CATEGORIES_DIRNAME .. UNIT_CATEGORIES_PREFIX .. catData.name .. UNIT_CATEGORIES_SUFFIX 
+			local file = io.open(fileName, "w")
+			if(not file)then
+				Logger.log("categories", "saveCategories: unable to write in file: ", fileName)
+				return nil
+			end
+			file:write(text)
+			file:close()
 		end
-		file:write(text)
-		file:close()	
 		return true
 	end
 	
@@ -63,9 +77,18 @@ return Utils:Assign("UnitCategories", function()
 		return result
 	end
 	
-	function UnitCategories.redefineCategories(newCategory) 
+	function UnitCategories.redefineCategories(newCategory)
 		-- here would be a good moment for check if it makes sense?
-		table.insert(UnitCategories.categories, newCategory)
+		local alreadyKnown = false 
+		for index,catData in pairs(UnitCategories.categories) do
+			if(catData.name == newCategory.name) then
+				alreadyKnown = true
+				UnitCategories.categories[index] = newCategory
+			end
+		end
+		if(alreadyKnown == false) then
+			table.insert(UnitCategories.categories, newCategory)
+		end
 		saveCategories()
 	end
 	return UnitCategories

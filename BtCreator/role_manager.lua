@@ -27,7 +27,7 @@ function roleManager.showCategoryDefinitionWindow()
 		caption = "DONE",
 		OnClick = {sanitizer:AsHandler(roleManager.doneCategoryDefinition)},
 	}
-	categoryDoneButton.categorynameEditBox = nameEditBox
+	categoryDoneButton.categoryNameEditBox = nameEditBox
 	categoryDoneButton.window = roleManager.categoryDefinitionWindow
 	categoryDoneButton.returnFunction = showRoleManagementWindow
 	-- plus checkboxes added later in categoryDoneButton
@@ -108,7 +108,7 @@ function roleManager.doneCategoryDefinition(self)
 	end
 	-- add check for category name?
 	local newCategory = {
-		name = self.categorynameEditBox.text,
+		name = self.categoryNameEditBox.text,
 		types = unitTypes,
 	}
 	Utils.UnitCategories.redefineCategories(newCategory)
@@ -116,9 +116,9 @@ function roleManager.doneCategoryDefinition(self)
 	roleManager.categoryDefinitionWindow:Hide()
 	self.returnFunction()
 end
+
 function roleManager.cancelCategoryDefinition(self)
 	self.window:Hide()
-	--roleManager.categoryDefinitionWindow:Hide()
 	self.returnFunction()
 end
 

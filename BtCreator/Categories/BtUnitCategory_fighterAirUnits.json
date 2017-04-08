@@ -1,0 +1,48 @@
+{
+	"name": "fighterAirUnits",
+	"types": [ {
+		"humanName": "Freedom Fighter",
+		"id": 68,
+		"name": "armfig"
+	}, {
+		"humanName": "Hawk",
+		"id": 79,
+		"name": "armhawk"
+	}, {
+		"humanName": "Snarky",
+		"id": 134,
+		"name": "armserp"
+	}, {
+		"humanName": "Tornado",
+		"id": 135,
+		"name": "armsfig"
+	}, {
+		"humanName": "ToadFoot",
+		"id": 154,
+		"name": "armtoad"
+	}, {
+		"humanName": "Blade",
+		"id": 169,
+		"name": "blade"
+	}, {
+		"humanName": "Montro Epsilon",
+		"id": 272,
+		"name": "corgamma2"
+	}, {
+		"humanName": "Osprey",
+		"id": 278,
+		"name": "corgryp"
+	}, {
+		"humanName": "Voodoo",
+		"id": 332,
+		"name": "corsfig"
+	}, {
+		"humanName": "Vamp",
+		"id": 363,
+		"name": "corvamp"
+	}, {
+		"humanName": "Avenger",
+		"id": 364,
+		"name": "corveng"
+	} ]
+}
