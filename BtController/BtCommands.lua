@@ -29,6 +29,7 @@ VFS.Include("LuaRules/modules.lua") -- modules table
 VFS.Include(modules.attach.data.path .. modules.attach.data.head) -- attach lib module
 
 local BehavioursDirectory = "LuaUI/Widgets/BtBehaviours"
+local DEFAULT_ICON_NAME = "default"
 
 -- get other madatory dependencies
 attach.Module(modules, "message")
@@ -169,6 +170,9 @@ end
 WG.BtCommandsTransformData = transformCommandData
 
 local BehaviourImageContentType = ProjectManager.makeRegularContentType(BehaviourTree.contentType.directoryName, "png")
+------------CHANGE LATER:
+local BehaviourDefaultImageContentType = ProjectManager.makeRegularContentType("Behaviours", "png")
+------------CHANGE LATER END
 local function registerCommandForTree(treeName)
 	-- should I check if there is such file??
 	
@@ -180,7 +184,8 @@ local function registerCommandForTree(treeName)
 	if gotIcon then
 		UIover = {texture = iconFileName }
 	else
-		UIover = {caption = treeName:gsub("%.", "\n"), texture = 'LuaUI/Images/commands/bold/restore.png' }
+		local defaultIconPath = ProjectManager.findFile(BehaviourDefaultImageContentType, "Common", DEFAULT_ICON_NAME)
+		UIover = {caption = treeName:gsub("%.", "\n"), texture = defaultIconPath} --'LuaUI/Images/commands/bold/restore.png' }
 	end
 	
 	local commandName =  "BT_" ..  treeName
@@ -202,20 +207,6 @@ local function registerCommandsForBehaviours()
 	local qualifiedNames = BehaviourTree.list()
 	for _,treeName in pairs(qualifiedNames) do
 		registerCommandForTree(treeName)
-		--[[
-		local commandName =  "BT_" ..  treeName
-		local description = {
-			type = CMDTYPE.ICON,
-			name = commandName,
-			cursor = 'Attack',
-			action = 'Attack',
-			tooltip = fileName,
-			hidden = false,
-			UIoverride = {caption = treeName, texture = 'LuaUI/Images/commands/guard.png' }
-			--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
-		}
-		registerCommand(description) --sendCustomMessage.RegisterCustomCommand(description)
-		]]
 	end
 end
 
