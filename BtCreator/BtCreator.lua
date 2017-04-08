@@ -724,7 +724,7 @@ function widget:Initialize()
 		draggable=true,
 		resizable=true,
 		skinName='DarkGlass',
-		backgroundColor = {1,1,1,1},
+		backgroundColor = {0.1,0.1,0.1,1},
 		zoomedOut = false,
 		OnClick = { sanitizer:AsHandler(listenerOnClickOnCanvas) },
 		OnResize = { sanitizer:AsHandler(listenerOnResizeBtCreator) },

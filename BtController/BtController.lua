@@ -745,7 +745,7 @@ function setUpTreeControlWindow()
 		draggable=true,
 		resizable=true,
 		skinName='DarkGlass',
-		backgroundColor = {1,1,1,1},
+		backgroundColor = {0.1,0.1,0.1,1},
 	}
   
 	controllerLabel = Chili.Label:New{
