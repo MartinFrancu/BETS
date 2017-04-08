@@ -19,6 +19,7 @@ return Utils:Assign("ProjectManager", function()
 	local INTERNAL_PROJECT_PATH = LUAUI_DIRNAME .. "Widgets/BtProjects/"
 	
 	local TMP_DIR = PROJECT_PATH .. ".bets/"
+	local CAPITALIZATION_FILE = ".capitalization"
 	
 	local projects = {}
 	local archives = {}
@@ -45,13 +46,19 @@ return Utils:Assign("ProjectManager", function()
 	local function loadProjects()
 		for _, projectsRoot in ipairs({ PROJECT_PATH, INTERNAL_PROJECT_PATH }) do
 			for i, projectName in ipairs(subDirs(projectsRoot)) do
-				if(projectName:sub(1,1) ~= "." and not projects[projectName])then
+				if(projectName:sub(1,1) ~= ".")then
 					local path = projectsRoot .. projectName .. "/"
-					projects[projectName] = {
-						name = projectName,
-						path = path,
-						isArchive = not subDirs(projectsRoot, projectName, VFS.RAW)[1], -- check whether the subdirectory exists outside of an archive
-					}
+					local capitalization = VFS.LoadFile(path .. CAPITALIZATION_FILE)
+					if(capitalization and capitalization:lower() == projectName:lower())then
+						projectName = capitalization
+					end
+					if(not projects[projectName])then
+						projects[projectName] = {
+							name = projectName,
+							path = path,
+							isArchive = not subDirs(projectsRoot, projectName, VFS.RAW)[1], -- check whether the subdirectory exists outside of an archive
+						}
+					end
 				end
 			end
 		end
@@ -89,6 +96,9 @@ return Utils:Assign("ProjectManager", function()
 		if(not project)then
 			return nil, "Project " .. tostring(projectName) .. " could not be found."
 		end
+		if(project.isArchive)then
+			return nil, "Project " .. tostring(projectName) .. " is already in an archive."
+		end
 		
 		Spring.CreateDir(TMP_DIR .. PROJECT_PATH)
 		if(not checkEmptyDirectory(TMP_DIR))then
@@ -96,7 +106,13 @@ return Utils:Assign("ProjectManager", function()
 		end
 		
 		os.rename(project.path, TMP_DIR .. PROJECT_PATH .. projectName) -- move to the archivation directory
-		local success, msg = pcall(VFS.CompressFolder, TMP_DIR, "zip", PROJECT_PATH .. "/" .. projectName .. ".sdz", false, VFS.RAW)
+		local success, msg = pcall(function()
+			capitalizationFile = io.open(TMP_DIR .. PROJECT_PATH .. projectName .. "/" .. CAPITALIZATION_FILE, "w")
+			capitalizationFile:write(projectName)
+			capitalizationFile:close()
+			return VFS.CompressFolder(TMP_DIR, "zip", PROJECT_PATH .. "/" .. projectName .. ".sdz", false, VFS.RAW)
+		end)
+		os.remove(TMP_DIR .. PROJECT_PATH .. projectName .. "/" .. CAPITALIZATION_FILE)
 		os.rename(TMP_DIR .. PROJECT_PATH .. projectName, project.path) -- move back
 		
 		return success, msg
