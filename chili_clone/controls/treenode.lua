@@ -260,8 +260,8 @@ local function fillInSensor(textBox)
 	local partialKey = string.lower(partialProperty:match("[_%w%(%)]*$") or "")
 	local partialLength = partialKey:len()
 	
-	local candidates = textBox.autocompleteCandidates
-	local index = textBox.nextAutocompleteIndex
+	local candidates = textBox.autocompleteCandidates or {}
+	local index = textBox.nextAutocompleteIndex or 1
 	
 	--Logger.log("treeNode", "beforeCursor - ", beforeCursor, "; candidates - ", candidates)
 	if(#candidates == 0)then

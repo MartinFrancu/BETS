@@ -50,6 +50,7 @@ local Dependency = Utils.Dependency
 local sanitizer = Utils.Sanitizer.forWidget(widget)
 
 local Debug = Utils.Debug;
+local ProjectManager = Utils.ProjectManager
 local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyTable, Debug.fileTable
 
 local nodeDefinitionInfo = {}
@@ -68,6 +69,7 @@ local treeInstanceId
 local moveAllNodes
 local moveFrom
 local moveCanvasImg
+
 
 function BtCreator.show()
 	if(not btCreatorWindow.visible) then
@@ -1079,38 +1081,42 @@ local sensorAutocompleteTable = nil
 
 local function loadSensorAutocompleteTable()
 	sensorAutocompleteTable = {}
-	local sensors = WG.SensorManager.getAvailableSensors()
+	local sensors = BtEvaluator.SensorManager.getAvailableSensors()
 	
 	-- Logger.log("save-and-load", "Sensor info - ", info)
 	for _, name in ipairs(sensors) do
-		local file = SENSOR_DIRNAME .. name .. ".lua"
-		if(not VFS.FileExists(file))then
-			return nil
-		end
-		
-		local key = name .. "()"
-		local fieldTable = {}
-		
-		local sensorCode = VFS.LoadFile(file)
-		sensorCode = sensorCode:match("function +getInfo.-end") 
-		--Logger.log("save-and-load", "Sensor - ", name,"; getInfo code - ", sensorCode)
-		
-		if sensorCode ~= nil then
-			local getInfo = loadstring("--[[" .. name .. "]] " .. sensorCode .. "; return getInfo")()
-			local info = getInfo()
-			Logger.log("save-and-load", "Sensor getInfo - ", info)
+		local file, res = ProjectManager.findFile(BtEvaluator.SensorManager.contentType, name)
+		if res.exists then
+			local projectName = res.project
+			local key = res.name .. "()"
 			
-			if info.fields then
-				for _,v in ipairs(info.fields) do
-					fieldTable[v] = {}
+			local fieldTable = {}
+			
+			local sensorCode = VFS.LoadFile(file)
+			sensorCode = sensorCode:match("function +getInfo.-end") 
+			--Logger.log("save-and-load", "Sensor - ", name,"; getInfo code - ", sensorCode)
+			
+			if sensorCode ~= nil then
+				local getInfo = loadstring("--[[" .. name .. "]] " .. sensorCode .. "; return getInfo")()
+				local info = getInfo()
+				Logger.log("save-and-load", "Sensor getInfo - ", info)
+				
+				if info.fields then
+					for _,v in ipairs(info.fields) do
+						fieldTable[v] = {}
+					end
 				end
 			end
+			
+			local projectTable = sensorAutocompleteTable[projectName]
+			if not projectTable then
+				projectTable = {}
+				sensorAutocompleteTable[projectName] = projectTable
+			end
+			
+			projectTable[key] = fieldTable
 		end
-		
-		
-		sensorAutocompleteTable[key] = fieldTable
 	end
-	
 	-- Logger.log("save-and-load", "Sensor autocompleteTable - ", dump(sensorAutocompleteTable, 3))
 end
 
