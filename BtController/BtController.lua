@@ -506,6 +506,10 @@ function refreshTreeSelectionPanel()
 	treeNameEditBox.text = "Instance"..instanceIdCount
 end
 
+local function listenerLockedCheckbox(self)
+	markAllUnitsInTree(self.TreeHandle)
+end
+
 -- This listener is called when user clicks on tabBar item in BtController. The 
 -- original listener is replaced by this one.
 function listenerBarItemClick(self, x, y, button, ...)
@@ -582,10 +586,6 @@ local function getDummyAllyUnit()
 	return allUnits[1]
 end
 
-local function listenerLockedCheckbox(self)
-	Logger.log("selection", "self unitslocked: ", self.TreeHandle.unitsLocked, " checked: ", self.checked)
-	self.TreeHandle.unitsLocked = self.checked
-end
 
 function listenerInputButton(self,x,y,button, ...)
 	if(not inputCommandsTable or not treeCommandsTable) then		
@@ -999,11 +999,7 @@ function widget:Initialize()
 	if(VFS.FileExists(configPath)) then
 		local f = assert(VFS.LoadFile(configPath))
 		local config = loadstring(f)()
-		-- if(config.showTree == "true") then
-			-- if(not showTreeCheckbox.checked) then
-				-- showTreeCheckbox:Toggle()
-			-- end
-		-- end
+
 		if(config.treeType) then
 			for i=1,#treeSelectionComboBox.items do
 				if(treeSelectionComboBox.items[i] == config.treeType) then
@@ -1045,6 +1041,7 @@ function widget:UnitDestroyed(unitId)
 	if(TreeHandle.unitsToTreesMap[unitId] ~= nil) then
 		local treeHandle =  TreeHandle.unitsToTreesMap[unitId].TreeHandle
 		TreeHandle.removeUnitFromCurrentTree(unitId)
+		removeMarks({unitId})
 		-- if the tree has no more units:
 		removeTreesWithoutUnitsRequiringUnits()
 	end

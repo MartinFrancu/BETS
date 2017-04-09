@@ -297,6 +297,8 @@ function TreeHandle:New(obj)
 		caption = "locked",
 		skinName = "DarkGlass",
 		tooltip = "Are units assigned to this tree selectable",
+		checked = false,
+		OnChange = {obj.LockedCheckboxListener}
 	}
 	lockedCheckbox.TreeHandle = obj
 	obj.unitsLocked = lockedCheckbox
