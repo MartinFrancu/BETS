@@ -9,7 +9,7 @@ local System = Utils.Debug.clone(loadstring("return _G")().System)
 
 setmetatable(System, { 
 	__index = {
-		dump = dump
+		dump = dump,
 		Logger = Logger,
 		System = System,
 		Vec3 = Utils.Vec3,
