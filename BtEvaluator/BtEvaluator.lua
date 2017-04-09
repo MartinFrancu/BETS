@@ -328,6 +328,10 @@ local function createExpression(expression)
 	local blackboard, sensorManager = {}, {}
 	local metatable = {
 		__index = function(self, key)
+			if (key == "Vec3") then
+				return Utils.Vec3
+			end
+		
 			local result = sensorManager[key]
 			if(result)then
 				return result
