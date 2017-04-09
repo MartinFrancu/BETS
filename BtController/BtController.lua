@@ -33,6 +33,8 @@ CONSTANTS = {
 	minInputButtonWidth = 150,
 	lockedIconPath = LUAUI_DIRNAME .. "Widgets/BtController/locked32.png",
 	unlockedIconPath = LUAUI_DIRNAME .. "Widgets/BtController/unlocked32.png",
+	labelHeight = 30,
+	windowFrameGap = 20,
 }
 
 
@@ -877,10 +879,10 @@ function setUpTreeControlWindow()
   
 	controllerLabel = Chili.Label:New{
     parent = treeControlWindow,
-	x = '1%',
-	y = '1%',
-    width  = '10%',
-    height = '100%',
+	x = CONSTANTS.windowFrameGap ,
+	y = 0 ,
+    width  = 50,
+    height = CONSTANTS.labelHeight,
     caption = "BtController",
 		skinName='DarkGlass',
 	}
@@ -889,7 +891,7 @@ function setUpTreeControlWindow()
 		caption = "BtCreator",
 		checked = false,
 		visible = false,
-		x = '80%',
+		x = treeControlWindow.width - 80 - CONSTANTS.windowFrameGap ,
 		y = 0,
 		width = 80,
 		skinName='DarkGlass',
@@ -905,9 +907,9 @@ function setUpTreeControlWindow()
 	reloadAllButton = Chili.Button:New{
 		parent = treeControlWindow,
 		caption = "Reload All",
-		x = '60%',
-		y = 0,
-		width = 90,
+		x =  treeControlWindow.width - 160 - CONSTANTS.windowFrameGap ,
+		y = windowFrameGap ,
+		width = 80,
 		skinName='DarkGlass',
 		tooltip = "Reloads all trees from drive.",
 		OnClick = {sanitizer:AsHandler(listenerReloadAll)}
