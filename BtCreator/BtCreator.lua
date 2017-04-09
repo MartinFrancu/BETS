@@ -257,7 +257,6 @@ local function saveTree()
 		updateSerializedIDs()
 	end
 	protoTree.roles = rolesOfCurrentTree
-	protoTree.defaultRole = rolesOfCurrentTree[1].name
 	protoTree.inputs = {}
 
 	local inputs = WG.nodeList[rootID].inputs

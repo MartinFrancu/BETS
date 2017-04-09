@@ -373,18 +373,27 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 	------------------------------------------
 	
 	local unitIdRoleTable = {}
+	local defaultRoles
 	
 	for _,roleData in pairs(treeHandle.Roles) do
-		for name,record in pairs(roleData.unitTypes) do
-			if(unitIdRoleTable[name] == nil) then
-				unitIdRoleTable[name] = {currentIndex = 1, roles = {}}
+		if(not next(roleData.unitTypes))then -- if there are no units, it is the default role
+			if(defaultRoles == nil)then
+				defaultRoles = {currentIndex = 1, roles = {}}
 			end
-			table.insert(unitIdRoleTable[name].roles, roleData)
+			table.insert(defaultRoles.roles, roleData)
+		else
+			for name,record in pairs(roleData.unitTypes) do
+				if(unitIdRoleTable[name] == nil) then
+					unitIdRoleTable[name] = {currentIndex = 1, roles = {}}
+				end
+				table.insert(unitIdRoleTable[name].roles, roleData)
+			end
 		end
 	end	
 	
 	local treeHandlesWithRemovedUnits = {}
 	
+	local assignedUnitCount = 0
 	for i,unitId in pairs(selectedUnits) do
 		local unitDefId = Spring.GetUnitDefID(unitId)
 		local thWithRemovedUnit = TreeHandle.removeUnitFromCurrentTree(unitId)
@@ -393,8 +402,9 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 		end
 		if(UnitDefs[unitDefId] ~= nil)then  
 			local name = UnitDefs[unitDefId].name
-			if(unitIdRoleTable[name] ~= nil) then
-				local unitRoles = unitIdRoleTable[name]
+			local unitRoles = unitIdRoleTable[name] or defaultRoles
+			if(unitRoles) then
+				assignedUnitCount = assignedUnitCount + 1
 				local currentRoleData = unitRoles.roles[unitRoles.currentIndex]
 				TreeHandle.assignUnitToTree(unitId, treeHandle, currentRoleData.assignButton.Role)
 				-- now, I should shift the index:
@@ -403,11 +413,15 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 					unitRoles.currentIndex = 1 -- reset the current index
 				end
 			else
-				-- put into default role:
-				TreeHandle.assignUnitToTree(unitId, treeHandle, treeHandle.Tree.defaultRole)
+				-- ignore the unit
 			end
 		else
 			Logger.log("roles", "could not find UnitDefs entry for: ",  unitId )
+		end
+	end
+	if(assignedUnitCount == 0)then
+		for i,unitId in pairs(selectedUnits) do
+			TreeHandle.assignUnitToTree(unitId, treeHandle, select(2, next(treeHandle.Roles)).assignButton.Role)
 		end
 	end
 	
