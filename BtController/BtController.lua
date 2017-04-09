@@ -17,6 +17,24 @@ function widget:GetInfo()
 end
 
 
+CONSTANTS = {
+	rolesXOffset = 10,
+	rolesYOffset = 30,
+	buttonHeight = 22,
+	singleButtonModifier = 10,
+	labelToButtonYModifier = 5, -- chili feature/bug
+	minRoleLabelWidth = 70,
+	minRoleAssingWidth = 100,
+	minUnitCountWidth = 50,
+	inputGap = 30,
+	SUCCESS_COLOR = {0.5,1,0.5,0.6},
+	FAILURE_COLOR = {1,0.25,0.25,0.6},
+	minInputButtonWidth = 150,
+	lockedIconPath = LUAUI_DIRNAME .. "Widgets/BtController/locked32.png",
+	unlockedIconPath = LUAUI_DIRNAME .. "Widgets/BtController/unlocked32.png",
+}
+
+
 
 
 local Chili, Screen0
@@ -112,7 +130,7 @@ local function unmarkUnits(treeHandle,role)
 end
 
 local function markUnits(treeHandle, role)
-	local locked = treeHandle.unitsLocked.checked
+	local locked = treeHandle.unitsLocked
 	local units = TreeHandle.unitsInTreeRole(treeHandle.InstanceId, role)
 	addMarks(units, locked)
 end
@@ -506,8 +524,17 @@ function refreshTreeSelectionPanel()
 	treeNameEditBox.text = "Instance"..instanceIdCount
 end
 
-local function listenerLockedCheckbox(self)
-	markAllUnitsInTree(self.TreeHandle)
+local function listenerLockImage(self)
+	local tH = self.TreeHandle
+	tH.unitsLocked = not tH.unitsLocked
+	if(tH.unitsLocked) then
+		self.file = CONSTANTS.lockedIconPath
+	else
+		self.file = CONSTANTS.unlockedIconPath
+	end
+	self:Invalidate()
+	self:RequestUpdate()
+	markAllUnitsInTree(tH)
 end
 
 -- This listener is called when user clicks on tabBar item in BtController. The 
@@ -684,7 +711,7 @@ function instantiateTree(treeType, instanceName, requireUnits)
 		TreeType = treeType,
 		AssignUnitListener = sanitizer:AsHandler(listenerAssignUnitsButton),
 		InputButtonListener = sanitizer:AsHandler(listenerInputButton),
-		LockedCheckboxListener = sanitizer:AsHandler(listenerLockedCheckbox),
+		lockImageListener = sanitizer:AsHandler(listenerLockImage),
 		RequireUnits = requireUnits,
 	}
 	
@@ -946,7 +973,7 @@ function resetMarkers()
 	local unitsLocked = {}
 	local unitsUnlocked = {}
 	for id,data in pairs(TreeHandle.unitsToTreesMap) do
-		if (data.TreeHandle.unitsLocked.checked) then
+		if (data.TreeHandle.unitsLocked) then
 			unitsLocked[#unitsLocked +1 ] = id
 		else
 			unitsUnlocked[#unitsUnlocked +1 ] = id
@@ -964,6 +991,7 @@ function widget:Initialize()
 	local newEntries = {}
 	newEntries["Chili"] = Chili
 	newEntries["Utils"] = Utils
+	newEntries["CONSTANTS"] = CONSTANTS
 	local environment = setmetatable(newEntries ,{__index = widget})
 	TreeHandle = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtController/BtTreeHandle.lua", environment , VFS.RAW_FIRST)
   
@@ -1053,7 +1081,7 @@ function widget:Update()
 	local okUnits = {}
 	for _,unitId in pairs(selectedUnits) do
 		if	( (assignedUnitsMap[unitId] == nil)
-			or (assignedUnitsMap[unitId].TreeHandle.unitsLocked.checked == false) ) 
+			or (assignedUnitsMap[unitId].TreeHandle.unitsLocked == false) ) 
 		then
 			table.insert(okUnits, unitId)
 		end

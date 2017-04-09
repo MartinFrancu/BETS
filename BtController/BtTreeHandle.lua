@@ -5,20 +5,6 @@ local Debug = Utils.Debug;
 local Logger = Debug.Logger
 local dump = Debug.dump
 
-CONSTANTS = {
-	rolesXOffset = 10,
-	rolesYOffset = 30,
-	buttonHeight = 22,
-	singleButtonModifier = 10,
-	labelToButtonYModifier = 5, -- chili feature/bug
-	minRoleLabelWidth = 70,
-	minRoleAssingWidth = 100,
-	minUnitCountWidth = 50,
-	inputGap = 30,
-	SUCCESS_COLOR = {0.5,1,0.5,0.6},
-	FAILURE_COLOR = {1,0.25,0.25,0.6},
-	minInputButtonWidth = 150,
-}
 
 --[[
 --------------------------------------------------------------------------------
@@ -260,7 +246,7 @@ end
 --[[ It is expected from obj that ti contains following records:
 	AssignUnitListener
 	InputButtonListener
-	LockedCheckboxListener
+	lockImageListener
 --]]
 function TreeHandle:New(obj)
 	setmetatable(obj, self)
@@ -289,20 +275,19 @@ function TreeHandle:New(obj)
 	}
 	table.insert(obj.ChiliComponentsGeneral, treeTypeLabel)
 	
-	local lockedCheckbox = Chili.Checkbox:New{
+	local lockImage = Chili.Image:New{
 		x = 300,
 		y = 0,
-		width = 70,
-		height = 30,
-		caption = "locked",
+		width = 40,
+		height = 40,
+		file = CONSTANTS.unlockedIconPath,
 		skinName = "DarkGlass",
 		tooltip = "Are units assigned to this tree selectable",
-		checked = false,
-		OnChange = {obj.LockedCheckboxListener}
+		OnClick = {obj.lockImageListener},
 	}
-	lockedCheckbox.TreeHandle = obj
-	obj.unitsLocked = lockedCheckbox
-	table.insert(obj.ChiliComponentsGeneral, lockedCheckbox)
+	lockImage.TreeHandle = obj
+	obj.unitsLocked = false
+	table.insert(obj.ChiliComponentsGeneral, lockImage)
 	
 	-- Order of these childs is sort of IMPORTANT as other entities needs to access children
 	
