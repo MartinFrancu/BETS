@@ -4,9 +4,9 @@ function getInfo()
 		parameterDefs = {
 			{ 
 				name = "msg",
-				variableType = "string",
+				variableType = "expression",
 				componentType = "editBox",
-				defaultValue = "0",
+				defaultValue = "hello",
 			}
 		}
 	}
