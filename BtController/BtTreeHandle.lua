@@ -106,7 +106,7 @@ function TreeHandle:UpdateTreeStatus()
 	if(soFarOk == false) then
 	result = result .. ", missing input: " .. missingInputs
 	end
-	self.ChiliComponentsGeneral[1]:SetCaption(self.TreeType .. " (" .. result .. ")") 
+	self.treeStatus:SetCaption(result) 
 end
 
 -- this function will check if all required inputs are given. 
@@ -134,7 +134,7 @@ end
 
 -- This method will set up and load in all chili components corresponding to 
 -- roles in given tree. It returns maximal x-coordinate of components
-function createChiliComponentsRoles(obj)
+function createChiliComponentsRoles(obj,xOffSet,yOffSet)
 	local rolesEndX
 	local roleInd = 0 
 	local roleCount = #obj.Tree.roles
@@ -142,10 +142,10 @@ function createChiliComponentsRoles(obj)
 	for _,roleData in pairs(obj.Tree.roles) do
 		local roleName = roleData.name
 		local roleNameLabel = Chili.Label:New{
-			x = CONSTANTS.rolesXOffset ,
-			y = CONSTANTS.rolesYOffset + CONSTANTS.labelToButtonYModifier  + ( CONSTANTS.buttonHeight ) * roleInd,
+			x = xOffSet ,
+			y = yOffSet + CONSTANTS.labelToButtonYModifier  + ( CONSTANTS.buttonHeight ) * roleInd,
 			height = (roleCount == 1 and CONSTANTS.buttonHeight + CONSTANTS.singleButtonModifier or CONSTANTS.buttonHeight),
-			width = '20%',
+			width = 100,
 			minWidth = CONSTANTS.minRoleLabelWidth,
 			caption = roleName,
 			skinName = "DarkGlass",
@@ -155,10 +155,10 @@ function createChiliComponentsRoles(obj)
 		table.insert(obj.ChiliComponentsRoles, roleNameLabel)
 		
 		local roleAssignmentButton = Chili.Button:New{
-			x = CONSTANTS.rolesXOffset + roleNameLabel.width + 50,
-			y = CONSTANTS.rolesYOffset + CONSTANTS.buttonHeight * roleInd,
+			x = roleNameLabel.x + roleNameLabel.width + CONSTANTS.roleGap,
+			y = yOffSet  + ( CONSTANTS.buttonHeight ) * roleInd,
 			height = roleCount == 1 and CONSTANTS.buttonHeight + CONSTANTS.singleButtonModifier or CONSTANTS.buttonHeight,
-			width = '10%',
+			width = 50,
 			minWidth = CONSTANTS.minRoleAssingWidth,
 			caption = "Assign",
 			OnClick = {obj.AssignUnitListener}, 
@@ -174,9 +174,9 @@ function createChiliComponentsRoles(obj)
 		
 		local unitCountButton = Chili.Button:New{
 			x = roleAssignmentButton.x + roleAssignmentButton.width ,
-			y = CONSTANTS.rolesYOffset + CONSTANTS.buttonHeight * roleInd,
+			y = yOffSet  + ( CONSTANTS.buttonHeight ) * roleInd,
 			height = roleCount == 1 and CONSTANTS.buttonHeight + CONSTANTS.singleButtonModifier or CONSTANTS.buttonHeight,
-			width = '10%',
+			width = 50,
 			minWidth = CONSTANTS.minUnitCountWidth,
 			caption = 0, 
 			skinName = "DarkGlass",
@@ -212,9 +212,9 @@ end
 
 -- This method will set up and load in all chili components corresponding to 
 -- inputs of given tree. It returns maximal x-coordinate of components.
-function createChiliComponentsInput(obj, xOffSet)
-	local inputXOffset = xOffSet + CONSTANTS.inputGap
-	local inputYOffset =  CONSTANTS.rolesYOffset
+function createChiliComponentsInput(obj, xOffSet, yOffSet)
+	local inputXOffset = xOffSet 
+	local inputYOffset = yOffSet
 	local inputInd = 0
 	local inputCount = table.getn(obj.Tree.inputs)
 	
@@ -224,7 +224,7 @@ function createChiliComponentsInput(obj, xOffSet)
 			x = inputXOffset,
 			y = inputYOffset + CONSTANTS.buttonHeight * inputInd,
 			height = inputCount == 1 and CONSTANTS.buttonHeight +  CONSTANTS.singleButtonModifier or CONSTANTS.buttonHeight,
-			width = '25%',
+			width = 180,
 			minWidth = CONSTANTS.minInputButtonWidth,
 			caption =" " .. inputName .. " (" .. WG.BtCommandsInputHumanNames[input.command].. ")",
 			OnClick = {obj.InputButtonListener}, 
@@ -267,19 +267,32 @@ function TreeHandle:New(obj)
 		x = 7,
 		y = 7,
 		height = 30,
-		width =  '80%',
+		width =  100,
 		minWidth = 50,
-		caption =  obj.TreeType .. " (initializing)",
+		caption =  obj.TreeType,
 		skinName = "DarkGlass",
 		tooltip = "Name of tree type, (state)",
 	}
 	table.insert(obj.ChiliComponentsGeneral, treeTypeLabel)
 	
+	local treeStatusLabel = Chili.Label:New{
+		x = 7,
+		y = 30,
+		height = 30,
+		width =  400,
+		minWidth = 50,
+		caption =  "initialized",
+		skinName = "DarkGlass",
+		tooltip = "Name of tree type, (state)",
+	}
+	table.insert(obj.ChiliComponentsGeneral, treeStatusLabel)
+	obj.treeStatus = treeStatusLabel
+	
 	local lockImage = Chili.Image:New{
-		x = 300,
-		y = 0,
-		width = 40,
-		height = 40,
+		x = 420,
+		y = 5,
+		width = 50,
+		height = 50,
 		file = CONSTANTS.unlockedIconPath,
 		skinName = "DarkGlass",
 		tooltip = "Are units assigned to this tree selectable",
@@ -294,8 +307,12 @@ function TreeHandle:New(obj)
 	
 	local roleInd = 0 
 	local roleCount = #obj.Tree.roles
-	local rolesEndX = createChiliComponentsRoles(obj)
-	createChiliComponentsInput(obj, rolesEndX)
+	local rolesEndX = createChiliComponentsRoles(obj,CONSTANTS.rolesXOffset,CONSTANTS.rolesYOffset )
+	
+	local inputOffSetX = rolesEndX + CONSTANTS.inputGap
+	local inputOffSetY = CONSTANTS.rolesYOffset
+	
+	createChiliComponentsInput(obj, rolesEndX, inputOffSetY)
 	return obj
 end
 

@@ -19,7 +19,7 @@ end
 
 CONSTANTS = {
 	rolesXOffset = 10,
-	rolesYOffset = 30,
+	rolesYOffset = 60,
 	buttonHeight = 22,
 	singleButtonModifier = 10,
 	labelToButtonYModifier = 5, -- chili feature/bug
@@ -27,6 +27,7 @@ CONSTANTS = {
 	minRoleAssingWidth = 100,
 	minUnitCountWidth = 50,
 	inputGap = 30,
+	roleGap = 20,
 	SUCCESS_COLOR = {0.5,1,0.5,0.6},
 	FAILURE_COLOR = {1,0.25,0.25,0.6},
 	minInputButtonWidth = 150,
@@ -426,7 +427,8 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 			if(unitRoles) then
 				assignedUnitCount = assignedUnitCount + 1
 				local currentRoleData = unitRoles.roles[unitRoles.currentIndex]
-				TreeHandle.assignUnitToTree(unitId, treeHandle, currentRoleData.assignButton.Role)
+				TreeHandle.assignUnitToTree(unitId, treeHandle,
+					currentRoleData.assignButton.Role)
 				-- now, I should shift the index:
 				unitRoles.currentIndex = unitRoles.currentIndex + 1 
 				if(unitRoles.currentIndex > table.getn(unitRoles.roles) ) then
@@ -460,6 +462,10 @@ end
 
 -- Reports units assigned to all roles to BtEvaluator
 function reportAssignedUnits(treeHandle)
+	if(treeHandle.Created == false) then 
+		-- nothign to report
+		return
+	end
 	local originallySelectedUnits = spGetSelectedUnits()
 	for name,roleData in pairs(treeHandle.Roles) do
 		-- now I need to share information with the BtEvaluator
