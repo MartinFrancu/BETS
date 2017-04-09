@@ -488,9 +488,6 @@ function TreeNode:Dispose()
 	if(self.connectionOut) then
 		self.connectionOut:Dispose()
 	end
-	if(self.nodeWindow) then
-		self.nodeWindow:Dispose()
-	end
 	if(self.nameEditBox) then
 		self.nameEditBox:Dispose()
 	end
@@ -512,6 +509,9 @@ function TreeNode:Dispose()
 				self.parameterObjects[i]["checkBox"]:Dispose()
 			end
 		end
+	end
+	if(self.nodeWindow) then
+		self.nodeWindow:Dispose()
 	end
 end
 
@@ -738,7 +738,6 @@ local function validateEditBox(editBox)
 	editBox.validatedValue = editBox.text
 	editBox.parent.treeNode.parameters[editBox.index].value = editBox.text
 end
-
 
 function TreeNode:UpdateParameterValues()
 	if(not self.nodeWindow) then
