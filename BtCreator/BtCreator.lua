@@ -68,6 +68,7 @@ local treeInstanceId
 
 local moveAllNodes
 local moveFrom
+local moveWindowFrom
 local moveCanvasImg
 
 
@@ -606,12 +607,50 @@ local function fillNodePoolWithNodes(nodes)
 	nodePoolPanel:RequestUpdate()
 end
 
-function listenerOnClickOnCanvas()
-	WG.clearSelection()
-	for _,node in pairs(WG.nodeList) do
-		node:UpdateParameterValues()
+local LEFT_BUTTON = 1
+local RIGHT_BUTTON = 3
+
+function listenerOnClickOnCanvas(self, x, y, button)
+	if button == LEFT_BUTTON then
+		WG.clearSelection()
+		for _,node in pairs(WG.nodeList) do
+			node:UpdateParameterValues()
+		end
+	end
+	--return self
+end
+
+function listenerOnMouseDownCanvas(self, x, y, button)
+	if button == RIGHT_BUTTON then
+		moveTimer = os.clock()
+		moveAllNodes = true
+		moveFrom = {x, y}
+		return self
 	end
 end
+
+function listenerOnMouseUpCanvas(self, x, y, button)
+	if button == RIGHT_BUTTON then
+		moveAllNodes = false
+		return self
+	end
+end
+
+function listenerOnMouseMoveCanvas(self, x, y)
+	if(moveAllNodes) then
+		local diffx = x - moveFrom[1]
+		local diffy = y - moveFrom[2]
+		for id,node in pairs(WG.nodeList) do
+			node.x = node.x + diffx
+			node.y = node.y + diffy
+			node.nodeWindow:SetPos(node.x + diffx, node.y + diffy)
+		end
+		moveFrom = {x, y}
+		btCreatorWindow:Invalidate()
+	end
+	return self
+end
+
 
 function listenerOnResizeBtCreator(self)
 	if(nodePoolPanel) then
@@ -775,14 +814,17 @@ function widget:Initialize()
 		width  = Screen0.width - nodePoolPanel.width - 25,
 		height = '42%',
 		padding = {10,10,10,10},
-		draggable=true,
+		draggable=false,
 		resizable=true,
 		skinName='DarkGlass',
 		backgroundColor = {0.1,0.1,0.1,1},
 		zoomedOut = false,
 		OnClick = { sanitizer:AsHandler(listenerOnClickOnCanvas) },
 		OnResize = { sanitizer:AsHandler(listenerOnResizeBtCreator) },
-		onMouseWheel = { sanitizer:AsHandler(listenerMouseWheelScroll) },
+		OnMouseWheel = { sanitizer:AsHandler(listenerMouseWheelScroll) },
+		OnMouseDown = { sanitizer:AsHandler(listenerOnMouseDownCanvas) },
+		OnMouseUp = { sanitizer:AsHandler(listenerOnMouseUpCanvas) },
+		OnMouseMove = { sanitizer:AsHandler(listenerOnMouseMoveCanvas) },
 	}
 
 	addNodeToCanvas( createRoot() )
@@ -933,10 +975,8 @@ function widget:Initialize()
 		file = LUAUI_DIRNAME.."Widgets/BtCreator/move_orange.png",
 		onMouseDown = { 
 			function(self, x, y)
-				moveTimer = os.clock()
 				self.file = LUAUI_DIRNAME.."Widgets/BtCreator/move_grey.png"
-				moveAllNodes = true
-				moveFrom = {x, y}
+				moveWindowFrom = {x, y}
 				self:Invalidate()
 				return self
 			end,
@@ -949,7 +989,6 @@ function widget:Initialize()
 		onMouseUp = {
 			function(self, x, y)
 				self.file = LUAUI_DIRNAME.."Widgets/BtCreator/move_orange.png"
-				moveAllNodes = false
 				self:Invalidate()
 				return self
 			end,
@@ -962,9 +1001,9 @@ function widget:Initialize()
 					for id,node in pairs(WG.nodeList) do
 						node.x = node.x + diffx
 						node.y = node.y + diffy
-						node.nodeWindow:SetPos(node.x + diffx, node.y + diffy)
+						btCreatorWindow:SetPos(node.x + diffx, node.y + diffy)
 					end
-					moveFrom = {x, y}
+					moveWindowFrom = {x, y}
 					btCreatorWindow:Invalidate()
 				end
 			end,
