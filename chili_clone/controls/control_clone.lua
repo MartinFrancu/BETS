@@ -1049,8 +1049,8 @@ function Control:CreateViewTexture(suffix_name, width, height, fnc, ...)
 	local texColor = self[texname]
 	local texStencil = self[texStencilName]
 
-	width = math.max(0.001,width)
-	height = math.max(0.001,height)
+	width = math.max(0.1,width)
+	height = math.max(0.1,height)
 	if (width ~= self[texw])or(height ~= self[texh]) then
 		self[texw] = width
 		self[texh] = height

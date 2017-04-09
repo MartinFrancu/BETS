@@ -473,7 +473,7 @@ function TreeNode:Dispose()
 	if(self.nameEditBox) then
 		self.nameEditBox:Dispose()
 	end
-	if(self.icon) then
+	if(self.icon and self.icon.Dispose) then
 		self.icon:Dispose()
 	end
 	if(self.parameterObjects) then
@@ -720,6 +720,9 @@ end
 
 
 function TreeNode:UpdateParameterValues()
+	if(not self.nodeWindow) then
+		return
+	end
 	for i=1,#self.parameterObjects do
 		local editBox = self.parameterObjects[i]["editBox"]
 		if(editBox) then
