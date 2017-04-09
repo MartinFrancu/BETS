@@ -101,7 +101,7 @@ end
 local function removeAllMarks()
 	local allUnits = {}
 	for unitId, record in pairs(TreeHandle.unitsToTreesMap) do
-		table.insert(removeMarkers, unitId)
+		allUnits[#allUnits+1] = unitId
 	end
 	removeMarks(allUnits)
 end
@@ -341,6 +341,8 @@ function reloadAll()
 			reloadTree(treeTabPanel, item.TreeHandle)
 		end
 	end
+	
+	resetMarkers()
 end
 --[[ This method pop up simple error window. Currently used if user tries 
 to create tree with already used name.
@@ -534,15 +536,19 @@ function listenerAssignUnitsButton(self,x,y, ...)
 	-- Here I am deassigning all units, that might destroy some tree:
 	
 	local treeHandlesWithRemovedUnits = {}
+	local removedUnits = {}
 	for unitId,treeAndRole in pairs(TreeHandle.unitsToTreesMap) do	
 		if(treeAndRole.InstanceId == self.TreeHandle.InstanceId) and (treeAndRole.Role == self.Role) then
+			removedUnits[#removedUnits +1] = unitId
 			local thWithRemovedUnit = TreeHandle.removeUnitFromCurrentTree(unitId)
 			if thWithRemovedUnit then
 				treeHandlesWithRemovedUnits[thWithRemovedUnit.InstanceId] = thWithRemovedUnit
 			end
-				-- if the tree has no more units:
 		end
 	end
+	-- remove markers:
+	removeMarks(removedUnits)
+	
 	-- notify BtEvaluator about removed units
 	for _,handle in pairs(treeHandlesWithRemovedUnits) do
 		reportAssignedUnits(handle)
@@ -932,8 +938,22 @@ local saveAllUnitDefs
 -- call durin initalize and reload trees
 function resetMarkers()
 	-- get players units
+	local teamId = Spring.GetMyTeamID()
+	local allUnits = Spring.GetTeamUnits(teamId)
 	-- unmarks all units in this team
+	removeMarks(allUnits)
 	-- mark all units in our trees
+	local unitsLocked = {}
+	local unitsUnlocked = {}
+	for id,data in pairs(TreeHandle.unitsToTreesMap) do
+		if (data.TreeHandle.unitsLocked.checked) then
+			unitsLocked[#unitsLocked +1 ] = id
+		else
+			unitsUnlocked[#unitsUnlocked +1 ] = id
+		end
+	end
+	addMarks(unitsLocked, true)
+	addMarks(unitsUnlocked, false)
 end
 function widget:Initialize()	
 	-- Get ready to use Chili
@@ -992,6 +1012,7 @@ function widget:Initialize()
 			end
 		end
 	end
+	resetMarkers()
 	
 	Dependency.fill(Dependency.BtController)
 end
