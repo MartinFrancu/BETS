@@ -61,7 +61,6 @@ local commandEnvironment = CustomEnvironment:New({
 
 local CommandManager = {}
 CommandManager.contentType = ProjectManager.makeRegularContentType("Commands", "lua")
-CommandManager.contentTypeIcon = ProjectManager.makeRegularContentType("Commands", "png")
 
 local Command = {}
 CommandManager.baseClass = Command
@@ -259,15 +258,6 @@ function Command:UnitIdle(unitID)
 
 	Logger.log("command", "UnitIdle - Unit: ", unitID, " Idle: ", self.idleUnits[unitID])
 	return self.idleUnits[unitID]
-end
-
-function CommandManager.getAvailableCommandScriptsIcons()
-	local commandList = ProjectManager.listAll(CommandManager.contentTypeIcon)
-	local iconList = {}
-	for _,data in ipairs(commandList)do
-		iconList[data.qualifiedName] = data.path
-	end
-	return iconList
 end
 
 function CommandManager.getAvailableCommandScripts()

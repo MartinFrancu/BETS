@@ -512,12 +512,14 @@ local function populateNodePoolWithTreeNodes(heightSum, nodes)
 	table.sort(nodes, function(a, b) return a.name < b.name end)
 	for i=1,#nodes do
 		if (nodes[i].nodeType ~= "luaCommand") then
+			Logger.log("icons", LUAUI_DIRNAME .. "Widgets/BtTreenodeIcons/"..nodes[i].name..".png____", "nodeType: ",nodes[i].nodeType)
 			local nodeParams = {
 				name = nodes[i].name,
 				hasConnectionOut = (nodes[i].children == nil) or (type(nodes[i].children) == "table" and #nodes[i].children ~= 0),
 				nodeType = nodes[i].name, -- TODO use name parameter instead of nodeType
 				parent = nodePoolPanel,
 				y = heightSum,
+				icon = LUAUI_DIRNAME .. "Widgets/BtTreenodeIcons/"..nodes[i].name..".png",
 				tooltip = nodes[i].tooltip or "",
 				draggable = false,
 				resizable = false,
@@ -556,6 +558,15 @@ local function sortedKeyList(t)
 	return keys
 end
 
+local function getAvailableCommandScriptsIcons()
+	local commandList = ProjectManager.listAll(ProjectManager.makeRegularContentType("Commands", "png"))
+	local iconList = {}
+	for _,data in ipairs(commandList)do
+		iconList[data.qualifiedName] = data.path
+	end
+	return iconList
+end
+
 local function fillNodePoolWithNodes(nodes)
 	nodePoolList = {}
 	nodeDefinitionInfo = {}
@@ -563,10 +574,8 @@ local function fillNodePoolWithNodes(nodes)
 	heightSum = populateNodePoolWithTreeNodes(heightSum, nodes) -- others than lua script commands
 	-- load lua commands
 	local paramDefs = BtEvaluator.CommandManager.getAvailableCommandScripts()
-	local scriptIcons = BtEvaluator.CommandManager.getAvailableCommandScriptsIcons()
-	-- Logger.log("icons", scriptIcons)
+	local scriptIcons = getAvailableCommandScriptsIcons()
 	local scriptList = sortedKeyList(paramDefs)
-	-- Logger.log("icons", scriptList)
 	for _, scriptName in ipairs(scriptList) do
 		local params = paramDefs[scriptName]
 		local nodeParams = {
@@ -973,9 +982,6 @@ end
 
 function widget:Shutdown()
 	Logger.log("reloading", "BtCreator widget:Shutdown start. ")
-	if(btCreatorWindow) then
-		btCreatorWindow:Dispose()
-	end
 	for _,node in pairs(nodePoolList) do
 		node:Dispose()
 	end
@@ -988,6 +994,9 @@ function widget:Shutdown()
 	end
 	WG.clearSelection()
 	clearCanvas()
+	if(btCreatorWindow) then
+		btCreatorWindow:Dispose()
+	end
 	Dependency.clear(Dependency.BtCreator)
 	Logger.log("reloading", "BtCreator widget:shutdown end. ")
 end

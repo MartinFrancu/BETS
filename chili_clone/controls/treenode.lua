@@ -147,7 +147,7 @@ function TreeNode:New(obj)
 		backgroundColor = {0,0,0,0},
 		autosize = true,
 	}
-	if(obj.icon) then
+	if(obj.icon and VFS.FileExists(obj.icon)) then
 		obj.icon = Image:New{
 			parent = obj.nodeWindow,
 			x = 15,
@@ -223,7 +223,7 @@ function TreeNode:UpdateDimensions()
 	else
 		maxHeight = math.max(maxHeight, #p * 20 + 50)
 	end
-	if(self.parent.zoomedOut == nil or self.parent.zoomedOut == false) then
+	if(self.nodeWindow and self.nodeWindow.parent and not self.nodeWindow.parent.zoomedOut) then
 		self.nodeWindow:SetPos(nil, nil, maxWidth, maxHeight)
 	end
 	self.width = maxWidth
