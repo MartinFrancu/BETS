@@ -241,7 +241,7 @@ end
 
 local afterRoleManagement
 
--- does not check if three makes sense
+-- does not check if tree makes sense
 local function saveTree()
 	local protoTree = formBehaviourTree()
 	
