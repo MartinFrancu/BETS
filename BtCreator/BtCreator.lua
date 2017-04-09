@@ -1071,6 +1071,9 @@ function formBehaviourTree()
 end
 
 function clearCanvas(omitRoot)
+	if(btCreatorWindow) then
+		btCreatorWindow.zoomedOut = false
+	end
 	connectionLine.clear()
 	for id,node in pairs(WG.nodeList) do
 		node:Dispose()
