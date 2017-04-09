@@ -1,5 +1,5 @@
-if(_G.loadMethods)then
-	_G:loadMethods("Common.build")
+if(loadMethods)then
+	loadMethods("Common.build")
 end
 
 local oldRun = Run

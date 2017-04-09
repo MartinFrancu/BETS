@@ -205,7 +205,7 @@ function Run(self, unitIds, parameter)
 	leaderDir:Normalize()
 	leaderDir = leaderDir * SHORT_PATH_LEN
 	
-	local leaderDone = (self.finalTargets[leader] - getUnitPos(leader)):LengthSqr() < LEADER_TOLERANCE_SQ or UnitIdle(self, leader)
+	local leaderDone = (self.finalTargets[leader] - getUnitPos(leader)):LengthSqr() < LEADER_TOLERANCE_SQ or self:UnitIdle(leader)
 	-- Logger.log("move-command", "Leader done - ", leaderDone, " dist - ", distanceSq(getUnitPos(leader), self.finalTargets[leader]))
 	local done = leaderDone
 	
@@ -241,7 +241,7 @@ function Run(self, unitIds, parameter)
 					--Logger.log("move-command", "=== Final order ", unitID)
 					giveOrderToUnit(unitID, springCmd, self.finalTargets[unitID]:AsSpringVector(), {})
 				end
-			elseif not curSubTar or UnitIdle(self, unitID) or (curSubTar - curPos):LengthSqr() < SUBTARGET_TOLEARANCE_SQ then --or not dirsEqual(leaderDir, curDir) then
+			elseif not curSubTar or self:UnitIdle(unitID) or (curSubTar - curPos):LengthSqr() < SUBTARGET_TOLEARANCE_SQ then --or not dirsEqual(leaderDir, curDir) then
 				-- otherwise move a small distance in the direction the leader is facing
 				
 				local toLeader = leaderPos - curPos

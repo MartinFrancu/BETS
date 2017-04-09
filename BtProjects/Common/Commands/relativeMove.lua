@@ -1,5 +1,5 @@
-if(_G.loadMethods)then
-	_G:loadMethods("Common.move")
+if(loadMethods)then
+	loadMethods("Common.move")
 end
 
 local oldRun = Run
