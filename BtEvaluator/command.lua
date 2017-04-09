@@ -74,32 +74,42 @@ Command.Spring = setmetatable({
 
 local orderIssueingCommand = {} -- a reference used as a key in unit roles
 
+function Command:loadMethods(...)
+	--Logger.log("script-load", "Loading method ", methodName, " into ", scriptName)
+	
+	local path, parameters = ProjectManager.findFile(CommandManager.contentType, ...)
+	if(not path)then
+		return nil, parameters
+	end
+	local name = parameters.qualifiedName
+	if(not parameters.exists)then
+		return nil, "Command " .. name .. " does not exist"
+	end
+	
+	local nameComment = "--[[" .. name .. "]] "
+	local scriptStr = nameComment .. VFS.LoadFile(path)
+	local scriptChunk = assert(loadstring(scriptStr))
+	setfenv(scriptChunk, self)
+	scriptChunk()
+	
+	if not self.New then
+		Logger.log("script-load", "Warning - scriptName: ", scriptName, ", Method ", methodSignatures.New, "  missing (note that this might be intentional)")
+		self.New = function() end
+	end
+	
+	if not self.Reset then
+		Logger.log("script-load", "Warning - scriptName: ", scriptName, ", Method ", methodSignatures.Reset, "  missing (note that this might be intentional)")
+		self.Reset = function() end
+	end
+	
+	if not self.Run then
+		Logger.error("script-load", "scriptName: ", scriptName, ", Method ", methodSignatures.Run, "  missing")
+		self.Run = function() return Command.FAILURE end
+	end
+end
+	
 function Command:Extend(scriptName)
 	Logger.log("script-load", "Loading command from file " .. scriptName)
-	function Command:loadMethods()
-		--Logger.log("script-load", "Loading method ", methodName, " into ", scriptName)
-		
-		local nameComment = "--[[" .. scriptName .. "]] "
-		local scriptStr = nameComment .. VFS.LoadFile((ProjectManager.findFile(CommandManager.contentType, scriptName)))
-		local scriptChunk = assert(loadstring(scriptStr))
-		setfenv(scriptChunk, self)
-		scriptChunk()
-		
-		if not self.New then
-			Logger.log("script-load", "Warning - scriptName: ", scriptName, ", Method ", methodSignatures.New, "  missing (note that this might be intentional)")
-			self.New = function() end
-		end
-		
-		if not self.Reset then
-			Logger.log("script-load", "Warning - scriptName: ", scriptName, ", Method ", methodSignatures.Reset, "  missing (note that this might be intentional)")
-			self.Reset = function() end
-		end
-		
-		if not self.Run then
-			Logger.error("script-load", "scriptName: ", scriptName, ", Method ", methodSignatures.Run, "  missing")
-			self.Run = function() return Command.FAILURE end
-		end
-	end
 
 	Logger.log("script-load", "scriptName: ", scriptName)
 	local new_class = {	}
@@ -123,9 +133,10 @@ function Command:Extend(scriptName)
 		return newinst
 	end
 
+	new_class._G = new_class
 	setmetatable( new_class, { __index = self })
 	setmetatable(self, { __index = System })	
-	new_class:loadMethods()
+	new_class:loadMethods(scriptName)
 
 	return new_class
 end

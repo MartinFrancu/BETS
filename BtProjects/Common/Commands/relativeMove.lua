@@ -1,6 +1,5 @@
-local groupExtents
-if(COMMAND_DIRNAME)then
-	VFS.Include(COMMAND_DIRNAME .. "move.lua", nil, VFS.RAW_FIRST)
+if(_G.loadMethods)then
+	_G:loadMethods("Common.move")
 end
 
 local oldRun = Run
