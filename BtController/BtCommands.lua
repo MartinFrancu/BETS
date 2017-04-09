@@ -121,11 +121,14 @@ local function fillInCommandID(cmdName, cmdID)
 		if (treeCmdName == cmdName) then
 			-- read serialized behaviour inputs
 			local bt, msg = BehaviourTree.load(treeName)
-
-			WG.BtCommands[ cmdID ] = {
-				treeName = treeName,
-				inputs = bt.inputs,
-			}
+			if(not bt)then
+				Logger.error("save-and-load", msg)
+			else
+				WG.BtCommands[ cmdID ] = {
+					treeName = treeName,
+					inputs = bt.inputs,
+				}
+			end
 		end
 	end
 end

@@ -48,6 +48,8 @@ return Utils:Assign("BehaviourTree", function()
 	-- @treturn BehaviourTree
 	function BehaviourTree:New()
 		local bt = {}
+		bt.roles = {}
+		bt.inputs = {}
 		bt.additionalNodes = {}
 		bt.properties = {}
 		return setmetatable(bt, treeMetatable)
@@ -132,6 +134,45 @@ return Utils:Assign("BehaviourTree", function()
 		return result
 	end
 	
+	local function validateRoles(roles)
+		if(type(roles) ~= "table")then
+			return false, "Slot 'roles' must be a table."
+		end
+	
+		if(not roles[1])then
+			return false, "At least one role must be defined."
+		end
+		for i, v in ipairs(roles) do
+			if(type(v.categories) ~= "table")then
+				return false, tostring(i) .. "-th role 'categories' slot is not a table."
+			end
+			if(type(v.name) ~= "string")then
+				return false, tostring(i) .. "-th role 'name' slot is not a string."
+			end
+		end
+		return true
+	end
+	local validCommandNames = {
+		["BETS_POSITION"] = true,
+		["BETS_UNIT"] = true,
+		["BETS_AREA"] = true,
+	}
+	local function validateInputs(inputs)
+		if(type(inputs) ~= "table")then
+			return false, "Slot 'inputs' must be a table."
+		end
+	
+		for i, v in ipairs(inputs) do
+			if(not validCommandNames[v.command])then
+				return false, tostring(i) .. "-th input 'command' slot is not a valid value."
+			end
+			if(type(v.name) ~= "string")then
+				return false, tostring(i) .. "-th input 'name' slot is not a string."
+			end
+		end
+		return true
+	end
+	
 	--- Loads a previously saved tree.
 	-- @static
 	-- @treturn BehaviourTree loaded tree if found, `nil` otherwise
@@ -150,9 +191,19 @@ return Utils:Assign("BehaviourTree", function()
 		end
 		local bt = JSON:decode(data)
 		
+		bt.roles = bt.roles or {}
+		bt.inputs = bt.inputs or {}
 		bt.additionalNodes = bt.additionalNodes or {}
 		bt.properties = bt.properties or {}
 		setmetatable(bt, treeMetatable)
+
+		local success, message = validateRoles(bt.roles)
+		if(success)then
+			success, message = validateInputs(bt.inputs)
+		end
+		if(not success)then
+			return nil, "[BT:" .. name .. "] " .. tostring(message)
+		end
 		
 		if not bt.root then
 			local root = bt:NewNode({id = "rootId", nodeType = "empty_tree"})
@@ -174,6 +225,14 @@ return Utils:Assign("BehaviourTree", function()
 			bt, -- the tree which to save
 			name -- name under which to save, must not contain path-illegal characters
 		)
+		local success, message = validateRoles(bt.roles)
+		if(success)then
+			success, message = validateInputs(bt.inputs)
+		end
+		if(not success)then
+			return nil, "[BT:" .. name .. "] " .. tostring(message)
+		end
+		
 		local temp = bt.project
 		bt.project = nil
 		local text = JSON:encode(bt, nil, { pretty = true, indent = "\t" })

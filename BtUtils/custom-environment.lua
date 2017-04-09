@@ -1,5 +1,6 @@
---- Provides a custom environment.
--- @module CustomEnvironment
+--- Provides the capability of constructing a custom environment separated from the widget infrastructure.
+-- @classmod CustomEnvironment
+-- @alias customEnvironmentPrototype
 -- @pragma nostrip
 
 -- tag @pragma makes it so that the name of the module is not stripped from the function names
