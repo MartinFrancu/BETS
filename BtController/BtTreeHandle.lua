@@ -20,6 +20,43 @@ CONSTANTS = {
 	minInputButtonWidth = 150,
 }
 
+--[[
+--------------------------------------------------------------------------------
+--- Marker: Visualize units in trees:
+-- get madatory module operators
+VFS.Include("LuaRules/modules.lua") -- modules table
+VFS.Include(modules.attach.data.path .. modules.attach.data.head) -- attach lib module
+
+-- get other madatory dependencies
+attach.Module(modules, "message") -- communication backend
+
+
+local Marker = {}
+local function sendMessageToMarker(msg)
+	message.SendUI(msg)
+end
+
+local function Marker.addMarkerArray(units, locked)
+	local newMsg = {
+		subject = "AddUnitAIMarkers",
+		units = units,
+		locked = locked
+	}
+	sendMessageToMarker(newMsg)
+end
+
+local function Marker.removeMarker(units)
+	local newMsg = {
+		subject = "RemoveUnitAIMarkers",
+		units = units,
+	}
+	sendMessageToMarker(newMsg)
+end
+
+
+
+--------------------------------------------------------------------------------
+--]]
 
 
 TreeHandle = {}
@@ -58,7 +95,6 @@ TreeHandle = {
 --				Ready = indicator if this tree is ready to be send to BtEvaluator
 --				Created = indicator if BtEvalutor is told about this tree
 --				Inputs =
-
 -----------------------------------------------------------------------------------]]--
 
 -- The following funtion creates string which summarize state of this tree. 

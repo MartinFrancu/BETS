@@ -38,7 +38,7 @@ local dump = Debug.dump
 
 local TreeHandle --= VFS.Include(LUAUI_DIRNAME .. "Widgets/BtController/BtTreeHandle.lua", BtController, VFS.RAW_FIRST)
 
---------------------------------------------------------------------------------
+
 local treeControlWindow
 local controllerLabel
 local treeTabPanel
@@ -67,6 +67,70 @@ local spSelectUnits = Spring.SelectUnitArray
 local inputCommandsTable = WG.InputCommands
 local treeCommandsTable = WG.BtCommands
 
+--------------------------------------------------------------------------------
+--- Marker: Visualize units in trees:
+-- get madatory module operators
+VFS.Include("LuaRules/modules.lua") -- modules table
+VFS.Include(modules.attach.data.path .. modules.attach.data.head) -- attach lib module
+
+-- get other madatory dependencies
+attach.Module(modules, "message") -- communication backend
+
+local function sendMessageToMarker(msg)
+	Logger.log("selection", "msg to marker: ", dump(msg,2) )
+	message.SendUI(msg)
+end
+
+local function addMarks(units, locked)
+	local newMsg = {
+		subject = "AddUnitAIMarkers",
+		units = units,
+		locked = locked
+	}
+	sendMessageToMarker(newMsg)
+end
+
+local function removeMarks(units)
+	local newMsg = {
+		subject = "RemoveUnitAIMarkers",
+		units = units,
+	}
+	sendMessageToMarker(newMsg)
+end
+
+local function removeAllMarks()
+	local allUnits = {}
+	for unitId, record in pairs(TreeHandle.unitsToTreesMap) do
+		table.insert(removeMarkers, unitId)
+	end
+	removeMarks(allUnits)
+end
+
+local function unmarkUnits(treeHandle,role)
+	local units = TreeHandle.unitsInTreeRole(treeHandle.InstanceId, role)
+	removeMarks(units)	
+end
+
+local function markUnits(treeHandle, role)
+	local locked = treeHandle.unitsLocked.checked
+	local units = TreeHandle.unitsInTreeRole(treeHandle.InstanceId, role)
+	addMarks(units, locked)
+end
+
+local function markAllUnitsInTree(treeHandle)
+	for _,roleSpec in pairs(treeHandle.Tree.roles) do
+		markUnits(treeHandle, roleSpec.name)
+	end
+end
+
+local function unmarkAllUnitsInTree(treeHandle)
+	for _,roleSpec in pairs(treeHandle.Tree.roles) do
+		unmarkUnits(treeHandle, roleSpec.name)
+	end
+end
+--------------------------------------------------------------------------------
+
+
 
 -- //////////////////////////////////////////////////////////////////////////////////////////////////////
 -- Id Generation
@@ -93,13 +157,6 @@ function generateID()
 	return str	
 end
 -- //////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-function getAssignedUnits()
-	return TreeHandle.unitsToTreesMap
-end
-WG.BtGetAssignedUnits = getAssignedUnits
-
 
 -- To show in treeTabPanel tab with given name:
  
@@ -193,6 +250,8 @@ function removeTreeBtController(tabs,treeHandle)
 	-- make sure addtab is in right place
 	moveToEndAddTab(tabs)
 	
+	-- remove markes above units
+	unmarkAllUnitsInTree(treeHandle)
 	-- remove records of unit assignment:
 	TreeHandle.removeUnitsFromTree(treeHandle.InstanceId)
 	
@@ -356,7 +415,6 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 	for _,handle in pairs(treeHandlesWithRemovedUnits) do
 		reportAssignedUnits(handle)
 	end
-	
 	removeTreesWithoutUnitsRequiringUnits()
 end
 
@@ -490,6 +548,9 @@ function listenerAssignUnitsButton(self,x,y, ...)
 		Logger.loggedCall("Errors", "BtController", "assigning units to tree", 
 		BtEvaluator.assignUnits, selectedUnits, self.TreeHandle.InstanceId, self.roleIndex)
 	end
+	-- put markers over units in selection:
+	markUnits(self.TreeHandle,  self.Role)
+	
 	-- now I should check if there are units in this tree
 	-- if the tree has no more units:
 	removeTreesWithoutUnitsRequiringUnits()
@@ -542,7 +603,6 @@ end
 
 -- Listener for reload all button 
 function listenerReloadAll(self, x, y, ...)
-	-- ADD SOMEWHERE UPDATE TREE SELECTION WINDOW
 	refreshTreeSelectionPanel()
 	reloadAll()
 end 
@@ -621,6 +681,8 @@ function instantiateTree(treeType, instanceName, requireUnits)
 	-- now, auto assign units to tree
 	automaticRoleAssignment(newTreeHandle, selectedUnits)
 	
+	-- mark units in tree:
+	markAllUnitsInTree(newTreeHandle)
 	
 	
 	if(newTreeHandle:CheckReady()) then
@@ -920,6 +982,7 @@ function widget:Initialize()
 	Dependency.fill(Dependency.BtController)
 end
 function widget:Shutdown()
+	removeAllMarks()
 	Dependency.clear(Dependency.BtController)
 end
 
