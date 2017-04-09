@@ -564,11 +564,9 @@ local function fillNodePoolWithNodes(nodes)
 	-- load lua commands
 	local paramDefs = BtEvaluator.CommandManager.getAvailableCommandScripts()
 	local scriptIcons = BtEvaluator.CommandManager.getAvailableCommandScriptsIcons()
-	
-	Logger.log("icons", scriptIcons)
+	-- Logger.log("icons", scriptIcons)
 	local scriptList = sortedKeyList(paramDefs)
-	
-	Logger.log("icons", scriptList)
+	-- Logger.log("icons", scriptList)
 	for _, scriptName in ipairs(scriptList) do
 		local params = paramDefs[scriptName]
 		local nodeParams = {
@@ -725,6 +723,8 @@ function widget:Initialize()
 						nodeWindow:SetPos(translatedX, translatedY, nodeWindow.width*scale, nodeWindow.height*scale)
 						node.width = nodeWindow.width*scale
 						node.height = nodeWindow.height*scale
+						node.x = translatedX
+						node.y = translatedY
 						nodeWindow:CallListeners( nodeWindow.OnResize )
 					end
 					local inputs = WG.nodeList[rootID].inputs
@@ -751,7 +751,11 @@ function widget:Initialize()
 						local translatedX = x + (nodeWindow.x - x)/scale
 						local translatedY = y + (nodeWindow.y - y)/scale
 						nodeWindow:SetPos(translatedX, translatedY, nodeWindow.width/scale, nodeWindow.height/scale)
-						nodeWindow:CallListeners( nodeWindow.OnResize )						
+						node.width = nodeWindow.width*scale
+						node.height = nodeWindow.height*scale
+						node.x = translatedX
+						node.y = translatedY
+						nodeWindow:CallListeners( nodeWindow.OnResize )
 					end
 					local inputs = WG.nodeList[rootID].inputs
 					if(inputs) then
