@@ -6,7 +6,7 @@ function getInfo()
 				name = "var",
 				variableType = "expression",
 				componentType = "editBox",
-				defaultValue = "0",
+				defaultValue = "x",
 			},
 			{ 
 				name = "value",
