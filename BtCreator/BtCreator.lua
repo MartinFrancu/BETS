@@ -646,6 +646,7 @@ function widget:Initialize()
 	BtEvaluator.OnNodeDefinitions = fillNodePoolWithNodes
 	BtEvaluator.OnUpdateStates = updateStatesMessage
 
+	loadSensorAutocompleteTable()
 	
 
 	connectionLine.initialize()
@@ -1077,10 +1078,11 @@ function clearCanvas(omitRoot)
 	end
 end
 
-local sensorAutocompleteTable = nil
-
-local function loadSensorAutocompleteTable()
-	sensorAutocompleteTable = {}
+function loadSensorAutocompleteTable()
+	if WG.sensorAutocompleteTable then
+		return
+	end
+	WG.sensorAutocompleteTable = {}
 	local sensors = BtEvaluator.SensorManager.getAvailableSensors()
 	
 	-- Logger.log("save-and-load", "Sensor info - ", info)
@@ -1108,16 +1110,15 @@ local function loadSensorAutocompleteTable()
 				end
 			end
 			
-			local projectTable = sensorAutocompleteTable[projectName]
+			local projectTable = WG.sensorAutocompleteTable[projectName]
 			if not projectTable then
 				projectTable = {}
-				sensorAutocompleteTable[projectName] = projectTable
+				WG.sensorAutocompleteTable[projectName] = projectTable
 			end
 			
 			projectTable[key] = fieldTable
 		end
 	end
-	-- Logger.log("save-and-load", "Sensor autocompleteTable - ", dump(sensorAutocompleteTable, 3))
 end
 
 local function loadBehaviourNode(bt, btNode)
@@ -1166,12 +1167,6 @@ local function loadBehaviourNode(bt, btNode)
 	params.connectable = true
 	params.draggable = true
 	
-	if not sensorAutocompleteTable then
-		loadSensorAutocompleteTable()
-	end
-
-	params.autocompleteTable = sensorAutocompleteTable
-
 	if (btNode.scriptName ~= nil) then
 		params.nodeType = btNode.scriptName
 	end

@@ -66,8 +66,8 @@ local createNextParameterObject
 -- ////////////////////////////////////////////////////////////////////////////
 
 function TreeNode:New(obj)
-	autocompleteTable = obj.autocompleteTable or {}
 	obj = inherited.New(self,obj)
+	autocompleteTable = WG.sensorAutocompleteTable or {}
 	
 	if(not obj.id) then
 		obj.id = generateID()
@@ -325,7 +325,7 @@ function createNextParameterObject(obj)
 			OnKeyPress = {
 				function(element, key)
 					if(key == KEYSYMS.TAB)then
-						Logger.log("treeNode", dump(autocompleteTable, 3))
+						Logger.log("treeNode", "table - ", dump(autocompleteTable, 3))
 						fillInSensor(element)
 					else
 						resetAutocomplete(element)
