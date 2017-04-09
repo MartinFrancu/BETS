@@ -2,34 +2,29 @@
 -- @module SensorManager
 
 local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
+local CustomEnvironment = Utils.CustomEnvironment
 local Logger = Utils.Debug.Logger
 
 local ProjectManager = Utils.ProjectManager
 
 local globalData = {} -- table that is persistent among all sensors (and all groups) and can be used to store persistent data
 
-local System = Utils.Debug.clone(loadstring("return _G")().System)
-setmetatable(System, {
-	-- enumerate all tables from Utils or other sources beside System that should be available in sensors
-	__index = {
-		Global = globalData,
-		Logger = Logger,
-		System = System,
-		Vec3 = Utils.Vec3,
-	}
-})
-
 local getGameFrame = Spring.GetGameFrame;
 
+local sensors = {}
 local sensorContentType = ProjectManager.makeRegularContentType("Sensors", "lua")
 
-local sensors = {}
-local sensorEnvironmentMetatable = {
-	__metatable = false,
-	__index = System
-};
+local sensorEnvironment
+local function prepareSensorEnvironment()
+	sensorEnvironment = CustomEnvironment:New({
+		Global = globalData,
+	}, {
+		units = function(p) return p.group end,
+	})
+end
+prepareSensorEnvironment()
 
-local smInstance = {}
+local smInstance = {} -- handle
 
 local SensorManager = {}
 
@@ -44,22 +39,22 @@ function SensorManager.loadSensor(...)
 	if(not parameters.exists)then
 		return nil
 	end
+	local project = parameters.project
 	local name = parameters.qualifiedName
 	
-	local sensorCode = "--[[" .. name .. "]] " .. VFS.LoadFile(path)
-	local sensorFunction, msg = loadstring(sensorCode)
+	local sensorCode = VFS.LoadFile(path)
+	local sensorFunction, msg = loadstring(sensorCode, name)
 	if(not sensorFunction)then
 		Logger.error("sensors", "Failed to compile sensor '", name, "' due to error: ", msg)
 		return nil
 	end
 	
-	local function sensorConstructor(groupSensorManager, group)
-		group.length = #group
-		local sensorEnvironment = setmetatable({
-			units = group,
-			Sensors = groupSensorManager,
-		}, sensorEnvironmentMetatable)
-		setfenv(sensorFunction, sensorEnvironment)
+	local function sensorConstructor(group)
+		local environment = sensorEnvironment:Create({
+			group = group,
+			project = project
+		})
+		setfenv(sensorFunction, environment)
 		local success, evaluator = pcall(sensorFunction)
 		if(not success)then
 			Logger.error("sensors", "Creation of sensor '", name ,"' instance failed: ", evaluator)
@@ -67,8 +62,8 @@ function SensorManager.loadSensor(...)
 		end
 		
 		local info = {}
-		if(sensorEnvironment.getInfo)then
-			info = sensorEnvironment.getInfo()
+		if(environment.getInfo)then
+			info = environment.getInfo()
 		end
 		info.period = info.period or 0
 		
@@ -126,7 +121,7 @@ function SensorManager.forGroup(group, localProject)
 							end
 							sensors[qualifiedName] = sensorConstructor
 						end
-						local sensor = sensorConstructor(self, group);
+						local sensor = sensorConstructor(group);
 						if(not sensor)then
 							sensors[qualifiedName] = nil
 							return nil
@@ -155,8 +150,12 @@ end
 
 function SensorManager.reload()
 	globalData = {}
-	getmetatable(System).__index.Global = globalData
+	prepareSensorEnvironment()
 	sensors = {}
 end
+
+CustomEnvironment.add("Sensors", { group = true }, function(p)
+	return SensorManager.forGroup(p.group, p.project)
+end)
 
 return SensorManager

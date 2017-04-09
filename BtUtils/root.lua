@@ -22,6 +22,7 @@ WG.BtUtils = WG.BtUtils or (function()
 		Sanitizer = "sanitizer", -- @{Sanitizer}
 		Timer = "timer", -- @{Timer}
 		ProjectManager = "project-manager", -- @{ProjectManager}
+		CustomEnvironment = "custom-environment" -- @{CustomEnvironment}
 	}
 	
 	local LOCAL_PATH = LUAUI_DIRNAME .. "Widgets/BtUtils/"
