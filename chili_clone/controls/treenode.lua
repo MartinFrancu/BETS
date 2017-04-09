@@ -29,6 +29,7 @@ TreeNode = Control:Inherit{
 	hasConnectionOut = true,
 	connectionOut = nil,
 	nameEditBox = nil,
+	icon = nil,
 
 	parameters = {},
 	parameterObjects = {},
@@ -146,6 +147,16 @@ function TreeNode:New(obj)
 		backgroundColor = {0,0,0,0},
 		autosize = true,
 	}
+	if(obj.icon) then
+		obj.icon = Image:New{
+			parent = obj.nodeWindow,
+			x = 15,
+			y = 10,
+			width = 20,
+			height = 20,
+			file = obj.icon,
+		}
+	end
 	if(obj.nodeType:lower() == "root") then
 		local label = Label:New{
 			name = "Inputs",
@@ -194,7 +205,7 @@ end
 
 function TreeNode:UpdateDimensions()
 	local maxWidth = self.nodeWindow.width
-	maxWidth = math.max(maxWidth, self.nodeWindow.font:GetTextWidth(self.nameEditBox.text) + 30)
+	maxWidth = math.max(maxWidth, self.nodeWindow.font:GetTextWidth(self.nameEditBox.text) + 70)
 	local maxHeight = self.nodeWindow.height
 	local p = self.parameterObjects
 	for i=1,#p do

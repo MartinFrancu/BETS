@@ -563,8 +563,12 @@ local function fillNodePoolWithNodes(nodes)
 	heightSum = populateNodePoolWithTreeNodes(heightSum, nodes) -- others than lua script commands
 	-- load lua commands
 	local paramDefs = BtEvaluator.CommandManager.getAvailableCommandScripts()
+	local scriptIcons = BtEvaluator.CommandManager.getAvailableCommandScriptsIcons()
+	
+	Logger.log("icons", scriptIcons)
 	local scriptList = sortedKeyList(paramDefs)
 	
+	Logger.log("icons", scriptList)
 	for _, scriptName in ipairs(scriptList) do
 		local params = paramDefs[scriptName]
 		local nodeParams = {
@@ -573,6 +577,7 @@ local function fillNodePoolWithNodes(nodes)
 			nodeType = scriptName,
 			parent = nodePoolPanel,
 			y = heightSum,
+			icon = scriptIcons[scriptName],
 			tooltip = "",
 			draggable = false,
 			resizable = false,
