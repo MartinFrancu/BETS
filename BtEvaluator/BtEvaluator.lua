@@ -17,6 +17,7 @@ local JSON = Utils.JSON
 local Sentry = Utils.Sentry
 local Dependency = Utils.Dependency
 local sanitizer = Utils.Sanitizer.forWidget(widget)
+local CustomEnvironment = Utils.CustomEnvironment
 
 local Debug = Utils.Debug
 local Logger = Debug.Logger
@@ -321,18 +322,20 @@ local function getBlackboardForInstance(treeId)
 	return (treeInstances[treeId] or {}).blackboard
 end
 
+local expressionEnvironment = CustomEnvironment:New()
 local function createExpression(expression)
 	local getter, getErrMsg = loadstring("return (" .. expression .. ")")
 	local setter, setErrMsg = loadstring(expression .. " = ...");
 	local group;
-	local blackboard, sensorManager = {}, {}
+	local blackboard, customEnvironment = {}, expressionEnvironment:Create()
 	local metatable = {
 		__index = function(self, key)
-			if (key == "Vec3") then
-				return Utils.Vec3
+			local result = customEnvironment[key]
+			if(result)then
+				return result
 			end
-		
-			local result = sensorManager[key]
+
+			result = customEnvironment.Sensors[key]
 			if(result)then
 				return result
 			end
@@ -340,8 +343,8 @@ local function createExpression(expression)
 			return blackboard[key]
 		end,
 		__newindex = function(self, key, value)
-			if(sensorManager[key])then
-				Logger.error("expression", "Attempt to overwrite a sensor.")
+			if(customEnvironment[key])then
+				Logger.error("expression", "Attempt to overwrite an environment variable.")
 			end
 			blackboard[key] = value
 		end
@@ -367,7 +370,10 @@ local function createExpression(expression)
 		setGroup = function(g)
 			if(group == g)then return end
 			group = g
-			sensorManager = SensorManager.forGroup(g, g[parentReference].project)
+			customEnvironment = expressionEnvironment:Create({
+				group = g,
+				project = g[parentReference].project,
+			})
 		end,
 	}
 end

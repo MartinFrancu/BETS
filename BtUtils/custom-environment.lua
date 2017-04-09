@@ -14,6 +14,7 @@ return Utils:Assign("CustomEnvironment", function()
 	local Sanitizer = Utils.Sanitizer
 
 	local common = Debug.clone(loadstring("return _G")().System)
+	--common.VFS = nil -- disable VFS so that users may not break something
 	common.dump = Debug.dump
 	common.Logger = Debug.Logger
 	common.Vec3 = Utils.Vec3
