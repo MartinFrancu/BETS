@@ -217,7 +217,9 @@ function TreeNode:UpdateDimensions()
 		if(p[i].componentType == "checkBox") then
 			maxWidth = math.max(maxWidth, p[i].checkBox.width + 50)
 		elseif(p[i].componentType == "editBox") then
-			maxWidth = math.max(maxWidth, math.max(40, self.nodeWindow.font:GetTextWidth(p[i].editBox.text)) + self.nodeWindow.font:GetTextWidth(p[i].label.caption) + 50)
+			local boxWidth = self.nodeWindow.font:GetTextWidth(p[i].editBox.text)
+			boxWidth = math.max(boxWidth, p[i].editBox.minWidth or 0)
+			maxWidth = math.max(maxWidth, math.max(40, boxWidth + self.nodeWindow.font:GetTextWidth((p[i].label or {caption = ""}).caption) + 50))
 		elseif(p[i].componentType == "comboBox") then
 			maxWidth = math.max(maxWidth, p[i].label.width + p[i].comboBox.width + 40)
 		end
@@ -316,21 +318,35 @@ function createNextParameterObject(obj)
 	--- EditBox componentType
 	if (param["componentType"] and param["componentType"]:lower() == "editbox") then
 		result.componentType = "editBox"
-		result.label = Label:New{
-			parent = obj.nodeWindow,
-			x = 18,
-			y = 10 + i*20,
-			width  = obj.nodeWindow.font:GetTextWidth(param["name"]),
-			height = '10%',
-			caption = param["name"],
-			--skinName='DarkGlass',
-		}
+		local showLabel = param.name ~= "expression" or param.variableType ~= "longString"
+		if showLabel then
+			result.label = Label:New{
+				parent = obj.nodeWindow,
+				x = 18,
+				y = 10 + i*20,
+				width  = obj.nodeWindow.font:GetTextWidth(param["name"]),
+				height = '10%',
+				caption = param["name"],
+				--skinName='DarkGlass',
+			}
+		end
+		local minWidth = 40
+		if param.variableType == "longString" then
+			minWidth = 150
+		end
+		local componentX
+		if showLabel then
+			componentX = obj.nodeWindow.font:GetTextWidth(param["name"]) + 25
+		else
+			componentX = 18
+		end
+		
 		result.editBox = EditBox:New{
 			parent = obj.nodeWindow,
 			text = tostring(param["value"]),
 			validatedValue = tostring(param["value"]),
 			-- width = math.max(obj.nodeWindow.font:GetTextWidth(param["value"])+10, 45),
-			x = obj.nodeWindow.font:GetTextWidth(param["name"]) + 25,
+			x = componentX,
 			y = 10 + i*20,
 			align = 'left',
 			--skinName = 'DarkGlass',
@@ -339,10 +355,11 @@ function createNextParameterObject(obj)
 			variableType = param["variableType"],
 			index = i, -- to be able to index editbox from treenode, to update treenode.parameters[i].value
 			autosize = true,
+			minWidth = minWidth,
 			OnKeyPress = {
 				function(element, key)
 					if(key == KEYSYMS.TAB)then
-						Logger.log("treeNode", "table - ", dump(autocompleteTable, 3))
+						-- Logger.log("treeNode", "table - ", dump(autocompleteTable, 3))
 						fillInSensor(element)
 					else
 						resetAutocomplete(element)
