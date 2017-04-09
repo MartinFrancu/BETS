@@ -473,6 +473,9 @@ function TreeNode:Dispose()
 	if(self.nameEditBox) then
 		self.nameEditBox:Dispose()
 	end
+	if(self.icon) then
+		self.icon:Dispose()
+	end
 	if(self.parameterObjects) then
 		for i=1,#self.parameterObjects do
 			if(self.parameterObjects[i]["label"]) then
