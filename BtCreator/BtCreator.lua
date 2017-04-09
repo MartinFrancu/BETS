@@ -467,7 +467,7 @@ local function updateStatesMessage(params)
 				color = STOPPED_COLOR
 				shouldPause = true
 			else
-				Logger.error("communication", "Uknown state received from AI, for node id: ", id)
+				Logger.error("communication", "Unknown state received from AI, for node id: ", id)
 			end
 		end
 		setBackgroundColor(node.nodeWindow, color)
