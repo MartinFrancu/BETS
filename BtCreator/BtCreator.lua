@@ -179,6 +179,9 @@ function listenerEndCopyingNode(_, x , y)
 			hasConnectionOut = nodeDefinitionInfo[copyTreeNode.nodeType].hasConnectionOut,
 			parameters = copyTable(nodeDefinitionInfo[copyTreeNode.nodeType].parameters)
 		}
+		if(copyTreeNode.icon) then
+			params.icon = copyTreeNode.icon.file
+		end
 		addNodeToCanvas(Chili.TreeNode:New(params))
 		copyTreeNode = nil
 	end

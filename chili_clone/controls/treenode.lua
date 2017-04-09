@@ -139,9 +139,9 @@ function TreeNode:New(obj)
 		parent = obj.nodeWindow,
 		text = obj.title or obj.nodeType,
 		defaultWidth = '80%',
-		x = '10%',
+		x = 15,
 		y = 6,
-		align = 'center',
+		align = 'left',
 		skinName = 'DarkGlass',
 		borderThickness = 0,
 		backgroundColor = {0,0,0,0},
@@ -156,6 +156,7 @@ function TreeNode:New(obj)
 			height = 20,
 			file = obj.icon,
 		}
+		obj.nameEditBox:SetPos(obj.nameEditBox.x+20)
 	end
 	if(obj.nodeType:lower() == "root") then
 		local label = Label:New{
@@ -205,7 +206,11 @@ end
 
 function TreeNode:UpdateDimensions()
 	local maxWidth = self.nodeWindow.width
-	maxWidth = math.max(maxWidth, self.nodeWindow.font:GetTextWidth(self.nameEditBox.text) + 70)
+	local nameEditBoxWidth = self.nodeWindow.font:GetTextWidth(self.nameEditBox.text)
+	if(self.icon) then
+		nameEditBoxWidth = nameEditBoxWidth + 20
+	end
+	maxWidth = math.max(maxWidth, nameEditBoxWidth + 35)
 	local maxHeight = self.nodeWindow.height
 	local p = self.parameterObjects
 	for i=1,#p do
