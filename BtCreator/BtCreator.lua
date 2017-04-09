@@ -912,12 +912,18 @@ function widget:Initialize()
 		width = 70,
 		x = '40%',
 		y = 5,
-		align = 'left',
-		skinName = 'DarkGlass',
+		align = 'center',
+		-- skinName = 'DarkGlass',
+		borderColor = {1,1,1,0.2},
+		borderColor2 = {1,1,1,0.2},
 		borderThickness = 0,
 		backgroundColor = {0,0,0,0},
+		minWidth = 120,
 		autosize = true,
 	}
+	treeNameEditbox.font.size = 16
+	treeNameEditbox:RequestUpdate()
+	
 	moveCanvasImg = Chili.Image:New{
 		parent = btCreatorWindow,
 		x = 20,
