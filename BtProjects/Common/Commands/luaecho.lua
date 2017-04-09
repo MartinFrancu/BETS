@@ -6,7 +6,7 @@ function getInfo()
 				name = "msg",
 				variableType = "expression",
 				componentType = "editBox",
-				defaultValue = "hello",
+				defaultValue = "",
 			}
 		}
 	}
