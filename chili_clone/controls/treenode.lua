@@ -238,9 +238,10 @@ local function resolveAutocompleteCandidates(textBox)
 	local partialProperty = beforeCursor:match("[_%w%.%(%)]+$") or ""
 	
 	local container = autocompleteTable
-	local get = function(t, key) return t[key] end
 	for key, separator in partialProperty:gmatch("([_%w%(%)]+)([%.])") do
-		container = get(container, key) --:sub(1, key:len() - 1)
+		key = key:gsub("(%([_%w]*%))$", "()")
+		Logger.log("treeNode", "Key - ", key)
+		container = container[key]
 		if not container then
 			return false
 		end
