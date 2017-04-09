@@ -625,6 +625,75 @@ function listenerOnResizeBtCreator(self)
 	end
 end
 
+function listenerMouseWheelScroll(self, x, y, zoomIn)
+	-- local zoomedOut = false
+	local scale = 2
+	-- if(zoomIn) then
+	if(zoomIn and self.zoomedOut) then
+		self.zoomedOut = false
+		for _,node in pairs(WG.nodeList) do
+			local nodeWindow = node.nodeWindow
+			local nameEditBox = node.nameEditBox
+			node:ShowParameterObjects()
+			nodeWindow.font.size = nodeWindow.font.size * scale
+			nameEditBox.font.size = nameEditBox.font.size * scale
+			nameEditBox:SetPos(nil,nameEditBox.y*scale)
+			nodeWindow.minWidth = nodeWindow.minWidth * scale
+			nodeWindow.minHeight = nodeWindow.minHeight * scale
+			local translatedX = x + (nodeWindow.x - x)*scale
+			local translatedY = y + (nodeWindow.y - y)*scale
+			nodeWindow:SetPos(translatedX, translatedY, nodeWindow.width*scale, nodeWindow.height*scale)
+			node.width = nodeWindow.width*scale
+			node.height = nodeWindow.height*scale
+			node.x = translatedX
+			node.y = translatedY
+			nodeWindow:CallListeners( nodeWindow.OnResize )
+		end
+		local inputs = WG.nodeList[rootID].inputs
+		if(inputs) then
+			for i=1,#inputs do
+				inputs[i][1]:Show()
+				inputs[i][2]:Show()
+			end
+		end
+		WG.nodeList[rootID].nodeWindow:GetChildByName("Inputs"):Show()
+		WG.nodeList[rootID].nodeWindow:GetChildByName("AddInputs"):Show()
+		WG.nodeList[rootID].nodeWindow:GetChildByName("RemoveInputs"):Show()
+	elseif(not zoomIn and not self.zoomedOut) then
+		self.zoomedOut = true
+		for _,node in pairs(WG.nodeList) do
+			local nodeWindow = node.nodeWindow
+			local nameEditBox = node.nameEditBox
+			node:HideParameterObjects()
+			nodeWindow.font.size = nodeWindow.font.size / scale
+			nameEditBox.font.size = nameEditBox.font.size / scale
+			nameEditBox:SetPos(nil,nameEditBox.y/scale)
+			nodeWindow.minWidth = nodeWindow.minWidth / scale
+			nodeWindow.minHeight = nodeWindow.minHeight / scale
+			local translatedX = x + (nodeWindow.x - x)/scale
+			local translatedY = y + (nodeWindow.y - y)/scale
+			nodeWindow:SetPos(translatedX, translatedY, nodeWindow.width/scale, nodeWindow.height/scale)
+			node.width = nodeWindow.width*scale
+			node.height = nodeWindow.height*scale
+			node.x = translatedX
+			node.y = translatedY
+			nodeWindow:CallListeners( nodeWindow.OnResize )
+		end
+		local inputs = WG.nodeList[rootID].inputs
+		if(inputs) then
+			for i=1,#inputs do
+				inputs[i][1]:Hide()
+				inputs[i][2]:Hide()
+			end
+		end
+		WG.nodeList[rootID].nodeWindow:GetChildByName("Inputs"):Hide()
+		WG.nodeList[rootID].nodeWindow:GetChildByName("AddInputs"):Hide()
+		WG.nodeList[rootID].nodeWindow:GetChildByName("RemoveInputs"):Hide()
+		
+	end
+	return self
+end
+
 function createRoot()
 	return Chili.TreeNode:New{
 		parent = btCreatorWindow,
@@ -713,76 +782,7 @@ function widget:Initialize()
 		zoomedOut = false,
 		OnClick = { sanitizer:AsHandler(listenerOnClickOnCanvas) },
 		OnResize = { sanitizer:AsHandler(listenerOnResizeBtCreator) },
-		onMouseWheel = {
-			function(self, x, y, zoomIn)
-				-- local zoomedOut = false
-				local scale = 2
-				-- if(zoomIn) then
-				if(zoomIn and self.zoomedOut) then
-					self.zoomedOut = false
-					for _,node in pairs(WG.nodeList) do
-						local nodeWindow = node.nodeWindow
-						local nameEditBox = node.nameEditBox
-						node:ShowParameterObjects()
-						nodeWindow.font.size = nodeWindow.font.size * scale
-						nameEditBox.font.size = nameEditBox.font.size * scale
-						nameEditBox:SetPos(nil,nameEditBox.y*scale)
-						nodeWindow.minWidth = nodeWindow.minWidth * scale
-						nodeWindow.minHeight = nodeWindow.minHeight * scale
-						local translatedX = x + (nodeWindow.x - x)*scale
-						local translatedY = y + (nodeWindow.y - y)*scale
-						nodeWindow:SetPos(translatedX, translatedY, nodeWindow.width*scale, nodeWindow.height*scale)
-						node.width = nodeWindow.width*scale
-						node.height = nodeWindow.height*scale
-						node.x = translatedX
-						node.y = translatedY
-						nodeWindow:CallListeners( nodeWindow.OnResize )
-					end
-					local inputs = WG.nodeList[rootID].inputs
-					if(inputs) then
-						for i=1,#inputs do
-							inputs[i][1]:Show()
-							inputs[i][2]:Show()
-						end
-					end
-					WG.nodeList[rootID].nodeWindow:GetChildByName("Inputs"):Show()
-					WG.nodeList[rootID].nodeWindow:GetChildByName("AddInputs"):Show()
-					WG.nodeList[rootID].nodeWindow:GetChildByName("RemoveInputs"):Show()
-				elseif(not zoomIn and not self.zoomedOut) then
-					self.zoomedOut = true
-					for _,node in pairs(WG.nodeList) do
-						local nodeWindow = node.nodeWindow
-						local nameEditBox = node.nameEditBox
-						node:HideParameterObjects()
-						nodeWindow.font.size = nodeWindow.font.size / scale
-						nameEditBox.font.size = nameEditBox.font.size / scale
-						nameEditBox:SetPos(nil,nameEditBox.y/scale)
-						nodeWindow.minWidth = nodeWindow.minWidth / scale
-						nodeWindow.minHeight = nodeWindow.minHeight / scale
-						local translatedX = x + (nodeWindow.x - x)/scale
-						local translatedY = y + (nodeWindow.y - y)/scale
-						nodeWindow:SetPos(translatedX, translatedY, nodeWindow.width/scale, nodeWindow.height/scale)
-						node.width = nodeWindow.width*scale
-						node.height = nodeWindow.height*scale
-						node.x = translatedX
-						node.y = translatedY
-						nodeWindow:CallListeners( nodeWindow.OnResize )
-					end
-					local inputs = WG.nodeList[rootID].inputs
-					if(inputs) then
-						for i=1,#inputs do
-							inputs[i][1]:Hide()
-							inputs[i][2]:Hide()
-						end
-					end
-					WG.nodeList[rootID].nodeWindow:GetChildByName("Inputs"):Hide()
-					WG.nodeList[rootID].nodeWindow:GetChildByName("AddInputs"):Hide()
-					WG.nodeList[rootID].nodeWindow:GetChildByName("RemoveInputs"):Hide()
-					
-				end
-				return self
-			end,
-		},
+		onMouseWheel = { sanitizer:AsHandler(listenerMouseWheelScroll) },
 	}
 
 	addNodeToCanvas( createRoot() )
