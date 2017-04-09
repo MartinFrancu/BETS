@@ -1,0 +1,28 @@
+{
+	"additionalNodes": [],
+	"defaultRole": "Role 0",
+	"inputs": [],
+	"properties": {
+		"ATabOMetaI45nhmLU0VtqYXZR81L2PJl": {
+			"height": 50,
+			"title": "Debug.dummy",
+			"width": 121.000008,
+			"x": 293,
+			"y": 165
+		}
+	},
+	"roles": [ {
+		"categories": [],
+		"name": "Role 0"
+	} ],
+	"root": {
+		"children": [],
+		"id": "ATabOMetaI45nhmLU0VtqYXZR81L2PJl",
+		"nodeType": "luaCommand",
+		"parameters": [ {
+			"name": "scriptName",
+			"value": "Debug.dummy"
+		} ],
+		"scriptName": "Debug.dummy"
+	}
+}

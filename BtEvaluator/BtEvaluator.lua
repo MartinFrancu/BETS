@@ -391,7 +391,7 @@ function BtEvaluator.OnCommand(params)
 			end
 		end
 		
-		command.Sensors = SensorManager.forGroup(units, instance.project)
+		command.Sensors = SensorManager.forGroup(units, command.project)
 		local result, output = command:BaseRun(units, parameters)
 		
 		if(output)then

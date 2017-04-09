@@ -125,6 +125,12 @@ return Utils:Assign("ProjectManager", function()
 		end
 		return result
 	end
+	function ProjectManager.isProject(projectName)
+		return not not projects[projectName]
+	end
+	function ProjectManager.asQualifiedName(projectName, name)
+		return projectName .. "." .. name
+	end
 	
 	function ProjectManager.findFile(contentType, qualifiedName, name)
 		local projectName
@@ -150,7 +156,7 @@ return Utils:Assign("ProjectManager", function()
 		return path, {
 			project = projectName,
 			name = name,
-			qualifiedName = projectName .. "." .. name,
+			qualifiedName = ProjectManager.asQualifiedName(projectName, name),
 			exists = VFS.FileExists(path),
 			readonly = project.isArchive
 		}
@@ -162,7 +168,7 @@ return Utils:Assign("ProjectManager", function()
 			result[i] = {
 				project = project.name,
 				name = name,
-				qualifiedName = project.name .. "." .. name,
+				qualifiedName = ProjectManager.asQualifiedName(project.name, name),
 				filename = v,
 				path = project.path .. (contentType.directoryName and (contentType.directoryName .. "/") or "") .. v,
 			}

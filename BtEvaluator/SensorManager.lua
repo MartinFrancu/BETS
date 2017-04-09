@@ -94,9 +94,9 @@ function SensorManager.loadSensor(...)
 end
 
 function SensorManager.forGroup(group, localProject)
-	local manager = group[smInstance];
-	if(not manager)then
-		manager = setmetatable({
+	local managers = group[smInstance];
+	if(not managers)then
+		managers = setmetatable({
 			Reload = function(self)
 				local keys = {}
 				for k, _ in pairs(self) do
@@ -110,28 +110,39 @@ function SensorManager.forGroup(group, localProject)
 				SensorManager.reload()
 			end
 		}, {
-			__index = function(self, key)
-				local sensorConstructor = sensors[key]
-				if(not sensorConstructor)then
-					sensorConstructor = SensorManager.loadSensor(localProject, key)
-					if(not sensorConstructor)then
-						return nil
-					end
-					sensors[key] = sensorConstructor
-				end
-				local sensor = sensorConstructor(manager, group);
-				if(not sensor)then
-					sensors[key] = nil
+			__index = function(self, projectName)
+				if(not ProjectManager.isProject(projectName))then
 					return nil
 				end
-				rawset(self, key, sensor)
-				return sensor
+				
+				local manager = setmetatable({ Reload = function() managers:Reload() end }, {
+					__index = function(self, key)
+						local qualifiedName = ProjectManager.asQualifiedName(projectName, key)
+						local sensorConstructor = sensors[qualifiedName]
+						if(not sensorConstructor)then
+							sensorConstructor = SensorManager.loadSensor(projectName, key)
+							if(not sensorConstructor)then
+								return managers[key]
+							end
+							sensors[qualifiedName] = sensorConstructor
+						end
+						local sensor = sensorConstructor(self, group);
+						if(not sensor)then
+							sensors[qualifiedName] = nil
+							return nil
+						end
+						rawset(self, key, sensor)
+						return sensor
+					end,
+				})
+				rawset(self, projectName, manager)
+				return manager
 			end,
 		})
 
-		group[smInstance] = manager
+		group[smInstance] = managers
 	end
-	return manager
+	return managers[localProject] or managers
 end
 
 function SensorManager.getAvailableSensors()

@@ -88,9 +88,12 @@ function Command:loadMethods(...)
 		return nil, "Command " .. name .. " does not exist"
 	end
 	
-	local nameComment = "--[[" .. name .. "]] "
-	local scriptStr = nameComment .. VFS.LoadFile(path)
-	local scriptChunk = assert(loadstring(scriptStr))
+	if(not self.project)then
+		self.project = parameters.project
+	end
+	
+	local scriptStr = VFS.LoadFile(path)
+	local scriptChunk = assert(loadstring(scriptStr, name))
 	setfenv(scriptChunk, self)
 	scriptChunk()
 	
@@ -257,9 +260,8 @@ function CommandManager.getAvailableCommandScripts()
 	for _,data in ipairs(commandList)do
 		Logger.log("script-load", "Loading definition from file: ", data.path)
 
-		local nameComment = "--[[" .. data.qualifiedName .. "]] "
-		local code = nameComment .. VFS.LoadFile(data.path) .. "; return getInfo()"
-		local script = assert(loadstring(code))
+		local code = VFS.LoadFile(data.path) .. "; return getInfo()"
+		local script = assert(loadstring(code, data.qualifiedName))
 
 		local success, info = pcall(script)
 
