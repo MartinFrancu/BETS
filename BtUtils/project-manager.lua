@@ -132,6 +132,22 @@ return Utils:Assign("ProjectManager", function()
 		return projectName .. "." .. name
 	end
 	
+	function ProjectManager.createProject(projectName)
+		if(projects[projectName])then
+			return nil, "Project " .. projectName .. " already exists"
+		end
+		
+		local path = PROJECT_PATH .. projectName .. "/"
+		Spring.CreateDir(path)
+		projects[projectName] = {
+			name = projectName,
+			path = path,
+			isArchive = false
+		}
+		
+		return true
+	end
+	
 	function ProjectManager.findFile(contentType, qualifiedName, name)
 		local projectName
 		if(name)then
