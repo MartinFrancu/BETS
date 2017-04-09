@@ -319,17 +319,21 @@ function createNextParameterObject(obj)
 	if (param["componentType"] and param["componentType"]:lower() == "editbox") then
 		result.componentType = "editBox"
 		local showLabel = param.name ~= "expression" or param.variableType ~= "longString"
+		local width, caption = 0, ""
 		if showLabel then
-			result.label = Label:New{
-				parent = obj.nodeWindow,
-				x = 18,
-				y = 10 + i*20,
-				width  = obj.nodeWindow.font:GetTextWidth(param["name"]),
-				height = '10%',
-				caption = param["name"],
-				--skinName='DarkGlass',
-			}
+			width = obj.nodeWindow.font:GetTextWidth(param["name"])
+			caption = param["name"]
 		end
+		result.label = Label:New{
+			parent = obj.nodeWindow,
+			x = 18,
+			y = 10 + i*20,
+			width  = width,
+			height = '10%',
+			caption = caption
+			--skinName='DarkGlass',
+		}
+		
 		local minWidth = 40
 		if param.variableType == "longString" then
 			minWidth = 150
