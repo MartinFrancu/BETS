@@ -21,21 +21,12 @@ function getInfo()
 	}
 end
 
-local buildingIds = {
-	["arm"] = {
-		["mex"] = "armmex",
-	},
-	["core"] = {
-		["mex"] = "cormex",
-	},
-}
-
 function New(self)
 	self.kind = select(5, Spring.GetTeamInfo(Spring.GetLocalTeamID()))
 end
 
 function Run(self, unitIds, parameter)
-	local buildingName = (buildingIds[self.kind] or {})[parameter.building]
+	local buildingName = parameter.building
 	if(not buildingName)then
 		Logger.error("build", "Unknown building identifier: '", parameter.building, "'")
 		return FAILURE
