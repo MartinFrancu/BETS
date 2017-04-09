@@ -42,6 +42,7 @@ TreeHandle = {
 			Ready = false,
 			Created = false,
 			Inputs = {},
+			unitsLocked,
 			} 
 --]]			
 --[[-----------------------------------------------------------------------------------
@@ -223,6 +224,7 @@ end
 --[[ It is expected from obj that ti contains following records:
 	AssignUnitListener
 	InputButtonListener
+	LockedCheckboxListener
 --]]
 function TreeHandle:New(obj)
 	setmetatable(obj, self)
@@ -243,15 +245,29 @@ function TreeHandle:New(obj)
 		x = 7,
 		y = 7,
 		height = 30,
-		width =  '95%',
+		width =  '80%',
 		minWidth = 50,
 		caption =  obj.TreeType .. " (initializing)",
 		skinName = "DarkGlass",
 		tooltip = "Name of tree type, (state)",
 	}
+	table.insert(obj.ChiliComponentsGeneral, treeTypeLabel)
+	
+	local lockedCheckbox = Chili.Checkbox:New{
+		x = 300,
+		y = 0,
+		width = 70,
+		height = 30,
+		caption = "locked",
+		skinName = "DarkGlass",
+		tooltip = "Are units assigned to this tree selectable",
+	}
+	lockedCheckbox.TreeHandle = obj
+	obj.unitsLocked = lockedCheckbox
+	table.insert(obj.ChiliComponentsGeneral, lockedCheckbox)
 	
 	-- Order of these childs is sort of IMPORTANT as other entities needs to access children
-	table.insert(obj.ChiliComponentsGeneral, treeTypeLabel)
+	
 	
 	local roleInd = 0 
 	local roleCount = #obj.Tree.roles

@@ -95,7 +95,10 @@ end
 -- //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-
+function getAssignedUnits()
+	return TreeHandle.unitsToTreesMap
+end
+WG.BtGetAssignedUnits = getAssignedUnits
 
 
 -- To show in treeTabPanel tab with given name:
@@ -498,6 +501,11 @@ local function getDummyAllyUnit()
 	return allUnits[1]
 end
 
+local function listenerLockedCheckbox(self)
+	Logger.log("selection", "self unitslocked: ", self.TreeHandle.unitsLocked, " checked: ", self.checked)
+	self.TreeHandle.unitsLocked = self.checked
+end
+
 function listenerInputButton(self,x,y,button, ...)
 	if(not inputCommandsTable or not treeCommandsTable) then		
 		--WG.fillCustomCommandIDs()
@@ -534,6 +542,8 @@ end
 
 -- Listener for reload all button 
 function listenerReloadAll(self, x, y, ...)
+	-- ADD SOMEWHERE UPDATE TREE SELECTION WINDOW
+	refreshTreeSelectionPanel()
 	reloadAll()
 end 
 -- Listener for closing error window.
@@ -558,6 +568,8 @@ local function listenerClickOnSelectedTreeDoneButton(self, x, y, button)
 	end
 end
 
+
+
 -- This function show currently selected tree in BtCreator. If add tree tab is selected
 local function listenerClickBtCreator(self, x, y, button)
 	-- get the selected tab from tabs:	
@@ -576,6 +588,7 @@ local function listenerClickBtCreator(self, x, y, button)
 		BtCreator.showNewTree()
 	end
 end
+
 ---------------------------------------LISTENERS END
 
 -- This is the method to create new tree instance, 
@@ -591,6 +604,7 @@ function instantiateTree(treeType, instanceName, requireUnits)
 		TreeType = treeType,
 		AssignUnitListener = sanitizer:AsHandler(listenerAssignUnitsButton),
 		InputButtonListener = sanitizer:AsHandler(listenerInputButton),
+		LockedCheckboxListener = sanitizer:AsHandler(listenerLockedCheckbox),
 		RequireUnits = requireUnits,
 	}
 	
@@ -839,6 +853,12 @@ end
 
 local saveAllUnitDefs
 
+-- call durin initalize and reload trees
+function resetMarkers()
+	-- get players units
+	-- unmarks all units in this team
+	-- mark all units in our trees
+end
 function widget:Initialize()	
 	-- Get ready to use Chili
 	Chili = WG.ChiliClone
@@ -930,6 +950,20 @@ function widget:UnitDestroyed(unitId)
 		-- if the tree has no more units:
 		removeTreesWithoutUnitsRequiringUnits()
 	end
+end
+
+function widget:Update()
+	local selectedUnits = spGetSelectedUnits()
+	local assignedUnitsMap = TreeHandle.unitsToTreesMap
+	local okUnits = {}
+	for _,unitId in pairs(selectedUnits) do
+		if	( (assignedUnitsMap[unitId] == nil)
+			or (assignedUnitsMap[unitId].TreeHandle.unitsLocked.checked == false) ) 
+		then
+			table.insert(okUnits, unitId)
+		end
+	end
+	spSelectUnits(okUnits)
 end
 
 function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
