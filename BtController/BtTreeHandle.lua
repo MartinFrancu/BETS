@@ -448,9 +448,9 @@ function TreeHandle:ReloadTree()
 	self.ChiliComponentsRoles = {}
 	self.ChiliComponentsInputs = {}
 	-- add new components: roles
-	local xOffSet = createChiliComponentsRoles(self)
+	local xOffSet = createChiliComponentsRoles(self, CONSTANTS.rolesXOffset,CONSTANTS.rolesYOffset)
 	-- add new components: inputs
-	createChiliComponentsInput(self, xOffSet)
+	createChiliComponentsInput(self, xOffSet, CONSTANTS.rolesYOffset)
 	
 	-- transfering user given data: 
 	
