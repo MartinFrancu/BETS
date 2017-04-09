@@ -27,15 +27,16 @@ return Utils:Assign("CustomEnvironment", function()
 	local customEnvironmentPrototype = {}
 	local customEnvironmentMetatable = { __index = customEnvironmentPrototype }
 
+	--- Creates the environment with the specified parameters.
+	-- You can optionally also specify the values for additional slot, which is equivalent to setting them after you receive the result.
+	-- @usage
+	-- local customEnvironment = CustomEnvironment:New({ mode = 2 })
+	-- local environment = customEnvironment:Create({ name = "myEnvironment" })
+	-- setfenv(myFunction, environment)
+	-- return myFunction()
 	function customEnvironmentPrototype:Create(parameters, additionalSlots)
 		parameters = parameters or {}
 		local result = setmetatable(additionalSlots and Debug.clone(additionalSlots) or {}, self.environmentMetatable)
-		
-		if(self.additionalCreators)then
-			for k, v in pairs(self.additionalCreators) do
-				result[k] = v(parameters)
-			end
-		end
 		
 		for i, v in pairs(addedSlotDescriptions) do
 			local fulfilled = true
@@ -51,10 +52,21 @@ return Utils:Assign("CustomEnvironment", function()
 			end
 		end
 		
+		if(self.additionalCreators)then
+			for k, v in pairs(self.additionalCreators) do
+				result[k] = v(parameters)
+			end
+		end
+		
 		result._G = result
 		return result
 	end
 
+	--- Creates a new instance of @{CustomEnvironment}
+	-- @constructor
+	-- @tparam {[string]=Any} additionalSlots Additional values that should be available in the final environment; or `nil`
+	-- @tparam {[string]=func} additionalCreators Costructors of additional values that should be available in the final environment that utilize the parameters of @{CustomEnvironment:Create}; or `nil`
+	-- @treturn CustomEnvironment
 	function CustomEnvironment:New(additionalSlots, additionalCreators)
 		return setmetatable({
 			environmentMetatable = additionalSlots and { __index = setmetatable(Debug.clone(additionalSlots), commonMetatable) } or commonMetatable,
@@ -62,8 +74,15 @@ return Utils:Assign("CustomEnvironment", function()
 		}, customEnvironmentMetatable)
 	end
 
-	---
-	-- @remarks If the slots have any requirements, they do not get added to already created environments -- those created by @{CustomEnvironment:Create}
+	--- Add a slot to all custom environments under certain conditions.
+	-- The slot is added only to those custom environments, that have the specified parameters filled-in.
+	-- @string slotName The name of the slot to populate
+	-- @tparam {[string]=Any}|{string} requirements A map (or array) with parameter keys that are required; or `nil` if the slot should be available everywhere
+	-- @tparam func|Any valueCreator The function that construct the value for given parameters or the value itself
+	-- @remarks If the slots have any requirements, they do not get added to already created environments, only to future ones.
+	-- @usage
+	--   CustomEnvironment.add("MathEx", nil, MathEx)
+	--   CustomEnvironment.add("error", { name = true }, function(p) return createCustomErrorHandler(p.name) end)
 	function CustomEnvironment.add(slotName, requirements, valueCreator)
 		if(valueCreator == nil)then
 			valueCreator = requirements
