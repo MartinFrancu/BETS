@@ -259,7 +259,8 @@ function removeTreeBtController(tabs,treeHandle)
 	
 	-- is it currently shown?
 	if treeHandle.Name == tabBar.selected_obj.caption and BtCreator then
-		BtCreator.hide()
+		-- hiding disabled as the tabs are no longer linked to each other
+		--BtCreator.hide()
 	end
 	
 	tabBar:Remove(treeHandle.Name)
@@ -278,8 +279,7 @@ function removeTreeBtController(tabs,treeHandle)
 	
 	if(treeHandle.Created) then
 		-- remove send message to BtEvaluator
-		Logger.loggedCall("Errors", "BtController", "removing tree fromBbtEvaluator", 
-			BtEvaluator.removeTree, treeHandle.InstanceId)
+		BtEvaluator.removeTree(treeHandle.InstanceId)
 	end
 end
 
@@ -290,8 +290,7 @@ function reloadTree(tabs, treeHandle)
 	-- remove tree instance in BtEvaluator if it is created:
 	if(treeHandle.Created) then
 		-- remove send message to BtEvaluator
-		Logger.loggedCall("Errors", "BtController", "removing tree fromBbtEvaluator", 
-			BtEvaluator.removeTree, treeHandle.InstanceId)
+		BtEvaluator.removeTree(treeHandle.InstanceId)
 	end
 	-- get the new tree specification and GUI components:
 	treeHandle:ReloadTree()
@@ -349,8 +348,8 @@ end
 -- Later should be added reload of sensorst etc..
 function reloadAll()
 	-- reload cache in BtEvaluator:
-	Logger.loggedCall("Error", "BtController", "asking BtEvaluator to clear cache.",
-		BtEvaluator.reloadCaches)
+	BtUtils.ProjectManager.reload()
+	BtEvaluator.reloadCaches()
 	-- I should iterate over all tab bar items:
 	local tabBarChildIndex = 1
 	-- get tabBar
@@ -473,16 +472,14 @@ function reportAssignedUnits(treeHandle)
 		-- now I need to share information with the BtEvaluator
 		local unitsInThisRole = TreeHandle.unitsInTreeRole(treeHandle.InstanceId, name)
 		spSelectUnits(unitsInThisRole)
-		Logger.loggedCall("Errors", "BtController", "reporting assigned units, reporting role: ".. name, 
-			BtEvaluator.assignUnits, unitsInThisRole, treeHandle.InstanceId, roleData.roleIndex)
+		BtEvaluator.assignUnits(unitsInThisRole, treeHandle.InstanceId, roleData.roleIndex)
 	end
 	spSelectUnits(originallySelectedUnits)
 end
 
 -- Reports users input for given input slot to BtEvaluator.
 function reportInputToBtEval(treeHandle, inputName)
-	Logger.loggedCall("Errors", "BtController", "reporting changed input", 
-		BtEvaluator.setInput, treeHandle.InstanceId , inputName, treeHandle.Inputs[inputName]) 
+	BtEvaluator.setInput(treeHandle.InstanceId , inputName, treeHandle.Inputs[inputName]) 
 end 
 
 -- Remove trees without units which require units.
@@ -604,8 +601,7 @@ function listenerAssignUnitsButton(self,x,y, ...)
 			self.TreeHandle.Created = true
 			reportAssignedUnits(self.TreeHandle)
 		end
-		Logger.loggedCall("Errors", "BtController", "assigning units to tree", 
-		BtEvaluator.assignUnits, selectedUnits, self.TreeHandle.InstanceId, self.roleIndex)
+		BtEvaluator.assignUnits(selectedUnits, self.TreeHandle.InstanceId, self.roleIndex)
 	end
 	-- put markers over units in selection:
 	markUnits(self.TreeHandle,  self.Role)
@@ -1136,10 +1132,7 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 					tH.Created = true
 					createTreeInBtEvaluator(tH)
 					reportAssignedUnits(tH)
-					Logger.loggedCall("Error", "BtController", 
-					"reporting tree to BtEvaluator - last input filled in",
-					BtEvaluator.reportTree, tH.InstanceId
-					)
+					BtEvaluator.reportTree(tH.InstanceId)
 					tH:UpdateTreeStatus()
 				else
 					-- tree is ready, we can report just input
