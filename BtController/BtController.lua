@@ -242,7 +242,7 @@ function addTreeToTreeTabPanel(treeHandle)
 	addFieldToBarItem(treeTabPanel, newTab.name, "MouseDown", sanitizer:AsHandler(tabBarItemMouseDownBETS) )
 	addFieldToBarItemList(treeTabPanel, newTab.name, "OnClick", sanitizer:AsHandler(listenerBarItemClick) )
 	addFieldToBarItem(treeTabPanel, newTab.name, "TreeHandle", treeHandle)
-	addFieldToBarItem(treeTabPanel, newTab.name, "tooltip", "Panel of ".. treeHandle.Name .. " tree")
+	addFieldToBarItem(treeTabPanel, newTab.name, "tooltip", treeHandle.Name .. " is an instance of the behaviour tree ".. treeHandle.TreeType .. ". Can be closed on middle mouse button click. ")
 	
 	moveToEndAddTab(treeTabPanel)
 end
@@ -779,7 +779,7 @@ end
 function finalizeAddTreeBarItem(tabs)
 	local item = getBarItemByName(tabs, "+")
 	item.focusColor = {0.2, 1.0, 0.2, 0.6}
-	item.tooltip = "Adds new instance of a tree. "
+	item.tooltip = "Add a new instance of the behaviour tree. "
 	local listeners = item.OnMouseDown
 	table.insert(listeners,refreshTreeSelectionPanel)
 end
@@ -806,7 +806,7 @@ function setUpTreeSelectionTab()
 		borderThickness = 0,
 		backgroundColor = {0.3,0.3,0.3,0.3},
 		focusColor = {1.0,0.5,0.0,0.5},
-		tooltip = "Choose a tree type from available behaviours located in BtBehaviours folder. ",
+		tooltip = "Choose a tree type from available behaviour trees. ",
 	}
 	
 	treeNameLabel = Chili.Label:New{
@@ -841,7 +841,7 @@ function setUpTreeSelectionTab()
 		skinName='DarkGlass',
 		focusColor = {1.0,0.5,0.0,0.5},
 		OnClick = {sanitizer:AsHandler(listenerClickOnSelectedTreeDoneButton)},
-		tooltip = "Creates new instance of selected behaviour with given tree instance name. ",
+		tooltip = "Creates a new instance of selected behaviour tree with given name. ",
 	}
 	
   
@@ -894,7 +894,7 @@ function setUpTreeControlWindow()
 		width = 80,
 		skinName='DarkGlass',
 		focusColor = {1.0,0.5,0.0,0.5},
-		tooltip = "Show currently selected tree in BtCreator, new tree if '+' tab",
+		tooltip = "Show currently selected tree in BtCreator. If there is no instance available, the new tree behaviour tree is shown. ",
 		OnClick = {sanitizer:AsHandler(listenerClickBtCreator)}
 	}
 	if(not BtCreator)then
@@ -910,7 +910,7 @@ function setUpTreeControlWindow()
 		y = windowFrameGap ,
 		width = 80,
 		skinName='DarkGlass',
-		tooltip = "Reloads all trees from drive.",
+		tooltip = "Reloads all behavour trees from the disk. Also reloads available lua scripts nodes and sensors. ",
 		focusColor = {1.0,0.5,0.0,0.5},
 		OnClick = {sanitizer:AsHandler(listenerReloadAll)}
 	}
