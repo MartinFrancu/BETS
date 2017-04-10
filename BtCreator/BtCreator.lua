@@ -183,7 +183,7 @@ function listenerEndCopyingNode(_, x , y)
 			parameters = copyTable(nodeDefinitionInfo[copyTreeNode.nodeType].parameters)
 		}
 		if(copyTreeNode.icon) then
-			params.icon = copyTreeNode.icon.file
+			params.iconPath = copyTreeNode.icon.file
 		end
 		addNodeToCanvas(Chili.TreeNode:New(params))
 		copyTreeNode = nil
@@ -524,7 +524,7 @@ local function populateNodePoolWithTreeNodes(heightSum, nodes)
 				nodeType = nodes[i].name, -- TODO use name parameter instead of nodeType
 				parent = nodePoolPanel,
 				y = heightSum,
-				icon = LUAUI_DIRNAME .. "Widgets/BtTreenodeIcons/"..nodes[i].name..".png",
+				iconPath = LUAUI_DIRNAME .. "Widgets/BtTreenodeIcons/"..nodes[i].name..".png",
 				tooltip = nodes[i].tooltip or "",
 				draggable = false,
 				resizable = false,
@@ -589,7 +589,7 @@ local function fillNodePoolWithNodes(nodes)
 			nodeType = scriptName,
 			parent = nodePoolPanel,
 			y = heightSum,
-			icon = scriptIcons[scriptName],
+			iconPath = scriptIcons[scriptName],
 			tooltip = "",
 			draggable = false,
 			resizable = false,
@@ -669,11 +669,17 @@ function listenerMouseWheelScroll(self, x, y, zoomIn)
 		self.zoomedOut = false
 		for _,node in pairs(WG.nodeList) do
 			local nodeWindow = node.nodeWindow
-			local nameEditBox = node.nameEditBox
+			local nodeName = node.nameEditBox
+			local icon = node.icon
 			node:ShowParameterObjects()
 			nodeWindow.font.size = nodeWindow.font.size * scale
-			nameEditBox.font.size = nameEditBox.font.size * scale
-			nameEditBox:SetPos(nil,nameEditBox.y*scale)
+			nodeName.font.size = nodeName.font.size * scale
+			local nameX = 15
+			if(icon) then
+				nameX = nameX + 20
+				icon:SetPos(icon.x + 3,icon.y + 3,icon.width * scale,icon.height * scale)
+			end
+			nodeName:SetPos(nameX,6)
 			nodeWindow.minWidth = nodeWindow.minWidth * scale
 			nodeWindow.minHeight = nodeWindow.minHeight * scale
 			local translatedX = x + (nodeWindow.x - x)*scale
@@ -699,11 +705,17 @@ function listenerMouseWheelScroll(self, x, y, zoomIn)
 		self.zoomedOut = true
 		for _,node in pairs(WG.nodeList) do
 			local nodeWindow = node.nodeWindow
-			local nameEditBox = node.nameEditBox
+			local nodeName = node.nameEditBox
+			local icon = node.icon
 			node:HideParameterObjects()
 			nodeWindow.font.size = nodeWindow.font.size / scale
-			nameEditBox.font.size = nameEditBox.font.size / scale
-			nameEditBox:SetPos(nil,nameEditBox.y/scale)
+			nodeName.font.size = nodeName.font.size / scale
+			local nameX = 10
+			if(icon) then
+				nameX = nameX + 10
+				icon:SetPos(icon.x - 3,icon.y - 3,icon.width / scale,icon.height / scale)
+			end
+			nodeName:SetPos(nameX,-1)
 			nodeWindow.minWidth = nodeWindow.minWidth / scale
 			nodeWindow.minHeight = nodeWindow.minHeight / scale
 			local translatedX = x + (nodeWindow.x - x)/scale

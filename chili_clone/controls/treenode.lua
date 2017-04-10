@@ -30,6 +30,7 @@ TreeNode = Control:Inherit{
 	connectionOut = nil,
 	nameEditBox = nil,
 	icon = nil,
+	iconPath = nil,
 
 	parameters = {},
 	parameterObjects = {},
@@ -147,14 +148,14 @@ function TreeNode:New(obj)
 		backgroundColor = {0,0,0,0},
 		autosize = true,
 	}
-	if(obj.icon and VFS.FileExists(obj.icon)) then
+	if(obj.iconPath and VFS.FileExists(obj.iconPath)) then
 		obj.icon = Image:New{
 			parent = obj.nodeWindow,
 			x = 15,
 			y = 10,
 			width = 20,
 			height = 20,
-			file = obj.icon,
+			file = obj.iconPath,
 		}
 		obj.nameEditBox:SetPos(obj.nameEditBox.x+20)
 	end
@@ -491,7 +492,7 @@ function TreeNode:Dispose()
 	if(self.nameEditBox) then
 		self.nameEditBox:Dispose()
 	end
-	if(self.icon and self.icon.Dispose) then
+	if(self.icon) then
 		self.icon:Dispose()
 	end
 	if(self.parameterObjects) then
