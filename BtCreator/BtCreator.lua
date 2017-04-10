@@ -68,9 +68,11 @@ local treeInstanceId
 
 local moveAllNodes
 local moveFrom
-local moveWindowFrom
-local moveCanvasImg
 
+local moveWindow
+local moveWindowFrom
+local moveWindowFromMouse
+local moveCanvasImg
 
 function BtCreator.show()
 	if(not btCreatorWindow.visible) then
@@ -610,22 +612,17 @@ end
 local LEFT_BUTTON = 1
 local RIGHT_BUTTON = 3
 
-function listenerOnClickOnCanvas(self, x, y, button)
-	if button == LEFT_BUTTON then
-		WG.clearSelection()
-		for _,node in pairs(WG.nodeList) do
-			node:UpdateParameterValues()
-		end
-	end
-	--return self
-end
-
 function listenerOnMouseDownCanvas(self, x, y, button)
 	if button == RIGHT_BUTTON then
 		moveTimer = os.clock()
 		moveAllNodes = true
 		moveFrom = {x, y}
 		return self
+	elseif button == LEFT_BUTTON then
+		WG.clearSelection()
+		for _,node in pairs(WG.nodeList) do
+			node:UpdateParameterValues()
+		end
 	end
 end
 
@@ -819,7 +816,6 @@ function widget:Initialize()
 		skinName='DarkGlass',
 		backgroundColor = {0.1,0.1,0.1,1},
 		zoomedOut = false,
-		OnClick = { sanitizer:AsHandler(listenerOnClickOnCanvas) },
 		OnResize = { sanitizer:AsHandler(listenerOnResizeBtCreator) },
 		OnMouseWheel = { sanitizer:AsHandler(listenerMouseWheelScroll) },
 		OnMouseDown = { sanitizer:AsHandler(listenerOnMouseDownCanvas) },
@@ -976,7 +972,9 @@ function widget:Initialize()
 		onMouseDown = { 
 			function(self, x, y)
 				self.file = LUAUI_DIRNAME.."Widgets/BtCreator/move_grey.png"
-				moveWindowFrom = {x, y}
+				moveWindow = true
+				moveWindowFrom = {btCreatorWindow.x, btCreatorWindow.y}
+				moveWindowFromMouse = {x, y}
 				self:Invalidate()
 				return self
 			end,
@@ -989,21 +987,17 @@ function widget:Initialize()
 		onMouseUp = {
 			function(self, x, y)
 				self.file = LUAUI_DIRNAME.."Widgets/BtCreator/move_orange.png"
+				moveWindow = false
 				self:Invalidate()
 				return self
 			end,
 			},
 		onMouseMove = {
 			function(self, x, y)
-				if(moveAllNodes) then
-					local diffx = - x + moveFrom[1]
-					local diffy = - y + moveFrom[2]
-					for id,node in pairs(WG.nodeList) do
-						node.x = node.x + diffx
-						node.y = node.y + diffy
-						btCreatorWindow:SetPos(node.x + diffx, node.y + diffy)
-					end
-					moveWindowFrom = {x, y}
+				if(moveWindow) then
+					local diffx = x - moveWindowFromMouse[1]
+					local diffy = y - moveWindowFromMouse[2]
+					btCreatorWindow:SetPos(btCreatorWindow.x + diffx, btCreatorWindow.y + diffy)
 					btCreatorWindow:Invalidate()
 				end
 			end,
