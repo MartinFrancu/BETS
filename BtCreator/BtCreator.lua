@@ -840,7 +840,7 @@ function widget:Initialize()
 		height = 30,
 		caption = "New Tree",
 		skinName = "DarkGlass",
-		focusColor = {0.5,0.5,0.5,0.5},
+		focusColor = {1.0,0.5,0.0,0.5},
 		OnClick = { sanitizer:AsHandler(listenerClickOnNewTree) },
 	}
 	saveTreeButton = Chili.Button:New{
@@ -851,7 +851,7 @@ function widget:Initialize()
 		height = 30,
 		caption = "Save Tree",
 		skinName = "DarkGlass",
-		focusColor = {0.5,0.5,0.5,0.5},
+		focusColor = {1.0,0.5,0.0,0.5},
 		OnClick = { sanitizer:AsHandler(listenerClickOnSaveTree) },
 	}
 	saveTreeButton.hideFunction = BtCreator.hide
@@ -863,7 +863,7 @@ function widget:Initialize()
 		height = 30,
 		caption = "Load Tree",
 		skinName = "DarkGlass",
-		focusColor = {0.5,0.5,0.5,0.5},
+		focusColor = {1.0,0.5,0.0,0.5},
 		OnClick = { sanitizer:AsHandler(listenerClickOnLoadTree) },
 	}
 	roleManagerButton = Chili.Button:New{
@@ -874,7 +874,7 @@ function widget:Initialize()
 		height = 30,
 		caption = "Role manager",
 		skinName = "DarkGlass",
-		focusColor = {0.5,0.5,0.5,0.5},
+		focusColor = {1.0,0.5,0.0,0.5},
 		OnClick = { sanitizer:AsHandler(listenerClickOnRoleManager) },
 	}
 	roleManagerButton.hideFunction = BtCreator.hide
@@ -887,7 +887,7 @@ function widget:Initialize()
 		height = 30,
 		caption = "Sensors",
 		skinName = "DarkGlass",
-		focusColor = {0.5,0.5,0.5,0.5},
+		focusColor = {1.0,0.5,0.0,0.5},
 		OnClick = { sanitizer:AsHandler(listenerClickOnShowSensors) },
 	}
 	showBlackboardButton = Chili.Button:New{
@@ -898,7 +898,7 @@ function widget:Initialize()
 		height = 30,
 		caption = "Blackboard",
 		skinName = "DarkGlass",
-		focusColor = {0.5,0.5,0.5,0.5},
+		focusColor = {1.0,0.5,0.0,0.5},
 		OnClick = { sanitizer:AsHandler(
 			function()
 				blackboard.setWindowPosition(
@@ -917,7 +917,7 @@ function widget:Initialize()
 		height = 30,
 		caption = "Toggle Breakpoint",
 		skinName = "DarkGlass",
-		focusColor = {0.5,0.5,0.5,0.5},
+		focusColor = {1.0,0.5,0.0,0.5},
 		OnClick = { sanitizer:AsHandler(listenerClickOnBreakpoint) },
 	}
 	continueButton = Chili.Button:New{
@@ -928,7 +928,7 @@ function widget:Initialize()
 		height = 30,
 		caption = "Continue",
 		skinName = "DarkGlass",
-		focusColor = {0.5,0.5,0.5,0.5},
+		focusColor = {1.0,0.5,0.0,0.5},
 		OnClick = { sanitizer:AsHandler(listenerClickOnContinue) },
 	}
 
@@ -940,7 +940,7 @@ function widget:Initialize()
 		height = 30,
 		caption = "_",
 		skinName = "DarkGlass",
-		focusColor = {0.5,0.5,0.5,0.5},
+		focusColor = {1.0,0.5,0.0,0.5},
 		OnClick = { sanitizer:AsHandler(listenerClickOnMinimize) },
 	}
 

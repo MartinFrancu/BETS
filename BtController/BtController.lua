@@ -805,6 +805,7 @@ function setUpTreeSelectionTab()
 		skinName = 'DarkGlass',
 		borderThickness = 0,
 		backgroundColor = {0.3,0.3,0.3,0.3},
+		focusColor = {1.0,0.5,0.0,0.5},
 		tooltip = "Choose a tree type from available behaviours located in BtBehaviours folder. ",
 	}
 	
@@ -838,6 +839,7 @@ function setUpTreeSelectionTab()
 		height = 30,
 		caption = "Done",
 		skinName='DarkGlass',
+		focusColor = {1.0,0.5,0.0,0.5},
 		OnClick = {sanitizer:AsHandler(listenerClickOnSelectedTreeDoneButton)},
 		tooltip = "Creates new instance of selected behaviour with given tree instance name. ",
 	}
@@ -891,6 +893,7 @@ function setUpTreeControlWindow()
 		y = 0,
 		width = 80,
 		skinName='DarkGlass',
+		focusColor = {1.0,0.5,0.0,0.5},
 		tooltip = "Show currently selected tree in BtCreator, new tree if '+' tab",
 		OnClick = {sanitizer:AsHandler(listenerClickBtCreator)}
 	}
@@ -908,6 +911,7 @@ function setUpTreeControlWindow()
 		width = 80,
 		skinName='DarkGlass',
 		tooltip = "Reloads all trees from drive.",
+		focusColor = {1.0,0.5,0.0,0.5},
 		OnClick = {sanitizer:AsHandler(listenerReloadAll)}
 	}
 
