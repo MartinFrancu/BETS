@@ -852,17 +852,18 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 	end
 	-- Check for double click
 	local now = Spring.GetTimer()
-	if(childName == self.treeNode.nameEditBox.name and Spring.DiffTimers(now, lastClicked) < 0.3) then
+	local selectSubtree = false
+	if(Spring.DiffTimers(now, lastClicked) < 0.3) then
 		lastClicked = now
-		return
+		selectSubtree = true
 	end
 	lastClicked = now
 	local _, ctrl, _, shift = Spring.GetModKeyState()
-	if(WG.selectedNodes[self.treeNode.id]==nil and (not ctrl) and (not shift) and button ~= 3) then
+	if(not selectSubtree and WG.selectedNodes[self.treeNode.id]==nil and (not ctrl) and (not shift) and button ~= 3) then
 		WG.clearSelection()
 		addNodeToSelection(self)
 	end
-	if(WG.selectedNodes[self.treeNode.id] and (not ctrl) and (not shift) and button ~= 3) then
+	if(not selectSubtree and WG.selectedNodes[self.treeNode.id] and (not ctrl) and (not shift) and button ~= 3) then
 		movingNodes = true
 		previousPosition.x = self.x
 		previousPosition.y = self.y
@@ -873,11 +874,7 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 		return self
 	end
 
-	local selectSubtree = false
-	if(button == 3) then
-		selectSubtree = true
-	end
-	if (shift) then
+	if (shift or selectSubtree) then
 		shiftSelectNodes(self, selectSubtree)
 	elseif (ctrl) then
 		ctrlSelectNodes(self, selectSubtree)

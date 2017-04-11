@@ -619,9 +619,12 @@ function listenerOnMouseDownCanvas(self, x, y, button)
 		moveFrom = {x, y}
 		return self
 	elseif button == LEFT_BUTTON then
-		WG.clearSelection()
-		for _,node in pairs(WG.nodeList) do
-			node:UpdateParameterValues()
+		local _, ctrl, _, shift = Spring.GetModKeyState()
+		if not ctrl and not shift then  
+			WG.clearSelection()
+			for _,node in pairs(WG.nodeList) do
+				node:UpdateParameterValues()
+			end
 		end
 	end
 end
