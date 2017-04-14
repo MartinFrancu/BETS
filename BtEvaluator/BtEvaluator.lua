@@ -128,11 +128,11 @@ function BtEvaluator.sendMessage(messageType, messageData)
 	local payload = "BETS " .. messageType;
 	if(messageData)then
 		payload = payload .. " "
-		if(type(messageData) == "string")then
+		--[[if(type(messageData) == "string")then
 			payload = payload .. messageData
-		else
+		else]]
 			payload = payload .. JSON:encode(messageData)
-		end
+		--end
 	end
 	Logger.log("communication", payload)
 	lastResponse = nil
@@ -150,6 +150,9 @@ function BtEvaluator.sendMessage(messageType, messageData)
 			return nil, response.error
 		end
 	end
+end
+function BtEvaluator.executeOS(command)
+	BtEvaluator.sendMessage("EXECUTE", command)
 end
 
 function BtEvaluator.requestNodeDefinitions()
