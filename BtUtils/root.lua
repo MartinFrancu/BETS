@@ -7,6 +7,7 @@ WG.BtUtils = WG.BtUtils or (function()
 	--- Locatable modules and classes.
 	-- @table BtUtils.
 	local locators = {
+		Chili = "chili-proxy", -- @{Chili}
 		Sentry = "sentry", -- @{Sentry}
 		JSON = "JSON", -- @{JSON}
 		Dependency = "dependency", -- @{Dependency}
@@ -22,7 +23,8 @@ WG.BtUtils = WG.BtUtils or (function()
 		Sanitizer = "sanitizer", -- @{Sanitizer}
 		Timer = "timer", -- @{Timer}
 		ProjectManager = "project-manager", -- @{ProjectManager}
-		CustomEnvironment = "custom-environment" -- @{CustomEnvironment}
+		CustomEnvironment = "custom-environment", -- @{CustomEnvironment}
+		ErrorBox = "error-box", -- @{ErrorBox}
 	}
 	
 	local LOCAL_PATH = LUAUI_DIRNAME .. "Widgets/BtUtils/"

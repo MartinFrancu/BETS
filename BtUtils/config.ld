@@ -41,9 +41,12 @@ custom_display_name_handler = function(item, default_handler)
 	return default_handler(item)
 end
 
--- custom see handler to properly reference the JSON library
+-- custom see handler to properly reference external libraries
 custom_see_handler('JSON', function()
   return 'JSON', 'http://regex.info/blog/lua/json'
+end)
+custom_see_handler('Chili', function()
+  return 'Chili', 'https://gajop.github.io/chiliui/index.html'
 end)
 
 -- adds the Remarks section to methods, functions etc.
