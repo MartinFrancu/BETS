@@ -27,6 +27,7 @@ local continueButton
 local minimizeButton
 local roleManagerButton
 local newTreeButton
+local showBtCheatButton
 
 local saveTreeOncePossible
 
@@ -35,6 +36,8 @@ local treeNameEditbox
 local rolesOfCurrentTree
 
 local roleManager
+
+local btCheat
 
 --- Keys are node IDs, values are Treenode objects.
 WG.nodeList = {}
@@ -396,6 +399,15 @@ function listenerClickOnRoleManager(self)
 	local currentTree = formBehaviourTree()
 	self.hideFunction()
 	roleManager.showRolesManagement(Screen0, currentTree, rolesOfCurrentTree, afterRoleManagement)
+end
+
+function listenerClickOnCheat(self)
+	if(self.showing)then
+		btCheat.hide()
+	else
+		btCheat.show()
+	end
+	self.showing = not self.showing
 end
 
 function listenerClickOnMinimize()
@@ -947,6 +959,19 @@ function widget:Initialize()
 		OnClick = { sanitizer:AsHandler(listenerClickOnContinue) },
 	}
 
+	showBtCheatButton = Chili.Button:New{
+		parent = buttonPanel,
+		x = continueButton.x + continueButton.width,
+		y = 0,
+		width = 110,
+		height = 30,
+		caption = "Cheat",
+		skinName = "DarkGlass",
+		focusColor = {1.0,0.5,0.0,0.5},
+		OnClick = { sanitizer:AsHandler(listenerClickOnCheat) },
+	}
+	showBtCheatButton.showing = false
+	
 	minimizeButton = Chili.Button:New{
 		parent = buttonPanel,
 		x = btCreatorWindow.width - 45,
@@ -1031,6 +1056,7 @@ function widget:Initialize()
 	local environment = setmetatable(newEntries ,{__index = widget})
 	
 	roleManager = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/role_manager.lua", environment , VFS.RAW_FIRST)
+	btCheat = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/cheat.lua", environment , VFS.RAW_FIRST)
 	
 	Dependency.fill(Dependency.BtCreator)
 	Logger.log("reloading", "BtCreator widget:Initialize end. ")
@@ -1057,6 +1083,13 @@ function widget:Shutdown()
 	Logger.log("reloading", "BtCreator widget:shutdown end. ")
 end
 
+function widget:GameFrame()
+	btCheat.onFrame()
+end
+
+function widget:GamePaused()
+	btCheat.gamePaused()
+end
 
 function widget:KeyPress(key)
 	if(Spring.GetKeySymbol(key) == "delete") then -- Delete was pressed
