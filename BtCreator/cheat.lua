@@ -15,24 +15,35 @@ local downSpeedButton
 local ffState -- nill - nothing, not fastforwargin, acc = accelerrating, ff when fast forwarding, stop = slowing down
 local speed
 
+local giveButton
+
+local expectedCommand
+
+local inputCommandsTable
 
 local CONSTANTS = {
 	pauseCMD = "Pause",
 	speedUpCMD = "SpeedUp",
 	slowDownCMD = "SlowDown",
+	giveCMD = "give",
 	ffButton = {
 		whenSlow = ">>>>>",
 		whenFast = "Stop",
 	},
 	defaultFFSpeed = 5,
 	normalSpeed = 1,
+	cheatInputCMDName = "BETS_CHEAT_POSITION",
 }
 
 local spSendCommand = Spring.SendCommands
-local spGetTimer = Spring.GetTimer
-local spDiffTimes = Spring.DiffTimers
+--local spGetTimer = Spring.GetTimer
+---local spDiffTimes = Spring.DiffTimers
+local spGetCmdDescIndex = Spring.GetCmdDescIndex
+local spSetActiveCommand = Spring.SetActiveCommand
+local spGetSelectedUnits = Spring.GetSelectedUnits
+local spSelectUnits = Spring.SelectUnitArray
 
-function pauseGameListener()	
+function pauseGameListener()
 	spSendCommand(CONSTANTS.pauseCMD)
 end
 
@@ -59,6 +70,43 @@ function fastForwardButtonListener(self)
 		ffState = "stop"
 		self:SetCaption(CONSTANTS.ffButton.whenSlow)
 	end
+end
+
+
+-- this returns one ally unit. 
+local function getDummyAllyUnit()
+	local allUnits = Spring.GetTeamUnits(Spring.GetMyTeamID())
+	return allUnits[1]
+end
+
+function giveListener(self)
+	if(not inputCommandsTable or not treeCommandsTable) then		
+		inputCommandsTable = WG.InputCommands
+	end
+	
+	local f = function()
+		local ret = spSetActiveCommand(  spGetCmdDescIndex(inputCommandsTable[ CONSTANTS.cheatInputCMDName ]) ) 
+		if(ret == false ) then 
+			Logger.log("commands", "BtCheats: Unable to set command active: " , CONSTANTS.cheatInputCMDNamee) 
+		end
+	end
+	
+	-- if there are no units selected, ...
+	if(not spGetSelectedUnits()[1])then
+		-- select one
+		spSelectUnits({ getDummyAllyUnit() })
+		-- wait until return to Spring to execute f
+		Timer.delay(f)
+	else
+		f() -- execute synchronously
+	end
+--[[	
+	expectedCommand = {
+		unitName = "armpw",
+		countStr = "10",
+		teamStr = "0",
+	}
+	--]]
 end
 
 function BtCheat.onFrame()	
@@ -94,6 +142,29 @@ function BtCheat.hide()
 	cheatWindow:Hide()
 end
 
+function BtCheat.commandNotify(cmdID,cmdParams)
+	if(not inputCommandsTable or not treeCommandsTable) then		
+		inputCommandsTable = WG.InputCommands
+	end
+	Logger.log("commands", "getting there, cmdID: ", cmdID, " name: ", inputCommandsTable[cmdID] )
+	if(inputCommandsTable[cmdID] and inputCommandsTable[cmdID] == CONSTANTS.cheatInputCMDName) then
+		--- spawn units
+		local positionStr = "@"..cmdParams[1]..","..cmdParams[2]..","..cmdParams[3]
+		local unitNameStr =  "armpw"
+		local countStr = "10"
+		local teamStr = "0"
+		local commandAll = CONSTANTS.giveCMD .. " "
+			.. countStr ..  " " 
+			.. unitNameStr .." "
+			..teamStr.." "
+			..  positionStr
+		Logger.log("commands", "cheat: " , commandAll)
+		spSendCommand(commandAll)
+		return true
+	end
+	return false
+end
+
 function init()
 	local Screen0 = Chili.Screen0	
 	speed = CONSTANTS.defaultFFSpeed
@@ -103,7 +174,7 @@ function init()
 		x = Screen0.width - 150,
 		y = '30%',
 		width  = 150 ,
-		height = 100,	
+		height = 150,	
 			padding = {10,10,10,10},
 			draggable=true,
 			resizable=false,
@@ -114,19 +185,19 @@ function init()
 	pauseButton =  Chili.Button:New{
 		parent = cheatWindow ,
 		caption = "Pause/Unpause",
-		x = 10,
+		x = 5,
 		y = 5,
 		width = 120,
 		skinName='DarkGlass',
 		focusColor = {1.0,0.5,0.0,0.5},
-		tooltip = "Pause/Unpause button",
+		tooltip = "Pause/Unpause game",
 		OnClick = {sanitizer:AsHandler(pauseGameListener)}
 	}
 	
 	fastForwardButton =  Chili.Button:New{
 		parent = cheatWindow ,
 		caption = CONSTANTS.ffButton.whenSlow,
-		x = 10,
+		x = 5,
 		y = 25,
 		width = 120,
 		skinName='DarkGlass',
@@ -170,6 +241,20 @@ function init()
 		OnClick = { sanitizer:AsHandler(downSpeedListener)},
 		speedLabel = speedLabel,
 	}
+	
+	downSpeedButton  = Chili.Button:New{
+		parent = cheatWindow ,
+		caption = "Give",
+		x = 5,
+		y = 75,
+		width = 120,
+		skinName='DarkGlass',
+		focusColor = {1.0,0.5,0.0,0.5},
+		tooltip = "Give units (ARMPW) on specified position.",
+		OnClick = { sanitizer:AsHandler(giveListener)},
+	}
+	
+	
 end
 
 init()

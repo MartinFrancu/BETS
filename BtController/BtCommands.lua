@@ -83,7 +83,19 @@ local inputCommandDesc = {
 		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
 		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sad.png' },
 	},
+	["BETS_CHEAT_POSITION"] = {
+		type = CMDTYPE.ICON_MAP,
+		name = 'BETS_CHEAT_POSITION',
+		cursor = 'Attack',
+		--action = 'Convoy',
+		tooltip = 'Collects input where to spawn units',
+		hidden = true,
+		humanName = "Position",
+		--UIoverride = { texture = 'LuaUI/Images/commands/bold/sprint.png' },
+	},
 }
+
+
 
 local registeredCommands = {}
 
@@ -104,6 +116,15 @@ local function fillInCommandID(cmdName, cmdID)
 		WG.BtCommands = {}
 	end
 	-- if it is our command, we should remember its cmdID
+	
+	-- is it input command?
+	for inputCmdName,_ in pairs(inputCommandDesc) do 
+		if (inputCmdName == cmdName) then
+			-- make the WG.InputCommands bidirectional
+			WG.InputCommands[ cmdID ] = cmdName
+			WG.InputCommands[ cmdName ] = cmdID
+		end
+	end
 	
 	-- is it input command?
 	for inputCmdName,_ in pairs(inputCommandDesc) do 

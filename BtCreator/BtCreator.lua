@@ -1091,6 +1091,11 @@ function widget:GamePaused()
 	btCheat.gamePaused()
 end
 
+function widget:CommandNotify(cmdID, cmdParams, cmdOptions)
+	local result = btCheat.commandNotify(cmdID,cmdParams)
+	return result
+end
+
 function widget:KeyPress(key)
 	if(Spring.GetKeySymbol(key) == "delete") then -- Delete was pressed
 		for id,_ in pairs(WG.selectedNodes) do

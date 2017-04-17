@@ -1100,15 +1100,14 @@ end
 function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 	-- Check for custom commands, first input commands
 	if(not inputCommandsTable or not treeCommandsTable) then
-		-- TODO Do a proper initialization, only once. 
-		--WG.fillCustomCommandIDs()
 		inputCommandsTable = WG.InputCommands
 		treeCommandsTable = WG.BtCommands
 		if(not inputCommandsTable)then
 			return false -- if the problem persists, end
 		end
 	end
-	if(inputCommandsTable[cmdID]) then
+	Logger.log("commands", "cmd name: ", inputCommandsTable[cmdID])
+	if(inputCommandsTable[cmdID] and (inputCommandsTable[cmdID] ~= "BETS_CHEAT_POSITION")) then
 		if(expectedInput ~= nil) then
 			-- I should insert given input to tree:
 			local tH = expectedInput.TreeHandle 
@@ -1144,7 +1143,7 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 				end	
 			end
 		else
-			Logger.log("commands", "Received input command while not expecting one!!!")
+			Logger.log("commands", "BtController: Received input command while not expecting one!!!")
 		end
 		return true -- true is for deleting command and not sending it further according to documentation		
 	end
@@ -1161,7 +1160,7 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 		end
 		return true
 	end
-	Logger.log("commands", "received unknown command: " , cmdID)
+	Logger.log("commands", "received unknown command (probably normal case): " , cmdID)
 	return false
 end 
   
