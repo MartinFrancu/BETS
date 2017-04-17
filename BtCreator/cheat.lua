@@ -242,7 +242,7 @@ function init()
 		speedLabel = speedLabel,
 	}
 	
-	downSpeedButton  = Chili.Button:New{
+	giveButton  = Chili.Button:New{
 		parent = cheatWindow ,
 		caption = "Give",
 		x = 5,
@@ -253,7 +253,19 @@ function init()
 		tooltip = "Give units (ARMPW) on specified position.",
 		OnClick = { sanitizer:AsHandler(giveListener)},
 	}
-	
+--[[	
+	giveEnemyButton  = Chili.Button:New{
+		parent = cheatWindow ,
+		caption = "Give enemy",
+		x = 5,
+		y = 75,
+		width = 120,
+		skinName='DarkGlass',
+		focusColor = {1.0,0.5,0.0,0.5},
+		tooltip = "Give enemy unit (ARMPW) on specified position.",
+		OnClick = { sanitizer:AsHandler(giveListener)},
+	}
+	--]]
 	
 end
 
