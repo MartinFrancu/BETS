@@ -94,7 +94,12 @@ WG.BtUtils = WG.BtUtils or (function()
 			
 				local locator = locators[key]
 				if(locator)then
-					local result = type(locator) == "string" and include(prefix .. locator) or select(locator[2], include(prefix .. locator[1]))
+					local result
+					if(type(locator) == "string")then
+						result = include(prefix .. locator)
+					else
+						result = select(locator[2], include(prefix .. locator[1]))
+					end
 					rawset(self, key, result)
 					return result
 				else
