@@ -990,7 +990,7 @@ function widget:Initialize()
 		width = 70,
 		x = '40%',
 		y = 5,
-		align = 'center',
+		align = 'left',
 		-- skinName = 'DarkGlass',
 		borderColor = {1,1,1,0.2},
 		borderColor2 = {1,1,1,0.2},
