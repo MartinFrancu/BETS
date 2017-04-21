@@ -706,6 +706,8 @@ function listenerMouseWheelScroll(self, x, y, zoomIn)
 			node.height = nodeWindow.height*scale
 			node.x = translatedX
 			node.y = translatedY
+			nodeWindow.resizable = true
+			nodeWindow:Invalidate()
 			nodeWindow:CallListeners( nodeWindow.OnResize )
 		end
 		local inputs = WG.nodeList[rootID].inputs
@@ -742,6 +744,8 @@ function listenerMouseWheelScroll(self, x, y, zoomIn)
 			node.height = nodeWindow.height*scale
 			node.x = translatedX
 			node.y = translatedY
+			nodeWindow.resizable = false
+			nodeWindow:Invalidate()
 			nodeWindow:CallListeners( nodeWindow.OnResize )
 		end
 		local inputs = WG.nodeList[rootID].inputs
