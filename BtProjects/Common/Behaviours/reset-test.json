@@ -191,7 +191,7 @@
 				"id": "2nM6KUyyxKHD9SJUkhZ5XIdgssF0wrGn",
 				"nodeType": "luaCommand",
 				"parameters": [ {
-					"name": "diff",
+					"name": "dist",
 					"value": "{ x = 500, z = 500}"
 				}, {
 					"name": "scriptName",
@@ -205,7 +205,7 @@
 				"parameters": []
 			} ],
 			"id": "SMNrmxZQJ1JGDQhCBBttaRyjAbCR67oq",
-			"nodeType": "luaExpression",
+			"nodeType": "luaCondition",
 			"parameters": [ {
 				"name": "expression",
 				"value": "distanceTo(old) < 100"
@@ -219,7 +219,7 @@
 				"id": "s2tYxtTf0IQKiPirtmaLaY8Ktraees8t",
 				"nodeType": "luaCommand",
 				"parameters": [ {
-					"name": "diff",
+					"name": "dist",
 					"value": "{ x = -500, z = -500}"
 				}, {
 					"name": "scriptName",

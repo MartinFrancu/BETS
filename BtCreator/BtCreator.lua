@@ -1244,8 +1244,14 @@ local function loadBehaviourNode(bt, btNode)
 	Logger.log("save-and-load", "loadBehaviourNode - nodeType: ", btNode.nodeType, " scriptName: ", btNode.scriptName, " info: ", dump(nodeDefinitionInfo[btNode.nodeType],2))
 	if (btNode.scriptName ~= nil) then
 		info = nodeDefinitionInfo[btNode.scriptName]
+		if(not info) then
+			error("Trying to load unknown node: ".. btNode.scriptName)
+		end
 	else
 		info = nodeDefinitionInfo[btNode.nodeType]
+		if(not info) then
+			error("Trying to load unknown lua script node: ".. btNode.nodeType)
+		end
 	end
 
 	for k,v in pairs(info) do
@@ -1258,11 +1264,11 @@ local function loadBehaviourNode(bt, btNode)
 	for k, v in pairs(btNode) do
 		if(k=="parameters") then
 
-			Logger.log("save-and-load", "params: ", params, ", params.parameters: ", params.parameters, "v[3]: ", v[3])
+			Logger.log("save-and-load", "params: ", params, ", params.parameters: ", params.parameters)
 			for i=1,#v do
 				if (v[i].name ~= "scriptName") then
 					if(params.parameters[i].name ~= v[i].name)then
-						Logger.error("save-and-load", "Parameter names do not match: ", params.parameters[i].name, " != ", v[i].name)
+						Logger.error("save-and-load", "Parameter names do not match: ", params.parameters[i].name, " != ", v[i].name, " of node "..btNode.nodeType or btNode.scriptName)
 					end
 
 					Logger.log("save-and-load", "params.parameters[i]: ", params.parameters[i], ", v[i]: ", v[i])

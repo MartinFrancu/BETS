@@ -58,22 +58,22 @@
 			"children": [ {
 				"children": [],
 				"id": "XEQ3LW7Vdsh5tt0rtBoiUi8Unpr243Vc",
-				"nodeType": "echo",
+				"nodeType": "Common.luaecho",
 				"parameters": [ {
-					"name": "message",
+					"name": "msg",
 					"value": "We feel brave!"
 				} ]
 			}, {
 				"children": [],
 				"id": "2A1iS15hsvvY7uSUJvRbpzJi0mbwlep7",
-				"nodeType": "echo",
+				"nodeType": "Common.luaecho",
 				"parameters": [ {
-					"name": "message",
+					"name": "msg",
 					"value": "We feel weak."
 				} ]
 			} ],
 			"id": "DL7IYrvIeHaGttn9xvKgwpbClF1hYux3",
-			"nodeType": "luaExpression",
+			"nodeType": "luaCondition",
 			"parameters": [ {
 				"name": "expression",
 				"value": "tacticalAdvantageByHPForGroundAttack(1000)"

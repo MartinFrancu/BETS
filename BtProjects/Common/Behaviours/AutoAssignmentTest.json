@@ -33,17 +33,17 @@
 		"children": [ {
 			"children": [],
 			"id": "dCtMCf1LDu13EzTrvX1TsLHggsZj4xVV",
-			"nodeType": "echo",
+			"nodeType": "Common.luaecho",
 			"parameters": [ {
-				"name": "message",
+				"name": "msg",
 				"value": "Echo message"
 			} ]
 		}, {
 			"children": [],
 			"id": "wp4vovvQ9HIVcemnw1D4leQnvXmwyySM",
-			"nodeType": "echo",
+			"nodeType": "Common.luaecho",
 			"parameters": [ {
-				"name": "message",
+				"name": "msg",
 				"value": "Echo message"
 			} ]
 		} ],
