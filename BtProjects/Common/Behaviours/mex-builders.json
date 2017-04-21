@@ -19,7 +19,7 @@
 		},
 		"8PQLBonaER6Pl09B2yyoqCTYmPlgYwZg": {
 			"height": 90,
-			"title": "luaExpression",
+			"title": "luaCondition",
 			"width": 273.642822,
 			"x": 391,
 			"y": 323
@@ -395,7 +395,7 @@
 						} ]
 					} ],
 					"id": "8PQLBonaER6Pl09B2yyoqCTYmPlgYwZg",
-					"nodeType": "luaExpression",
+					"nodeType": "luaCondition",
 					"parameters": [ {
 						"name": "expression",
 						"value": "distanceTo(target) < 100"
