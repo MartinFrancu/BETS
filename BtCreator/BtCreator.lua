@@ -179,6 +179,7 @@ function listenerEndCopyingNode(_, x , y)
 			y = y + startCopyingLocation.y - 70,
 			width = copyTreeNode.width,
 			height = copyTreeNode.height,
+			tooltip = copyTreeNode.tooltip,
 			connectable = true,
 			draggable = true,
 			hasConnectionIn = true,
@@ -504,7 +505,7 @@ end
 
 -- Renames the field 'defaultValue' to 'value' if it present, for all the parameters,
 -- also saves parameters, hasConnectionIn, hasConnectionOut into 'nodeDefinitionInfo'.
-local function processTreenodeParameters(nodeType, parameters, hasConnectionIn, hasConnectionOut)
+local function processTreenodeParameters(nodeType, parameters, hasConnectionIn, hasConnectionOut, tooltip)
 	for i=1,#parameters do
 		if(parameters[i]["defaultValue"]) then
 			parameters[i]["value"] = parameters[i]["defaultValue"]
@@ -515,6 +516,7 @@ local function processTreenodeParameters(nodeType, parameters, hasConnectionIn, 
 	nodeDefinitionInfo[nodeType]["parameters"] = copyTable(parameters)
 	nodeDefinitionInfo[nodeType]["hasConnectionIn"]  = hasConnectionIn
 	nodeDefinitionInfo[nodeType]["hasConnectionOut"] = hasConnectionOut
+	nodeDefinitionInfo[nodeType]["tooltip"] = tooltip or ""
 end
 
 local function addNodeIntoNodepool(treenodeParams)
@@ -546,7 +548,7 @@ local function populateNodePoolWithTreeNodes(heightSum, nodes)
 				parameters = copyTable(nodes[i]["parameters"]),
 			}
 			-- Make value field from defaultValue.
-			processTreenodeParameters(nodeParams.nodeType, nodeParams.parameters, nodeParams.hasConnectionIn, nodeParams.hasConnectionOut)
+			processTreenodeParameters(nodeParams.nodeType, nodeParams.parameters, nodeParams.hasConnectionIn, nodeParams.hasConnectionOut, nodeParams.tooltip)
 
 			if(nodes[i].defaultHeight) then
 				nodeParams.height = math.max(50 + #nodeParams["parameters"]*20, nodes[i].defaultHeight)
@@ -590,7 +592,7 @@ local function fillNodePoolWithNodes(nodes)
 	local heightSum = 30 -- skip NodePoolLabel
 	heightSum = populateNodePoolWithTreeNodes(heightSum, nodes) -- others than lua script commands
 	-- load lua commands
-	local paramDefs = BtEvaluator.CommandManager.getAvailableCommandScripts()
+	local paramDefs, tooltips = BtEvaluator.CommandManager.getAvailableCommandScripts()
 	local scriptIcons = getAvailableCommandScriptsIcons()
 	local scriptList = sortedKeyList(paramDefs)
 	for _, scriptName in ipairs(scriptList) do
@@ -602,7 +604,7 @@ local function fillNodePoolWithNodes(nodes)
 			parent = nodePoolPanel,
 			y = heightSum,
 			iconPath = scriptIcons[scriptName],
-			tooltip = "",
+			tooltip = tooltips[scriptName],
 			draggable = false,
 			resizable = false,
 			connectable = false,
@@ -771,7 +773,29 @@ function createRoot()
 		hasConnectionIn = false,
 		hasConnectionOut = true,
 		id = false,
+		tooltip = "Root node of the tree. Can have only one child node. ",
 	}
+end
+
+function widget:IsAbove(x,y)
+	y = Screen0.height - y
+	if (x > btCreatorWindow.x and x < btCreatorWindow.x + btCreatorWindow.width and 
+			y > btCreatorWindow.y and y < btCreatorWindow.y + btCreatorWindow.height) then
+			return true
+	end
+	if (x > nodePoolPanel.x and x < nodePoolPanel.x + nodePoolPanel.width and 
+			y > nodePoolPanel.y and y < nodePoolPanel.y + nodePoolPanel.height) then
+			return true
+	end
+	return false
+end
+
+function widget:GetTooltip(x, y)
+	local component = Screen0:HitTest(x, Screen0.height - y)
+	if (component) then
+		--Spring.Echo("component: "..dump(component.name))
+		return component.tooltip
+	end
 end
 
 function widget:Initialize()
@@ -998,6 +1022,7 @@ function widget:Initialize()
 		backgroundColor = {0,0,0,0},
 		minWidth = 120,
 		autosize = true,
+		tooltip = "The name of current behavior tree. ",
 	}
 	treeNameEditbox.font.size = 16
 	treeNameEditbox:RequestUpdate()
@@ -1009,6 +1034,7 @@ function widget:Initialize()
 		width = 30,
 		height = 30,
 		file = LUAUI_DIRNAME.."Widgets/BtCreator/move_orange.png",
+		tooltip = "When dragged around it moves with whole BtCreator windows. ",
 		onMouseDown = { 
 			function(self, x, y)
 				self.file = LUAUI_DIRNAME.."Widgets/BtCreator/move_grey.png"

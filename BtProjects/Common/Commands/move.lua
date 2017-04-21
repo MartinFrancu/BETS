@@ -1,6 +1,7 @@
 function getInfo()
 	return {
 		onNoUnits = SUCCESS,
+		tooltip = "Move to absolute coordinates, specified by 'pos'. If the 'fight' checkbox is checked, then encountered enemy units are fought till death. ",
 		parameterDefs = {
 			{ 
 				name = "pos",

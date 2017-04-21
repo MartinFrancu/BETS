@@ -99,6 +99,7 @@ function TreeNode:New(obj)
 		treeNode = obj,
 		connectable = obj.connectable,
 		disableChildrenHitTest = true,
+		tooltip = obj.tooltip,
 	}
 	if ( obj.connectable ) then
 		nodeWindowOptions.OnMouseDown = { listenerOnMouseDownMoveNode }
@@ -175,6 +176,7 @@ function TreeNode:New(obj)
 			x = label.x + label.width + 6,
 			y = label.y,
 			caption = "Add",
+			tooltip = "Adds new input parameter to the tree. ",
 			width = 50,
 			OnClick = { listenerAddInput },
 		}
@@ -184,6 +186,7 @@ function TreeNode:New(obj)
 			x = obj.addButton.x + obj.addButton.width + 6,
 			y = label.y,
 			caption = "Remove",
+			tooltip = "Removes the last input parameter from the tree. ",
 			OnClick = { listenerRemoveInput },
 		}
 	end

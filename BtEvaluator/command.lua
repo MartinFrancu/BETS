@@ -263,6 +263,7 @@ end
 function CommandManager.getAvailableCommandScripts()
 	local commandList = ProjectManager.listAll(CommandManager.contentType)
 	local paramsDefs = {}
+	local tooltips = {}
 	
 	local nameList = {}
 	
@@ -282,11 +283,12 @@ function CommandManager.getAvailableCommandScripts()
 		if success then
 			Logger.log("script-load", "Script: ", data.qualifiedName, ", Definitions loaded: ", info.parameterDefs)
 			paramsDefs[data.qualifiedName] = info.parameterDefs or {}
+			tooltips[data.qualifiedName] = info.tooltip or ""
 		else
 			error("script-load".. "Script ".. data.qualifiedName .. " is missing the getInfo() function or it contains an error: ".. info)
 		end
 	end
-	return paramsDefs
+	return paramsDefs, tooltips
 end
 
 return CommandManager

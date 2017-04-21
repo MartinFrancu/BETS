@@ -22,6 +22,8 @@ getInfo()
     		{
     			-- name of the parameter. Displayed in the BtCreator and is used to access the value in Run()
     			name = "x",
+    			-- optional, when not provided tooltip wont be shown. 
+    			tooltip = "Node tooltip to be displayed in BtCreator. ",
     			-- type of values that can be entered in the component. 
     			-- For componentType 'comboBox' should contain a list of possible values separated by a comma in one string.("value1,value2,value3")
     			variableType = ["number"|"string"|"expression"], -- expression is lua code
