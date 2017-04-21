@@ -505,7 +505,7 @@ end
 
 -- Renames the field 'defaultValue' to 'value' if it present, for all the parameters,
 -- also saves parameters, hasConnectionIn, hasConnectionOut into 'nodeDefinitionInfo'.
-local function processTreenodeParameters(nodeType, parameters, hasConnectionIn, hasConnectionOut, tooltip)
+local function processTreenodeParameters(nodeType, parameters, hasConnectionIn, hasConnectionOut, tooltip, iconPath)
 	for i=1,#parameters do
 		if(parameters[i]["defaultValue"]) then
 			parameters[i]["value"] = parameters[i]["defaultValue"]
@@ -517,6 +517,7 @@ local function processTreenodeParameters(nodeType, parameters, hasConnectionIn, 
 	nodeDefinitionInfo[nodeType]["hasConnectionIn"]  = hasConnectionIn
 	nodeDefinitionInfo[nodeType]["hasConnectionOut"] = hasConnectionOut
 	nodeDefinitionInfo[nodeType]["tooltip"] = tooltip or ""
+	nodeDefinitionInfo[nodeType].iconPath = iconPath
 end
 
 local function addNodeIntoNodepool(treenodeParams)
@@ -548,7 +549,7 @@ local function populateNodePoolWithTreeNodes(heightSum, nodes)
 				parameters = copyTable(nodes[i]["parameters"]),
 			}
 			-- Make value field from defaultValue.
-			processTreenodeParameters(nodeParams.nodeType, nodeParams.parameters, nodeParams.hasConnectionIn, nodeParams.hasConnectionOut, nodeParams.tooltip)
+			processTreenodeParameters(nodeParams.nodeType, nodeParams.parameters, nodeParams.hasConnectionIn, nodeParams.hasConnectionOut, nodeParams.tooltip, nodeParams.iconPath)
 
 			if(nodes[i].defaultHeight) then
 				nodeParams.height = math.max(50 + #nodeParams["parameters"]*20, nodes[i].defaultHeight)
@@ -612,7 +613,7 @@ local function fillNodePoolWithNodes(nodes)
 			onMouseUp = { listenerEndCopyingNode },
 			parameters = copyTable(params),
 		}
-		processTreenodeParameters(nodeParams.nodeType, nodeParams.parameters, nodeParams.hasConnectionIn, nodeParams.hasConnectionOut)
+		processTreenodeParameters(nodeParams.nodeType, nodeParams.parameters, nodeParams.hasConnectionIn, nodeParams.hasConnectionOut, nodeParams.tooltip, nodeParams.iconPath)
 		isScript[scriptName] = true
 		nodeParams.width = 110
 		nodeParams.height = 50 + #nodeParams.parameters * 20
