@@ -133,7 +133,7 @@ end
 local function addNodeToCanvas(node)
 	if next(WG.nodeList) == nil then
 		rootID = node.id
-		Logger.log("tree-editing", "BtCreator: Setting u of new of rootID: ", rootID, " script: ", node.luaScript)
+		Logger.log("reloading", "BtCreator: Setting of new of rootID: ", rootID, " script: ", node.luaScript)
 	end
 	WG.nodeList[node.id] = node
 	WG.clearSelection()
@@ -240,6 +240,7 @@ local function reGenerateTreenodeID(id)
 	local newID = WG.nodeList[id].id
 	if(id == rootID) then
 		rootID = newID
+		Logger.log("reloading", "BtCreator: Editing of rootID: ", rootID)
 	end
 	WG.nodeList[newID] = WG.nodeList[id]
 	WG.nodeList[id] = nil
@@ -384,7 +385,7 @@ end
 local serializedTreeName
 
 function listenerClickOnLoadTree()
-	Logger.log("save-and-load", "Load Tree clicked on. ")
+	Logger.log("reloading", "listenerClickOnLoadTree() start")
 	local bt = BehaviourTree.load(treeNameEditbox.text)
 	if(bt)then
 		clearCanvas()
@@ -393,6 +394,11 @@ function listenerClickOnLoadTree()
 	else
 		error("BehaviourTree " .. treeNameEditbox.text .. " instance not found. " .. debug.traceback())
 	end
+	if(not WG.nodeList[rootID]) then
+		Logger.error("RootID is not contained in WG.nodeList!")
+	end
+	Logger.log("reloading", "loadTree end  -nodeList: "..dump(WG.nodeList))
+	Logger.log("reloading", "loadTree end  -rootID: "..rootID)
 end
 
 function listenerClickOnRoleManager(self)
@@ -463,6 +469,9 @@ local function listenerClickOnContinue()
 end
 
 local function updateStatesMessage(params)
+	Logger.log("reloading", "updateStatesMessage")
+	Logger.log("reloading", "nodeList: ", WG.nodeList)
+	Logger.log("reloading", "rootID: ", rootID)
 	local states = params.states
 	local shouldPause
 	for id, node in pairs(WG.nodeList) do
@@ -1064,21 +1073,25 @@ end
 
 function widget:Shutdown()
 	Logger.log("reloading", "BtCreator widget:Shutdown start. ")
-	for _,node in pairs(nodePoolList) do
-		node:Dispose()
-	end
-	if(nodePoolPanel) then
-		nodePoolPanel:ClearChildren()
-		nodePoolPanel:Dispose()
-	end
-	if(buttonPanel) then
-		buttonPanel:Dispose()
-	end
-	WG.clearSelection()
-	clearCanvas()
-	if(btCreatorWindow) then
-		btCreatorWindow:Dispose()
-	end
+	-- for _,node in pairs(nodePoolList) do
+		-- node:Dispose()
+	-- end
+	-- rootID = nil
+	-- WG.nodeList = {}
+	-- WG.selectedNodes = {}
+	-- serializedIDs = {}
+	-- if(nodePoolPanel) then
+		-- nodePoolPanel:ClearChildren()
+		-- nodePoolPanel:Dispose()
+	-- end
+	-- if(buttonPanel) then
+		-- buttonPanel:Dispose()
+	-- end
+	-- WG.clearSelection()
+	-- clearCanvas()
+	-- if(btCreatorWindow) then
+		-- btCreatorWindow:Dispose()
+	-- end
 	Dependency.clear(Dependency.BtCreator)
 	Logger.log("reloading", "BtCreator widget:shutdown end. ")
 end
@@ -1178,6 +1191,7 @@ function formBehaviourTree()
 end
 
 function clearCanvas(omitRoot)
+	Logger.log("reloading", "Clear canvas call. ")
 	if(btCreatorWindow) then
 		btCreatorWindow.zoomedOut = false
 	end
@@ -1187,10 +1201,11 @@ function clearCanvas(omitRoot)
 	end
 	WG.nodeList = {}
 	WG.selectedNodes = {}
-
+	serializedIDs = {}
 	if(not omitRoot)then
 		addNodeToCanvas( createRoot() )
 	end
+	Logger.log("reloading", "Clear canvas call end. ")
 end
 
 function loadSensorAutocompleteTable()
