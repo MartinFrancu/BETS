@@ -78,8 +78,8 @@ WG.BtConnectionLine = WG.BtConnectionLine or (function()
 					parent = connectionOut.parent.parent,
 					width = halfDistance,
 					height = 1,
-					x = lineOutx,
-					y = lineOuty,
+					x = 0,
+					y = 0,
 					skinName = 'default',
 					borderColor = {0.6,0.6,0.6,1},
 					borderColor2 = {0.4,0.4,0.4,1},
@@ -90,12 +90,14 @@ WG.BtConnectionLine = WG.BtConnectionLine or (function()
 					onMouseOut = { connectionLine.listenerOutOfConnectionLine },
 					lineIndex = lineIndex,
 				}
+				lineOut:SetPos(lineOutx, lineOuty)
+				lineOut:Invalidate()
 				local lineIn = Chili.Line:New{
 					parent = connectionOut.parent.parent,
 					width = halfDistance,
 					height = 1,
-					x = lineInx,
-					y = lineIny,
+					x = 0,
+					y = 0,
 					skinName = 'default',
 					borderColor = {0.6,0.6,0.6,1},
 					borderColor2 = {0.4,0.4,0.4,1},
@@ -106,13 +108,15 @@ WG.BtConnectionLine = WG.BtConnectionLine or (function()
 					onMouseOut = { connectionLine.listenerOutOfConnectionLine },
 					lineIndex = lineIndex,
 				}
+				lineIn:SetPos(lineInx, lineIny)
+				lineIn:Invalidate()
 				local lineV = Chili.Line:New{
 					parent = connectionOut.parent.parent,
 					width = 5,
 					height = math.abs(lineOuty-lineIny),
 					minHeight = 0,
-					x = lineVx,
-					y = math.min(lineOuty,lineIny)+transparentBorderWidth,
+					x = 0,
+					y = 0,
 					style = "vertical",
 					skinName = 'default',
 					borderColor = {0.6,0.6,0.6,1},
@@ -124,10 +128,12 @@ WG.BtConnectionLine = WG.BtConnectionLine or (function()
 					onMouseOut = { connectionLine.listenerOutOfConnectionLine },
 					lineIndex = lineIndex,
 				}
+				lineV:SetPos(lineVx, math.min(lineOuty,lineIny)+transparentBorderWidth)
+				lineV:Invalidate()
 				local arrow = Chili.Image:New{
 					parent = connectionOut.parent.parent,
-					x = lineInx + halfDistance - 8,
-					y = lineIny + 1,
+					x = 0,
+					y = 0,
 					file = arrowWhite,
 					width = 5,
 					height = 8,
@@ -136,6 +142,8 @@ WG.BtConnectionLine = WG.BtConnectionLine or (function()
 					onMouseOver = { connectionLine.listenerOverConnectionLine },
 					onMouseOut = { connectionLine.listenerOutOfConnectionLine },
 				}
+				arrow:SetPos(lineInx + halfDistance - 8, lineIny + 1)
+				arrow:Invalidate()
 				if(lineVx > lineInx) then
 					arrow.x = math.min(lineInx + 8, lineInx + halfDistance - 8)
 					arrow.file = arrowWhiteFlipped
@@ -197,7 +205,7 @@ WG.BtConnectionLine = WG.BtConnectionLine or (function()
 				end
 				arrow.y = lineIny + 1
 				for i=2,5 do
-					connectionLines[index][i]:RequestUpdate()
+					connectionLines[index][i]:Invalidate()
 				end
 			end,
 			
@@ -271,25 +279,13 @@ WG.BtConnectionLine = WG.BtConnectionLine or (function()
 					connectionLines[lineIndex][i]:Invalidate()
 					connectionLines[lineIndex][i]:RequestUpdate()
 				end
-				local oldArrow = connectionLines[lineIndex][5]
-				local arrow = Chili.Image:New{
-					parent = oldArrow.parent,
-					x = oldArrow.x,
-					y = oldArrow.y,
-					flip = oldArrow.flip,
-					file = arrowOrange,
-					width = oldArrow.width,
-					height = oldArrow.height,
-					lineIndex = oldArrow.lineIndex,
-					onMouseDown = { listenerClickOnConnectionLine },
-					onMouseOver = { listenerOverConnectionLine },
-					onMouseOut = { listenerOutOfConnectionLine },
-				}
+				local arrow = connectionLines[lineIndex][5]
 				if(arrow.flip) then
 					arrow.file = arrowOrangeFlipped
+				else
+					arrow.file = arrowOrange
 				end
-				connectionLines[lineIndex][5]:Dispose()
-				connectionLines[lineIndex][5] = arrow
+				arrow:Invalidate()
 				return self
 			end,
 			
@@ -301,25 +297,13 @@ WG.BtConnectionLine = WG.BtConnectionLine or (function()
 					connectionLines[lineIndex][i]:Invalidate()
 					connectionLines[lineIndex][i]:RequestUpdate()
 				end
-				local oldArrow = connectionLines[lineIndex][5]
-				local arrow = Chili.Image:New{
-					parent = oldArrow.parent,
-					x = oldArrow.x,
-					y = oldArrow.y,
-					file = arrowWhite,
-					flip = oldArrow.flip,
-					width = oldArrow.width,
-					height = oldArrow.height,
-					lineIndex = oldArrow.lineIndex,
-					onMouseDown = { listenerClickOnConnectionLine },
-					onMouseOver = { listenerOverConnectionLine },
-					onMouseOut = { listenerOutOfConnectionLine },
-				}
+				local arrow = connectionLines[lineIndex][5]
 				if(arrow.flip) then
 					arrow.file = arrowWhiteFlipped
+				else
+					arrow.file = arrowWhite
 				end
-				connectionLines[lineIndex][5]:Dispose()
-				connectionLines[lineIndex][5] = arrow
+				arrow:Invalidate()
 			end,
 			
 			listenerClickOnConnectionLine = function(self)

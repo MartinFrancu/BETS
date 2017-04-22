@@ -634,8 +634,8 @@ function listenerOnMouseDownCanvas(self, x, y, button)
 		moveFrom = {x, y}
 		return self
 	elseif button == LEFT_BUTTON then
-		local _, ctrl, _, shift = Spring.GetModKeyState()
-		if not ctrl and not shift then  
+		local child = self:HitTest(x, y)
+		if child and child.name == btCreatorWindow.name then 
 			WG.clearSelection()
 			for _,node in pairs(WG.nodeList) do
 				node:UpdateParameterValues()
@@ -658,7 +658,7 @@ function listenerOnMouseMoveCanvas(self, x, y)
 		for id,node in pairs(WG.nodeList) do
 			node.x = node.x + diffx
 			node.y = node.y + diffy
-			node.nodeWindow:SetPos(node.x + diffx, node.y + diffy)
+			node.nodeWindow:SetPos(node.nodeWindow.x + diffx, node.nodeWindow.y + diffy)
 		end
 		moveFrom = {x, y}
 		btCreatorWindow:Invalidate()
@@ -1105,7 +1105,9 @@ function widget:Shutdown()
 	if(buttonPanel) then
 		buttonPanel:Dispose()
 	end
-	WG.clearSelection()
+	if(WG.clearSelection) then
+		WG.clearSelection()
+	end
 	clearCanvas()
 	if(btCreatorWindow) then
 		btCreatorWindow:Dispose()

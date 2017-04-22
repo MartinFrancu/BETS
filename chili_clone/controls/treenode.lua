@@ -68,6 +68,16 @@ local createNextParameterObject
 -- ////////////////////////////////////////////////////////////////////////////
 
 function TreeNode:New(obj)
+	-- To create a treenode on negative coordinates, first create it on nonnegative ones,
+	-- and then move it to negative coordinates. 
+	local negativeX = 0
+	local negativeY = 0
+	if(obj.x and obj.x < 0) then
+		negativeX, obj.x = obj.x, negativeX
+	end
+	if(obj.y and obj.y < 0) then
+		negativeY, obj.y = obj.y, negativeY
+	end
 	obj = inherited.New(self,obj)
 	autocompleteTable = WG.sensorAutocompleteTable or {}
 	
@@ -190,8 +200,6 @@ function TreeNode:New(obj)
 			OnClick = { listenerRemoveInput },
 		}
 	end
-	-- obj.nodeWindow.minWidth = math.max(obj.nodeWindow.minWidth, obj.nameEditBox.font:GetTextWidth(obj.nameEditBox.text) + 33)
-	-- obj.nodeWindow.minHeight = obj.nodeWindow.height
 
 	obj.parameterObjects = {}
 	for i=1,#obj.parameters do
@@ -203,8 +211,16 @@ function TreeNode:New(obj)
 	if(#obj.parameters ~= #obj.parameterObjects) then
 		error("#obj.parameters="..#obj.parameters.."  ~= #obj.parameterObjects="..#obj.parameterObjects)
 	end
+	-- If coordinates of treenode were negative before creation, transform it there now
+	if(negativeX < 0) then
+		obj.x = negativeX
+	end
+	if(negativeY < 0) then
+		obj.y = negativeY
+	end
+	obj.nodeWindow:SetPos(obj.x, obj.y)
+	obj.nodeWindow:Invalidate()
 	obj:UpdateDimensions()
-	obj.nodeWindow:RequestUpdate()
   return obj
 end
 
@@ -678,9 +694,11 @@ function listenerNodeWindowOnResize(self)
 	-- if (self.resizable) then
 	if(self.treeNode.connectionIn) then
 		self.treeNode.connectionIn:SetPos(nil, self.height*0.35)
+		self.treeNode.connectionIn:Invalidate()
 	end
 	if(self.treeNode.connectionOut) then
 		self.treeNode.connectionOut:SetPos(self.width-18, self.height*0.35)
+		self.treeNode.connectionOut:Invalidate()
 	end
 	self.treeNode.width = self.width
 	self.treeNode.height = self.height
@@ -862,15 +880,15 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 	end
 	lastClicked = now
 	local _, ctrl, _, shift = Spring.GetModKeyState()
-	if(not selectSubtree and WG.selectedNodes[self.treeNode.id]==nil and (not ctrl) and (not shift) and button ~= 3) then
+	if((not selectSubtree) and (not WG.selectedNodes[self.treeNode.id]) and (not ctrl) and (not shift)) then
 		WG.clearSelection()
 		addNodeToSelection(self)
 	end
-	if(not selectSubtree and WG.selectedNodes[self.treeNode.id] and (not ctrl) and (not shift) and button ~= 3) then
 		movingNodes = true
 		previousPosition.x = self.x
 		previousPosition.y = self.y
 		self:StartDragging(x, y)
+	if((not selectSubtree) and WG.selectedNodes[self.treeNode.id] and (not ctrl) and (not shift)) then
 		return self
 	end
 	if(movingNodes) then
@@ -902,11 +920,9 @@ function listenerOnMouseUpMoveNode(self, x ,y)
 		for id,_ in pairs(WG.selectedNodes) do
 			if(id ~= self.treeNode.id) then
 				local node = WG.nodeList[id]
-				node.nodeWindow.x = node.nodeWindow.x + diffx
-				node.nodeWindow.y = node.nodeWindow.y + diffy
-				node.x = math.max(0, node.x + diffx)
-				node.y = math.max(0, node.y + diffy)
-				node.nodeWindow:StopDragging(x, y)
+				node.x = node.x + diffx
+				node.y = node.y + diffy
+				node.nodeWindow:SetPos(node.x, node.y)
 				node.nodeWindow:Invalidate()
 				node:UpdateConnectionLines()
 			end
