@@ -884,11 +884,11 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 		WG.clearSelection()
 		addNodeToSelection(self)
 	end
+	if((not selectSubtree) and WG.selectedNodes[self.treeNode.id] and (not ctrl) and (not shift)) then
 		movingNodes = true
 		previousPosition.x = self.x
 		previousPosition.y = self.y
 		self:StartDragging(x, y)
-	if((not selectSubtree) and WG.selectedNodes[self.treeNode.id] and (not ctrl) and (not shift)) then
 		return self
 	end
 	if(movingNodes) then
