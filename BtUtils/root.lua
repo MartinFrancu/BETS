@@ -25,6 +25,7 @@ WG.BtUtils = WG.BtUtils or (function()
 		ProjectManager = "project-manager", -- @{ProjectManager}
 		CustomEnvironment = "custom-environment", -- @{CustomEnvironment}
 		ErrorBox = "error-box", -- @{ErrorBox}
+		ProjectDialog = "project-dialog",
 	}
 	
 	local LOCAL_PATH = LUAUI_DIRNAME .. "Widgets/BtUtils/"

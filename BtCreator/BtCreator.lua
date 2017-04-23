@@ -54,6 +54,7 @@ local sanitizer = Utils.Sanitizer.forWidget(widget)
 
 local Debug = Utils.Debug;
 local ProjectManager = Utils.ProjectManager
+local ProjectDialog = Utils.ProjectDialog
 local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyTable, Debug.fileTable
 
 local nodeDefinitionInfo = {}
@@ -249,10 +250,8 @@ end
 local afterRoleManagement
 
 -- does not check if tree makes sense
-local function saveTree()
+local function saveTree(treeName)
 	local protoTree = formBehaviourTree()
-	
-	local  treeName = treeNameEditbox.text
 	
 	if(serializedTreeName and serializedTreeName ~= treeName) then
 		--regenerate all IDs from loaded Tree
@@ -289,6 +288,15 @@ local function saveTree()
 		treeName)
 end 
 
+function saveTreeDialogCallback(window, treeName)
+	window:ClearChildren()
+	window:Hide()
+	if(treeName)then 
+		saveTree(treeName)
+		treeNameEditbox.SetText(treeName)
+	end
+end
+
 function listenerClickOnSaveTree(self)
 	Logger.log("save-and-load", "Save Tree clicked on. ")
 		-- on tree Save() regenerate IDs of nodes already present in loaded tree
@@ -300,8 +308,22 @@ function listenerClickOnSaveTree(self)
 	for _,role in pairs(rolesOfCurrentTree) do
 		rolesCount = rolesCount + 1
 	end
+	
 	if((maxSplit == rolesCount) and (rolesCount > 0) ) then --roles are plausible
-		saveTree()
+		-- show save tree dialog
+		local saveTreeDialogWindow = Chili.Window:New{
+			parent = Screen0,
+			x = 300,
+			y = 500,
+			width = 400,
+			height = 150,
+			padding = {10,10,10,10},
+			draggable = true,
+			resizable = true,
+			skinName = 'DarkGlass',
+		}
+		local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
+		ProjectDialog.setUpDialog(saveTreeDialogWindow, treeContentType, true, saveTreeDialogWindow, saveTreeDialogCallback)	
 	else
 		-- we need to get user to define roles first:
 		saveTreeOncePossible = true
@@ -314,7 +336,7 @@ afterRoleManagement = function (rolesData)
 	rolesOfCurrentTree = rolesData
 	BtCreator.show()
 	if(saveTreeOncePossible) then
-		saveTree()
+		listenerClickOnSaveTree()
 		saveTreeOncePossible = false 
 	end
 end
@@ -384,8 +406,45 @@ end
 
 local serializedTreeName
 
+function getBehaviourTree(treeName)
+	local bt = BehaviourTree.load(treeName)
+	if(bt)then
+		clearCanvas()
+		loadBehaviourTree(bt)
+		rolesOfCurrentTree = bt.roles or {}
+	else
+		error("BehaviourTree " .. treeName .. " instance not found. " .. debug.traceback())
+	end
+end 
+
+function loadTreeDialogCallback(window, treeName)
+	if treeName then -- tree was selected
+		getBehaviourTree(treeName)
+		treeNameEditbox:SetText(treeName)
+	end
+	-- clear window and hide it
+	window:ClearChildren()
+	window:Hide()
+	
+
+end
+
 function listenerClickOnLoadTree()
 	Logger.log("save-and-load", "Load Tree clicked on. ")
+	loadTreeDialogWindow = Chili.Window:New{
+		parent = Screen0,
+		x = 300,
+		y = 500,
+		width = 400,
+		height = 150,
+		padding = {10,10,10,10},
+		draggable = true,
+		resizable = true,
+		skinName = 'DarkGlass',
+	}
+	local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
+	ProjectDialog.setUpDialog(loadTreeDialogWindow, treeContentType, false,loadTreeDialogWindow, loadTreeDialogCallback)
+	--[[
 	local bt = BehaviourTree.load(treeNameEditbox.text)
 	if(bt)then
 		clearCanvas()
@@ -394,6 +453,7 @@ function listenerClickOnLoadTree()
 	else
 		error("BehaviourTree " .. treeNameEditbox.text .. " instance not found. " .. debug.traceback())
 	end
+	]]
 end
 
 function listenerClickOnRoleManager(self)
