@@ -28,8 +28,9 @@ return function(range)
 	local enemyInRange = false
 	for i=1, units.length do
 		local enemyID = SpringGetNearestEnemy(units[i], range, true)
-		if(enemyID) then
+		if (enemyID) then
 			enemyInRange = true
+			break
 		end
 	end
 	return enemyInRange
