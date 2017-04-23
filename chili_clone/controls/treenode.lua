@@ -129,7 +129,6 @@ function TreeNode:New(obj)
 		padding = {0,0,0,0},
 		draggable=false,
 		resizable=false,
-		tooltip="BT Node connection",
 		OnMouseDown = {},
 		borderThickness = 0,
 		skinName = 'DarkGlass',
@@ -689,6 +688,21 @@ function listenerClickOnConnectionPanel(self)
 	return false
 end
 
+
+--//=============================================================================
+--// Listeners for node selections and their helper functions
+--//=============================================================================
+
+local previousPosition = {}
+local movingNodeID
+
+--- Key is node id, value is true
+WG.selectedNodes = {}
+---local selectedNodes = WG.selectedNodes
+
+local ALPHA_OF_SELECTED_NODES = 1
+local ALPHA_OF_NOT_SELECTED_NODES = 0.6
+
 -- called also after move!
 function listenerNodeWindowOnResize(self)
 	-- if (self.resizable) then
@@ -703,23 +717,25 @@ function listenerNodeWindowOnResize(self)
 	self.treeNode.width = self.width
 	self.treeNode.height = self.height
 	self.treeNode:UpdateConnectionLines()
-	-- end
-	--return true
+	-- move with all the selected nodes other than the dragged one
+	if(movingNodes and self.treeNode.id == movingNodeID) then
+		local diffx = self.x - previousPosition.x
+		local diffy = self.y - previousPosition.y
+		for id,_ in pairs(WG.selectedNodes) do
+			if(id ~= movingNodeID) then
+				-- Spring.Echo("movingNodes. diffx:"..diffx..", diffy:"..diffy)
+				local node = WG.nodeList[id]
+				node.x = node.x + diffx
+				node.y = node.y + diffy
+				node.nodeWindow:SetPos(node.x, node.y)
+				node.nodeWindow:Invalidate()
+				node:UpdateConnectionLines()
+			end
+		end
+		previousPosition.x = self.x
+		previousPosition.y = self.y
+	end
 end
-
-
---//=============================================================================
---// Listeners for node selections and their helper functions
---//=============================================================================
-
-local previousPosition = {}
-
---- Key is node id, value is true
-WG.selectedNodes = {}
----local selectedNodes = WG.selectedNodes
-
-local ALPHA_OF_SELECTED_NODES = 1
-local ALPHA_OF_NOT_SELECTED_NODES = 0.6
 
 local function validateEditBox(editBox)
 	local variableType = editBox.variableType
@@ -886,6 +902,7 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 	end
 	if((not selectSubtree) and WG.selectedNodes[self.treeNode.id] and (not ctrl) and (not shift)) then
 		movingNodes = true
+		movingNodeID = self.treeNode.id
 		previousPosition.x = self.x
 		previousPosition.y = self.y
 		self:StartDragging(x, y)
