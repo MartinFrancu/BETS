@@ -1083,18 +1083,31 @@ function widget:UnitDestroyed(unitId)
 	end
 end
 
-function widget:Update()
+function widget:Update() 
 	local selectedUnits = spGetSelectedUnits()
 	local assignedUnitsMap = TreeHandle.unitsToTreesMap
 	local okUnits = {}
-	for _,unitId in pairs(selectedUnits) do
-		if	( (assignedUnitsMap[unitId] == nil)
-			or (assignedUnitsMap[unitId].TreeHandle.unitsLocked == false) ) 
-		then
-			table.insert(okUnits, unitId)
+	local okUnitsCounter = 0
+	local allUnitsOK = true
+	for i=1, #selectedUnits do -- !! TIME CRITICAL
+		local thisUnitID = selectedUnits[i]
+		local thisUnitOK = true
+		if (assignedUnitsMap[thisUnitID] ~= nil) then
+			if (assignedUnitsMap[thisUnitID].TreeHandle.unitsLocked) then
+				allUnitsOk = false
+				thisUnitOk = false
+			end
+		end
+		
+		if (thisUnitOK) then
+			okUnitsCounter = okUnitsCounter + 1
+			okUnits[okUnitsCounter] = thisUnitID
 		end
 	end
-	spSelectUnits(okUnits)
+	
+	if (not allUnitsOK) then -- ! only if necessary do re-selection
+		spSelectUnits(okUnits)
+	end
 end
 
 function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
