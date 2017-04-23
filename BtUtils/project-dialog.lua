@@ -85,51 +85,7 @@ return Utils:Assign("ProjectDialog", function()
 		local window = Chili.Window:New(winPar)
 		
 		ProjectDialog.setUpDialog(window, contentType, dialogType, callback)
-		--[[
-		-- get project manager
-		local pM =  Utils.ProjectManager
-		local contents = pM.listAll(contentType)
-		local items = {}
-		Logger.log("dialogs", "content = ", dump(contents, 2 ) )
-		for i,data in ipairs(contents) do
-			items[i] = data["qualifiedName"]
-			Logger.log("dialogs", "qualifiedName = ", dump(data,2))
-			Logger.log("dialogs", "qualifiedName = ", data["qualifiedName"] )
-		
-		end
-		Logger.log("dialogs", "items = ", dump(items, 2 ) )
-		
-		
-		local selection = Chili.ComboBox:New{
-			parent = window,
-			x = 20,
-			y = 20,
-			width = 300,
-			height = 35,
-			items = items,
-		}	
-		local doneButton = Utils.Chili.Button:New{
-			parent = window,
-			x = '40%',
-			y = '70%',
-			width = 60,
-			height = 30,
-			caption = "DONE",
-			OnClick = {doneButtonListener},
-			skinName = 'DarkGlass',
-		}
-		doneButton.callback = callback
-		local cancelButton = Utils.Chili.Button:New{
-			parent = window,
-			x = '40%',
-			y = '90%',
-			width = 60,
-			height = 30,
-			caption = "CANCEL",
-			OnClick = {cancelButtonListener},
-			skinName = 'DarkGlass',
-		}
-		cancelButton.callback = callback --]]
+
 	end]]
 	
 	--- This will attach corresponding chili components to
