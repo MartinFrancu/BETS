@@ -797,7 +797,7 @@ end
 
 function widget:GetTooltip(x, y)
 	local component = Screen0:HitTest(x, Screen0.height - y)
-	if (component) then
+	if (component and component.classname ~= 'TreeNode') then
 		--Spring.Echo("component: "..dump(component.name))
 		return component.tooltip
 	end

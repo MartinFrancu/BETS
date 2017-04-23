@@ -251,9 +251,9 @@ function TreeNode:UpdateDimensions()
 	end
 	if(self.nodeWindow and self.nodeWindow.parent and not self.nodeWindow.parent.zoomedOut) then
 		self.nodeWindow:SetPos(nil, nil, maxWidth, maxHeight)
+		self.width = maxWidth
+		self.height = maxHeight
 	end
-	self.width = maxWidth
-	self.height = maxHeight
 	self.nodeWindow:CallListeners( self.nodeWindow.OnResize )
 end
 
