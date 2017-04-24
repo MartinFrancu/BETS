@@ -41,6 +41,7 @@ local function makeInstance(instanceId, project, roles)
 		inputs = {},
 		roles = {},
 		nodes = {},
+		subblackboards = {},
 		activeNodes = {},
 	}
 	local blackboardMetatable = {
@@ -48,6 +49,7 @@ local function makeInstance(instanceId, project, roles)
 	}
 	function instance:ResetBlackboard()
 		self.blackboard = setmetatable({}, blackboardMetatable)
+		self.subblackboards = {}
 		return self.blackboard
 	end
 	instance:ResetBlackboard()
@@ -383,6 +385,80 @@ local function createExpression(expression)
 end
 
 
+function BtEvaluator.OnStartTree(params)
+	local instance = treeInstances[params.treeId]
+	local blackboard = getBlackboardForInstance(params.treeId)
+	local subblackboard = instance.subblackboards[params.id]
+	local units = instance.roles[params.roleId + 1]
+	if(not subblackboard)then
+		subblackboard = {}
+		instance.subblackboards[params.id] = subblackboard
+	end
+	
+	local parameterExpressions = {}
+	instance.nodes[params.id] = { expressions = parameterExpressions }
+	
+	for k, v in pairs(params.parameter) do
+		local expr = createExpression(tostring(v))
+		expr.setBlackboard(blackboard)
+		expr.setGroup(units)
+		parameterExpressions[k] = expr;
+		local success, value = pcall(expr.get)
+		if(success)then
+			if(not value)then
+				Logger.log("subtree", "Subtree '", params.id, "@", params.treeId, "' has a nil parameter '", k, "'." )
+				return "F"
+			end
+			subblackboard[k] = value
+		else	
+			Logger.error("expression", "Evaluating parameter '", k, "' threw an exception: ", value);
+		end
+	end
+	
+	local stack = instance.blackboardStack
+	if(not stack)then
+		stack = { length = 0 }
+		instance.blackboardStack = stack
+	end
+	stack.length = stack.length + 1
+	stack[stack.length] = instance.blackboard
+	instance.blackboard = subblackboard
+	
+	return "S"
+end
+function BtEvaluator.OnEnterTree(params)
+	local instance = treeInstances[params.treeId]
+	local subblackboard = instance.subblackboards[params.id]
+	if(not subblackboard)then
+		Logger.error("subtree", "Attempt to enter a subtree '", params.id, "@", params.treeId, "' that was not started.")
+		return "F"
+	end
+	
+	local stack = instance.blackboardStack
+	if(not stack)then
+		stack = { length = 0 }
+		instance.blackboardStack = stack
+	end
+	stack.length = stack.length + 1
+	stack[stack.length] = instance.blackboard
+	instance.blackboard = subblackboard
+	
+	return "S"
+end
+function BtEvaluator.OnExitTree(params)
+	local instance = treeInstances[params.treeId]
+	local subblackboard = instance.subblackboards[params.id]
+	if(subblackboard ~= instance.blackboard)then
+		Logger.error("subtree", "Attempt to exit a subtree '", params.id, "@", params.treeId, "' that was not entered.")
+		return "F"
+	end
+	
+	local stack = instance.blackboardStack
+	instance.blackboard = stack[stack.length]
+	stack[stack.length] = nil
+	stack.length = stack.length - 1
+end
+
 function BtEvaluator.OnCommand(params)
 	local instance = treeInstances[params.treeId]
 	local command = getCommand(params.name, params.id, params.treeId)
@@ -520,12 +596,12 @@ end
 
 local function asHandlerNoparam(event)
 	return function()
-		return event:Invoke()
+		return event()
 	end
 end
 local function asHandler(event)
 	return function(data)
-		return event:Invoke(data.asJSON())
+		return event(data.asJSON())
 	end
 end
 local handlers = {
@@ -546,6 +622,9 @@ local handlers = {
 	-- event messages
 	["COMMAND"] = asHandler(BtEvaluator.OnCommand),
 	["EXPRESSION"] = asHandler(BtEvaluator.OnExpression),
+	["ENTER_SUBTREE"] = asHandler(BtEvaluator.OnEnterTree),
+	["START_SUBTREE"] = asHandler(BtEvaluator.OnStartTree),
+	["EXIT_SUBTREE"] = asHandler(BtEvaluator.OnExitTree),
 	["UPDATE_STATES"] = function(data)
 		local params = data.asJSON()
 		local instanceId = params.id
@@ -555,7 +634,11 @@ local handlers = {
 		end
 		return BtEvaluator.OnUpdateStates:Invoke(params)
 	end,
-	["NODE_DEFINITIONS"] = asHandler(BtEvaluator.OnNodeDefinitions),
+	["NODE_DEFINITIONS"] = function(data)
+		local nodeDefinitions = data.asJSON()
+		-- TODO: add Reference node to nodeDefinitions
+		return BtEvaluator.OnNodeDefinitions:Invoke(nodeDefinitions)
+	end,
 }
 function widget:RecvSkirmishAIMessage(aiTeam, message)
 	Logger.log("communication", "Received message from team " .. tostring(aiTeam) .. ": " .. message)

@@ -47,7 +47,8 @@ function eventHandlerPrototype:Invoke(
 end
 
 local eventHandlerMetatable = {
-	__index = eventHandlerPrototype
+	__index = eventHandlerPrototype,
+	__call = eventHandlerPrototype.Invoke,
 }
 --- @section end
 

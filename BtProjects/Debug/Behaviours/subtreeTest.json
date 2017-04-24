@@ -1,0 +1,120 @@
+{
+	"additionalNodes": [],
+	"inputs": [],
+	"properties": {
+		"65LpcViAIijrDPPN7uS54HzAn0Xpa89Y": {
+			"height": 60,
+			"title": "sequence",
+			"width": 114,
+			"x": 285,
+			"y": 187
+		},
+		"K3YbuODKt5lpSkbdhhdFwLcmWPgiEt6e": {
+			"height": 70,
+			"title": "Common.luaecho",
+			"width": 198.000031,
+			"x": 480,
+			"y": 118
+		},
+		"e9pkyAccaeTm6yodB009FmGLQGs4nNWx": {
+			"height": 90,
+			"title": "subtree",
+			"width": 233,
+			"x": 481,
+			"y": 195
+		},
+		"l5d5YwTdINuaDSes0UhahVTdjOoNqLiT": {
+			"height": 70,
+			"title": "Common.luaecho",
+			"width": 188.000015,
+			"x": 872,
+			"y": 218
+		},
+		"t2gOUSbd6olrBuV4PSuCVsDY8ubvTsTw": {
+			"height": 90,
+			"title": "Common.store",
+			"width": 147,
+			"x": 482,
+			"y": 21
+		},
+		"tWsPgQt6aZi3qZPeS9WsKAB65L48KNt2": {
+			"height": 70,
+			"title": "Common.luaecho",
+			"width": 205.000046,
+			"x": 480,
+			"y": 310
+		}
+	},
+	"roles": [ {
+		"categories": [],
+		"name": "Role 0"
+	} ],
+	"root": {
+		"children": [ {
+			"children": [],
+			"id": "t2gOUSbd6olrBuV4PSuCVsDY8ubvTsTw",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "var",
+				"value": "x"
+			}, {
+				"name": "value",
+				"value": "0"
+			}, {
+				"name": "scriptName",
+				"value": "Common.store"
+			} ],
+			"scriptName": "Common.store"
+		}, {
+			"children": [],
+			"id": "K3YbuODKt5lpSkbdhhdFwLcmWPgiEt6e",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "msg",
+				"value": "\"Out: \" .. tostring(x)"
+			}, {
+				"name": "scriptName",
+				"value": "Common.luaecho"
+			} ],
+			"scriptName": "Common.luaecho"
+		}, {
+			"children": [ {
+				"children": [],
+				"id": "l5d5YwTdINuaDSes0UhahVTdjOoNqLiT",
+				"nodeType": "luaCommand",
+				"parameters": [ {
+					"name": "msg",
+					"value": "\"In: \" .. tostring(x)"
+				}, {
+					"name": "scriptName",
+					"value": "Common.luaecho"
+				} ],
+				"scriptName": "Common.luaecho"
+			} ],
+			"id": "e9pkyAccaeTm6yodB009FmGLQGs4nNWx",
+			"nodeType": "subtree",
+			"parameters": [ {
+				"name": "var",
+				"value": "x"
+			}, {
+				"name": "value",
+				"value": "x+1"
+			} ]
+		}, {
+			"children": [],
+			"id": "tWsPgQt6aZi3qZPeS9WsKAB65L48KNt2",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "msg",
+				"value": "\"Out2: \" .. tostring(x)"
+			}, {
+				"name": "scriptName",
+				"value": "Common.luaecho"
+			} ],
+			"scriptName": "Common.luaecho"
+		} ],
+		"id": "65LpcViAIijrDPPN7uS54HzAn0Xpa89Y",
+		"nodeType": "sequence",
+		"parameters": []
+	}
+}
