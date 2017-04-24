@@ -193,9 +193,11 @@ function createChiliComponentsRoles(obj,xOffSet,yOffSet)
 		-- get the role unit types:
 		local roleUnitTypes = {}
 		for _,catName in pairs(roleData.categories) do
-			local unitTypes = BtUtils.UnitCategories.getCategoryTypes(catName)		
-			for _,unitType in pairs(unitTypes) do
-				roleUnitTypes[unitType.name] = 1
+			local unitTypes = BtUtils.UnitCategories.getCategoryTypes(catName)
+			if unitTypes then
+				for _,unitType in pairs(unitTypes) do
+					roleUnitTypes[unitType.name] = 1
+				end
 			end
 		end
 		
