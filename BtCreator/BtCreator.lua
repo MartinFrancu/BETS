@@ -154,46 +154,46 @@ local function removeNodeFromCanvas(id)
 	btCreatorWindow:RequestUpdate()
 end
 
+--- x,y are the coordinates of top left corner where to place the node
+function placeTreeNodeOnCanvas(nodeType, x, y)
+	if btCreatorWindow.zoomedOut then
+		Spring.Echo("Please zoom out to place new nodes. ")
+		return
+	end
+	local newNode
+	for i=1,#nodePoolList do
+		if(nodeType == nodePoolList[i].nodeType) then
+			newNode = nodePoolList[i]
+			break
+		end
+	end
+	if(not newNode) then
+		Logger.error("A kurva..")
+	end
+	local halfwidth = 0.5*(nodePoolPanel.font:GetTextWidth(nodeType)+20+20)
+	local params = {
+		parent = btCreatorWindow,
+		nodeType = nodeType,
+		x = x-halfwidth,
+		y = y-10,
+		width = newNode.width,
+		height = newNode.height,
+		tooltip = newNode.tooltip,
+		connectable = true,
+		draggable = true,
+		hasConnectionIn = true,
+		hasConnectionOut = nodeDefinitionInfo[nodeType].hasConnectionOut,
+		parameters = copyTable(nodeDefinitionInfo[nodeType].parameters)
+	}
+	if(newNode.icon) then
+		params.iconPath = newNode.icon.file
+	end
+	addNodeToCanvas(Chili.TreeNode:New(params))
+end
+
 -- //////////////////////////////////////////////////////////////////////
 -- Listeners
 -- //////////////////////////////////////////////////////////////////////
-
-local copyTreeNode = nil
---- In coordinates of nodePool(origin in top left corner of nodePool)
-local startCopyingLocation = {}
-
-function listenerStartCopyingNode(node, x , y)
-	Logger.log("tree-editing", "listener start Copy Object. x:", x + node.x, ", y=", y + node.y)
-	copyTreeNode = node
-	startCopyingLocation.x = x + node.x
-	startCopyingLocation.y = y + node.y - nodePoolPanel.scrollPosY
-	return node
-end
-
-function listenerEndCopyingNode(_, x , y)
-	--y = y + startCopyingLocation.y
-	if(btCreatorWindow.zoomedOut==false and copyTreeNode and x - nodePoolPanel.width - startCopyingLocation.x > -20) then
-		local params = {
-			parent = btCreatorWindow,
-			nodeType = copyTreeNode.nodeType,
-			x = x - nodePoolPanel.width - startCopyingLocation.x,
-			y = y + startCopyingLocation.y - 70,
-			width = copyTreeNode.width,
-			height = copyTreeNode.height,
-			tooltip = copyTreeNode.tooltip,
-			connectable = true,
-			draggable = true,
-			hasConnectionIn = true,
-			hasConnectionOut = nodeDefinitionInfo[copyTreeNode.nodeType].hasConnectionOut,
-			parameters = copyTable(nodeDefinitionInfo[copyTreeNode.nodeType].parameters)
-		}
-		if(copyTreeNode.icon) then
-			params.iconPath = copyTreeNode.icon.file
-		end
-		addNodeToCanvas(Chili.TreeNode:New(params))
-		copyTreeNode = nil
-	end
-end
 
 local clearCanvas, loadBehaviourTree, formBehaviourTree
 local inputTypeMap = {
@@ -581,10 +581,10 @@ local function processTreenodeParameters(nodeType, parameters, hasConnectionIn, 
 end
 
 local function addNodeIntoNodepool(treenodeParams)
-	if(nodePoolPanel:GetChildByName(treenodeParams.name)) then
-		local treenode = nodePoolPanel:GetChildByName(treenodeParams.name)
-		nodePoolPanel:RemoveChild(treenode)
-	end
+	-- if(nodePoolPanel:GetChildByName(treenodeParams.name)) then
+		-- local treenode = nodePoolPanel:GetChildByName(treenodeParams.name)
+		-- nodePoolPanel:RemoveChild(treenode)
+	-- end
 	table.insert(nodePoolList, Chili.TreeNode:New(treenodeParams))
 end
 
@@ -597,15 +597,13 @@ local function populateNodePoolWithTreeNodes(heightSum, nodes)
 				name = nodes[i].name,
 				hasConnectionOut = (nodes[i].children == nil) or (type(nodes[i].children) == "table" and #nodes[i].children ~= 0),
 				nodeType = nodes[i].name, -- TODO use name parameter instead of nodeType
-				parent = nodePoolPanel,
+				-- parent = nodePoolPanel,
 				y = heightSum,
 				iconPath = LUAUI_DIRNAME .. "Widgets/BtTreenodeIcons/"..nodes[i].name..".png",
 				tooltip = nodes[i].tooltip or "",
 				draggable = false,
 				resizable = false,
 				connectable = false,
-				onMouseDown = { listenerStartCopyingNode },
-				onMouseUp = { listenerEndCopyingNode },
 				parameters = copyTable(nodes[i]["parameters"]),
 			}
 			-- Make value field from defaultValue.
@@ -647,7 +645,7 @@ local function getAvailableCommandScriptsIcons()
 	return iconList
 end
 
-local function fillNodePoolWithNodes(nodes)
+local function fillNodeListWithNodes(nodes)
 	nodePoolList = {}
 	nodeDefinitionInfo = {}
 	local heightSum = 30 -- skip NodePoolLabel
@@ -662,15 +660,13 @@ local function fillNodePoolWithNodes(nodes)
 			name = scriptName,
 			hasConnectionOut = false,
 			nodeType = scriptName,
-			parent = nodePoolPanel,
+			-- parent = nodePoolPanel,
 			y = heightSum,
 			iconPath = scriptIcons[scriptName],
 			tooltip = tooltips[scriptName],
 			draggable = false,
 			resizable = false,
 			connectable = false,
-			onMouseDown = { listenerStartCopyingNode },
-			onMouseUp = { listenerEndCopyingNode },
 			parameters = copyTable(params),
 		}
 		processTreenodeParameters(nodeParams.nodeType, nodeParams.parameters, nodeParams.hasConnectionIn, nodeParams.hasConnectionOut, nodeParams.tooltip, nodeParams.iconPath)
@@ -680,8 +676,6 @@ local function fillNodePoolWithNodes(nodes)
 		heightSum = heightSum + (nodeParams.height or 60)
 		addNodeIntoNodepool(nodeParams)
 	end
-
-	nodePoolPanel:RequestUpdate()
 end
 
 local LEFT_BUTTON = 1
@@ -880,7 +874,7 @@ function widget:Initialize()
 
 	BtEvaluator = sanitizer:Import(WG.BtEvaluator)
 
-	BtEvaluator.OnNodeDefinitions = fillNodePoolWithNodes
+	BtEvaluator.OnNodeDefinitions = fillNodeListWithNodes
 	BtEvaluator.OnUpdateStates = updateStatesMessage
 
 	loadSensorAutocompleteTable()
@@ -889,6 +883,7 @@ function widget:Initialize()
 	connectionLine.initialize()
 	blackboard = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/blackboard.lua", nil, VFS.RAW_FIRST)
 
+	BtEvaluator.requestNodeDefinitions()
 	nodePoolPanel = Chili.ScrollPanel:New{
 		parent = Screen0,
 		y = '56%',
@@ -897,6 +892,7 @@ function widget:Initialize()
 		minWidth = 115,
 		height = '41.5%',
 		skinName='DarkGlass',
+		tooltip = "The Node Pool \nDrag&drop individual nodes from Node Pool onto Canvas and start creating a behaviour. ",
 	}
 	nodePoolLabel = Chili.Label:New{
 		parent = nodePoolPanel,
@@ -907,20 +903,14 @@ function widget:Initialize()
 		caption = "Node Pool",
 		skinName='DarkGlass',
 	}
-
-	BtEvaluator.requestNodeDefinitions()
-
-
 	Logger.log("reloading", "BtCreator widget:Initialize after requestNodeDefinitions. nodeDefinitionInfo: "..dump(nodeDefinitionInfo, 3))
 
-	local maxNodeWidth = 125
+	local maxNodeWidth = 110
 	for i=1,#nodePoolList do
-		if(nodePoolList[i].width + 21 > maxNodeWidth) then
-			maxNodeWidth = nodePoolList[i].width + 21
-		end
+		maxNodeWidth = math.max(maxNodeWidth, nodePoolPanel.font:GetTextWidth(nodePoolList[i].nodeType) + 20 + 30)
 	end
-	nodePoolPanel.width = maxNodeWidth
-	nodePoolPanel:RequestUpdate()
+	nodePoolPanel:SetPos(nil,nil,maxNodeWidth,nil,true)
+	
 	 -- Create the window
 	btCreatorWindow = Chili.Window:New{
 		parent = Screen0,
@@ -940,6 +930,11 @@ function widget:Initialize()
 		OnMouseUp = { sanitizer:AsHandler(listenerOnMouseUpCanvas) },
 		OnMouseMove = { sanitizer:AsHandler(listenerOnMouseMoveCanvas) },
 	}
+	local nodePoolItem = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/nodePoolItem.lua", nil, VFS.RAW_FIRST)
+	nodePoolItem.initialize(btCreatorWindow, placeTreeNodeOnCanvas)
+	for i,treenode in pairs(nodePoolList) do
+		nodePoolItem.new(treenode, nodePoolPanel)
+	end
 
 	addNodeToCanvas( createRoot() )
 
@@ -1102,7 +1097,7 @@ function widget:Initialize()
 		height = 30,
 		file = LUAUI_DIRNAME.."Widgets/BtCreator/move_orange.png",
 		tooltip = "When dragged around it moves with whole BtCreator windows. ",
-		onMouseDown = { 
+		onMouseDown = { sanitizer:AsHandler(
 			function(self, x, y)
 				self.file = LUAUI_DIRNAME.."Widgets/BtCreator/move_grey.png"
 				moveWindow = true
@@ -1110,22 +1105,22 @@ function widget:Initialize()
 				moveWindowFromMouse = {x, y}
 				self:Invalidate()
 				return self
-			end,
+			end),
 			},
-		onClick = { 
+		onClick = { sanitizer:AsHandler(
 			function(self)
 				return self
-			end,
+			end),
 			},
-		onMouseUp = {
+		onMouseUp = { sanitizer:AsHandler(
 			function(self, x, y)
 				self.file = LUAUI_DIRNAME.."Widgets/BtCreator/move_orange.png"
 				moveWindow = false
 				self:Invalidate()
 				return self
-			end,
+			end),
 			},
-		onMouseMove = {
+		onMouseMove = { sanitizer:AsHandler(
 			function(self, x, y)
 				if(moveWindow) then
 					local diffx = x - moveWindowFromMouse[1]
@@ -1133,7 +1128,7 @@ function widget:Initialize()
 					btCreatorWindow:SetPos(btCreatorWindow.x + diffx, btCreatorWindow.y + diffy)
 					btCreatorWindow:Invalidate()
 				end
-			end,
+			end),
 		},
 	}	
 	
