@@ -695,7 +695,7 @@ function listenerOnMouseDownCanvas(self, x, y, button)
 		return self
 	elseif button == LEFT_BUTTON then
 		local child = self:HitTest(x, y)
-		if child and child.name == btCreatorWindow.name then 
+		if child and (child.name == btCreatorWindow.name or child.classname == 'TreeNode') then 
 			WG.clearSelection()
 			for _,node in pairs(WG.nodeList) do
 				node:UpdateParameterValues()
@@ -844,11 +844,13 @@ end
 
 function widget:IsAbove(x,y)
 	y = Screen0.height - y
-	if (x > btCreatorWindow.x and x < btCreatorWindow.x + btCreatorWindow.width and 
+	if (btCreatorWindow.visible and
+			x > btCreatorWindow.x and x < btCreatorWindow.x + btCreatorWindow.width and 
 			y > btCreatorWindow.y and y < btCreatorWindow.y + btCreatorWindow.height) then
 			return true
 	end
-	if (x > nodePoolPanel.x and x < nodePoolPanel.x + nodePoolPanel.width and 
+	if (nodePoolPanel.visible and 
+			x > nodePoolPanel.x and x < nodePoolPanel.x + nodePoolPanel.width and 
 			y > nodePoolPanel.y and y < nodePoolPanel.y + nodePoolPanel.height) then
 			return true
 	end
