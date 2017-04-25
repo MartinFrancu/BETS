@@ -57,13 +57,20 @@ local function updateVisualiser()
 			visualiser = {}
 			visualiser.window = Chili.Window:New{
 				parent = ChiliRoot,
+				name = "BtOS",
 				width = 200,
+				draggable = false,
 				height = widgetCount * TEXT_HEIGHT + 7*TEXT_HEIGHT/2,
 				caption = "BtOS",
 				skinName = 'DarkGlass',
 				backgroundColor = {0,0,0,1},
 			}
-			visualiser.window:SetPos(screenWidth * 15 / 100 + 500, 30) -- visualiser.window.width, 200)
+			local btcontroller = ChiliRoot:GetChildByName("BtControllerTreeControlWindow")
+			if(btcontroller) then
+				visualiser.window:SetPos(btcontroller.x+btcontroller.width, btcontroller.y) 
+			else
+				visualiser.window:SetPos(screenWidth * 15 / 100 + 500, 30) -- visualiser.window.width, 200)
+			end
 			
 			local top = 0
 			for widgetName in pairs(widgets) do

@@ -867,12 +867,21 @@ function setUpTreeControlWindow()
     parent = Screen0,
     x = '15%',
     y = '1%',
+		name = "BtControllerTreeControlWindow",
     width  = 500 ,
     height = 200,--'10%',	
 		padding = {10,10,10,10},
 		draggable=true,
 		resizable=true,
 		skinName='DarkGlass',
+		OnResize = { sanitizer:AsHandler(
+			function()
+				local btos = Screen0:GetChildByName("BtOS")
+				if(btos) then
+					btos:SetPos(treeControlWindow.x+treeControlWindow.width,treeControlWindow.y)
+				end
+			end
+		)},
 	}
   
 	controllerLabel = Chili.Label:New{
