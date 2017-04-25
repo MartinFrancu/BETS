@@ -291,7 +291,10 @@ end
 function saveTreeDialogCallback(window, treeName)
 	window:ClearChildren()
 	window:Hide()
-	if(treeName)then 
+	if(treeName)then -- tree is going to be saved
+		-- if new project I should create it 
+		--local projectName = 
+		--if(not projectManager.isProject(projectName)) .. create it
 		saveTree(treeName)
 		treeNameEditbox.SetText(treeName)
 	end
