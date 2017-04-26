@@ -636,6 +636,23 @@ local handlers = {
 	end,
 	["NODE_DEFINITIONS"] = function(data)
 		local nodeDefinitions = data.asJSON()
+		table.insert(nodeDefinitions, {
+			children = {},
+			defaultHeight = 60,
+			defaultWidth = 110,
+			name = "reference",
+			parameters = {
+				{
+					componentType = "treePicker",
+					defaultValue = "",
+					name = "behaviour",
+					variableType = "reference",
+				}
+			},
+			isReferenceNode = true,
+			tooltip = "Leaf node that serves as a reference to another behaviour tree. It allows specifying (staticly) the tree to be reference as well as its incoming and outgoing parameters.",
+		})
+		
 		-- TODO: add Reference node to nodeDefinitions
 		return BtEvaluator.OnNodeDefinitions:Invoke(nodeDefinitions)
 	end,
