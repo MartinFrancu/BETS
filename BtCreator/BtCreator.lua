@@ -92,9 +92,9 @@ end
 
 function BtCreator.showTree(tree, instanceId)
 	BtCreator.show()
-	treeNameEditbox:SetText(tree)
+	loadTree(tree)
 	treeInstanceId = instanceId
-	listenerClickOnLoadTree()
+	--listenerClickOnLoadTree()
 end
 
 
@@ -420,10 +420,14 @@ function getBehaviourTree(treeName)
 	end
 end 
 
+function loadTree(treeName)
+	getBehaviourTree(treeName)
+	treeNameEditbox:SetText(treeName)
+end
+
 function loadTreeDialogCallback(window, treeName)
 	if treeName then -- tree was selected
-		getBehaviourTree(treeName)
-		treeNameEditbox:SetText(treeName)
+		loadTree(treeName)
 	end
 	-- clear window and hide it
 	window:ClearChildren()

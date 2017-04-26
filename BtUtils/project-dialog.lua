@@ -220,32 +220,6 @@ return Utils:Assign("ProjectDialog", function()
 		}
 		
 		
-		
-		--[[local selection = Chili.ComboBox:New{
-			parent = parent,
-			x = 15,
-			y = 20,
-			width = 300,
-			height = 35,
-			items = items,
-			OnSelect = {onSelectCombobox},
-			newItemEditBox = newEditBox,
-			newItemString = NEW_ITEM_STRING,
-			newItemLabel = newLabel,
-		}
-		]]
-
-		
-		
-		--[[selection.newItemString = NEW_ITEM_STRING
-		selection.newItemEditBox = newEditBox
-		selection.newItemLabel = newLabel]]
-		--[[local newEditBox
-		if(creatingEnabled) then
-			
-		end]]
-		
-		
 		local doneButton = Chili.Button:New{
 			parent = parent,
 			x = 50,
