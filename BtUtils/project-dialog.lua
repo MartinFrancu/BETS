@@ -31,36 +31,31 @@ return Utils:Assign("ProjectDialog", function()
 	local NEW_ITEM_STRING = "--NEW ITEM--"
 	local NEW_PROJECT_STRING = "--NEW PROJECT--"
 	
-	--[[ProjectDialog.LOAD = "loading dialog"
-	ProjectDialog.SAVE = "saving dialog"]]
-	--[[
-	function onSelectCombobox(self)
-		if(self.items[self.selected] == self.newItemString) then
-			self.newItemEditBox:Show()
-			self.newItemLabel:Show()
-		else
-			self.newItemEditBox:Hide()
-			self.newItemLabel:Hide()
-		end
-	end]]
-	
 	function onSelectItem(self)
 		if(self.items[self.selected] == self.newItemString) then
-			self.newItemEditBox:Show()
+			if(not self.newItemEditBox.visible ) then
+				self.newItemEditBox:Show()
+			end
 		else
-			self.newItemEditBox:Hide()
+			if(self.newItemEditBox.visible)then
+				self.newItemEditBox:Hide()
+			end
 		end
 	end
 	
 	function onSelectProject(self)
 		local selected = self.items[self.selected]
 		if( selected == self.newProjectString) then
-			self.newProjectEditBox:Show()
+			if(not self.newProjectEditBox.visible ) then
+				self.newProjectEditBox:Show()
+			end
 			-- add possible new item
 			self.itemComboBox.items = {self.newItemString}
 			self.itemComboBox:Select(1)
 		else
-			self.newProjectEditBox:Hide()
+			if( self.newProjectEditBox.visible ) then
+				self.newProjectEditBox:Hide()
+			end
 			-- i should update item combo box:
 			-- new items:
 			local listProject = self.projectManager.listProject(selected, self.contentType)
@@ -99,62 +94,12 @@ return Utils:Assign("ProjectDialog", function()
 	function cancelButtonListener(self)
 		self.callback(self.callbackObject)
 	end
---[[	
-	function ProjectDialog.showWindow(contentType, dialogType, callback, parent, windowParams)
-		local Chili = Utils.Chili
-		-- prepare window with default params if necessary
-		local par = parent or Chili.Screen0
-		local defaultParams = {
-			parent = par,
-			x = 400,
-			y = 400,
-			width = 600,
-			height = 200,
-			padding = {10,10,10,10},
-			draggable = true,
-			resizable = true,
-			skinName = 'DarkGlass',
-		}
-		local winPar 
-		if(windowParams) then
-			winPar = setmetatable(windowParams ,{__index = defaultParams})
-		else
-			winPar = defaultParams
-		end
-		local window = Chili.Window:New(winPar)
-		
-		ProjectDialog.setUpDialog(window, contentType, dialogType, callback)
-
-	end]]
 	
 	--- This will attach corresponding chili components to
 	function ProjectDialog.setUpDialog(parent, contentType, creatingEnabled, callbackObject, callbackFunction)
 		local Chili = Utils.Chili
 		-- get project manager
 		local pM =  Utils.ProjectManager
-		--[[ 
-		local contents = pM.listAll(contentType)
-		local items = {}
-		for i,data in ipairs(contents) do
-			items[i] = data["qualifiedName"]
-			Logger.log("dialogs", "qualifiedName = ", dump(data,2))
-			Logger.log("dialogs", "qualifiedName = ", data["qualifiedName"] )
-		end
-		
-		if creatingEnabled then
-			items[#items+1] = NEW_ITEM_STRING
-		end
-		]]
-		--[[local newLabel = Chili.Label:New{
-			parent = parent,
-			caption = "New:",
-			x = 25,
-			y = 60,
-			width = 40,
-			height = 35,
-		}
-		newLabel:Hide()]]
-		
 		
 		local newProjectEditBox = Chili.EditBox:New{
 			parent = parent,
@@ -165,7 +110,6 @@ return Utils:Assign("ProjectDialog", function()
 			height = 20,
 			
 		}
-		newProjectEditBox:Hide()
 		
 		local newItemEditBox = Chili.EditBox:New{
 			parent = parent,
@@ -176,7 +120,6 @@ return Utils:Assign("ProjectDialog", function()
 			height = 20,
 			
 		}
-		newItemEditBox:Hide()
 		
 		local itemSelection = Chili.ComboBox:New{
 			parent = parent,
@@ -190,7 +133,7 @@ return Utils:Assign("ProjectDialog", function()
 			newItemString = NEW_ITEM_STRING,
 			newItemLabel = newLabel,
 		}
-		--itemSelection:Hide()
+
 		
 		local projects = pM.getProjects()
 		
