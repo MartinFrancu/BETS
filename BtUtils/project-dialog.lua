@@ -88,7 +88,7 @@ return Utils:Assign("ProjectDialog", function()
 		local result = selectedProject .. "." .. selectedItem
 		
 		Logger.log("dialogs", "result: " , result)
-		self.callback(self.callbackObject, result)
+		self.callback(self.callbackObject, selectedProject, selectedItem)
 	end
 	
 	function cancelButtonListener(self)

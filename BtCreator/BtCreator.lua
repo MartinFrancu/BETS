@@ -288,15 +288,21 @@ local function saveTree(treeName)
 		treeName)
 end 
 
-function saveTreeDialogCallback(window, treeName)
+function saveTreeDialogCallback(window, project, tree)
+	local pM = window.projectManager
 	window:ClearChildren()
-	window:Hide()
-	if(treeName)then -- tree is going to be saved
-		-- if new project I should create it 
-		--local projectName = 
-		--if(not projectManager.isProject(projectName)) .. create it
-		saveTree(treeName)
-		treeNameEditbox.SetText(treeName)
+	if(window.visible) then
+		window:Hide()
+	end
+	
+	if project and tree then -- tree is going to be saved
+		-- if new project I should create it  
+		if(not pM.isProject(project))then
+			pM.createProject(project)
+		end
+		local qualifiedName = project .. "." .. tree
+		saveTree(qualifiedName)
+		treeNameEditbox:SetText(qualifiedName)
 	end
 end
 
@@ -324,6 +330,7 @@ function listenerClickOnSaveTree(self)
 			draggable = true,
 			resizable = true,
 			skinName = 'DarkGlass',
+			projectManager = Utils.ProjectManager
 		}
 		local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
 		ProjectDialog.setUpDialog(saveTreeDialogWindow, treeContentType, true, saveTreeDialogWindow, saveTreeDialogCallback)	
@@ -425,15 +432,15 @@ function loadTree(treeName)
 	treeNameEditbox:SetText(treeName)
 end
 
-function loadTreeDialogCallback(window, treeName)
-	if treeName then -- tree was selected
-		loadTree(treeName)
+function loadTreeDialogCallback(window, project, tree)
+	
+	if project and tree then -- tree was selected
+		local qualifiedName = project .. "." .. tree
+		loadTree(qualifiedName)
 	end
 	-- clear window and hide it
 	window:ClearChildren()
 	window:Hide()
-	
-
 end
 
 function listenerClickOnLoadTree()
