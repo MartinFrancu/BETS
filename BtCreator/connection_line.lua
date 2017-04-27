@@ -39,16 +39,29 @@ WG.BtConnectionLine = WG.BtConnectionLine or (function()
 				local transparentBorderWidth = 5
 				local lineOutx = connectionOut.parent.x + connectionOut.x + 2
 				local lineOuty = connectionOut.parent.y + connectionOut.y
-				local halfDistance = math.ceil(math.abs(connectionIn.parent.x - connectionOut.parent.x - connectionOut.x)*0.5)
-				local lineVx   = lineOutx+halfDistance - transparentBorderWidth
-				local lineInx  = connectionIn.parent.x - halfDistance + transparentBorderWidth - 2
-				local lineIny  = connectionIn.parent.y + connectionIn.y
-				if(connectionOut.x+connectionOut.parent.x > connectionIn.parent.x) then
-					lineOutx = connectionOut.parent.x + connectionOut.x + 1 - halfDistance
-					lineInx  = connectionIn.parent.x + transparentBorderWidth - 1
-					lineVx   = lineOutx - transparentBorderWidth + 1
+				
+				-- FIRST SEGMENT STATIC EDGE
+				local STATIC_FIRST_SEGEMENT_LENGTH = 25
+				local fullXDistance = math.ceil(math.abs(connectionIn.parent.x - connectionOut.parent.x - connectionOut.x))
+				local bigDistance = fullXDistance - STATIC_FIRST_SEGEMENT_LENGTH
+				local linxOutLength = STATIC_FIRST_SEGEMENT_LENGTH + 1
+				local linxInLength = bigDistance			
+				
+				local lineVx = lineOutx + STATIC_FIRST_SEGEMENT_LENGTH - transparentBorderWidth
+				local lineInx = connectionIn.parent.x - bigDistance + transparentBorderWidth - 3
+				local lineIny = connectionIn.parent.y + connectionIn.y
+				
+				if (lineOutx + STATIC_FIRST_SEGEMENT_LENGTH > connectionIn.parent.x) then
+					lineInx = connectionIn.parent.x - STATIC_FIRST_SEGEMENT_LENGTH
+					linxInLength = STATIC_FIRST_SEGEMENT_LENGTH + 1
+					lineVx = lineInx - transparentBorderWidth
+					lineOutx = lineInx			
+					linxOutLength = fullXDistance + STATIC_FIRST_SEGEMENT_LENGTH - 1
+					linxOutLength = math.ceil(math.abs(lineInx - (connectionOut.parent.x + connectionOut.x + 2)))
 				end
-				return lineOutx, lineOuty, halfDistance, lineVx, lineInx, lineIny, transparentBorderWidth
+				-- END OF THE FIRST SEGMENT STATIC EDGE				
+				
+				return lineOutx, lineOuty, linxOutLength, lineVx, lineInx, lineIny, linxInLength, transparentBorderWidth
 			end,
 			
 			--- Returns local table connectionLines, should be immutable! so beware, do not change it.
@@ -73,10 +86,10 @@ WG.BtConnectionLine = WG.BtConnectionLine or (function()
 				end
 				
 				local lineIndex = (#connectionLines + 1)
-				local lineOutx,lineOuty,halfDistance,lineVx,lineInx,lineIny,transparentBorderWidth = connectionLine.computeCoordinates(connectionOut, connectionIn)
+				local lineOutx, lineOuty, lineOutLength, lineVx, lineInx, lineIny, lineInLength, transparentBorderWidth = connectionLine.computeCoordinates(connectionOut, connectionIn)
 				local lineOut = Chili.Line:New{ 
 					parent = connectionOut.parent.parent,
-					width = halfDistance,
+					width = lineOutLength,
 					height = 1,
 					x = 0,
 					y = 0,
@@ -94,7 +107,7 @@ WG.BtConnectionLine = WG.BtConnectionLine or (function()
 				lineOut:Invalidate()
 				local lineIn = Chili.Line:New{
 					parent = connectionOut.parent.parent,
-					width = halfDistance,
+					width = lineInLength,
 					height = 1,
 					x = 0,
 					y = 0,
@@ -142,15 +155,15 @@ WG.BtConnectionLine = WG.BtConnectionLine or (function()
 					onMouseOver = { connectionLine.listenerOverConnectionLine },
 					onMouseOut = { connectionLine.listenerOutOfConnectionLine },
 				}
-				arrow:SetPos(lineInx + halfDistance - 8, lineIny + 1)
+				arrow:SetPos(lineInx + lineInLength - 8, lineIny + 1)
 				arrow:Invalidate()
 				if(lineVx > lineInx) then
-					arrow.x = math.min(lineInx + 8, lineInx + halfDistance - 8)
+					arrow.x = math.min(lineInx + 8, lineInx + lineInLength - 8)
 					arrow.file = arrowWhiteFlipped
 					arrow.flip = true
 				else
 					arrow.file = arrowWhite
-					arrow.x = lineInx + halfDistance - 8
+					arrow.x = lineInx + lineInLength - 8
 					arrow.flip = false
 				end
 				table.insert( connectionLines, {connectionOut, lineOut, lineV, lineIn, arrow, connectionIn} )
@@ -180,27 +193,27 @@ WG.BtConnectionLine = WG.BtConnectionLine or (function()
 				end
 				local connectionOut = connectionLines[index][1]
 				local connectionIn = connectionLines[index][#connectionLines[index]]
-				local lineOutx,lineOuty,halfDistance,lineVx,lineInx,lineIny,transparentBorderWidth = connectionLine.computeCoordinates(connectionOut, connectionIn)
+				local lineOutx, lineOuty, lineOutLength, lineVx, lineInx, lineIny, lineInLength, transparentBorderWidth = connectionLine.computeCoordinates(connectionOut, connectionIn)
 				local lineOut = connectionLines[index][2]
 				local lineV = connectionLines[index][3]
 				local lineIn = connectionLines[index][4]
 				local arrow = connectionLines[index][5]
-				lineOut.width = halfDistance
+				lineOut.width = lineOutLength
 				lineOut.x = lineOutx
 				lineOut.y = lineOuty
-				lineIn.width = halfDistance
+				lineIn.width = lineInLength
 				lineIn.x = lineInx
 				lineIn.y = lineIny
 				lineV.height = math.abs(lineOuty-lineIny)
 				lineV.x = lineVx
 				lineV.y = math.min(lineOuty,lineIny)+transparentBorderWidth
 				if(lineVx > lineInx) then
-					arrow.x = math.min(lineInx + 8, lineInx + halfDistance - 8)
+					arrow.x = math.min(lineInx + 8, lineInx + lineInLength - 8)
 					arrow.file = arrowWhiteFlipped
 					arrow.flip = true
 				else
 					arrow.file = arrowWhite
-					arrow.x = lineInx + halfDistance - 8
+					arrow.x = lineInx + lineInLength - 8
 					arrow.flip = false
 				end
 				arrow.y = lineIny + 1
