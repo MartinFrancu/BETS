@@ -156,6 +156,7 @@ return Utils:Assign("BehaviourTree", function()
 		["BETS_POSITION"] = true,
 		["BETS_UNIT"] = true,
 		["BETS_AREA"] = true,
+		["Variable"] = true,
 	}
 	local function validateInputs(inputs)
 		if(type(inputs) ~= "table")then

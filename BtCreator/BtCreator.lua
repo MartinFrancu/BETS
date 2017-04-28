@@ -203,6 +203,7 @@ local inputTypeMap = {
 	["BETS_POSITION"] = "Position",
 	["BETS_AREA"]			= "Area",
 	["BETS_UNIT"]			= "UnitID",
+	["Variable"] = "Variable",
 }
 
 local function maxRoleSplit(tree)
@@ -264,6 +265,7 @@ local function saveTree(treeName)
 	end
 	protoTree.roles = rolesOfCurrentTree
 	protoTree.inputs = {}
+	protoTree.outputs = {}
 
 	local inputs = WG.nodeList[rootID].inputs
 	if(inputs ~= nil) then
@@ -272,6 +274,12 @@ local function saveTree(treeName)
 				error("Uknown tree input type detected in BtCreator tree serialization. "..debug.traceback())
 			end
 			table.insert(protoTree.inputs, {["name"] = inputs[i][1].text, ["command"] = inputTypeMap[ inputs[i][2].items[ inputs[i][2].selected ] ],})
+		end
+	end
+	local outputs = WG.nodeList[rootID].outputs
+	if(outputs ~= nil) then
+		for i=1,#outputs do
+			table.insert(protoTree.outputs, {["name"] = outputs[i][1].text,})
 		end
 	end
 	Logger.assert("save-and-load", protoTree:Save(treeName))
@@ -1396,11 +1404,11 @@ function loadBehaviourTree(bt)
 	WG.clearSelection()
 	updateSerializedIDs()
 	-- deserialize tree inputs
-	local addButton = WG.nodeList[rootID].addButton
+	local addInputButton = WG.nodeList[rootID].nodeWindow:GetChildByName("AddInput")
 	for i=1,#bt.inputs do
 		-- Add inputs and sets them to saved values
-		addButton:CallListeners( addButton.OnClick )
-		WG.nodeList[rootID].inputs[i][1].text = bt.inputs[i].name
+		addInputButton:CallListeners( addInputButton.OnClick )
+		WG.nodeList[rootID].inputs[i][1]:SetText(bt.inputs[i].name)
 		local inputType = inputTypeMap[ bt.inputs[i]["command"] ]
 		local inputComboBox = WG.nodeList[rootID].inputs[i][2]
 		for k=1,#inputComboBox.items do
@@ -1408,6 +1416,12 @@ function loadBehaviourTree(bt)
 				WG.nodeList[rootID].inputs[i][2]:Select( k )
 			end
 		end
+	end
+	-- deserialize tree outputs
+	local addOutputButton = WG.nodeList[rootID].nodeWindow:GetChildByName("AddOutput")
+	for i=1,#bt.outputs do
+		addOutputButton:CallListeners( addOutputButton.OnClick )
+		WG.nodeList[rootID].outputs[i][1]:SetText(bt.outputs[i].name)
 	end
 end
 
