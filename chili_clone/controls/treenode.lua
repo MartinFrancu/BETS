@@ -154,10 +154,12 @@ function TreeNode:New(obj)
 		x = 15,
 		y = 6,
 		align = 'left',
-		skinName = 'DarkGlass',
+		-- skinName = 'DarkGlass',
 		borderThickness = 0,
 		backgroundColor = {0,0,0,0},
 		autosize = true,
+		minWidth = 50,
+		borderColor = {0,0,0,0},
 	}
 	if(obj.iconPath and VFS.FileExists(obj.iconPath)) then
 		obj.icon = Image:New{
@@ -203,7 +205,7 @@ function TreeNode:UpdateDimensions()
 	if(self.icon) then
 		nameEditBoxWidth = nameEditBoxWidth + 20
 	end
-	maxWidth = math.max(maxWidth, nameEditBoxWidth + 35)
+	maxWidth = math.max(maxWidth, nameEditBoxWidth + 40)
 	local maxHeight = self.nodeWindow.height
 	local p = self.parameterObjects
 	for i=1,#p do
@@ -835,6 +837,9 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 	end
 	-- Check for double click
 	local now = Spring.GetTimer()
+	if(Spring.DiffTimers(now, lastClicked) < 0.5 and childName == self.treeNode.nameEditBox.name) then
+		return
+	end
 	local selectSubtree = false
 	if(Spring.DiffTimers(now, lastClicked) < 0.3) then
 		lastClicked = now
