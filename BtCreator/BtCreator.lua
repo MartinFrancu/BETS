@@ -779,16 +779,6 @@ function listenerMouseWheelScroll(self, x, y, zoomIn)
 			nodeWindow:Invalidate()
 			nodeWindow:CallListeners( nodeWindow.OnResize )
 		end
-		local inputs = WG.nodeList[rootID].inputs
-		if(inputs) then
-			for i=1,#inputs do
-				inputs[i][1]:Show()
-				inputs[i][2]:Show()
-			end
-		end
-		WG.nodeList[rootID].nodeWindow:GetChildByName("Inputs"):Show()
-		WG.nodeList[rootID].nodeWindow:GetChildByName("AddInputs"):Show()
-		WG.nodeList[rootID].nodeWindow:GetChildByName("RemoveInputs"):Show()
 	elseif(not zoomIn and not self.zoomedOut) then
 		self.zoomedOut = true
 		for _,node in pairs(WG.nodeList) do
@@ -817,17 +807,6 @@ function listenerMouseWheelScroll(self, x, y, zoomIn)
 			nodeWindow:Invalidate()
 			nodeWindow:CallListeners( nodeWindow.OnResize )
 		end
-		local inputs = WG.nodeList[rootID].inputs
-		if(inputs) then
-			for i=1,#inputs do
-				inputs[i][1]:Hide()
-				inputs[i][2]:Hide()
-			end
-		end
-		WG.nodeList[rootID].nodeWindow:GetChildByName("Inputs"):Hide()
-		WG.nodeList[rootID].nodeWindow:GetChildByName("AddInputs"):Hide()
-		WG.nodeList[rootID].nodeWindow:GetChildByName("RemoveInputs"):Hide()
-		
 	end
 	return self
 end
@@ -838,7 +817,7 @@ function createRoot()
 		nodeType = "Root",
 		y = btCreatorWindow.height*0.5 - 40,
 		x = 5,
-		width = 210,
+		width = 180,
 		height = 80,
 		draggable = true,
 		resizable = true,

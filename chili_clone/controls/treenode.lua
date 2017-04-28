@@ -53,6 +53,7 @@ local listenerMouseOut
 
 -- connection line functions
 local connectionLine = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/connection_line.lua", nil, VFS.RAW_FIRST)
+local rootnode = VFS.Include(LUAUI_DIRNAME .. "Widgets/chili_clone/controls/treenode_rootnode.lua", nil, VFS.RAW_FIRST)
 
 local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
 local Debug = Utils.Debug;
@@ -170,34 +171,7 @@ function TreeNode:New(obj)
 		obj.nameEditBox:SetPos(obj.nameEditBox.x+20)
 	end
 	if(obj.nodeType:lower() == "root") then
-		local label = Label:New{
-			name = "Inputs",
-			parent = obj.nodeWindow,
-			x = 18,
-			y = 24,
-			width  = obj.nodeWindow.font:GetTextWidth("Inputs"),
-			height = '10%',
-			caption = "Inputs",
-		}
-		obj.addButton = Button:New{
-			name = "AddInputs",
-			parent = obj.nodeWindow,
-			x = label.x + label.width + 6,
-			y = label.y,
-			caption = "Add",
-			tooltip = "Adds new input parameter to the tree. ",
-			width = 50,
-			OnClick = { listenerAddInput },
-		}
-		obj.removeButton = Button:New{
-			name = "RemoveInputs",
-			parent = obj.nodeWindow,
-			x = obj.addButton.x + obj.addButton.width + 6,
-			y = label.y,
-			caption = "Remove",
-			tooltip = "Removes the last input parameter from the tree. ",
-			OnClick = { listenerRemoveInput },
-		}
+		rootnode.addComponents(obj)
 	end
 
 	obj.parameterObjects = {}
@@ -244,8 +218,9 @@ function TreeNode:UpdateDimensions()
 		end
 	end
 	if(self.nodeType == "Root") then
-		local inputs = self.inputs or {}
-		maxHeight = math.max(maxHeight, #inputs * 21 + 55)
+		height,width = rootnode.getMinimalDimensions(self)
+		maxHeight = math.max(height, maxHeight)
+		maxWidth = math.max(width, maxWidth)
 	else
 		maxHeight = math.max(maxHeight, #p * 20 + 50)
 	end
@@ -456,6 +431,9 @@ function TreeNode:ShowParameterObjects()
 			obj.checkBox:Show()
 		end
 	end
+	if(self.nodeType == "Root") then
+		rootnode.showComponents(self)
+	end
 end
 
 function TreeNode:HideParameterObjects()
@@ -469,6 +447,9 @@ function TreeNode:HideParameterObjects()
 		elseif(obj.componentType == "checkBox") then
 			obj.checkBox:Hide()
 		end
+	end
+	if(self.nodeType == "Root") then
+		rootnode.hideComponents(self)
 	end
 end
 
@@ -595,53 +576,6 @@ function connectionLineCanBeCreated(obj)
 end
 
 --//=============================================================================
---// Listeners - input buttons
---//=============================================================================
-
-function listenerAddInput(obj)
-	local inputs = obj.parent.treeNode.inputs or {}
-	obj.parent.treeNode.inputs = inputs
-	local i = #inputs
-	local editBox = EditBox:New{
-		parent = obj.parent,
-		text = "input"..i,
-		defaultWidth = '40%',
-		x = '10%',
-		y = 45 + i*20,
-		align = 'left',
-		--skinName = 'DarkGlass',
-		borderThickness = 0,
-		backgroundColor = {0,0,0,0},
-		autosize = true,
-	}
-	local comboBox = ComboBox:New{
-			caption = "",
-			parent = obj.parent,
-			x = '55%',
-			y = 45 + i*20,
-			width = 80,
-			borderThickness = 0,
-			--skinName = 'DarkGlass',
-			items = {"Position", "Area", "UnitID"},
-		}
-	table.insert(inputs, { editBox, comboBox })
-	obj.parent.treeNode:UpdateDimensions()
-	return true
-end
-
-function listenerRemoveInput(obj)
-	local inputs = obj.parent.treeNode.inputs or {}
-	local i = #inputs
-	if(i <= 0) then
-		return
-	end 
-	inputs[i][1]:Dispose()
-	inputs[i][2]:Dispose()
-	table.remove(inputs, i)
-	return true
-end
-
---//=============================================================================
 --// Listeners
 --//=============================================================================
 
@@ -735,6 +669,7 @@ function listenerNodeWindowOnResize(self)
 		previousPosition.x = self.x
 		previousPosition.y = self.y
 	end
+	self:Invalidate()
 end
 
 local function validateEditBox(editBox)
@@ -860,11 +795,13 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 	if((self.treeNode.connectionIn and childName == self.treeNode.connectionIn.name) or (self.treeNode.connectionOut and childName == self.treeNode.connectionOut.name)) then
 		return
 	end
-	-- Check for input buttons
-	if(self.treeNode.addButton and self.treeNode.addButton.name == childName) then
-		return
-	end
-	if(self.treeNode.removeButton and self.treeNode.removeButton.name == childName) then
+	-- Check for rootnode buttons
+	if(rootnode and (
+				rootnode.getAddInputButtonName() == childName or
+				rootnode.getRemoveInputButtonName() == childName or
+				rootnode.getAddOutputButtonName() == childName or
+				rootnode.getRemoveOutputButtonName() == childName)
+			) then
 		return
 	end
 	-- Check for input editBox and comboBox
@@ -872,6 +809,15 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 		local inputs = self.treeNode.inputs
 		for i=1,#inputs do
 			if(childName == inputs[i][1].name or childName == inputs[i][2].name) then
+				return
+			end
+		end
+	end
+	-- Check for output editBox
+	if(self.treeNode.outputs) then
+		local outputs = self.treeNode.outputs
+		for i=1,#outputs do
+			if(childName == outputs[i][1].name) then
 				return
 			end
 		end
