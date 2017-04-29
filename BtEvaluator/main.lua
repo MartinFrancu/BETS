@@ -665,8 +665,8 @@ local handlers = {
 		local nodeDefinitions = data.asJSON()
 		table.insert(nodeDefinitions, {
 			children = {},
-			defaultHeight = 60,
-			defaultWidth = 110,
+			defaultHeight = 110,
+			defaultWidth = 140,
 			name = "reference",
 			parameters = {
 				{

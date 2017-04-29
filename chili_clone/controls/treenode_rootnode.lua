@@ -1,7 +1,5 @@
 local rootNode = {}
 
-local Chili = WG.ChiliClone
-
 local addInputButton
 local removeInputButton
 local addOutputButton
@@ -9,11 +7,6 @@ local removeOutputButton
 
 local inputsLabel
 local outputsLabel
-
-function rootNode.getAddInputButtonName()    return addInputButton.name end
-function rootNode.getRemoveInputButtonName() return removeInputButton.name end
-function rootNode.getAddOutputButtonName()   return addOutputButton.name end
-function rootNode.getRemoveOutputButtonName()return removeOutputButton.name end
 
 function rootNode.getMinimalDimensions(treeNode)
 	local inputs = treeNode.inputs or {}
@@ -30,49 +23,6 @@ function rootNode.getMinimalDimensions(treeNode)
 	end
 	-- Spring.Echo("maxWidth: "..maxWidth)
 	return maxHeight,maxWidth
-end
-
-function rootNode.hideComponents(treeNode)
-	addInputButton:Hide()
-	addOutputButton:Hide()
-	inputsLabel:Hide()
-	outputsLabel:Hide()
-	removeInputButton:Hide()
-	removeOutputButton:Hide()
-	local inputs = treeNode.inputs
-	if(inputs) then
-		for i=1,#inputs do
-			inputs[i][1]:Hide()
-			inputs[i][2]:Hide()
-		end
-	end
-	local outputs = treeNode.outputs
-	if(outputs) then
-		for i=1,#outputs do
-			outputs[i][1]:Hide()
-		end
-	end
-end
-
-function rootNode.showComponents(treeNode)
-	addInputButton:Show()
-	addOutputButton:Show()
-	inputsLabel:Show()
-	outputsLabel:Show()
-	removeInputButton:Show()
-	removeOutputButton:Show()
-	if(inputs) then
-		for i=1,#inputs do
-			inputs[i][1]:Show()
-			inputs[i][2]:Show()
-		end
-	end
-	local outputs = treeNode.outputs
-	if(outputs) then
-		for i=1,#outputs do
-			outputs[i][1]:Show()
-		end
-	end
 end
 
 --//=============================================================================

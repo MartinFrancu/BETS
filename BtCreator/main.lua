@@ -167,6 +167,7 @@ function placeTreeNodeOnCanvas(nodeType, x, y)
 		width = newNode.width,
 		height = newNode.height,
 		tooltip = newNode.tooltip,
+		isReferenceNode = newNode.isReferenceNode,
 		connectable = true,
 		draggable = true,
 		hasConnectionIn = true,
@@ -295,7 +296,6 @@ local function saveTree(treeName)
 		zoomCanvasOut(btCreatorWindow, w/2, h/2)
 	end
 end 
-
 
 function saveAsTreeDialogCallback(project, tree)
 
@@ -610,6 +610,7 @@ local function populateNodePoolWithTreeNodes(heightSum, nodes)
 				resizable = false,
 				connectable = false,
 				parameters = copyTable(nodes[i]["parameters"]),
+				isReferenceNode = nodes[i].isReferenceNode
 			}
 			-- Make value field from defaultValue.
 			processTreenodeParameters(nodeParams.nodeType, nodeParams.parameters, nodeParams.hasConnectionIn, nodeParams.hasConnectionOut, nodeParams.tooltip, nodeParams.iconPath)
@@ -750,7 +751,7 @@ function zoomCanvasIn(self, x, y)
 		local nodeWindow = node.nodeWindow
 		local nodeName = node.nameEditBox
 		local icon = node.icon
-		node:ShowParameterObjects()
+			node:ShowChildren()
 		nodeWindow.font.size = nodeWindow.font.size * scale
 		nodeName.font.size = nodeName.font.size * scale
 		local nameX = 15
@@ -780,7 +781,7 @@ function zoomCanvasOut(self, x, y)
 		local nodeWindow = node.nodeWindow
 		local nodeName = node.nameEditBox
 		local icon = node.icon
-		node:HideParameterObjects()
+			node:HideChildren()
 		nodeWindow.font.size = nodeWindow.font.size / scale
 		nodeName.font.size = nodeName.font.size / scale
 		local nameX = 10
@@ -1433,6 +1434,7 @@ function loadBehaviourTree(bt)
 	end
 	-- deserialize tree outputs
 	local addOutputButton = WG.nodeList[rootID].nodeWindow:GetChildByName("AddOutput")
+	bt.outputs = bt.outputs or {}
 	for i=1,#bt.outputs do
 		addOutputButton:CallListeners( addOutputButton.OnClick )
 		WG.nodeList[rootID].outputs[i][1]:SetText(bt.outputs[i].name)

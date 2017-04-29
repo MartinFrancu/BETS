@@ -54,6 +54,7 @@ local listenerMouseOut
 -- connection line functions
 local connectionLine = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/connection_line.lua", nil, VFS.RAW_FIRST)
 local rootnode = VFS.Include(LUAUI_DIRNAME .. "Widgets/chili_clone/controls/treenode_rootnode.lua", nil, VFS.RAW_FIRST)
+local referenceNode = VFS.Include(LUAUI_DIRNAME .. "Widgets/chili_clone/controls/treenode_reference.lua", nil, VFS.RAW_FIRST)
 
 local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
 local Debug = Utils.Debug;
@@ -223,9 +224,8 @@ function TreeNode:UpdateDimensions()
 		height,width = rootnode.getMinimalDimensions(self)
 		maxHeight = math.max(height, maxHeight)
 		maxWidth = math.max(width, maxWidth)
-	else
-		maxHeight = math.max(maxHeight, #p * 20 + 50)
 	end
+	maxHeight = math.max(maxHeight, #p * 20 + 50)
 	if(self.nodeWindow and self.nodeWindow.parent and not self.nodeWindow.parent.zoomedOut) then
 		self.nodeWindow:SetPos(nil, nil, maxWidth, maxHeight)
 		self.width = maxWidth
@@ -417,41 +417,51 @@ function createNextParameterObject(obj)
 			items = items,
 		}
 		result.comboBox:Select(defaultIndex)
+	elseif(param["componentType"] and param["componentType"]:lower() == "treepicker") then
+		result.componentType = "treePicker"
+		result.button = Button:New{
+			parent = obj.nodeWindow,
+			x = 18,
+			y = 24,
+			caption = "Choose Tree",
+			tooltip = "Choose from available behaviour trees the one which should be referenced by this node. ",
+			width = 110,
+			height = 20,
+			
+			OnClick = { referenceNode.listenerChooseTree },
+		}
+		result.label = Label:New{
+			parent = obj.nodeWindow,
+			x = 18,
+			y = result.button.y + 23,
+			caption =  tostring(param["value"] or ""),
+			tooltip = "Chosen tree to be referenced. ",
+			autosize = true,
+		}
+		result.label.font.color = {1,1,1,0.8}
+		if(obj.draggable and result.label.caption ~= "") then
+			referenceNode.addInputOutputComponents(obj.nodeWindow, result.label.caption)
+		end
 	end
 	return result
 end
 
-function TreeNode:ShowParameterObjects()
-	for i=1,#self.parameterObjects do
-		local obj = self.parameterObjects[i]
-		if(obj.componentType == "editBox") then
-			obj.label:Show()
-			obj.editBox:Show()
-		elseif(obj.componentType == "comboBox") then
-			obj.comboBox:Show()
-		elseif(obj.componentType == "checkBox") then
-			obj.checkBox:Show()
-		end
-	end
-	if(self.nodeType == "Root") then
-		rootnode.showComponents(self)
+function TreeNode:ShowChildren()
+	for child,_ in pairs(self.nodeWindow.children_hidden) do
+		self.nodeWindow:ShowChild(child)
 	end
 end
 
-function TreeNode:HideParameterObjects()
-	for i=1,#self.parameterObjects do
-		local obj = self.parameterObjects[i]
-		if(obj.componentType == "editBox") then
-			obj.label:Hide()
-			obj.editBox:Hide()
-		elseif(obj.componentType == "comboBox") then
-			obj.comboBox:Hide()
-		elseif(obj.componentType == "checkBox") then
-			obj.checkBox:Hide()
-		end
+function TreeNode:HideChildren()
+	for i=#self.nodeWindow.children,1,-1 do
+		self.nodeWindow.children[i]:SetVisibility(false)
 	end
-	if(self.nodeType == "Root") then
-		rootnode.hideComponents(self)
+	self.nameEditBox:SetVisibility(true)
+	if(self.connectionIn) then
+		self.connectionIn:SetVisibility(true)
+	end
+	if(self.connectionOut) then
+		self.connectionOut:SetVisibility(true)
 	end
 end
 
@@ -731,6 +741,9 @@ function TreeNode:UpdateParameterValues()
 		if(comboBox) then
 			comboBox.parent.treeNode.parameters[comboBox.index].value = tostring(comboBox.items[comboBox.selected])
 		end
+		if(self.parameterObjects[i].componentType == "treePicker") then
+			self.parameterObjects[i].label.parent.treeNode.parameters[i].value = self.parameterObjects[i].label.caption
+		end
 	end
 	self.title = self.nameEditBox.text
 	self:UpdateDimensions()
@@ -789,52 +802,16 @@ end
 local lastClicked = Spring.GetTimer()
 
 function listenerOnMouseDownMoveNode(self, x ,y, button)
-	-- if(clickedConnection) then -- check if we are connecting nodes
-		-- return
-	-- end
-	local childName = self:HitTest(x, y).name
-	-- Check if the connectionIn or connectionOut was clicked
-	if((self.treeNode.connectionIn and childName == self.treeNode.connectionIn.name) or (self.treeNode.connectionOut and childName == self.treeNode.connectionOut.name)) then
+	local child = self:HitTest(x, y)
+	local childName = child.name
+	-- Check for any child component which reacts on mouse down event
+	if(childName ~= self.name and 
+		(#child.OnMouseDown > 0 or #child.OnClick > 0 or child.MouseDown ~= nil) and
+		childName ~= self.treeNode.nameEditBox.name
+		)then
 		return
 	end
-	-- Check for rootnode buttons
-	if(rootnode and (
-				rootnode.getAddInputButtonName() == childName or
-				rootnode.getRemoveInputButtonName() == childName or
-				rootnode.getAddOutputButtonName() == childName or
-				rootnode.getRemoveOutputButtonName() == childName)
-			) then
-		return
-	end
-	-- Check for input editBox and comboBox
-	if(self.treeNode.inputs) then
-		local inputs = self.treeNode.inputs
-		for i=1,#inputs do
-			if(childName == inputs[i][1].name or childName == inputs[i][2].name) then
-				return
-			end
-		end
-	end
-	-- Check for output editBox
-	if(self.treeNode.outputs) then
-		local outputs = self.treeNode.outputs
-		for i=1,#outputs do
-			if(childName == outputs[i][1].name) then
-				return
-			end
-		end
-	end
-	-- Check if the parameter value (editbox's text) hasnt changed
 	self.treeNode:UpdateParameterValues()
-	for i=1,#self.treeNode.parameterObjects do
-		if(self.treeNode.parameterObjects[i]["editBox"] and childName == self.treeNode.parameterObjects[i]["editBox"].name) then
-			return
-		elseif(self.treeNode.parameterObjects[i]["checkBox"] and childName == self.treeNode.parameterObjects[i]["checkBox"].name) then
-			return
-		elseif(self.treeNode.parameterObjects[i]["comboBox"] and childName == self.treeNode.parameterObjects[i]["comboBox"].name) then
-			return
-		end
-	end
 	-- Check for double click
 	local now = Spring.GetTimer()
 	if(Spring.DiffTimers(now, lastClicked) < 0.5 and childName == self.treeNode.nameEditBox.name) then
