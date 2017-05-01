@@ -252,6 +252,12 @@ local afterRoleManagement
 
 -- does not check if tree makes sense
 local function saveTree(treeName)
+	local zoomedOut = btCreatorWindow.zoomedOut
+	local w = btCreatorWindow.width
+	local h = btCreatorWindow.height
+	if zoomedOut then
+		zoomCanvasIn(btCreatorWindow, w/2, h/2)
+	end
 	local protoTree = formBehaviourTree()
 	
 	if(serializedTreeName and serializedTreeName ~= treeName) then
@@ -294,6 +300,10 @@ local function saveTree(treeName)
 		"registering command for new tree",
 		WG.BtRegisterCommandForTree,
 		treeName)
+		
+	if zoomedOut then
+		zoomCanvasOut(btCreatorWindow, w/2, h/2)
+	end
 end 
 
 function saveTreeDialogCallback(window, project, tree)
@@ -755,66 +765,75 @@ function listenerOnResizeBtCreator(self)
 	end
 end
 
+local scale = 2
+
+function zoomCanvasIn(self, x, y)
+	self.zoomedOut = false
+	for _,node in pairs(WG.nodeList) do
+		local nodeWindow = node.nodeWindow
+		local nodeName = node.nameEditBox
+		local icon = node.icon
+		node:ShowParameterObjects()
+		nodeWindow.font.size = nodeWindow.font.size * scale
+		nodeName.font.size = nodeName.font.size * scale
+		local nameX = 15
+		if(icon) then
+			nameX = nameX + 20
+			icon:SetPos(icon.x + 3,icon.y + 3,icon.width * scale,icon.height * scale)
+		end
+		nodeName:SetPos(nameX,6)
+		nodeWindow.minWidth = nodeWindow.minWidth * scale
+		nodeWindow.minHeight = nodeWindow.minHeight * scale
+		local translatedX = x + (nodeWindow.x - x)*scale
+		local translatedY = y + (nodeWindow.y - y)*scale
+		nodeWindow:SetPos(translatedX, translatedY, nodeWindow.width*scale, nodeWindow.height*scale)
+		node.width = nodeWindow.width*scale
+		node.height = nodeWindow.height*scale
+		node.x = translatedX
+		node.y = translatedY
+		nodeWindow.resizable = true
+		nodeWindow:Invalidate()
+		nodeWindow:CallListeners( nodeWindow.OnResize )
+	end
+end
+
+function zoomCanvasOut(self, x, y)
+	self.zoomedOut = true
+	for _,node in pairs(WG.nodeList) do
+		local nodeWindow = node.nodeWindow
+		local nodeName = node.nameEditBox
+		local icon = node.icon
+		node:HideParameterObjects()
+		nodeWindow.font.size = nodeWindow.font.size / scale
+		nodeName.font.size = nodeName.font.size / scale
+		local nameX = 10
+		if(icon) then
+			nameX = nameX + 10
+			icon:SetPos(icon.x - 3,icon.y - 3,icon.width / scale,icon.height / scale)
+		end
+		nodeName:SetPos(nameX,-1)
+		nodeWindow.minWidth = nodeWindow.minWidth / scale
+		nodeWindow.minHeight = nodeWindow.minHeight / scale
+		local translatedX = x + (nodeWindow.x - x)/scale
+		local translatedY = y + (nodeWindow.y - y)/scale
+		nodeWindow:SetPos(translatedX, translatedY, nodeWindow.width/scale, nodeWindow.height/scale)
+		node.width = nodeWindow.width*scale
+		node.height = nodeWindow.height*scale
+		node.x = translatedX
+		node.y = translatedY
+		nodeWindow.resizable = false
+		nodeWindow:Invalidate()
+		nodeWindow:CallListeners( nodeWindow.OnResize )
+	end
+end
+
 function listenerMouseWheelScroll(self, x, y, zoomIn)
 	-- local zoomedOut = false
-	local scale = 2
 	-- if(zoomIn) then
 	if(zoomIn and self.zoomedOut) then
-		self.zoomedOut = false
-		for _,node in pairs(WG.nodeList) do
-			local nodeWindow = node.nodeWindow
-			local nodeName = node.nameEditBox
-			local icon = node.icon
-			node:ShowParameterObjects()
-			nodeWindow.font.size = nodeWindow.font.size * scale
-			nodeName.font.size = nodeName.font.size * scale
-			local nameX = 15
-			if(icon) then
-				nameX = nameX + 20
-				icon:SetPos(icon.x + 3,icon.y + 3,icon.width * scale,icon.height * scale)
-			end
-			nodeName:SetPos(nameX,6)
-			nodeWindow.minWidth = nodeWindow.minWidth * scale
-			nodeWindow.minHeight = nodeWindow.minHeight * scale
-			local translatedX = x + (nodeWindow.x - x)*scale
-			local translatedY = y + (nodeWindow.y - y)*scale
-			nodeWindow:SetPos(translatedX, translatedY, nodeWindow.width*scale, nodeWindow.height*scale)
-			node.width = nodeWindow.width*scale
-			node.height = nodeWindow.height*scale
-			node.x = translatedX
-			node.y = translatedY
-			nodeWindow.resizable = true
-			nodeWindow:Invalidate()
-			nodeWindow:CallListeners( nodeWindow.OnResize )
-		end
+		zoomCanvasIn(self, x, y)
 	elseif(not zoomIn and not self.zoomedOut) then
-		self.zoomedOut = true
-		for _,node in pairs(WG.nodeList) do
-			local nodeWindow = node.nodeWindow
-			local nodeName = node.nameEditBox
-			local icon = node.icon
-			node:HideParameterObjects()
-			nodeWindow.font.size = nodeWindow.font.size / scale
-			nodeName.font.size = nodeName.font.size / scale
-			local nameX = 10
-			if(icon) then
-				nameX = nameX + 10
-				icon:SetPos(icon.x - 3,icon.y - 3,icon.width / scale,icon.height / scale)
-			end
-			nodeName:SetPos(nameX,-1)
-			nodeWindow.minWidth = nodeWindow.minWidth / scale
-			nodeWindow.minHeight = nodeWindow.minHeight / scale
-			local translatedX = x + (nodeWindow.x - x)/scale
-			local translatedY = y + (nodeWindow.y - y)/scale
-			nodeWindow:SetPos(translatedX, translatedY, nodeWindow.width/scale, nodeWindow.height/scale)
-			node.width = nodeWindow.width*scale
-			node.height = nodeWindow.height*scale
-			node.x = translatedX
-			node.y = translatedY
-			nodeWindow.resizable = false
-			nodeWindow:Invalidate()
-			nodeWindow:CallListeners( nodeWindow.OnResize )
-		end
+		zoomCanvasOut(self, x, y)
 	end
 	return self
 end
