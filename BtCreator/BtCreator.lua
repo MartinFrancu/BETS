@@ -28,6 +28,7 @@ local minimizeButton
 local roleManagerButton
 local newTreeButton
 local showBtCheatButton
+local fileDialogWindow
 
 local saveTreeOncePossible
 
@@ -94,7 +95,6 @@ function BtCreator.showTree(tree, instanceId)
 	BtCreator.show()
 	loadTree(tree)
 	treeInstanceId = instanceId
-	--listenerClickOnLoadTree()
 end
 
 
@@ -314,6 +314,7 @@ function saveTreeDialogCallback(window, project, tree)
 	if(window.visible) then
 		window:Hide()
 	end
+	fileDialogWindow = nil
 	
 	if project and tree then -- tree is going to be saved
 		-- if new project I should create it  
@@ -327,8 +328,15 @@ function saveTreeDialogCallback(window, project, tree)
 end
 
 function listenerClickOnSaveTree(self)
-	Logger.log("save-and-load", "Save Tree clicked on. ")
-		-- on tree Save() regenerate IDs of nodes already present in loaded tree
+	-- check if some dialog is open
+	local window = self.dialogWindow
+	if window then -- window is already shown what to do? guess hide it?
+		if(window.visible) then
+			window:Hide()
+		end
+		return -- dont do anything else
+	end
+	
 	
 	local resultTree = formBehaviourTree()
 	-- are there enough roles?
@@ -340,7 +348,7 @@ function listenerClickOnSaveTree(self)
 	
 	if((maxSplit == rolesCount) and (rolesCount > 0) ) then --roles are plausible
 		-- show save tree dialog
-		local saveTreeDialogWindow = Chili.Window:New{
+		window = Chili.Window:New{
 			parent = Screen0,
 			x = 300,
 			y = 500,
@@ -353,20 +361,20 @@ function listenerClickOnSaveTree(self)
 			projectManager = Utils.ProjectManager
 		}
 		local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
-		ProjectDialog.setUpDialog(saveTreeDialogWindow, treeContentType, true, saveTreeDialogWindow, saveTreeDialogCallback)	
+		ProjectDialog.setUpDialog(window, treeContentType, true, window, saveTreeDialogCallback)	
 	else
 		-- we need to get user to define roles first:
 		saveTreeOncePossible = true
-		roleManager.showRolesManagement(Screen0, resultTree, rolesOfCurrentTree, afterRoleManagement)
+		roleManager.showRolesManagement(Screen0, resultTree, rolesOfCurrentTree, self, afterRoleManagement)
 		self.hideFunction()
 	end
 end
 
-afterRoleManagement = function (rolesData)
+afterRoleManagement = function (self, rolesData)
 	rolesOfCurrentTree = rolesData
 	BtCreator.show()
 	if(saveTreeOncePossible) then
-		listenerClickOnSaveTree()
+		listenerClickOnSaveTree({window = fileDialogWindow})
 		saveTreeOncePossible = false 
 	end
 end
@@ -453,7 +461,6 @@ function loadTree(treeName)
 end
 
 function loadTreeDialogCallback(window, project, tree)
-	
 	if project and tree then -- tree was selected
 		local qualifiedName = project .. "." .. tree
 		loadTree(qualifiedName)
@@ -461,11 +468,20 @@ function loadTreeDialogCallback(window, project, tree)
 	-- clear window and hide it
 	window:ClearChildren()
 	window:Hide()
+	fileDialogWindow = nil
 end
 
-function listenerClickOnLoadTree()
-	Logger.log("save-and-load", "Load Tree clicked on. ")
-	loadTreeDialogWindow = Chili.Window:New{
+function listenerClickOnLoadTree(self)
+	-- check if some dialog is open
+	local window = self.dialogWindow
+	if window then -- window is already shown what to do? guess hide it?
+		if(window.visible) then
+			window:Hide()
+		end
+		-- dont do anything else i guess
+		return
+	end
+	self.dialogWindow = Chili.Window:New{
 		parent = Screen0,
 		x = 300,
 		y = 500,
@@ -477,23 +493,13 @@ function listenerClickOnLoadTree()
 		skinName = 'DarkGlass',
 	}
 	local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
-	ProjectDialog.setUpDialog(loadTreeDialogWindow, treeContentType, false,loadTreeDialogWindow, loadTreeDialogCallback)
-	--[[
-	local bt = BehaviourTree.load(treeNameEditbox.text)
-	if(bt)then
-		clearCanvas()
-		loadBehaviourTree(bt)
-		rolesOfCurrentTree = bt.roles or {}
-	else
-		error("BehaviourTree " .. treeNameEditbox.text .. " instance not found. " .. debug.traceback())
-	end
-	]]
+	ProjectDialog.setUpDialog(self.dialogWindow, treeContentType, false, self.dialogWindow, loadTreeDialogCallback)
 end
 
 function listenerClickOnRoleManager(self)
 	local currentTree = formBehaviourTree()
 	self.hideFunction()
-	roleManager.showRolesManagement(Screen0, currentTree, rolesOfCurrentTree, afterRoleManagement)
+	roleManager.showRolesManagement(Screen0, currentTree, rolesOfCurrentTree, self, afterRoleManagement)
 end
 
 function listenerClickOnCheat(self)
@@ -992,6 +998,7 @@ function widget:Initialize()
 		skinName = "DarkGlass",
 		focusColor = {1.0,0.5,0.0,0.5},
 		OnClick = { sanitizer:AsHandler(listenerClickOnSaveTree) },
+		dialogWindow = fileDialogWindow,
 	}
 	saveTreeButton.hideFunction = BtCreator.hide
 	loadTreeButton = Chili.Button:New{
@@ -1004,6 +1011,7 @@ function widget:Initialize()
 		skinName = "DarkGlass",
 		focusColor = {1.0,0.5,0.0,0.5},
 		OnClick = { sanitizer:AsHandler(listenerClickOnLoadTree) },
+		dialogWindow = fileDialogWindow,
 	}
 	roleManagerButton = Chili.Button:New{
 		parent = buttonPanel,

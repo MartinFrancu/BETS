@@ -139,7 +139,7 @@ function doneRoleManagerWindow(self)
 	end
 	
 	-- call return function
-	self.returnFunction(result)
+	self.returnFunction(callbackObject, result)
 end
 
 local function maxRoleSplit(tree)
@@ -159,7 +159,7 @@ local function maxRoleSplit(tree)
 	return roleCount
 end
 
-local parent, tree, rolesOfCurrentTree, returnFunction
+local parent, tree, rolesOfCurrentTree, returnFunction, callbackObject
 
 showRoleManagementWindow = function()
 -- remove old children:
@@ -186,6 +186,7 @@ showRoleManagementWindow = function()
 		caption = "DONE",
 		OnClick = {sanitizer:AsHandler(doneRoleManagerWindow)},
 		returnFunction = returnFunction,
+		callbackObject = callbackObject,
 	}
 	roleManagementDoneButton.window = roleManager.rolesWindow
 
@@ -269,8 +270,8 @@ end
 
 
 -- This shows the role manager window, returnFunction is used to export specified roles data after user clicked "done". (returnFunction(rolesData))
-function roleManager.showRolesManagement(parentIn, treeIn, rolesOfCurrentTreeIn, returnFunctionIn)	
-	parent, tree, rolesOfCurrentTree, returnFunction  = parentIn, treeIn, rolesOfCurrentTreeIn, returnFunctionIn
+function roleManager.showRolesManagement(parentIn, treeIn, rolesOfCurrentTreeIn, callbackObjectIn, callbackFunction)	
+	parent, tree, rolesOfCurrentTree, callbackObject, returnFunction  = parentIn, treeIn, rolesOfCurrentTreeIn, callbackObjectIn, callbackFunction
 	showRoleManagementWindow()
 end
 
