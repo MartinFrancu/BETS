@@ -173,6 +173,18 @@ return Utils:Assign("BehaviourTree", function()
 		end
 		return true
 	end
+	local function validateOutputs(outputs)
+		if(type(outputs) ~= "table")then
+			return false, "Slot 'outputs' must be a table."
+		end
+	
+		for i, v in ipairs(outputs) do
+			if(type(v.name) ~= "string")then
+				return false, tostring(i) .. "-th output 'name' slot is not a string."
+			end
+		end
+		return true
+	end
 	
 	--- Loads a previously saved tree.
 	-- @static
@@ -194,6 +206,7 @@ return Utils:Assign("BehaviourTree", function()
 		
 		bt.roles = bt.roles or {}
 		bt.inputs = bt.inputs or {}
+		bt.outputs = bt.outputs or {}
 		bt.additionalNodes = bt.additionalNodes or {}
 		bt.properties = bt.properties or {}
 		setmetatable(bt, treeMetatable)
@@ -201,6 +214,9 @@ return Utils:Assign("BehaviourTree", function()
 		local success, message = validateRoles(bt.roles)
 		if(success)then
 			success, message = validateInputs(bt.inputs)
+		end
+		if(success)then
+			success, message = validateOutputs(bt.outputs)
 		end
 		if(not success)then
 			return nil, "[BT:" .. name .. "] " .. tostring(message)
@@ -229,6 +245,9 @@ return Utils:Assign("BehaviourTree", function()
 		local success, message = validateRoles(bt.roles)
 		if(success)then
 			success, message = validateInputs(bt.inputs)
+		end
+		if(success)then
+			success, message = validateOutputs(bt.outputs)
 		end
 		if(not success)then
 			return nil, "[BT:" .. name .. "] " .. tostring(message)

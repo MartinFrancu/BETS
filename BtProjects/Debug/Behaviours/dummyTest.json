@@ -1,12 +1,14 @@
 {
 	"additionalNodes": [],
-	"defaultRole": "Role 0",
 	"inputs": [],
+	"outputs": [ {
+		"name": "outputVariable0"
+	} ],
 	"properties": {
 		"ATabOMetaI45nhmLU0VtqYXZR81L2PJl": {
 			"height": 50,
 			"title": "Debug.dummy",
-			"width": 121.000008,
+			"width": 131,
 			"x": 293,
 			"y": 165
 		}
