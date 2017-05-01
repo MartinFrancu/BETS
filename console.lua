@@ -21,7 +21,6 @@ if (widget and not widget.GetInfo) then
 	local RELOAD_KEY = KEYSYMS.F8
 	local TOGGLE_VISIBILITY_KEY = KEYSYMS.F9;
 	
-	local Chili, ChiliRoot
 	 
 	local history = {}
 	local commandCount = 0
@@ -33,6 +32,9 @@ if (widget and not widget.GetInfo) then
 	 
 	-- using BtUtils
 	local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
+	
+	local Chili = Utils.Chili
+	local ChiliRoot = Chili.Screen0
 	
 	local Debug = Utils.Debug
 	local Logger, dump = Debug.Logger, Debug.dump
@@ -280,6 +282,7 @@ if (widget and not widget.GetInfo) then
 		commandInput:SetText("")
 		consoleContext.history = history
 	end
+	
 	local Units = {}
 	for k, v in pairs(UnitDefs) do
 		local name = v.name
@@ -287,7 +290,6 @@ if (widget and not widget.GetInfo) then
 		Units[v.humanName] = name
 	end
 	consoleContext.Units = Units;
-
 	consoleContext.spawn = function(unit, count, playerId)
 		count = count or 1
 		playerId = playerId or Spring.GetLocalPlayerID()
@@ -296,6 +298,10 @@ if (widget and not widget.GetInfo) then
 	if(not Spring.IsCheatingEnabled())then
 		Spring.SendCommands("cheat")
 	end
+	
+	consoleContext.Chili = Chili
+	consoleContext.ChiliRoot = ChiliRoot
+	
 	setmetatable(consoleContext, { __index = function(t, key)
 			local value = WG[key]
 			if(value ~= nil)then
@@ -423,19 +429,14 @@ if (widget and not widget.GetInfo) then
 	end
 	
 	function widget:Initialize()	
-		if (not WG.ChiliClone) then
-			-- don't run if we can't find Chili
+		if (Utils.Surrogate.isSurrogate(Chili)) then
+			-- don't run if we dont't have initialized Chili at this point
 			widgetHandler:RemoveWidget()
 			return
 		end
 	 
 		loadSettings()
 	 
-		-- Get ready to use Chili
-		Chili = WG.ChiliClone
-		ChiliRoot = Chili.Screen0	
-		consoleContext.Chili = Chili
-		consoleContext.ChiliRoot = ChiliRoot
 		
 		consolePanel = Chili.Panel:New{
 			parent = ChiliRoot,
