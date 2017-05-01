@@ -272,6 +272,8 @@ local function saveTree(treeName)
 	protoTree.roles = rolesOfCurrentTree
 	protoTree.inputs = {}
 	protoTree.outputs = {}
+	local r = WG.nodeList[rootID]
+	protoTree.additionalParameters = { root = { x = r.x, y = r.y, width = r.width, height = r.height } }
 
 	local inputs = WG.nodeList[rootID].inputs
 	if(inputs ~= nil) then
@@ -1441,6 +1443,18 @@ function loadBehaviourTree(bt)
 	for i=1,#bt.outputs do
 		addOutputButton:CallListeners( addOutputButton.OnClick )
 		WG.nodeList[rootID].outputs[i][1]:SetText(bt.outputs[i].name)
+	end
+	
+	-- load root node position and size
+	local serRoot = (bt.additionalParameters or { root = nil }).root
+	if serRoot then
+		local root = WG.nodeList[rootID]
+		root.x = serRoot.x
+		root.y = serRoot.y
+		root.width = serRoot.width
+		root.height = serRoot.height
+		root.nodeWindow:SetPos(root.x, root.y, root.width, root.height)
+		root.nodeWindow:Invalidate()
 	end
 end
 
