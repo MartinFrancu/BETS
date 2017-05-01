@@ -430,7 +430,7 @@ if (widget and not widget.GetInfo) then
 	
 	function widget:Initialize()	
 		if (Utils.Surrogate.isSurrogate(Chili)) then
-			-- don't run if we dont't have initialized Chili at this point
+			-- don't run if we don't have initialized Chili at this point
 			widgetHandler:RemoveWidget()
 			return
 		end

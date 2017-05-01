@@ -14,6 +14,8 @@ return Utils:Assign("Sanitizer", function()
 	local Debug = Utils.Debug
 	local Logger = Debug.Logger
 	
+	local getWidgetCaller = Debug.getWidgetCaller
+	
 	local sanitizationEnvironment = {
 		xpcall = xpcall,
 		unpack = unpack,
@@ -122,6 +124,9 @@ return Utils:Assign("Sanitizer", function()
 	local sanitizerMetatable = { __index = sanitizerPrototype }
 	function Sanitizer.forWidget(widget)
 		return setmetatable({ widget = widget }, sanitizerMetatable)
+	end
+	function Sanitizer.forCurrentWidget()
+		return Sanitizer.forWidget(getWidgetCaller())
 	end
 	
 	local function isUpper(s)

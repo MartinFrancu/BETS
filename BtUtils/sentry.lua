@@ -26,7 +26,7 @@
 -- @remark The @{EventHandler}s do not need to be created, they are formed when accessed for the first time.
 local Sentry = {}
 
-function isEventKey(key)
+local function isEventKey(key)
 	return type(key) == "string" and key:sub(1, 2) == "On"
 end
 

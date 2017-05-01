@@ -109,7 +109,7 @@ If it is not an array, it is equivalent to an array with a single value.
 		end, s1, x1
 	end
 
-	function internalLog(logGroup, logType, ...)
+	local function internalLog(logGroup, logType, ...)
 		local message = ""
 		local parameters = { ... }
 		local maxIndex = 0
