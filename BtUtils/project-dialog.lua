@@ -31,6 +31,8 @@ return Utils:Assign("ProjectDialog", function()
 	local NEW_ITEM_STRING = "--NEW ITEM--"
 	local NEW_PROJECT_STRING = "--NEW PROJECT--"
 	
+	local dialogWindow
+	
 	function onSelectItem(self)
 		if(self.items[self.selected] == self.newItemString) then
 			if(not self.newItemEditBox.visible ) then
@@ -93,6 +95,48 @@ return Utils:Assign("ProjectDialog", function()
 	
 	function cancelButtonListener(self)
 		self.callback(self.callbackObject)
+	end
+	
+	function hideWindowAndCall(window, ...) 
+		if window.visible then
+			window:Hide()
+		end
+		window.callback(...)
+	end
+	
+	function ProjectDialog.showDialogWindow(parent, contentType, canSpecifyNew, callbackFunction, title)
+		local Chili = Utils.Chili
+		
+		local dialogWindow = Chili.Window:New{
+			parent = parent,
+			x = 300,
+			y = 500,
+			width = 400,
+			height = 185,
+			padding = {10,10,10,10},
+			draggable = true,
+			resizable = true,
+			skinName = 'DarkGlass',
+		}
+		dialogWindow.callback = callbackFunction
+		local label = Chili.Label:New{
+			parent = dialogWindow,
+			x = 5,
+			y = 5,
+			height = 30,
+			width = '90%',
+			caption = title,
+			skinName = 'DarkGlass',
+		}
+		local panel = Chili.Control:New{
+			parent = dialogWindow,
+			x = 0,
+			y = 30,
+			height = 150,
+			width = 400,
+			skinName = 'DarkGlass',
+		}
+		ProjectDialog.setUpDialog(panel, contentType, canSpecifyNew, dialogWindow, hideWindowAndCall)	
 	end
 	
 	--- This will attach corresponding chili components to

@@ -259,8 +259,10 @@ function widget:Shutdown()
 	end
 	-- I guess there is missing deregistration of trees we have registered..
 	
-	for cmdName, cmdData in pairs(WG.BtCommands) do
-		sendCustomMessage.DeregisterCustomCommand(cmdName)
+	if(WG.BtCommands)then
+		for cmdName, cmdData in pairs(WG.BtCommands) do
+			sendCustomMessage.DeregisterCustomCommand(cmdName)
+		end
 	end
 	
 	WG.fillCustomCommandIDs = nil

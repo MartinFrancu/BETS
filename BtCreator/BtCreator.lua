@@ -308,13 +308,9 @@ local function saveTree(treeName)
 	end
 end 
 
-function saveTreeDialogCallback(window, project, tree)
-	local pM = window.projectManager
-	window:ClearChildren()
-	if(window.visible) then
-		window:Hide()
-	end
-	fileDialogWindow = nil
+function saveTreeDialogCallback(project, tree)
+	local pM = Utils.ProjectManager
+	BtCreator.show()
 	
 	if project and tree then -- tree is going to be saved
 		-- if new project I should create it  
@@ -347,6 +343,7 @@ function listenerClickOnSaveTree(self)
 	end
 	
 	if((maxSplit == rolesCount) and (rolesCount > 0) ) then --roles are plausible
+		--[[
 		-- show save tree dialog
 		window = Chili.Window:New{
 			parent = Screen0,
@@ -360,8 +357,10 @@ function listenerClickOnSaveTree(self)
 			skinName = 'DarkGlass',
 			projectManager = Utils.ProjectManager
 		}
+		]]
+		BtCreator.hide()
 		local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
-		ProjectDialog.setUpDialog(window, treeContentType, true, window, saveTreeDialogCallback)	
+		ProjectDialog.showDialogWindow(Screen0, treeContentType, true, saveTreeDialogCallback, "Save tree as:")	
 	else
 		-- we need to get user to define roles first:
 		saveTreeOncePossible = true
@@ -460,8 +459,8 @@ function loadTree(treeName)
 	treeNameEditbox:SetText(treeName)
 end
 
-function loadTreeDialogCallback(window, project, tree)
-	if project and tree then -- tree was selected
+function loadTreeDialogCallback(project, tree)
+	--[[if project and tree then -- tree was selected
 		local qualifiedName = project .. "." .. tree
 		loadTree(qualifiedName)
 	end
@@ -469,9 +468,16 @@ function loadTreeDialogCallback(window, project, tree)
 	window:ClearChildren()
 	window:Hide()
 	fileDialogWindow = nil
+	]]
+	BtCreator.show()
+	if project and tree then -- tree was selected
+		local qualifiedName = project .. "." .. tree
+		loadTree(qualifiedName)
+	end
 end
 
 function listenerClickOnLoadTree(self)
+	--[[
 	-- check if some dialog is open
 	local window = self.dialogWindow
 	if window then -- window is already shown what to do? guess hide it?
@@ -494,6 +500,10 @@ function listenerClickOnLoadTree(self)
 	}
 	local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
 	ProjectDialog.setUpDialog(self.dialogWindow, treeContentType, false, self.dialogWindow, loadTreeDialogCallback)
+	]]
+	BtCreator.hide()
+	local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
+	ProjectDialog.showDialogWindow(Screen0, treeContentType, false, loadTreeDialogCallback, "Select tree to be loaded:")
 end
 
 function listenerClickOnRoleManager(self)
