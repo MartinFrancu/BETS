@@ -3,6 +3,10 @@ local roleManager = {}
 
 
 local showRoleManagementWindow
+local categoryCheckBoxes
+local unitCheckBoxes
+local returnFunction
+
 function roleManager.showCategoryDefinitionWindow()
 	roleManager.rolesWindow:Hide()
 	roleManager.categoryDefinitionWindow = Chili.Window:New{
@@ -13,25 +17,19 @@ function roleManager.showCategoryDefinitionWindow()
 		height = 600,
 		skinName = 'DarkGlass'
 	}
-	local nameEditBox = Chili.EditBox:New{
-			parent = roleManager.categoryDefinitionWindow,
-			x = 0,
-			y = 0,
-			text = "New unit category",
-			width = 150
-	}
+	
 	local categoryDoneButton = Chili.Button:New{
 		parent =  roleManager.categoryDefinitionWindow,
-		x = nameEditBox.x + nameEditBox.width,
+		x = 0,
 		y = 0,
-		caption = "DONE",
+		caption = "SAVE AS",
 		OnClick = {sanitizer:AsHandler(roleManager.doneCategoryDefinition)},
 	}
-	categoryDoneButton.categoryNameEditBox = nameEditBox
+	--categoryDoneButton.categoryNameEditBox = nameEditBox
 	categoryDoneButton.window = roleManager.categoryDefinitionWindow
-	categoryDoneButton.returnFunction = showRoleManagementWindow
+	returnFunction = showRoleManagementWindow
 	-- plus checkboxes added later in categoryDoneButton
-
+	
 	local categoryCancelButton = Chili.Button:New{
 		parent =  roleManager.categoryDefinitionWindow,
 		x = categoryDoneButton.x + categoryDoneButton.width,
@@ -52,7 +50,7 @@ function roleManager.showCategoryDefinitionWindow()
 	}
 	xOffSet = 5
 	yOffSet = 30
-	local typesCheckboxes = {}
+
 	local xLocalOffSet = 0
 	local unitsD = {}
 	for _,unitDef in pairs(UnitDefs) do
@@ -60,18 +58,24 @@ function roleManager.showCategoryDefinitionWindow()
 			table.insert(unitsD, unitDef)
 		end
 	end 
-	
+	--[[
 	local humanNameOrder  = function (a,b)
 		return a.humanName < b.humanName
 	end
-	table.sort(unitsD, humanNameOrder)
+	--]]
+	local nameOrder  = function (a,b)
+		return a.name < b.name
+	end
 	
-	for _,unitDef in ipairs(unitsD) do
+	table.sort(unitsD, nameOrder)
+	
+	unitCheckBoxes = {}
+	for i,unitDef in ipairs(unitsD) do
 		local typeCheckBox = Chili.Checkbox:New{
 			parent = categoryScrollPanel,
 			x = xOffSet + (xLocalOffSet * 250),
 			y = yOffSet,
-			caption = unitDef.humanName,
+			caption = unitDef.name .. "(" .. unitDef.humanName .. ")",
 			checked = false,
 			width = 200,
 		}
@@ -83,7 +87,7 @@ function roleManager.showCategoryDefinitionWindow()
 			xLocalOffSet = 0
 			yOffSet = yOffSet + 20
 		end
-		table.insert(typesCheckboxes, typeCheckBox)
+		unitCheckBoxes[i] = typeCheckBox
 	end
 	-- add small placeholder at end:
 	local placeholder = Chili.Label:New{
@@ -97,24 +101,49 @@ function roleManager.showCategoryDefinitionWindow()
 	categoryDoneButton.Checkboxes = typesCheckboxes
 end
 
-function roleManager.doneCategoryDefinition(self)
-	-- add new category to unitCategories
-	local unitTypes = {}
-	for _,unitTypeCheckBox in pairs(self.Checkboxes) do
-		if(unitTypeCheckBox.checked == true) then
-			local typeRecord = {id = unitTypeCheckBox.unitId, name = unitTypeCheckBox.unitName, humanName = unitTypeCheckBox.unitHumanName}
-			table.insert(unitTypes, typeRecord)
+function roleManager.createNewCategoryCallback(projectName, categoryName)	
+	local pM = Utils.ProjectManager
+	
+	if(projectName and categoryName)then
+		-- user selected a project and category name, lets save it
+ 
+		if(not pM.isProject(projectName))then
+			-- if new project I should create it 
+			pM.createProject(projectName)
 		end
+		local qualifiedName = projectName .. "." .. categoryName
+		--create project if necessary
+		-- add new category to unitCategories
+		local unitTypes = {}
+		for _,unitTypeCheckBox in pairs(unitCheckBoxes) do
+			if(unitTypeCheckBox.checked == true) then
+				local typeRecord = {id = unitTypeCheckBox.unitId, name = unitTypeCheckBox.unitName, humanName = unitTypeCheckBox.unitHumanName}
+				table.insert(unitTypes, typeRecord)
+			end
+		end
+		-- add check for category name?
+		local newCategory = {
+			name = 	qualifiedName,
+			types = unitTypes,
+		}
+		Utils.UnitCategories.redefineCategories(newCategory)		
+		-- return after
+		returnFunction()
+	else
+		-- user hit cancel, lets return to category definition
+		roleManager.categoryDefinitionWindow:Show()	
 	end
-	-- add check for category name?
-	local newCategory = {
-		name = self.categoryNameEditBox.text,
-		types = unitTypes,
-	}
-	Utils.UnitCategories.redefineCategories(newCategory)
+end
 
-	roleManager.categoryDefinitionWindow:Hide()
-	self.returnFunction()
+function roleManager.doneCategoryDefinition(self)
+	local ProjectDialog = Utils.ProjectDialog
+	local ProjectManager = Utils.ProjectManager
+	-- show save dialog:
+	roleManager.categoryDefinitionWindow:Hide()	
+	
+	local contentType =  ProjectManager.makeRegularContentType("UnitCategories", "json")
+	ProjectDialog.showDialogWindow(Utils.Chili.Screen0, contentType, true, 
+		roleManager.createNewCategoryCallback, "Save category as:")	
 end
 
 function roleManager.cancelCategoryDefinition(self)
@@ -233,7 +262,7 @@ showRoleManagementWindow = function()
 		end
 
 		local categoryNames = Utils.UnitCategories.getAllCategoryNames()
-		local categoryCheckBoxes = {}
+		categoryCheckBoxes = {}
 		local xLocalOffSet = 0
 		for _,categoryName in pairs(categoryNames) do
 			local categoryCheckBox = Chili.Checkbox:New{
