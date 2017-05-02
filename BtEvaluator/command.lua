@@ -1,8 +1,6 @@
-local Logger = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/debug_utils/logger.lua", nil, VFS.RAW_FIRST)
+local Logger = Utils.Debug.Logger
+local dump = Utils.Debug.dump
 
-local dump = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST).Debug.dump
-
-local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
 local ProjectManager = Utils.ProjectManager
 local CustomEnvironment = Utils.CustomEnvironment
 

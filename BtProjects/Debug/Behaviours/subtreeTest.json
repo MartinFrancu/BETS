@@ -1,11 +1,20 @@
 {
 	"additionalNodes": [],
+	"additionalParameters": {
+		"root": {
+			"height": 83,
+			"width": 180,
+			"x": 5,
+			"y": 170.5
+		}
+	},
 	"inputs": [],
+	"outputs": [],
 	"properties": {
 		"65LpcViAIijrDPPN7uS54HzAn0Xpa89Y": {
 			"height": 60,
 			"title": "sequence",
-			"width": 114,
+			"width": 119,
 			"x": 285,
 			"y": 187
 		},
@@ -33,7 +42,7 @@
 		"t2gOUSbd6olrBuV4PSuCVsDY8ubvTsTw": {
 			"height": 90,
 			"title": "Common.store",
-			"width": 147,
+			"width": 152,
 			"x": 482,
 			"y": 21
 		},
@@ -98,7 +107,7 @@
 				"value": "x"
 			}, {
 				"name": "value",
-				"value": "x+1"
+				"value": "Sensors.flipSensor()"
 			} ]
 		}, {
 			"children": [],

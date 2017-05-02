@@ -1,18 +1,3 @@
-function widget:GetInfo()
-	return {
-		name      = "BtEvaluator",
-		desc      = "BtEvaluator loader and message test to this AI.",
-		author    = "BETS Team",
-		date      = "Sep 20, 2016",
-		license   = "BY-NC-SA",
-		layer     = 0,
-		enabled   = true, --  loaded by default?
-		version   = version,
-	}
-end
-
-local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
-
 local BehaviourTree = Utils.BehaviourTree
 local JSON = Utils.JSON
 local Sentry = Utils.Sentry
@@ -23,7 +8,7 @@ local CustomEnvironment = Utils.CustomEnvironment
 local Debug = Utils.Debug
 local Logger = Debug.Logger
 
-local SensorManager = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtEvaluator/SensorManager.lua", nil, VFS.RAW_FIRST)
+local SensorManager = require("SensorManager")
 
 local getGameFrame = Spring.GetGameFrame;
 
@@ -341,7 +326,7 @@ BtEvaluator.SensorManager = SensorManager
 
 BtEvaluator.scripts = {}
 
-local CommandManager = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtEvaluator/command.lua", nil, VFS.RAW_FIRST)
+local CommandManager = require("command")
 BtEvaluator.CommandManager = CommandManager
 baseCommandClass = CommandManager.baseClass
 

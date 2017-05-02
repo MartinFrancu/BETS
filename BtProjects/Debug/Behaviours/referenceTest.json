@@ -22,9 +22,14 @@
 		"parameters": [ {
 			"name": "behaviourName",
 			"value": "Debug.dummyTest"
-		}, {
+		} ],
+		"referenceInputs": [ {
       "name": "x",
       "value": "Sensors.flipSensor()"
-    } ]
+    } ],
+		"referenceOutputs": [ {
+			"name": "y",
+			"value": "mojeY"
+		} ]
 	}
 }

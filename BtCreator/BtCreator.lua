@@ -1266,6 +1266,9 @@ function formBehaviourTree()
 	for id,node in pairs(WG.nodeList) do
 		if(node.id ~= rootID)then
 			local params = {}
+			
+			-- TODO: OH: change serialized x,y to be relative to the position of the root node (root node then ends up being on 0,0)
+			
 			for _, key in ipairs(fieldsToSerialize) do
 				params[key] = node[key]
 			end

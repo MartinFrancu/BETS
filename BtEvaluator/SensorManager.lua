@@ -1,7 +1,6 @@
 --- .
 -- @module SensorManager
 
-local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
 local CustomEnvironment = Utils.CustomEnvironment
 local Logger = Utils.Debug.Logger
 

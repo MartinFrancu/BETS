@@ -67,6 +67,8 @@ return Utils:Assign("BehaviourTree", function()
 			nodeType = params.nodeType,
 			scriptName = params.scriptName,
 			parameters = params.parameters or {},
+			referenceInputs = params.referenceInputs,
+			referenceOutputs = params.referenceOutputs,
 			children = {},
 		}, makeNodeMetatable(self, properties))
 		
