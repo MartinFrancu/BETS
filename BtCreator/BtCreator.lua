@@ -739,17 +739,21 @@ function listenerOnMouseUpCanvas(self, x, y, button)
 	end
 end
 
+function moveCanvas(diffx, diffy)
+	for id,node in pairs(WG.nodeList) do
+		node.x = node.x + diffx
+		node.y = node.y + diffy
+		node.nodeWindow:SetPos(node.nodeWindow.x + diffx, node.nodeWindow.y + diffy)
+	end
+	btCreatorWindow:Invalidate()
+end
+
 function listenerOnMouseMoveCanvas(self, x, y)
 	if(moveAllNodes) then
 		local diffx = x - moveFrom[1]
 		local diffy = y - moveFrom[2]
-		for id,node in pairs(WG.nodeList) do
-			node.x = node.x + diffx
-			node.y = node.y + diffy
-			node.nodeWindow:SetPos(node.nodeWindow.x + diffx, node.nodeWindow.y + diffy)
-		end
+		moveCanvas(diffx, diffy)
 		moveFrom = {x, y}
-		btCreatorWindow:Invalidate()
 	end
 	return self
 end
@@ -1449,12 +1453,15 @@ function loadBehaviourTree(bt)
 	local serRoot = (bt.additionalParameters or { root = nil }).root
 	if serRoot then
 		local root = WG.nodeList[rootID]
+		local diffx = root.x - serRoot.x
+		local diffy = root.y - serRoot.y
 		root.x = serRoot.x
 		root.y = serRoot.y
 		root.width = serRoot.width
 		root.height = serRoot.height
 		root.nodeWindow:SetPos(root.x, root.y, root.width, root.height)
 		root.nodeWindow:Invalidate()
+		moveCanvas(diffx, diffy)
 	end
 end
 
