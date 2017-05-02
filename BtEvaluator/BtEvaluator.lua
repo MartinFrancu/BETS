@@ -13,6 +13,7 @@ end
 
 local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
 
+local BehaviourTree = Utils.BehaviourTree
 local JSON = Utils.JSON
 local Sentry = Utils.Sentry
 local Dependency = Utils.Dependency
@@ -237,6 +238,47 @@ function BtEvaluator.assignUnits(units, instanceId, roleId)
 		unitToRoleMap[id] = role
 		allRole.length = allRole.length + 1
 		allRole[allRole.length] = id
+	end
+end
+function BtEvaluator.dereferenceTree(treeDefinition)
+	-- TODO: solve local contexts -- referenced tree may be from a difference project
+	-- TODO: differentiate between inputs and outputs and also other types of inputs
+	-- TODO: actually look up whether the given inputs/outputs match inputs/outputs from the referenced tree
+
+	local referencedList = {}
+	local failure, message = treeDefinition:Visit(function(node)
+		if(node.nodeType == "reference")then
+			local referencedName, parameterI;
+			for i, v in ipairs(node.parameters) do
+				if(v.name == "behaviourName")then
+					parameterI = i
+					referencedName = v.value
+				end
+			end
+			
+			if(not referencedName)then
+				return true, "[node=" .. tostring(node.id) .. "] Reference tree without 'behaviourName' parameter."
+			end
+			local referenced, message = BehaviourTree.load(referencedName)
+			if(not referenced)then
+				return true, "[node=" .. tostring(node.id) .. "] " .. message
+			end
+			
+			local root = treeDefinition:Combine(referenced, function(n) n:ChangeID(node.id .. "-" .. n.id) end)
+			table.remove(node.parameters, parameterI)
+			node:Connect(root)
+			
+			-- TODO: do something with other.project
+			
+			table.insert(referencedList, referencedName)
+		end
+	end)
+	
+	if(failure)then
+		Logger.error("dereference", message)
+		return false, message
+	else
+		return referencedList
 	end
 end
 function BtEvaluator.createTree(instanceId, treeDefinition, inputs)
@@ -645,7 +687,7 @@ local handlers = {
 				{
 					componentType = "treePicker",
 					defaultValue = "",
-					name = "behaviour",
+					name = "behaviourName",
 					variableType = "reference",
 				}
 			},

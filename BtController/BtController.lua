@@ -458,6 +458,7 @@ end
 
 -- Calls required functions to create tree in BtEvaluator
 function createTreeInBtEvaluator(treeHandle)
+	BtEvaluator.dereferenceTree(treeHandle.Tree)
 	BtEvaluator.createTree(treeHandle.InstanceId, treeHandle.Tree, treeHandle.Inputs)
 end
 

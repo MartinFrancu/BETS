@@ -228,7 +228,7 @@ function createChiliComponentsInput(obj, xOffSet, yOffSet)
 			height = inputCount == 1 and CONSTANTS.buttonHeight +  CONSTANTS.singleButtonModifier or CONSTANTS.buttonHeight,
 			width = 180,
 			minWidth = CONSTANTS.minInputButtonWidth,
-			caption =" " .. inputName .. " (" .. WG.BtCommandsInputHumanNames[input.command].. ")",
+			caption =" " .. inputName .. " (" .. (WG.BtCommandsInputHumanNames[input.command]or"N/A").. ")",
 			OnClick = {obj.InputButtonListener}, 
 			skinName = "DarkGlass",
 			focusColor = {0.5,0.5,0.5,0.5},

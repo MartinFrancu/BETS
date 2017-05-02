@@ -100,6 +100,58 @@ return Utils:Assign("BehaviourTree", function()
 		self.root = root
 	end
 
+	--- Add all nodes from the other tree to the current one.
+	-- @tparam BehaviourTree other The other tree.
+	-- @func f Optional, function that is to be applied to each node of the other tree before it is combined, e.g. ID changes.
+	-- @treturn Node The original root of the other tree.
+	function treePrototype:Combine(other, f)
+		other:Visit(f)
+		local otherRoot = other.root
+		local n = table.getn(self.additionalNodes) + 1
+		self.additionalNodes[n] = otherRoot
+		for i, v in ipairs(other.additionalNodes) do
+			n = n + 1
+			self.additionalNodes[n] = v
+		end
+		
+		for k, v in pairs(other.properties) do
+			self.properties[k] = v
+		end
+		
+		other.root = nil
+		other.additionalNodes = {}
+		other.properties = {}
+		
+		return otherRoot
+	end
+
+	-- implementation of BehaviourTree:Visit
+	local function visit(f, node)
+		if(not node) then
+			return
+		end
+		
+		local results = { f(node) }
+		if(results[1] ~= nil)then
+			return results
+		end
+		
+		for _, child in ipairs(node.children) do
+			local results = visit(child)
+			if(results and results[1] ~= nil)then
+				return results
+			end
+		end
+	end
+	
+	--- Invokes the given function on all nodes of the tree depth-first.
+	-- The traversing of the tree is terminated early if the function returns something.
+	-- @func f The function that is to be invoked for every node.
+	-- @return Whatever the function `f` returned along the way, or `nil`
+	function treePrototype:Visit(f)
+		return unpack(visit(f, self.root) or {})
+	end
+
 	-- loading
 	local function load_setupNode(tree, node)
 		if(not node)then return end
@@ -200,7 +252,7 @@ return Utils:Assign("BehaviourTree", function()
 		
 		local data = VFS.LoadFile(path)
 		if(not data)then
-			return nil, "File not found"
+			return nil, "[BT:" .. name .. "] " .. "File '" .. path .. "' not found"
 		end
 		local bt = JSON:decode(data)
 		
@@ -318,6 +370,14 @@ return Utils:Assign("BehaviourTree", function()
 			table.insert(tree.additionalNodes, fromNode)
 		end
 
+		--- Changes the ID of the node.
+		-- This has to be used over simply changing the value of the `id` slot in order to properly transfer the additional properties of the node.
+		function nodePrototype:ChangeID(newId)
+			tree.properties[newId] = tree.properties[self.id]
+			tree.properties[self.id] = nil
+			self.id = newId
+		end
+		
 		local nodeMetatable = {
 			__index = function(self, key)
 				return nodePrototype[key] or properties[key]
