@@ -59,7 +59,6 @@ return Utils:Assign("ProjectDialog", function()
 			local listProject = self.projectManager.listProject(selected, self.contentType)
 			local newItems = {}
 			for i,data in ipairs(listProject)do
-				Logger.log("dialogs", "data: ", dump(data,2) ) 
 				newItems[i] = data.name
 			end
 			-- add possible new item
@@ -172,7 +171,7 @@ return Utils:Assign("ProjectDialog", function()
 			width = 100,
 			height = 30,
 			caption = "DONE",
-			OnClick = {doneButtonListenerNew},
+			OnClick = {doneButtonListener},
 			skinName = 'DarkGlass',
 		}
 		doneButton.callback = callbackFunction

@@ -20,6 +20,7 @@ local nodePoolPanel
 local buttonPanel
 local loadTreeButton
 local saveTreeButton
+local saveAsTreeButton
 local showSensorsButton
 local showBlackboardButton
 local breakpointButton
@@ -27,15 +28,14 @@ local continueButton
 local minimizeButton
 local roleManagerButton
 local newTreeButton
---local noTreeNameString = "==NO"
 local showBtCheatButton
-local fileDialogWindow
 
 local saveTreeOncePossible
 
-local treeNameEditbox
+local treeNameLabel
+local noNameString = "--NO NAME GIVEN--"
 
-local rolesOfCurrentTree
+local rolesOfCurrentTree = {}
 
 local roleManager
 
@@ -309,73 +309,65 @@ local function saveTree(treeName)
 	end
 end 
 
-function saveTreeDialogCallback(project, tree)
+
+function saveAsTreeDialogCallback(project, tree)
 
 	BtCreator.show()
 	
-	if project and tree then -- tree is going to be saved
-		-- if new project I should create it  
-		if(not ProjectManager.isProject(project))then
-			pM.createProject(project)
+	if project and tree then 
+		-- we have treetree name
+		-- now we need to check if roles are plausible:
+		
+		local resultTree = formBehaviourTree()
+		-- are there enough roles?
+		local maxSplit = maxRoleSplit(resultTree)
+		local rolesCount = 0
+		for _,role in pairs(rolesOfCurrentTree) do
+			rolesCount = rolesCount + 1
 		end
 		local qualifiedName = project .. "." .. tree
-		saveTree(qualifiedName)
-		treeNameEditbox:SetText(qualifiedName)
+		treeNameLabel:SetCaption(qualifiedName)
+		if((maxSplit == rolesCount) and (rolesCount > 0) ) then --roles are plausible:
+			-- if new project I should create it  
+			if(not ProjectManager.isProject(project))then
+				ProjectManager.createProject(project)
+			end
+			saveTree(qualifiedName)	
+		else
+			-- we need to get user to define roles first:
+			saveTreeOncePossible = true
+			roleManager.showRolesManagement(Screen0, resultTree, rolesOfCurrentTree, self, afterRoleManagement)
+			BtCreator.hide()
+		end
+			
 	end
 end
 
-function listenerClickOnSaveTree(self)
-	-- check if some dialog is open
-	local window = self.dialogWindow
-	if window then -- window is already shown what to do? guess hide it?
-		if(window.visible) then
-			window:Hide()
-		end
-		return -- dont do anything else
-	end
-	
-	
-	local resultTree = formBehaviourTree()
-	-- are there enough roles?
-	local maxSplit = maxRoleSplit(resultTree)
-	local rolesCount = 0
-	for _,role in pairs(rolesOfCurrentTree) do
-		rolesCount = rolesCount + 1
-	end
-	
-	if((maxSplit == rolesCount) and (rolesCount > 0) ) then --roles are plausible
-		--[[
-		-- show save tree dialog
-		window = Chili.Window:New{
-			parent = Screen0,
-			x = 300,
-			y = 500,
-			width = 400,
-			height = 150,
-			padding = {10,10,10,10},
-			draggable = true,
-			resizable = true,
-			skinName = 'DarkGlass',
-			projectManager = Utils.ProjectManager
-		}
-		]]
-		BtCreator.hide()
-		local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
-		ProjectDialog.showDialogWindow(Screen0, treeContentType, 
-			ProjectDialog.SAVE_DIALOG_FLAG, saveTreeDialogCallback, "Save tree as:")	
+function listenerClickOnSaveTree()
+	local qualifiedName = treeNameLabel.caption
+	local length = string.len(qualifiedName)
+	local position = string.find(qualifiedName, '%.')
+	if(position or position == length or position == 1) then
+		local project = string.sub(qualifiedName, 1, position-1)
+		local name = string.sub(qualifiedName, position+1,length )
+		saveAsTreeDialogCallback(project, name)
 	else
-		-- we need to get user to define roles first:
-		saveTreeOncePossible = true
-		roleManager.showRolesManagement(Screen0, resultTree, rolesOfCurrentTree, self, afterRoleManagement)
-		self.hideFunction()
+		listenerClickOnSaveAsTree()
 	end
+end
+
+function listenerClickOnSaveAsTree()
+	BtCreator.hide()
+	local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
+	ProjectDialog.showDialogWindow(Screen0, treeContentType, 
+		ProjectDialog.SAVE_DIALOG_FLAG, saveAsTreeDialogCallback, "Save tree as:")
 end
 
 afterRoleManagement = function (self, rolesData)
 	rolesOfCurrentTree = rolesData
 	BtCreator.show()
 	if(saveTreeOncePossible) then
-		listenerClickOnSaveTree({window = fileDialogWindow})
+		listenerClickOnSaveTree()
 		saveTreeOncePossible = false 
 	end
 end
@@ -433,7 +425,7 @@ end
 
 function newTreeDialogCallback(projectName,treeName)
 	if(projectName and treeName) then -- user selected 
-		treeNameEditbox:SetText(projectName .. "." .. treeName)
+		treeNameLabel:SetCaption(projectName .. "." .. treeName)
 		rolesOfCurrentTree = {}
 		clearCanvas()
 		BtCreator.show()
@@ -464,7 +456,7 @@ end
 
 function loadTree(treeName)
 	getBehaviourTree(treeName)
-	treeNameEditbox:SetText(treeName)
+	treeNameLabel:SetCaption(treeName)
 end
 
 function loadTreeDialogCallback(project, tree)
@@ -984,12 +976,24 @@ function widget:Initialize()
 		skinName = "DarkGlass",
 		focusColor = {1.0,0.5,0.0,0.5},
 		OnClick = { sanitizer:AsHandler(listenerClickOnSaveTree) },
-		dialogWindow = fileDialogWindow,
 	}
-	saveTreeButton.hideFunction = BtCreator.hide
-	loadTreeButton = Chili.Button:New{
+	
+	saveAsTreeButton = Chili.Button:New{
 		parent = buttonPanel,
 		x = saveTreeButton.x + saveTreeButton.width,
+		y = 0,
+		width = 100,
+		height = 30,
+		caption = "Save Tree As",
+		skinName = "DarkGlass",
+		focusColor = {1.0,0.5,0.0,0.5},
+		OnClick = { sanitizer:AsHandler(listenerClickOnSaveAsTree) },
+	}
+	
+	
+	loadTreeButton = Chili.Button:New{
+		parent = buttonPanel,
+		x = saveAsTreeButton.x + saveAsTreeButton.width,
 		y = 0,
 		width = 90,
 		height = 30,
@@ -997,7 +1001,6 @@ function widget:Initialize()
 		skinName = "DarkGlass",
 		focusColor = {1.0,0.5,0.0,0.5},
 		OnClick = { sanitizer:AsHandler(listenerClickOnLoadTree) },
-		dialogWindow = fileDialogWindow,
 	}
 	roleManagerButton = Chili.Button:New{
 		parent = buttonPanel,
@@ -1090,9 +1093,9 @@ function widget:Initialize()
 		OnClick = { sanitizer:AsHandler(listenerClickOnMinimize) },
 	}
 
-	treeNameEditbox = Chili.EditBox:New{
+	treeNameLabel = Chili.Label:New{
 		parent = btCreatorWindow,
-		text = "02-flipEcho",
+		caption = noNameString,
 		width = 70,
 		x = '40%',
 		y = 5,
@@ -1106,8 +1109,8 @@ function widget:Initialize()
 		autosize = true,
 		tooltip = "The name of current behavior tree. ",
 	}
-	treeNameEditbox.font.size = 16
-	treeNameEditbox:RequestUpdate()
+	treeNameLabel.font.size = 16
+	treeNameLabel:RequestUpdate()
 	
 	moveCanvasImg = Chili.Image:New{
 		parent = btCreatorWindow,
@@ -1153,7 +1156,7 @@ function widget:Initialize()
 	}	
 	
 	
-	-- treeNameEditbox.font.size = 16
+	-- treeNameLabel.font.size = 16
 	listenerClickOnMinimize()
 	WG.BtCreator = sanitizer:Export(BtCreator)
 	
@@ -1419,7 +1422,7 @@ local function loadBehaviourNode(bt, btNode)
 end
 
 function loadBehaviourTree(bt)
-	serializedTreeName = treeNameEditbox.text -- to be able to regenerate ids of deserialized nodes, when saved with different name
+	serializedTreeName = treeNameLabel.caption -- to be able to regenerate ids of deserialized nodes, when saved with different name
 	local root = loadBehaviourNode(bt, bt.root)
 	if(root)then
 		connectionLine.add(WG.nodeList[rootID].connectionOut, root.connectionIn)
