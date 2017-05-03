@@ -27,6 +27,7 @@ local continueButton
 local minimizeButton
 local roleManagerButton
 local newTreeButton
+--local noTreeNameString = "==NO"
 local showBtCheatButton
 local fileDialogWindow
 
@@ -309,12 +310,12 @@ local function saveTree(treeName)
 end 
 
 function saveTreeDialogCallback(project, tree)
-	local pM = Utils.ProjectManager
+
 	BtCreator.show()
 	
 	if project and tree then -- tree is going to be saved
 		-- if new project I should create it  
-		if(not pM.isProject(project))then
+		if(not ProjectManager.isProject(project))then
 			pM.createProject(project)
 		end
 		local qualifiedName = project .. "." .. tree
@@ -360,7 +361,8 @@ function listenerClickOnSaveTree(self)
 		]]
 		BtCreator.hide()
 		local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
-		ProjectDialog.showDialogWindow(Screen0, treeContentType, true, saveTreeDialogCallback, "Save tree as:")	
+		ProjectDialog.showDialogWindow(Screen0, treeContentType, 
+			ProjectDialog.SAVE_DIALOG_FLAG, saveTreeDialogCallback, "Save tree as:")	
 	else
 		-- we need to get user to define roles first:
 		saveTreeOncePossible = true
@@ -429,16 +431,22 @@ function listenerClickOnShowSensors()
 	end
 end
 
-function listenerClickOnNewTree()
-	local i = 0
-	local newTreeName = "New Tree " .. i
-	while(VFS.FileExists(LUAUI_DIRNAME .. "Widgets/BtBehaviours/" .. newTreeName .. ".json")) do
-		i = i + 1
-		newTreeName = "New Tree " .. i
+function newTreeDialogCallback(projectName,treeName)
+	if(projectName and treeName) then -- user selected 
+		treeNameEditbox:SetText(projectName .. "." .. treeName)
+		rolesOfCurrentTree = {}
+		clearCanvas()
+		BtCreator.show()
+	else
+		BtCreator.show()
 	end
-	treeNameEditbox:SetText(newTreeName)
-	rolesOfCurrentTree = {}
-	clearCanvas()
+end
+
+function listenerClickOnNewTree()
+	BtCreator.hide()
+	local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
+	ProjectDialog.showDialogWindow(Screen0, treeContentType, 
+			ProjectDialog.NEW_DIALOG_FLAG, newTreeDialogCallback, "Name the new tree:")	
 end
 
 local serializedTreeName
@@ -460,15 +468,6 @@ function loadTree(treeName)
 end
 
 function loadTreeDialogCallback(project, tree)
-	--[[if project and tree then -- tree was selected
-		local qualifiedName = project .. "." .. tree
-		loadTree(qualifiedName)
-	end
-	-- clear window and hide it
-	window:ClearChildren()
-	window:Hide()
-	fileDialogWindow = nil
-	]]
 	BtCreator.show()
 	if project and tree then -- tree was selected
 		local qualifiedName = project .. "." .. tree
@@ -477,33 +476,10 @@ function loadTreeDialogCallback(project, tree)
 end
 
 function listenerClickOnLoadTree(self)
-	--[[
-	-- check if some dialog is open
-	local window = self.dialogWindow
-	if window then -- window is already shown what to do? guess hide it?
-		if(window.visible) then
-			window:Hide()
-		end
-		-- dont do anything else i guess
-		return
-	end
-	self.dialogWindow = Chili.Window:New{
-		parent = Screen0,
-		x = 300,
-		y = 500,
-		width = 400,
-		height = 150,
-		padding = {10,10,10,10},
-		draggable = true,
-		resizable = true,
-		skinName = 'DarkGlass',
-	}
-	local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
-	ProjectDialog.setUpDialog(self.dialogWindow, treeContentType, false, self.dialogWindow, loadTreeDialogCallback)
-	]]
 	BtCreator.hide()
 	local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
-	ProjectDialog.showDialogWindow(Screen0, treeContentType, false, loadTreeDialogCallback, "Select tree to be loaded:")
+	ProjectDialog.showDialogWindow(Screen0, treeContentType, ProjectDialog.LOAD_DIALOG_FLAG, 
+		loadTreeDialogCallback, "Select tree to be loaded:")
 end
 
 function listenerClickOnRoleManager(self)
