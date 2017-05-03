@@ -123,10 +123,11 @@ function roleManager.createNewCategoryCallback(projectName, categoryName)
 		end
 		-- add check for category name?
 		local newCategory = {
-			name = 	qualifiedName,
+			project = projectName,
+			name = 	categoryName,
 			types = unitTypes,
 		}
-		Utils.UnitCategories.redefineCategories(newCategory)		
+		Utils.UnitCategories.saveCategory(newCategory)		
 		-- return after
 		returnFunction()
 	else

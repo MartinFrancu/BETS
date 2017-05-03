@@ -23,10 +23,10 @@
 		}
 	},
 	"roles": [ {
-		"categories": [ "groundUnits" ],
+		"categories": [ "Common.groundUnits" ],
 		"name": "Role 0"
 	}, {
-		"categories": [ "groundUnits" ],
+		"categories": [ "Common.groundUnits" ],
 		"name": "Role 1"
 	} ],
 	"root": {

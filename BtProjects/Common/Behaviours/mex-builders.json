@@ -169,7 +169,7 @@
 		"categories": [],
 		"name": "Defenders"
 	}, {
-		"categories": [ "builders" ],
+		"categories": [ "Common.builders" ],
 		"name": "Builders"
 	} ],
 	"root": {
