@@ -856,10 +856,10 @@ function setUpTreeControlWindow()
 		resizable=true,
 		skinName='DarkGlass',
 		OnResize = { sanitizer:AsHandler(
-			function()
+			function(self)
 				local btos = Screen0:GetChildByName("BtOS")
 				if(btos) then
-					btos:SetPos(treeControlWindow.x+treeControlWindow.width,treeControlWindow.y)
+					btos:SetPos(self.x+self.width,self.y)
 				end
 			end
 		)},

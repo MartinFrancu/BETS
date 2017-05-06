@@ -4,9 +4,18 @@
 
 WG = WG or {}
 WG.BtUtils = WG.BtUtils or (function()
+	local BtUtils
+	
 	-- construct a widget-free environment so that no BtUtils component could in any way affect a widget
-	local environment = setmetatable({ BtUtils = false, WG = WG }, {
+	local protoenvironment = setmetatable({
+		BtUtils = false,
+		WG = WG
+	}, {
 		__index = (_G or getfenv(0)._G).System,
+	})
+	local environment = setmetatable({}, {
+		__index = protoenvironment,
+		-- report any attempts to define a global slot in BtUtils, of which there should be none
 		__newindex = function(self, key, value)
 			if(BtUtils and BtUtils.Debug and BtUtils.Debug.Logger)then
 				BtUtils.Debug.Logger.warn("BtUtils", "A global slot defined in BtUtils: ", key)
@@ -16,8 +25,8 @@ WG.BtUtils = WG.BtUtils or (function()
 			rawset(self, key, value)
 		end,
 	})
-
-	return setfenv(function()
+	
+	BtUtils = setfenv(function()
 		--- Locatable modules and classes.
 		-- @table BtUtils.
 		local locators = {
@@ -131,8 +140,11 @@ WG.BtUtils = WG.BtUtils or (function()
 
 		-- BtUtils is an instance of a Locator
 		-- the return value is in brackets as we do not want to return our locators map
-		return (Locator:New({ Locator = Locator, _G = environment }, locators));
+		return (Locator:New({ Locator = Locator }, locators));
 	end, environment)()
+	protoenvironment.BtUtils = BtUtils
+	
+	return BtUtils
 end)()
 
 -- export the BtUtils into the global space, although users are expected to capture the return value

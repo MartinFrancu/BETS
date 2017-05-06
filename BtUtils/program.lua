@@ -10,6 +10,7 @@ return Utils:Assign("program", function()
 	local Debug = Utils.Debug
 	local Logger = Debug.Logger
 	local getWidgetCaller = Debug.getWidgetCaller
+	local rawTable = Debug.rawTable
 
 	local Surrogate = Utils.Surrogate
 	
@@ -86,10 +87,7 @@ return Utils:Assign("program", function()
 			return result
 		end
 
-		return require(rootPath, name), setmetatable({}, {
-			__index = function(_, key) return rawget(programEnvironment, key) end, -- retrieves only the directly stored value
-			__pairs = function() return pairs(programEnvironment) end, -- iterates only through the directly stored key-value pairs
-		})
+		return require(rootPath, name), rawTable(programEnvironment)
 	end
 	
 	return program
