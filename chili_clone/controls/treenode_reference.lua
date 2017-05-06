@@ -34,22 +34,38 @@ local function disposePreviousInputOutputComponents()
 	end
 end
 
-local function addLabelEditboxPair(nodeWindow, components, i, y, label, text)
-	components[i] = {}
-	components[i].label = Label:New{
+local function addLabelEditboxPair(nodeWindow, components, y, label, text, invalid)
+	local x = 15
+	if(invalid) then
+		components.button = Button:New{
+			parent = nodeWindow,
+			x = x,
+			y = y,
+			caption = 'x',
+			width = 20,
+			tooltip = "Removes this saved parameter with its value. ",
+			backgroundColor = {1,0.1,0,1},
+		}
+		x = x + 25
+	end
+	components.label = Label:New{
 		parent = nodeWindow,
-		x = 25,
+		x = x,
 		y = y,
 		caption = label,
 	}
-	components[i].editBox = EditBox:New{
+	components.editBox = EditBox:New{
 		parent = nodeWindow,
-		x = 25 + nodeWindow.font:GetTextWidth(label) + 10,
-		y = y,
+		x = x + nodeWindow.font:GetTextWidth(label) + 10,
+		y = y - 3,
 		autosize = true,
 		minWidth = 70,
 		text = text or "",
 	}
+	if(invalid) then
+		components.label.font.color = {1,0.1,0,1}
+		components.editBox.font.color = {1,0.1,0,1}
+	end
 end
 
 function referenceNode.addInputOutputComponents(nodeWindow,treeName)
@@ -57,44 +73,74 @@ function referenceNode.addInputOutputComponents(nodeWindow,treeName)
 	local inputs = bt.inputs
 	local outputs = bt.outputs or {}
 	local positiony = 68
-	nodeWindow.treeNode.referenceInputsLabel = Label:New{
+	local yoffset = 21
+	local treeNode = nodeWindow.treeNode
+	treeNode.referenceInputsLabel = Label:New{
 		parent = nodeWindow,
 			x = 18,
 			y = positiony,
 			caption = "Inputs: ",
 	}
-	nodeWindow.treeNode.referenceInputs = nodeWindow.treeNode.referenceInputs or {}
-	nodeWindow.treeNode.referenceInputObjects = {}
-	for i=1,#inputs do
-		positiony = positiony + 21
-		local value = ''
-		if(nodeWindow.treeNode.referenceInputs
-			and nodeWindow.treeNode.referenceInputs[i] 
-			and nodeWindow.treeNode.referenceInputs[i].value
-			) then
-			value = nodeWindow.treeNode.referenceInputs[i].value
-		end
-		addLabelEditboxPair(nodeWindow, nodeWindow.treeNode.referenceInputObjects, i, positiony, inputs[i].name, value)
+	treeNode.referenceInputs = treeNode.referenceInputs or {}
+	treeNode.referenceInputObjects = {}
+	local unfilledInputs = {}
+	for _,input in pairs(treeNode.referenceInputs) do
+		unfilledInputs[input.name] = input.value
 	end
-	positiony = positiony + 21
-	nodeWindow.treeNode.referenceOutputsLabel = Label:New{
+	for i=1,#inputs do
+		positiony = positiony + yoffset
+		local value = ''
+		if(treeNode.referenceInputs
+			and treeNode.referenceInputs[i] 
+			and treeNode.referenceInputs[i].value
+			) then
+				if(unfilledInputs[ inputs[i].name ]) then
+					value = treeNode.referenceInputs[i].value
+					unfilledInputs[ inputs[i].name ] = nil
+				end
+		end
+		treeNode.referenceInputObjects[i] = {}
+		addLabelEditboxPair(nodeWindow, treeNode.referenceInputObjects[i], positiony, inputs[i].name, value)
+	end
+	for name,value in pairs(unfilledInputs) do
+		positiony = positiony + yoffset
+		local i = #treeNode.referenceInputObjects + 1
+		treeNode.referenceInputObjects[i] = {}
+		addLabelEditboxPair(nodeWindow, treeNode.referenceInputObjects[i], positiony, name, value, true)
+	end
+	positiony = positiony + yoffset
+	treeNode.referenceOutputsLabel = Label:New{
 		parent = nodeWindow,
 			x = 18,
 			y = positiony,
 			caption = "Outputs: "
 	}
-	nodeWindow.treeNode.referenceOutputs = nodeWindow.treeNode.referenceOutputs or {}
-	nodeWindow.treeNode.referenceOutputObjects = {}
+	treeNode.referenceOutputs = nodeWindow.treeNode.referenceOutputs or {}
+	treeNode.referenceOutputObjects = {}
+	local unfilledOutputs = {}
+	for _,output in pairs(treeNode.referenceOutputs) do
+		unfilledOutputs[output.name] = output.value
+	end
 	for i=1,#outputs do
-		positiony = positiony + 21
+		positiony = positiony + yoffset
 		local value = ''
-		if(nodeWindow.treeNode.referenceOutputs
-			and nodeWindow.treeNode.referenceOutputs[i] 
-			and nodeWindow.treeNode.referenceOutputs[i].value
+		if(treeNode.referenceOutputs
+			and treeNode.referenceOutputs[i] 
+			and treeNode.referenceOutputs[i].value
 			) then
-			value = nodeWindow.treeNode.referenceOutputs[i].value
+				if(unfilledOutputs[ outputs[i].name ]) then
+					unfilledOutputs[ outputs[i].name ] = nil
+					value = treeNode.referenceOutputs[i].value
+				end
 		end
-		addLabelEditboxPair(nodeWindow, nodeWindow.treeNode.referenceOutputObjects, i, positiony, outputs[i].name, value)
+		treeNode.referenceOutputObjects[i] = {}
+		addLabelEditboxPair(nodeWindow, treeNode.referenceOutputObjects[i], positiony, outputs[i].name, value)
+	end
+	for name,value in pairs(unfilledOutputs) do
+		positiony = positiony + yoffset
+		local i = #treeNode.referenceOutputObjects + 1
+		treeNode.referenceOutputObjects[i] = {}
+		addLabelEditboxPair(nodeWindow, treeNode.referenceOutputObjects[i], positiony, name, value, true)
 	end
 end
 
