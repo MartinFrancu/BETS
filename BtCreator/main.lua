@@ -85,8 +85,6 @@ function BtCreator.showTree(tree, instanceId)
 	treeInstanceId = instanceId
 end
 
-
-
 function BtCreator.showNewTree()
 	if(not btCreatorWindow.visible) then
 		btCreatorWindow:Show()
@@ -570,7 +568,7 @@ end
 
 -- Renames the field 'defaultValue' to 'value' if it present, for all the parameters,
 -- also saves parameters, hasConnectionIn, hasConnectionOut into 'nodeDefinitionInfo'.
-local function processTreenodeParameters(nodeType, parameters, hasConnectionIn, hasConnectionOut, tooltip, iconPath)
+local function processTreenodeParameters(nodeType, parameters, hasConnectionIn, hasConnectionOut, tooltip, iconPath, isReferenceNode)
 	for i=1,#parameters do
 		if(parameters[i]["defaultValue"]) then
 			parameters[i]["value"] = parameters[i]["defaultValue"]
@@ -583,6 +581,7 @@ local function processTreenodeParameters(nodeType, parameters, hasConnectionIn, 
 	nodeDefinitionInfo[nodeType]["hasConnectionOut"] = hasConnectionOut
 	nodeDefinitionInfo[nodeType]["tooltip"] = tooltip or ""
 	nodeDefinitionInfo[nodeType].iconPath = iconPath
+	nodeDefinitionInfo[nodeType].isReferenceNode = isReferenceNode
 end
 
 local function addNodeIntoNodepool(treenodeParams)
@@ -613,7 +612,7 @@ local function populateNodePoolWithTreeNodes(heightSum, nodes)
 				isReferenceNode = nodes[i].isReferenceNode
 			}
 			-- Make value field from defaultValue.
-			processTreenodeParameters(nodeParams.nodeType, nodeParams.parameters, nodeParams.hasConnectionIn, nodeParams.hasConnectionOut, nodeParams.tooltip, nodeParams.iconPath)
+			processTreenodeParameters(nodeParams.nodeType, nodeParams.parameters, nodeParams.hasConnectionIn, nodeParams.hasConnectionOut, nodeParams.tooltip, nodeParams.iconPath, nodeParams.isReferenceNode)
 
 			if(nodes[i].defaultHeight) then
 				nodeParams.height = math.max(50 + #nodeParams["parameters"]*20, nodes[i].defaultHeight)
@@ -675,7 +674,7 @@ local function fillNodeListWithNodes(nodes)
 			connectable = false,
 			parameters = copyTable(params),
 		}
-		processTreenodeParameters(nodeParams.nodeType, nodeParams.parameters, nodeParams.hasConnectionIn, nodeParams.hasConnectionOut, nodeParams.tooltip, nodeParams.iconPath)
+		processTreenodeParameters(nodeParams.nodeType, nodeParams.parameters, nodeParams.hasConnectionIn, nodeParams.hasConnectionOut, nodeParams.tooltip, nodeParams.iconPath, nodeParams.isReferenceNode)
 		isScript[scriptName] = true
 		nodeParams.width = 110
 		nodeParams.height = 50 + #nodeParams.parameters * 20
@@ -1217,6 +1216,8 @@ local fieldsToSerialize = {
 	'width',
 	'height',
 	'parameters',
+	'referenceInputs',
+	'referenceOutputs',
 }
 
 function formBehaviourTree()
@@ -1235,7 +1236,13 @@ function formBehaviourTree()
 			-- TODO: OH: change serialized x,y to be relative to the position of the root node (root node then ends up being on 0,0)
 			
 			for _, key in ipairs(fieldsToSerialize) do
-				params[key] = node[key]
+				if(node[key]) then
+					if(type(node[key]=="table")) then
+						params[key] = copyTable(node[key])
+					else
+						params[key] = node[key]
+					end
+				end
 			end
 			local info = nodeDefinitionInfo[node.nodeType]
 			local hasScriptName = false
@@ -1258,7 +1265,6 @@ function formBehaviourTree()
 				params.nodeType = "luaCommand"
 				params.scriptName = scriptName
 			end
-
 			nodeMap[node] = bt:NewNode(params)
 		end
 	end
@@ -1381,6 +1387,8 @@ local function loadBehaviourNode(bt, btNode)
 					params.parameters[i].value = v[i].value
 				end
 			end
+		elseif(k == 'referenceInputs' or k == 'referenceOutputs')then
+			params[k] = copyTable(v)
 		else
 			params[k] = v
 		end

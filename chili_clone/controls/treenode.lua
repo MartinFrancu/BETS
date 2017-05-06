@@ -746,6 +746,30 @@ function TreeNode:UpdateParameterValues()
 		end
 	end
 	self.title = self.nameEditBox.text
+	-- Spring.Echo(self.isReferenceNode)
+	if(self.isReferenceNode) then
+		-- only if a referenced tree was set
+		if(self.referenceOutputObjects) then
+			for i=1,#self.referenceOutputObjects do
+				local name = self.referenceOutputObjects[i].label.caption
+				local value = self.referenceOutputObjects[i].editBox.text
+				self.referenceOutputs[i] = {}
+				self.referenceOutputs[i].name = name
+				self.referenceOutputs[i].value = value
+				-- Spring.Echo("Setting referenceOutput "..name.." to value "..value)
+			end
+		end
+		if(self.referenceInputObjects) then
+			for i=1,#self.referenceInputObjects do
+				local name = self.referenceInputObjects[i].label.caption
+				local value = self.referenceInputObjects[i].editBox.text
+				self.referenceInputs[i] = {}
+				self.referenceInputs[i].name = name
+				self.referenceInputs[i].value = value
+				-- Spring.Echo("Setting referenceInput "..name.." to value "..value)
+			end
+		end
+	end
 	self:UpdateDimensions()
 end
 

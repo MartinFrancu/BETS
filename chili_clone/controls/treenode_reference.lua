@@ -3,6 +3,7 @@ local referenceNode = {}
 local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
 local ProjectDialog = Utils.ProjectDialog
 local BehaviourTree = Utils.BehaviourTree
+local dump = Utils.Debug.dump
 
 local dialogWindow
 
@@ -33,7 +34,7 @@ local function disposePreviousInputOutputComponents()
 	end
 end
 
-local function addLabelEditboxPair(nodeWindow, components, i, y, label)
+local function addLabelEditboxPair(nodeWindow, components, i, y, label, text)
 	components[i] = {}
 	components[i].label = Label:New{
 		parent = nodeWindow,
@@ -47,6 +48,7 @@ local function addLabelEditboxPair(nodeWindow, components, i, y, label)
 		y = y,
 		autosize = true,
 		minWidth = 70,
+		text = text or "",
 	}
 end
 
@@ -59,12 +61,14 @@ function referenceNode.addInputOutputComponents(nodeWindow,treeName)
 		parent = nodeWindow,
 			x = 18,
 			y = positiony,
-			caption = "Inputs: "
+			caption = "Inputs: ",
 	}
+	nodeWindow.treeNode.referenceInputs = nodeWindow.treeNode.referenceInputs or {}
 	nodeWindow.treeNode.referenceInputObjects = {}
 	for i=1,#inputs do
 		positiony = positiony + 21
-		addLabelEditboxPair(nodeWindow, nodeWindow.treeNode.referenceInputObjects, i, positiony, inputs[i].name)
+		local value = nodeWindow.treeNode.referenceInputs[i].value or ''
+		addLabelEditboxPair(nodeWindow, nodeWindow.treeNode.referenceInputObjects, i, positiony, inputs[i].name, value)
 	end
 	positiony = positiony + 21
 	nodeWindow.treeNode.referenceOutputsLabel = Label:New{
@@ -73,11 +77,12 @@ function referenceNode.addInputOutputComponents(nodeWindow,treeName)
 			y = positiony,
 			caption = "Outputs: "
 	}
-	outputs = outputs or {}
+	nodeWindow.treeNode.referenceOutputs = nodeWindow.treeNode.referenceOutputs or {}
 	nodeWindow.treeNode.referenceOutputObjects = {}
 	for i=1,#outputs do
 		positiony = positiony + 21
-		addLabelEditboxPair(nodeWindow, nodeWindow.treeNode.referenceOutputObjects, i, positiony, outputs[i].name)
+		local value = nodeWindow.treeNode.referenceOutputs[i].value or ''
+		addLabelEditboxPair(nodeWindow, nodeWindow.treeNode.referenceOutputObjects, i, positiony, outputs[i].name, value)
 	end
 end
 
