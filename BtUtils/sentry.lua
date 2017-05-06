@@ -37,11 +37,20 @@ local eventHandlerPrototype = {}
 function eventHandlerPrototype:Invoke(
 		... -- any parameters that may be expected by the handlers themselves
 	)
-	for _, event in ipairs(self) do
-		local result = event(...)
-		if(result)then
-			return result
+	local toBeRemoved, toBeRemovedCount = {}, 0
+	for i, event in ipairs(self) do
+		local results = { event(...) }
+		if(results[1])then
+			return unpack(results)
+		elseif(results[1] == false)then -- handler explicitly asks to be removed
+			toBeRemovedCount = toBeRemovedCount + 1
+			toBeRemoved[toBeRemovedCount] = i
 		end
+	end
+	
+	-- remove outside fo the list, so that we do not interfere with the iteration process
+	for i = toBeRemovedCount, 1, -1 do
+		table.remove(self, toBeRemoved[i])
 	end
 	return nil
 end

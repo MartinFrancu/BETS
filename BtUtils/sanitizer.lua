@@ -23,8 +23,15 @@ return Utils:Assign("Sanitizer", function()
 		error = error,
 	}
 	
+	local isRemovedField = {} -- a handle
+	
 	local function sanitize(widget, f, rethrow)
 		return setfenv(function(...)
+			-- we do not call the function if we are already removed, instead returning false (which the caller may interpret as some kind of failure)
+			if(not rethrow and widget[isRemovedField])then
+				return false
+			end
+		
 			local p = {...}
 			local err
 			local r = { xpcall(function() return f(unpack(p)) end, function(e) Logger.error(widget:GetInfo().name, e) err = e end) }
@@ -137,7 +144,12 @@ return Utils:Assign("Sanitizer", function()
 		for k, v in pairs(widget) do
 			if(type(k) == "string" and type(v) == "function" and isUpper(k:sub(1,1)) and not protectedMethods[k])then
 				Logger.log("sanitize", "Sanitizing ", widget:GetInfo().name, ".", k)
-				widget[k] = sanitize(widget, v, k == "Shutdown")
+				local f = sanitize(widget, v, k == "Shutdown")
+				if(k == "Shutdown")then
+					local sanitized = f
+					f = function(...) widget[isRemovedField] = true; return sanitized(...) end
+				end
+				widget[k] = f
 			end
 		end
 	end
