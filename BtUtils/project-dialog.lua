@@ -173,6 +173,7 @@ return Utils:Assign("ProjectDialog", function()
 			caption = "DONE",
 			OnClick = {doneButtonListener},
 			skinName = 'DarkGlass',
+			focusColor = {1,0.5,0,0.5},
 		}
 		doneButton.callback = callbackFunction
 		doneButton.callbackObject = callbackObject
@@ -192,6 +193,7 @@ return Utils:Assign("ProjectDialog", function()
 			caption = "CANCEL",
 			OnClick = {cancelButtonListener},
 			skinName = 'DarkGlass',
+			focusColor = {1,0.5,0,0.5},
 		}
 		cancelButton.callback = callbackFunction
 		cancelButton.callbackObject = callbackObject

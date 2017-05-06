@@ -67,7 +67,13 @@ function referenceNode.addInputOutputComponents(nodeWindow,treeName)
 	nodeWindow.treeNode.referenceInputObjects = {}
 	for i=1,#inputs do
 		positiony = positiony + 21
-		local value = nodeWindow.treeNode.referenceInputs[i].value or ''
+		local value = ''
+		if(nodeWindow.treeNode.referenceInputs
+			and nodeWindow.treeNode.referenceInputs[i] 
+			and nodeWindow.treeNode.referenceInputs[i].value
+			) then
+			value = nodeWindow.treeNode.referenceInputs[i].value
+		end
 		addLabelEditboxPair(nodeWindow, nodeWindow.treeNode.referenceInputObjects, i, positiony, inputs[i].name, value)
 	end
 	positiony = positiony + 21
@@ -81,7 +87,13 @@ function referenceNode.addInputOutputComponents(nodeWindow,treeName)
 	nodeWindow.treeNode.referenceOutputObjects = {}
 	for i=1,#outputs do
 		positiony = positiony + 21
-		local value = nodeWindow.treeNode.referenceOutputs[i].value or ''
+		local value = ''
+		if(nodeWindow.treeNode.referenceOutputs
+			and nodeWindow.treeNode.referenceOutputs[i] 
+			and nodeWindow.treeNode.referenceOutputs[i].value
+			) then
+			value = nodeWindow.treeNode.referenceOutputs[i].value
+		end
 		addLabelEditboxPair(nodeWindow, nodeWindow.treeNode.referenceOutputObjects, i, positiony, outputs[i].name, value)
 	end
 end
