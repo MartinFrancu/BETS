@@ -9,6 +9,7 @@ local dialogWindow
 
 -- Stores nodeWindow component corresponding to last clicked chooseTreeButton
 local nodeWindow
+local treeName
 
 local function disposePreviousInputOutputComponents()
 	if(not nodeWindow) then
@@ -21,20 +22,28 @@ local function disposePreviousInputOutputComponents()
 	if(treeNode.referenceOutputsLabel) then 
 		treeNode.referenceOutputsLabel:Dispose()
 	end
-	if(not treeNode.referenceInputObjects or not treeNode.referenceOutputObjects) then
-		return
+	if(treeNode.referenceInputObjects) then
+		for i=1,#treeNode.referenceInputObjects do
+			if(treeNode.referenceInputObjects[i].button) then 
+				treeNode.referenceInputObjects[i].button:Dispose()
+			end
+			treeNode.referenceInputObjects[i].label:Dispose()
+			treeNode.referenceInputObjects[i].editBox:Dispose()
+		end
 	end
-	for i=1,#treeNode.referenceInputObjects do
-		treeNode.referenceInputObjects[i].label:Dispose()
-		treeNode.referenceInputObjects[i].editBox:Dispose()
-	end
+	if(treeNode.referenceOutputObjects) then
 		for i=1,#treeNode.referenceOutputObjects do
-		treeNode.referenceOutputObjects[i].label:Dispose()
-		treeNode.referenceOutputObjects[i].editBox:Dispose()
+			if(treeNode.referenceOutputObjects[i].button) then 
+				treeNode.referenceOutputObjects[i].button:Dispose()
+			end
+			treeNode.referenceOutputObjects[i].label:Dispose()
+			treeNode.referenceOutputObjects[i].editBox:Dispose()
+		end
 	end
 end
 
-local function addLabelEditboxPair(nodeWindow, components, y, label, text, invalid)
+local function addLabelEditboxPair(nodeWindow_, components, y, label, text, invalid, serializedValues)
+	nodeWindow = nodeWindow_
 	local x = 15
 	if(invalid) then
 		components.button = Button:New{
@@ -45,6 +54,24 @@ local function addLabelEditboxPair(nodeWindow, components, y, label, text, inval
 			width = 20,
 			tooltip = "Removes this saved parameter with its value. ",
 			backgroundColor = {1,0.1,0,1},
+			components = components,
+			OnClick = {
+				function(self)
+
+					components.editBox:Dispose()
+					components.label:Dispose()
+					for i,pair in pairs(serializedValues) do
+						if(pair.name == label) then
+							serializedValues[i] = nil
+						end
+					end
+					Spring.Echo(dump(nodeWindow.referenceInputs,2))
+					self:Dispose()
+					
+					disposePreviousInputOutputComponents()
+					referenceNode.addInputOutputComponents(nodeWindow,treeName)
+				end
+			},
 		}
 		x = x + 25
 	end
@@ -68,7 +95,8 @@ local function addLabelEditboxPair(nodeWindow, components, y, label, text, inval
 	end
 end
 
-function referenceNode.addInputOutputComponents(nodeWindow,treeName)
+function referenceNode.addInputOutputComponents(nodeWindow,treeName_)
+	treeName = treeName_
 	local bt = BehaviourTree.load(treeName)
 	local inputs = bt.inputs
 	local outputs = bt.outputs or {}
@@ -106,7 +134,7 @@ function referenceNode.addInputOutputComponents(nodeWindow,treeName)
 		positiony = positiony + yoffset
 		local i = #treeNode.referenceInputObjects + 1
 		treeNode.referenceInputObjects[i] = {}
-		addLabelEditboxPair(nodeWindow, treeNode.referenceInputObjects[i], positiony, name, value, true)
+		addLabelEditboxPair(nodeWindow, treeNode.referenceInputObjects[i], positiony, name, value, true, treeNode.referenceInputs)
 	end
 	positiony = positiony + yoffset
 	treeNode.referenceOutputsLabel = Label:New{
@@ -140,14 +168,15 @@ function referenceNode.addInputOutputComponents(nodeWindow,treeName)
 		positiony = positiony + yoffset
 		local i = #treeNode.referenceOutputObjects + 1
 		treeNode.referenceOutputObjects[i] = {}
-		addLabelEditboxPair(nodeWindow, treeNode.referenceOutputObjects[i], positiony, name, value, true)
+		addLabelEditboxPair(nodeWindow, treeNode.referenceOutputObjects[i], positiony, name, value, true, treeNode.referenceOutputs)
 	end
 end
 
 local function setTreeCallback(window, projectName, behaviour)
 	if(projectName and behaviour) then
-		local treeName = projectName.."."..behaviour
+		treeName = projectName.."."..behaviour
 		nodeWindow.treeNode.parameterObjects[1].label:SetCaption(treeName)
+		
 		-- remove older components if any
 		disposePreviousInputOutputComponents()
 		referenceNode.addInputOutputComponents(nodeWindow,treeName)
