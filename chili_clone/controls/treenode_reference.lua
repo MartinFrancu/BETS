@@ -113,6 +113,9 @@ end
 function referenceNode.listenerChooseTree(button)
 	local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
 	nodeWindow = button.parent
+	if(dialogWindow) then
+		dialogWindow:Dispose()
+	end
 	dialogWindow = Window:New{
 		parent = Screen0,
 		x = 300,
