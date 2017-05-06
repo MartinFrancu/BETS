@@ -714,5 +714,3 @@ function widget:RecvSkirmishAIMessage(aiTeam, message)
 		Logger.log("communication", "Unknown message type: |", messageType, "|")
 	end
 end
-
-sanitizer:SanitizeWidget()

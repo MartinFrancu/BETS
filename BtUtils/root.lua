@@ -123,8 +123,9 @@ WG.BtUtils = WG.BtUtils or (function()
 					else
 						return nil
 					end
-				end
+				end,
 				-- newindex is left out, so that other scripts can hang their objects on the table even when evaluated from outside
+				__pairs = function() return pairs(locators) end,
 			}), locators
 		end
 

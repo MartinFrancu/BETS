@@ -1,5 +1,8 @@
 local BtCheat = {}
 
+local sanitizer = Utils.Sanitizer.forCurrentWidget()
+local Chili = Utils.Chili
+
 local Timer = Utils.Timer;
 local Debug = Utils.Debug;
 local Logger = Debug.Logger
@@ -165,7 +168,7 @@ function BtCheat.commandNotify(cmdID,cmdParams)
 	return false
 end
 
-function init()
+function BtCheat.init()
 	local Screen0 = Chili.Screen0	
 	speed = CONSTANTS.defaultFFSpeed
 	
@@ -268,8 +271,6 @@ function init()
 	--]]
 	
 end
-
-init()
 
 
 return BtCheat

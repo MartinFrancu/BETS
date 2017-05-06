@@ -1,5 +1,6 @@
 local TreeHandle
 
+local Chili = Utils.Chili
 local BehaviourTree = Utils.BehaviourTree
 local Debug = Utils.Debug;
 local Logger = Debug.Logger

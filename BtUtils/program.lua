@@ -20,19 +20,34 @@ return Utils:Assign("program", function()
 		return path:gsub("\\", "/")
 	end
 
-	function program(f, context)
-		local path = LUAUI_DIRNAME .. "Widgets/"
-		
+	local rootPath = LUAUI_DIRNAME .. "Widgets/"
+	
+	function program(name, context)
 		if(not context)then
 			context = getWidgetCaller()
 		end
 		
-		local environment
+		local programEnvironment = setmetatable({}, {
+			__index = context,
+		})
+
+		local require;
+		local function makeFileEnvironment(path)
+			return setmetatable({
+				_G = programEnvironment,
+				PATH = path,
+				Utils = Utils,
+				require = function(name) return require(path, name) end,
+			}, {
+				__index = programEnvironment,
+				__newindex = programEnvironment,
+			})
+		end
 		
 		local storedResults = {}
 		local processingResults = {}
-		local function require(name)
-			local cacheIndex = type(name) == "string" and path .. name or name
+		function require(currentPath, name)
+			local cacheIndex = type(name) == "string" and currentPath .. name or name
 		
 			local stored = storedResults[cacheIndex]
 			if(stored)then
@@ -51,43 +66,30 @@ return Utils:Assign("program", function()
 			end
 			
 			processingResults[cacheIndex] = true
+			local environment = makeFileEnvironment(path)
 			local result 
 			if(type(name) == "string")then
-				local orig = name
-				local dir, filename = normalizePath(name):match("(.*)/(.*)")
-				local oldPath = path
-				if(dir)then
-					path = path .. dir .. "/"
-				else
-					filename = name
-				end
-				name = filename == "" and "main" or name
-				local file = path .. name .. ".lua"
+				local path = normalizePath(currentPath .. name):match("(.*/)")
+				local file = currentPath .. name .. ((name == "" or name:match("/$")) and "main" or "") .. ".lua"
 				if(not VFS.FileExists(file))then
-					error("require('" .. orig .. "') at '" .. oldPath .. "' couldn't find '" .. file .. "'", 2)
+					error("require('" .. name .. "') at '" .. currentPath .. "' couldn't find '" .. file .. "'", 2)
 				end
 				-- TODO: do explicit LoadFile and loadstring to report errors in a nicer way (similarly to non-existancy)
-				result = VFS.Include(file, environment, VFS.RAW_FIRST)
-				path = oldPath
+				result = VFS.Include(file, makeFileEnvironment(path), VFS.RAW_FIRST)
 			else
 				local oldenv = getfenv(name)
-				setfenv(name, environment)
+				setfenv(name, makeFileEnvironment(currentPath))
 				result = name()
-				setfenv(name, oldenv)
+				setfenv(name, oldenv) -- if the function spawned any functions, they capture the current environment at the time, so this switch back shouldn't be a problem
 			end
 			storedResults[cacheIndex] = result
 			return result
 		end
 
-		environment = setmetatable({
-			Utils = Utils,
-			require = require,
-		}, {
-			__index = context,
+		return require(rootPath, name), setmetatable({}, {
+			__index = function(_, key) return rawget(programEnvironment, key) end, -- retrieves only the directly stored value
+			__pairs = function() return pairs(programEnvironment) end, -- iterates only through the directly stored key-value pairs
 		})
-				
-		-- TODO: expose envrionment to the outside, so it can be inspected
-		return require(f)
 	end
 	
 	return program

@@ -1,7 +1,6 @@
 
 nodePoolItem = {}
 
-local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
 local sanitizer = Utils.Sanitizer.forWidget(widget)
 
 --- NodeType of last clicked nodePoolItem

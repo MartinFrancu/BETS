@@ -12,6 +12,9 @@ function widget:GetInfo()
 end
 
 local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
+local Sanitizer = Utils.Sanitizer
 local program = Utils.program
 
 program("BtEvaluator/")
+
+Sanitizer.sanitizeWidget(widget)

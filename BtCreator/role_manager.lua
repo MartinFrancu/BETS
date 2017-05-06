@@ -1,3 +1,5 @@
+local sanitizer = Utils.Sanitizer.forCurrentWidget()
+local Chili = Utils.Chili
 
 local roleManager = {}
 

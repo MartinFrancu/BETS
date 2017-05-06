@@ -7,14 +7,13 @@ WG.BtConnectionLine = WG.BtConnectionLine or (function()
 		
 		local connectionLines = {}
 		
-		local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
 		local Debug = Utils.Debug;
 		local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyTable, Debug.fileTable
 		
-		local arrowWhite				 	= LUAUI_DIRNAME .. "Widgets/BtCreator/arrow_white.png"
-		local arrowWhiteFlipped		= LUAUI_DIRNAME .. "Widgets/BtCreator/arrow_white_flipped.png"
-		local arrowOrange				 	= LUAUI_DIRNAME .. "Widgets/BtCreator/arrow_orange.png"
-		local arrowOrangeFlipped	= LUAUI_DIRNAME .. "Widgets/BtCreator/arrow_orange_flipped.png"
+		local arrowWhite        	= PATH .. "arrow_white.png"
+		local arrowWhiteFlipped		= PATH .. "arrow_white_flipped.png"
+		local arrowOrange        	= PATH .. "arrow_orange.png"
+		local arrowOrangeFlipped	= PATH .. "arrow_orange_flipped.png"
 		
 		Logger.log("connection-lines", "connection_line.lua Singleton creation. ")
 		
