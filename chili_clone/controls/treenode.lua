@@ -174,7 +174,7 @@ function TreeNode:New(obj)
 		obj.nameEditBox:SetPos(obj.nameEditBox.x+20)
 	end
 	if(obj.nodeType:lower() == "root") then
-		rootnode.addComponents(obj)
+		rootnode.addChildComponents(obj)
 	end
 
 	obj.parameterObjects = {}
@@ -201,45 +201,33 @@ function TreeNode:New(obj)
 end
 
 function TreeNode:UpdateDimensions()
-	local maxWidth = self.nodeWindow.width
-	local nameEditBoxWidth = self.nodeWindow.font:GetTextWidth(self.nameEditBox.text)
+	local nodeWindow = self.nodeWindow
+	-- connectionOut is on the boundary of the nodeWindow and messes up the GetChildrenMinimumExtends() call,
+	-- so hide it 
+	if(self.connectionOut) then
+		self.connectionOut:Hide()
+	end
+	local max = math.max
+	local w,h = nodeWindow:GetChildrenMinimumExtents()
+	if(self.connectionOut) then
+		self.connectionOut:Show()
+	end
+	local nameWidth = self.nameEditBox.width + 35
 	if(self.icon) then
-		nameEditBoxWidth = nameEditBoxWidth + 20
+		nameWidth = nameWidth + 20
 	end
-	maxWidth = math.max(maxWidth, nameEditBoxWidth + 40)
-	local maxHeight = self.nodeWindow.height
-	local p = self.parameterObjects
-	for i=1,#p do
-		if(p[i].componentType == "checkBox") then
-			maxWidth = math.max(maxWidth, p[i].checkBox.width + 50)
-		elseif(p[i].componentType == "editBox") then
-			local boxWidth = self.nodeWindow.font:GetTextWidth(p[i].editBox.text)
-			boxWidth = math.max(boxWidth, p[i].editBox.minWidth or 0)
-			maxWidth = math.max(maxWidth, math.max(40, boxWidth + self.nodeWindow.font:GetTextWidth((p[i].label or {caption = ""}).caption) + 50))
-		elseif(p[i].componentType == "comboBox") then
-			maxWidth = math.max(maxWidth, p[i].label.width + p[i].comboBox.width + 40)
-		end
-	end
-	if(self.nodeType == "Root") then
-		height,width = rootnode.getMinimalDimensions(self)
-		maxHeight = math.max(height, maxHeight)
-		maxWidth = math.max(width, maxWidth)
-	end
-	if(self.isReferenceNode and self.referenceInputObjects and self.referenceOutputObjects) then
-		maxHeight = math.max(maxHeight, #self.referenceInputObjects*21 + #self.referenceOutputObjects*21 + 68 + 55)
-		for i=1,#self.referenceInputObjects do
-			maxWidth = math.max(maxWidth, 50 + self.referenceInputObjects[i].label.width + self.referenceInputObjects[i].editBox.width)
-		end
-		for i=1,#self.referenceOutputObjects do
-			maxWidth = math.max(maxWidth, 50 + self.referenceOutputObjects[i].label.width + self.referenceOutputObjects[i].editBox.width)
-		end
-	end
-	maxHeight = math.max(maxHeight, #p * 20 + 50)
-	if(self.nodeWindow and self.nodeWindow.parent and not self.nodeWindow.parent.zoomedOut) then
-		self.nodeWindow:SetPos(nil, nil, maxWidth, maxHeight)
+	local maxWidth = max(nodeWindow.width, nameWidth)
+	local maxHeight = nodeWindow.height
+	-- Spring.Echo("minimum extents w,h: "..math.ceil(w)..","..math.ceil(h))
+	-- Spring.Echo("current extents w,h: "..math.ceil(maxWidth)..","..math.ceil(maxHeight))
+	maxWidth = math.ceil(max(maxWidth, w+20))
+	maxHeight = math.ceil(max(maxHeight, h+20))
+	if(nodeWindow and nodeWindow.parent and not nodeWindow.parent.zoomedOut) then
+		nodeWindow:SetPos(nil, nil, maxWidth, maxHeight)
 		self.width = maxWidth
 		self.height = maxHeight
 	end
+
 	self.nodeWindow:CallListeners( self.nodeWindow.OnResize )
 end
 

@@ -258,10 +258,10 @@ local function saveTree(treeName)
 	local inputs = WG.nodeList[rootID].inputs
 	if(inputs ~= nil) then
 		for i=1,#inputs do
-			if (inputTypeMap[ inputs[i][2].items[ inputs[i][2].selected ] ] == nil) then
+			if (inputTypeMap[ inputs[i].comboBox.items[ inputs[i].comboBox.selected ] ] == nil) then
 				error("Uknown tree input type detected in BtCreator tree serialization. "..debug.traceback())
 			end
-			table.insert(protoTree.inputs, {["name"] = inputs[i][1].text, ["command"] = inputTypeMap[ inputs[i][2].items[ inputs[i][2].selected ] ],})
+			table.insert(protoTree.inputs, {["name"] = inputs[i].editBox.text, ["command"] = inputTypeMap[ inputs[i].comboBox.items[ inputs[i].comboBox.selected ] ],})
 		end
 	end
 	local outputs = WG.nodeList[rootID].outputs
@@ -1447,12 +1447,12 @@ function loadBehaviourTree(bt)
 	for i=1,#bt.inputs do
 		-- Add inputs and sets them to saved values
 		addInputButton:CallListeners( addInputButton.OnClick )
-		WG.nodeList[rootID].inputs[i][1]:SetText(bt.inputs[i].name)
+		WG.nodeList[rootID].inputs[i].editBox:SetText(bt.inputs[i].name)
 		local inputType = inputTypeMap[ bt.inputs[i]["command"] ]
-		local inputComboBox = WG.nodeList[rootID].inputs[i][2]
+		local inputComboBox = WG.nodeList[rootID].inputs[i].comboBox
 		for k=1,#inputComboBox.items do
 			if(inputComboBox.items[k] == inputType) then
-				WG.nodeList[rootID].inputs[i][2]:Select( k )
+				WG.nodeList[rootID].inputs[i].comboBox:Select( k )
 			end
 		end
 	end
@@ -1461,7 +1461,7 @@ function loadBehaviourTree(bt)
 	bt.outputs = bt.outputs or {}
 	for i=1,#bt.outputs do
 		addOutputButton:CallListeners( addOutputButton.OnClick )
-		WG.nodeList[rootID].outputs[i][1]:SetText(bt.outputs[i].name)
+		WG.nodeList[rootID].outputs[i].editBox:SetText(bt.outputs[i].name)
 	end
 	
 	-- load root node position and size
