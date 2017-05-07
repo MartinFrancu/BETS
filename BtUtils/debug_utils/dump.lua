@@ -4,8 +4,8 @@
 local dump
 
 --- Serializes the given table to a lua-readable form.
--- @tab o asfasf
--- @int[opt] maxDepth asfa
+-- @tab o The table that is to be serialized.
+-- @int[opt] maxDepth The maximal depth into which to serialize the table.
 -- @remark It is preferable that the graph of the tables that are to be serialized should not contain cycles. If it does, @{dump} might end up producing duplicite output.
 function dump(o, maxDepth)
 	maxDepth = maxDepth or 1

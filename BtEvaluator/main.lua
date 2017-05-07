@@ -225,37 +225,94 @@ function BtEvaluator.assignUnits(units, instanceId, roleId)
 		allRole[allRole.length] = id
 	end
 end
+
+local function locateItem(items, name)
+	for i, item in ipairs(items) do
+		if(item.name == name)then
+			return item, i
+		end
+	end
+	return nil
+end
 function BtEvaluator.dereferenceTree(treeDefinition)
 	-- TODO: solve local contexts -- referenced tree may be from a difference project
 	-- TODO: differentiate between inputs and outputs and also other types of inputs
 	-- TODO: actually look up whether the given inputs/outputs match inputs/outputs from the referenced tree
 
-	local referencedList = {}
+	local referencedMap = {}
 	local failure, message = treeDefinition:Visit(function(node)
 		if(node.nodeType == "reference")then
-			local referencedName, parameterI;
-			for i, v in ipairs(node.parameters) do
-				if(v.name == "behaviourName")then
-					parameterI = i
-					referencedName = v.value
-				end
+			local behaviourNameParameter = locateItem(node.parameters, "behaviourName")
+			local referencedName = behaviourNameParameter.value
+			
+			local function makeError(text)
+				return true, "[node=" .. tostring(node.id) .. "] " .. text
 			end
 			
 			if(not referencedName)then
-				return true, "[node=" .. tostring(node.id) .. "] Reference tree without 'behaviourName' parameter."
+				return makeError("Reference tree without 'behaviourName' parameter.")
 			end
+			if(type(referencedName) ~= "string")then
+				return makeError("'behaviourName' parameter has to be a string.")
+			end
+			if(referencedMap[referencedName])then
+				return makeError("Cyclic reference to '" .. referenceName .. "'.")
+			end
+			
 			local referenced, message = BehaviourTree.load(referencedName)
 			if(not referenced)then
-				return true, "[node=" .. tostring(node.id) .. "] " .. message
+				return makeError(message)
 			end
 			
 			local root = treeDefinition:Combine(referenced, function(n) n:ChangeID(node.id .. "-" .. n.id) end)
-			table.remove(node.parameters, parameterI)
 			node:Connect(root)
 			
-			-- TODO: do something with other.project
+			for _, input in ipairs(referenced.inputs) do
+				local referenceInput = locateItem(node.referenceInputs, input.name)
+				if(referenceInput)then
+					referenceInput.matchedInput = input
+				else
+					return makeError("Referenced tree has an input '" .. input.name .. "' with no value specified.")
+				end
+			end
+			-- ignore missing outputs in referenced node
 			
-			table.insert(referencedList, referencedName)
+			local parameters, count = {}, 0
+			for i, input in ipairs(node.referenceInputs) do
+				count = count + 1
+				if(input.matchedInput)then
+					parameters[count] = {
+						name = input.name,
+						value = {
+							type = (input.matchedInput.command ~= "Variable" and "parameter" or "input"),
+							expression = input.value,
+						},
+					}
+				else
+					-- ignore missing inputs in referenced tree
+				end
+			end
+			for i, output in ipairs(node.referenceOutputs) do
+				count = count + 1
+				local matchedOutput = locateItem(node.outputs, output.name)
+				if(matchedOutput)then
+					parameters[count] = {
+						name = output.name,
+						value = {
+							type = "output",
+							expression = output.value,
+						},
+					}
+				else
+					-- ignore missing outputs in referenced tree
+				end
+			end
+			node.parameters = parameters
+
+			
+			-- TODO: do something with referenced.project
+			
+			referencedMap[referencedName] = true
 		end
 	end)
 	
@@ -263,6 +320,11 @@ function BtEvaluator.dereferenceTree(treeDefinition)
 		Logger.error("dereference", message)
 		return false, message
 	else
+		local referencedList, count = {}, 0
+		for k in pairs(referencedMap) do
+			count = count + 1
+			referencedList[count] = k
+		end
 		return referencedList
 	end
 end
@@ -422,33 +484,39 @@ function BtEvaluator.OnStartTree(params)
 		instance.subblackboards[params.id] = subblackboard
 	end
 	
-	local parameterExpressions = {}
-	instance.nodes[params.id] = { expressions = parameterExpressions }
+	local inputExpressions, outputExpressions = {}, {}
+	instance.nodes[params.id] = { inputExpressions = inputExpressions, outputExpressions = outputExpressions }
 	
 	for k, v in pairs(params.parameter) do
-		local expr = createExpression(tostring(v))
-		expr.setBlackboard(blackboard)
-		expr.setGroup(units)
-		parameterExpressions[k] = expr;
-		local success, value = pcall(expr.get)
-		if(success)then
-			if(not value)then
-				Logger.log("subtree", "Subtree '", params.id, "@", params.treeId, "' has a nil parameter '", k, "'." )
-				return "F"
+		if(v.type)then
+			local expr = createExpression(tostring(v.expression))
+			expr.setBlackboard(blackboard)
+			expr.setGroup(units)
+			if(v.type == "output")then
+				outputExpressions[k] = expr
+			else
+				inputExpressions[k] = expr;
+				local success, value = pcall(expr.get)
+				if(success)then
+					if(v.type == "input" and not value)then
+						Logger.log("subtree", "Subtree '", params.id, "@", params.treeId, "' has a nil parameter '", k, "'." )
+						return "F"
+					end
+					subblackboard[k] = value
+				else	
+					Logger.error("expression", "Evaluating parameter '", k, "' threw an exception: ", value);
+				end
 			end
-			subblackboard[k] = value
-		else	
-			Logger.error("expression", "Evaluating parameter '", k, "' threw an exception: ", value);
 		end
 	end
 	
-	local stack = instance.blackboardStack
+	local stack = instance.subtreeStack
 	if(not stack)then
 		stack = { length = 0 }
-		instance.blackboardStack = stack
+		instance.subtreeStack = stack
 	end
 	stack.length = stack.length + 1
-	stack[stack.length] = instance.blackboard
+	stack[stack.length] = { blackboard = instance.blackboard }
 	instance.blackboard = subblackboard
 	
 	return "S"
@@ -461,13 +529,13 @@ function BtEvaluator.OnEnterTree(params)
 		return "F"
 	end
 	
-	local stack = instance.blackboardStack
+	local stack = instance.subtreeStack
 	if(not stack)then
 		stack = { length = 0 }
-		instance.blackboardStack = stack
+		instance.subtreeStack = stack
 	end
 	stack.length = stack.length + 1
-	stack[stack.length] = instance.blackboard
+	stack[stack.length] = { blackboard = instance.blackboard }
 	instance.blackboard = subblackboard
 	
 	return "S"
@@ -479,9 +547,16 @@ function BtEvaluator.OnExitTree(params)
 		Logger.error("subtree", "Attempt to exit a subtree '", params.id, "@", params.treeId, "' that was not entered.")
 		return "F"
 	end
+	local node = instance.nodes[params.id]
+	for k, expr in pairs(node.outputExpressions) do
+		local success, value = pcall(expr.set, subblackboard[k])
+		if(not success)then
+			Logger.error("subtree", "Setting output paramter '", k, "' threw an exception: ", value)
+		end
+	end
 	
-	local stack = instance.blackboardStack
-	instance.blackboard = stack[stack.length]
+	local stack = instance.subtreeStack
+	instance.blackboard = stack[stack.length].blackboard
 	stack[stack.length] = nil
 	stack.length = stack.length - 1
 end
