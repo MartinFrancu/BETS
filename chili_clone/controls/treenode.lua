@@ -225,6 +225,15 @@ function TreeNode:UpdateDimensions()
 		maxHeight = math.max(height, maxHeight)
 		maxWidth = math.max(width, maxWidth)
 	end
+	if(self.isReferenceNode and self.referenceInputObjects and self.referenceOutputObjects) then
+		maxHeight = math.max(maxHeight, #self.referenceInputObjects*21 + #self.referenceOutputObjects*21 + 68 + 55)
+		for i=1,#self.referenceInputObjects do
+			maxWidth = math.max(maxWidth, 50 + self.referenceInputObjects[i].label.width + self.referenceInputObjects[i].editBox.width)
+		end
+		for i=1,#self.referenceOutputObjects do
+			maxWidth = math.max(maxWidth, 50 + self.referenceOutputObjects[i].label.width + self.referenceOutputObjects[i].editBox.width)
+		end
+	end
 	maxHeight = math.max(maxHeight, #p * 20 + 50)
 	if(self.nodeWindow and self.nodeWindow.parent and not self.nodeWindow.parent.zoomedOut) then
 		self.nodeWindow:SetPos(nil, nil, maxWidth, maxHeight)
