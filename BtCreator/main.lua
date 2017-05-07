@@ -2,6 +2,7 @@ local Chili, Screen0
 
 local BtEvaluator
 
+local rootPanel
 local btCreatorWindow
 local nodePoolLabel
 local nodePoolPanel
@@ -71,14 +72,8 @@ local moveWindowFromMouse
 local moveCanvasImg
 
 function BtCreator.show()
-	if(not btCreatorWindow.visible) then
-		btCreatorWindow:Show()
-	end
-	if(not nodePoolPanel.visible) then
-		nodePoolPanel:Show()
-	end
-	if(not buttonPanel.visible) then
-		buttonPanel:Show()
+	if(not rootPanel.visible) then
+		rootPanel:Show()
 	end
 end
 
@@ -88,6 +83,7 @@ function BtCreator.showTree(tree, instanceId)
 	treeInstanceId = instanceId
 end
 
+
 function BtCreator.showReferencedTree(treeName, _referenceNodeID)
 	-- loadTree() nillates the referenceNodeID so set it after loadTree() call
 	loadTree(treeName)
@@ -95,14 +91,8 @@ function BtCreator.showReferencedTree(treeName, _referenceNodeID)
 end
 
 function BtCreator.showNewTree()
-	if(not btCreatorWindow.visible) then
-		btCreatorWindow:Show()
-	end
-	if(not nodePoolPanel.visible) then
-		nodePoolPanel:Show()
-	end
-	if(not buttonPanel.visible) then
-		buttonPanel:Show()
+	if(not rootPanel.visible) then
+		rootPanel:Show()
 	end
 	listenerClickOnNewTree()
 end
@@ -114,14 +104,8 @@ function BtCreator.hide()
 	if(blackboardWindowState and blackboardWindowState.visible) then
 		blackboardWindowState:Hide()
 	end
-	if(btCreatorWindow.visible) then
-		btCreatorWindow:Hide()
-	end
-	if(nodePoolLabel.visible) then
-		nodePoolPanel:Hide()
-	end
-	if(buttonPanel.visible) then
-		buttonPanel:Hide()
+	if(rootPanel.visible) then
+		rootPanel:Hide()
 	end
 end
 
@@ -884,6 +868,13 @@ function widget:Initialize()
 	-- Get ready to use Chili
 	Chili = WG.ChiliClone
 	Screen0 = Chili.Screen0
+	rootPanel = Chili.Control:New{
+		parent = Screen0,
+		y = '56%',
+		x = 0,
+		width  = Screen0.width,
+		height = '41.5%',
+	}
 
 	BtEvaluator = sanitizer:Import(WG.BtEvaluator)
 
@@ -897,8 +888,8 @@ function widget:Initialize()
 
 	BtEvaluator.requestNodeDefinitions()
 	nodePoolPanel = Chili.ScrollPanel:New{
-		parent = Screen0,
-		y = '56%',
+		parent = rootPanel,
+		y = 30,
 		x = 25,
 		width  = 125,
 		minWidth = 115,
@@ -925,11 +916,11 @@ function widget:Initialize()
 	
 	 -- Create the window
 	btCreatorWindow = Chili.Window:New{
-		parent = Screen0,
+		parent = rootPanel,
 		x = nodePoolPanel.width + 22,
-		y = '56%',
+		y = 30,
 		width  = Screen0.width - nodePoolPanel.width - 25,
-		height = '42%',
+		height = rootPanel.height - 30,
 		padding = {10,10,10,10},
 		draggable=false,
 		resizable=true,
@@ -951,9 +942,9 @@ function widget:Initialize()
 	addNodeToCanvas( createRoot() )
 
 	buttonPanel = Chili.Control:New{
-		parent = Screen0,
+		parent = rootPanel,
 		x = btCreatorWindow.x,
-		y = btCreatorWindow.y - 30,
+		y = 0,
 		width = btCreatorWindow.width,
 		height = 40,
 	}
@@ -1150,8 +1141,8 @@ function widget:Initialize()
 				if(moveWindow) then
 					local diffx = x - moveWindowFromMouse[1]
 					local diffy = y - moveWindowFromMouse[2]
-					btCreatorWindow:SetPos(btCreatorWindow.x + diffx, btCreatorWindow.y + diffy)
-					btCreatorWindow:Invalidate()
+					rootPanel:SetPos(rootPanel.x + diffx, rootPanel.y + diffy)
+					rootPanel:Invalidate()
 				end
 			end),
 		},
@@ -1192,6 +1183,9 @@ function widget:Shutdown()
 	clearCanvas()
 	if(btCreatorWindow) then
 		btCreatorWindow:Dispose()
+	end
+	if rootPanel then
+		rootPanel:Dispose()
 	end
 	Dependency.clear(Dependency.BtCreator)
 	Logger.log("reloading", "BtCreator widget:shutdown end. ")
