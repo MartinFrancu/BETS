@@ -36,12 +36,12 @@ WG.BtConnectionLine = WG.BtConnectionLine or (function()
 			
 			computeCoordinates = function(connectionOut, connectionIn)
 				local transparentBorderWidth = 5
-				local lineOutx = connectionOut.parent.x + connectionOut.x + 2
+				local lineOutx = connectionOut.parent.x + connectionOut.x + 12
 				local lineOuty = connectionOut.parent.y + connectionOut.y
 				
 				-- FIRST SEGMENT STATIC EDGE
 				local STATIC_FIRST_SEGEMENT_LENGTH = 25
-				local fullXDistance = math.ceil(math.abs(connectionIn.parent.x - connectionOut.parent.x - connectionOut.x))
+				local fullXDistance = math.ceil(math.abs(connectionIn.parent.x - connectionOut.parent.x - connectionOut.x - 12))
 				local bigDistance = fullXDistance - STATIC_FIRST_SEGEMENT_LENGTH
 				local linxOutLength = STATIC_FIRST_SEGEMENT_LENGTH + 1
 				local linxInLength = bigDistance			
@@ -288,16 +288,20 @@ WG.BtConnectionLine = WG.BtConnectionLine or (function()
 				for i=2,4 do
 					connectionLines[lineIndex][i].borderColor = {1,0.6,0.2,0.8}
 					connectionLines[lineIndex][i].borderColor2 = {1,0.6,0.2,0.8}
+					connectionLines[lineIndex][i]:BringToFront()
 					connectionLines[lineIndex][i]:Invalidate()
 					connectionLines[lineIndex][i]:RequestUpdate()
 				end
 				local arrow = connectionLines[lineIndex][5]
+				arrow:BringToFront()
 				if(arrow.flip) then
 					arrow.file = arrowOrangeFlipped
 				else
 					arrow.file = arrowOrange
 				end
 				arrow:Invalidate()
+				connectionLines[lineIndex][1]:BringToFront()
+				connectionLines[lineIndex][6]:BringToFront()
 				return self
 			end,
 			
