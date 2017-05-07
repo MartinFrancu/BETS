@@ -831,23 +831,30 @@ local function ctrlSelectNodes(nodeWindow, recursive)
 end
 
 local lastClicked = Spring.GetTimer()
+local lastClickedName
 
 function listenerOnMouseDownMoveNode(self, x ,y, button)
+	local treeNode = self.treeNode
 	local child = self:HitTest(x, y)
 	local childName = child.name
 	-- Check for any child component which reacts on mouse down event
 	if(childName ~= self.name and 
 		(#child.OnMouseDown > 0 or #child.OnClick > 0 or child.MouseDown ~= nil) and
-		childName ~= self.treeNode.nameEditBox.name
+		childName ~= treeNode.nameEditBox.name
 		)then
 		return
 	end
-	self.treeNode:UpdateParameterValues()
-	-- Check for double click
 	local now = Spring.GetTimer()
-	if(Spring.DiffTimers(now, lastClicked) < 0.5 and childName == self.treeNode.nameEditBox.name) then
-		return
+	if(childName == treeNode.nameEditBox.name) then
+		if(lastClickedName and Spring.DiffTimers(now, lastClickedName) > 0.3) then
+			return
+		else
+			lastClickedName = Spring.GetTimer()
+		end
+	else
+		lastClickedName = nil
 	end
+	treeNode:UpdateParameterValues()
 	local selectSubtree = false
 	if(Spring.DiffTimers(now, lastClicked) < 0.3) then
 		lastClicked = now
@@ -855,13 +862,13 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 	end
 	lastClicked = now
 	local _, ctrl, _, shift = Spring.GetModKeyState()
-	if((not selectSubtree) and (not WG.selectedNodes[self.treeNode.id]) and (not ctrl) and (not shift)) then
+	if((not selectSubtree) and (not WG.selectedNodes[treeNode.id]) and (not ctrl) and (not shift)) then
 		WG.clearSelection()
 		addNodeToSelection(self)
 	end
-	if((not selectSubtree) and WG.selectedNodes[self.treeNode.id] and (not ctrl) and (not shift)) then
+	if((not selectSubtree) and WG.selectedNodes[treeNode.id] and (not ctrl) and (not shift)) then
 		movingNodes = true
-		movingNodeID = self.treeNode.id
+		movingNodeID = treeNode.id
 		previousPosition.x = self.x
 		previousPosition.y = self.y
 		self:StartDragging(x, y)
