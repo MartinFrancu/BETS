@@ -289,9 +289,6 @@ local function saveTree(treeName)
 end 
 
 function saveAsTreeDialogCallback(project, tree)
-
-	BtCreator.show()
-	
 	if project and tree then 
 		-- we have treetree name
 		-- now we need to check if roles are plausible:
@@ -315,7 +312,6 @@ function saveAsTreeDialogCallback(project, tree)
 			-- we need to get user to define roles first:
 			saveTreeOncePossible = true
 			roleManager.showRolesManagement(Screen0, resultTree, rolesOfCurrentTree, self, afterRoleManagement)
-			BtCreator.hide()
 		end
 			
 	end
@@ -334,16 +330,26 @@ function listenerClickOnSaveTree()
 	end
 end
 
+local function onModalDialog(show)
+	rootPanel.disableChildrenHitTest = show
+end
+
+local function onHidingDialog(show)
+	if show then
+		BtCreator.hide()
+	else
+		BtCreator.show()
+	end
+end
+
 function listenerClickOnSaveAsTree()
-	BtCreator.hide()
 	local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
-	ProjectDialog.showDialogWindow(Screen0, treeContentType, 
+	ProjectDialog.showDialogWindow(onModalDialog, treeContentType, 
 		ProjectDialog.SAVE_DIALOG_FLAG, saveAsTreeDialogCallback, "Save tree as:")
 end
 
 afterRoleManagement = function (self, rolesData)
 	rolesOfCurrentTree = rolesData
-	BtCreator.show()
 	if(saveTreeOncePossible) then
 		listenerClickOnSaveTree()
 		saveTreeOncePossible = false 
@@ -406,16 +412,12 @@ function newTreeDialogCallback(projectName,treeName)
 		treeNameLabel:SetCaption(projectName .. "." .. treeName)
 		rolesOfCurrentTree = {}
 		clearCanvas()
-		BtCreator.show()
-	else
-		BtCreator.show()
 	end
 end
 
 function listenerClickOnNewTree()
-	BtCreator.hide()
 	local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
-	ProjectDialog.showDialogWindow(Screen0, treeContentType, 
+	ProjectDialog.showDialogWindow(onHidingDialog, treeContentType, 
 			ProjectDialog.NEW_DIALOG_FLAG, newTreeDialogCallback, "Name the new tree:")	
 end
 
@@ -447,9 +449,8 @@ function loadTreeDialogCallback(project, tree)
 end
 
 function listenerClickOnLoadTree(self)
-	BtCreator.hide()
 	local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
-	ProjectDialog.showDialogWindow(Screen0, treeContentType, ProjectDialog.LOAD_DIALOG_FLAG, 
+	ProjectDialog.showDialogWindow(onHidingDialog, treeContentType, ProjectDialog.LOAD_DIALOG_FLAG, 
 		loadTreeDialogCallback, "Select tree to be loaded:")
 end
 

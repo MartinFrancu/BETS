@@ -26,7 +26,7 @@ return Utils:Assign("ProjectDialog", function()
 	ProjectDialog.LOAD_DIALOG_FLAG = "LOAD"
 	ProjectDialog.SAVE_DIALOG_FLAG = "SAVE"
 	ProjectDialog.NEW_DIALOG_FLAG = "NEW"
-	
+		
 	local dialogWindow
 	
 	local function onSelectItem(self)
@@ -83,10 +83,12 @@ return Utils:Assign("ProjectDialog", function()
 		end
 		
 		self.callback(self.callbackObject, selectedProject, selectedItem)
+		self.showDialogHandler(false)
 	end
 	
 	local function cancelButtonListener(self)
 		self.callback(self.callbackObject)
+		self.showDialogHandler(false)
 	end
 	
 	local function hideWindowAndCall(window, ...) 
@@ -98,7 +100,7 @@ return Utils:Assign("ProjectDialog", function()
 	end
 	
 	--- This will attach corresponding chili components of save/load dialog to given parent.
-	function ProjectDialog.setUpDialog(parent, contentType, creatingEnabled, callbackObject, callbackFunction)
+	function ProjectDialog.setUpDialog(parent, contentType, creatingEnabled, callbackObject, callbackFunction, showDialogHandler)
 		-- get project manager
 		local pM =  Utils.ProjectManager
 		
@@ -183,6 +185,7 @@ return Utils:Assign("ProjectDialog", function()
 		doneButton.newItemString = NEW_ITEM_STRING
 		doneButton.newProjectEditBox = newProjectEditBox
 		doneButton.newProjectString = NEW_PROJECT_STRING
+		doneButton.showDialogHandler = showDialogHandler
 		
 		local cancelButton = Chili.Button:New{
 			parent = parent,
@@ -197,6 +200,7 @@ return Utils:Assign("ProjectDialog", function()
 		}
 		cancelButton.callback = callbackFunction
 		cancelButton.callbackObject = callbackObject
+		cancelButton.showDialogHandler = showDialogHandler
 	end
 	
 
@@ -228,7 +232,7 @@ return Utils:Assign("ProjectDialog", function()
 		
 	
 	--- This will attach corresponding chili components of new item dialog to given parent.
-	function ProjectDialog.setUpDialogNewItem(parent, contentType, callbackObject, callbackFunction)
+	function ProjectDialog.setUpDialogNewItem(parent, contentType, callbackObject, callbackFunction, showDialogHandler)
 		-- get project manager
 		
 		local firstLineY = 20
@@ -296,6 +300,7 @@ return Utils:Assign("ProjectDialog", function()
 		doneButton.newItemEditBox = newItemEditBox
 		doneButton.newProjectEditBox = newProjectEditBox
 		doneButton.newProjectString = NEW_PROJECT_STRING
+		doneButton.showDialogHandler = showDialogHandler
 		
 		local cancelButton = Chili.Button:New{
 			parent = parent,
@@ -309,12 +314,12 @@ return Utils:Assign("ProjectDialog", function()
 		}
 		cancelButton.callback = callbackFunction
 		cancelButton.callbackObject = callbackObject
+		cancelButton.showDialogHandler = showDialogHandler
 	end
 	
-	
-	function ProjectDialog.showDialogWindow(parent, contentType, dialogFlag , callbackFunction, title)
+	function ProjectDialog.showDialogWindow(parentHandler, contentType, dialogFlag , callbackFunction, title, pare)
 		local dialogWindow = Chili.Window:New{
-			parent = parent,
+			parent = Chili.Screen0,
 			x = 300,
 			y = 500,
 			width = 400,
@@ -342,15 +347,18 @@ return Utils:Assign("ProjectDialog", function()
 			width = 400,
 			skinName = 'DarkGlass',
 		}
+		
 		if(dialogFlag == ProjectDialog.LOAD_DIALOG_FLAG) then
-			ProjectDialog.setUpDialog(panel, contentType, false, dialogWindow, hideWindowAndCall)
+			ProjectDialog.setUpDialog(panel, contentType, false, dialogWindow, hideWindowAndCall, parentHandler)
 		end
 		if(dialogFlag == ProjectDialog.SAVE_DIALOG_FLAG) then
-			ProjectDialog.setUpDialog(panel, contentType, true, dialogWindow, hideWindowAndCall)
+			ProjectDialog.setUpDialog(panel, contentType, true, dialogWindow, hideWindowAndCall, parentHandler)
 		end
 		if(dialogFlag == ProjectDialog.NEW_DIALOG_FLAG) then
-			ProjectDialog.setUpDialogNewItem(panel, contentType, dialogWindow, hideWindowAndCall)
+			ProjectDialog.setUpDialogNewItem(panel, contentType, dialogWindow, hideWindowAndCall, parentHandler)
 		end
+		
+		parentHandler(true)
 	end
 	
 	return ProjectDialog
