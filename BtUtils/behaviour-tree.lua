@@ -107,7 +107,10 @@ return Utils:Assign("BehaviourTree", function()
 	-- @func f Optional, function that is to be applied to each node of the other tree before it is combined, e.g. ID changes.
 	-- @treturn Node The original root of the other tree.
 	function treePrototype:Combine(other, f)
-		other:Visit(f)
+		if(f)then
+			other:Visit(f)
+		end
+		
 		local otherRoot = other.root
 		local n = table.getn(self.additionalNodes) + 1
 		self.additionalNodes[n] = otherRoot
@@ -139,7 +142,7 @@ return Utils:Assign("BehaviourTree", function()
 		end
 		
 		for _, child in ipairs(node.children) do
-			local results = visit(child)
+			local results = visit(f, child)
 			if(results and results[1] ~= nil)then
 				return results
 			end
