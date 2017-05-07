@@ -206,7 +206,7 @@ local function setTreeCallback(window, projectName, behaviour)
 		treeName = projectName.."."..behaviour		
 		-- remove older components if any
 		disposePreviousInputOutputComponents()
-		referenceNode.addInputOutputComponents(nodeWindow,nodeWindow.paramerObjects[1].label,treeName)
+		referenceNode.addInputOutputComponents(nodeWindow,nodeWindow.treeNode.parameterObjects[1].label,treeName)
 	end
 	window:Dispose()
 	nodeWindow = nil
