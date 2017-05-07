@@ -759,7 +759,7 @@ function TreeNode:UpdateParameterValues()
 					self.referenceOutputs[k].name = name
 					self.referenceOutputs[k].value = value
 					k = k+1
-					Spring.Echo("Setting referenceOutput "..name.." to value "..value)
+					-- Spring.Echo("Setting referenceOutput "..name.." to value "..value)
 				end
 				 
 			end
@@ -774,7 +774,7 @@ function TreeNode:UpdateParameterValues()
 					self.referenceInputs[k].name = name
 					self.referenceInputs[k].value = value
 					k = k+1
-					Spring.Echo("Setting referenceInput "..name.." to value "..value)
+					-- Spring.Echo("Setting referenceInput "..name.." to value "..value)
 				end
 				 
 			end

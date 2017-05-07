@@ -1388,7 +1388,12 @@ local function loadBehaviourNode(bt, btNode)
 				end
 			end
 		elseif(k == 'referenceInputs' or k == 'referenceOutputs')then
-			params[k] = copyTable(v)
+			-- params[k] = copyTable(v)
+			for i=#v,1,-1 do
+				if(v.value == "") then
+					table.remove(v, i)
+				end
+			end
 		else
 			params[k] = v
 		end
