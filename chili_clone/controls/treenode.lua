@@ -435,12 +435,12 @@ function createNextParameterObject(obj)
 			x = 18,
 			y = result.button.y + 23,
 			caption =  tostring(param["value"] or ""),
-			tooltip = "Chosen tree to be referenced. ",
+			tooltip = "Chosen tree to be referenced, on click it will open currently selected tree in BtCreator. ",
 			autosize = true,
 		}
 		result.label.font.color = {1,1,1,0.8}
 		if(obj.draggable and result.label.caption ~= "") then
-			referenceNode.addInputOutputComponents(obj.nodeWindow, result.label.caption)
+			referenceNode.addInputOutputComponents(obj.nodeWindow, result.label, result.label.caption)
 		end
 	end
 	return result

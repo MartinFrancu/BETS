@@ -58,6 +58,9 @@ local blackboard = require("blackboard")
 
 
 local treeInstanceId
+--- When opening tree through reference node, the id of the reference node is stored here.
+--- Needs to be nilled on any other type of tree loading. 
+local referenceNodeID
 
 local moveAllNodes
 local moveFrom
@@ -83,6 +86,12 @@ function BtCreator.showTree(tree, instanceId)
 	BtCreator.show()
 	loadTree(tree)
 	treeInstanceId = instanceId
+end
+
+function BtCreator.showReferencedTree(treeName, _referenceNodeID)
+	-- loadTree() nillates the referenceNodeID so set it after loadTree() call
+	loadTree(treeName)
+	referenceNodeID = _referenceNodeID
 end
 
 function BtCreator.showNewTree()
@@ -440,6 +449,7 @@ function getBehaviourTree(treeName)
 end 
 
 function loadTree(treeName)
+	referenceNodeID = ""
 	getBehaviourTree(treeName)
 	treeNameLabel:SetCaption(treeName)
 end
@@ -526,11 +536,17 @@ local function listenerClickOnContinue()
 	end
 end
 
+--- Called after every tick from BtEvaluator, it changes node background/border colors according to the
+--- node states. When referenced tree is opened, it has ids in the form 
+--- [referenceNodeID]-[internalNodeIDs].
 local function updateStatesMessage(params)
 	local states = params.states
 	local shouldPause
 	for id, node in pairs(WG.nodeList) do
 		local color = DEFAULT_COLOR;
+		if(referenceNodeID ~= '') then
+			id = referenceNodeID..'-'..id
+		end
 		-- set breakpoint color to all breakpoints, independent from current state
 		if(breakpoints[id]) then  --and ((states[id] and states[id]:upper() ~= "STOPPED") or states[id]==nil)) then
 			 color = BREAKPOINT_COLOR
