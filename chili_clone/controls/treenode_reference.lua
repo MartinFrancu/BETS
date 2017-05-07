@@ -122,7 +122,8 @@ function referenceNode.addInputOutputComponents(nodeWindow,treeNameLabel, treeNa
 			end
 		)
 	}
-	treeNameLabel.OnMouseDown = {
+	treeNameLabel.OnMouseDown = { function(self) return self end }
+	treeNameLabel.OnMouseUp = {
 		sanitizer:AsHandler( 
 			function(self)
 				local referenceID = nodeWindow.treeNode.id
@@ -209,6 +210,7 @@ local function setTreeCallback(window, projectName, behaviour)
 		referenceNode.addInputOutputComponents(nodeWindow,nodeWindow.treeNode.parameterObjects[1].label,treeName)
 	end
 	window:Dispose()
+	nodeWindow.treeNode:UpdateDimensions()
 	nodeWindow = nil
 end
 
