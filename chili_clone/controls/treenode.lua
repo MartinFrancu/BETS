@@ -750,23 +750,33 @@ function TreeNode:UpdateParameterValues()
 	if(self.isReferenceNode) then
 		-- only if a referenced tree was set
 		if(self.referenceOutputObjects) then
+			local k = 1
 			for i=1,#self.referenceOutputObjects do
 				local name = self.referenceOutputObjects[i].label.caption
 				local value = self.referenceOutputObjects[i].editBox.text
-				self.referenceOutputs[i] = {}
-				self.referenceOutputs[i].name = name
-				self.referenceOutputs[i].value = value
-				-- Spring.Echo("Setting referenceOutput "..name.." to value "..value)
+				if(value ~= "") then
+					self.referenceOutputs[k] = {}
+					self.referenceOutputs[k].name = name
+					self.referenceOutputs[k].value = value
+					k = k+1
+					Spring.Echo("Setting referenceOutput "..name.." to value "..value)
+				end
+				 
 			end
 		end
 		if(self.referenceInputObjects) then
+			local k = 1
 			for i=1,#self.referenceInputObjects do
 				local name = self.referenceInputObjects[i].label.caption
 				local value = self.referenceInputObjects[i].editBox.text
-				self.referenceInputs[i] = {}
-				self.referenceInputs[i].name = name
-				self.referenceInputs[i].value = value
-				-- Spring.Echo("Setting referenceInput "..name.." to value "..value)
+				if(value ~= "") then
+					self.referenceInputs[k] = {}
+					self.referenceInputs[k].name = name
+					self.referenceInputs[k].value = value
+					k = k+1
+					Spring.Echo("Setting referenceInput "..name.." to value "..value)
+				end
+				 
 			end
 		end
 	end

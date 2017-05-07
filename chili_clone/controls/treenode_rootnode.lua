@@ -83,7 +83,7 @@ local function listenerAddOutput(nodeWindow)
 	local i = #outputs
 	local editBox = EditBox:New{
 		parent = nodeWindow.parent,
-		text = "outputVariable"..i,
+		text = "output"..i,
 		defaultWidth = '40%',
 		minWidth = 60,
 		x = 18,
