@@ -415,6 +415,7 @@ function listenerClickOnShowSensors()
 end
 
 function newTreeDialogCallback(projectName,treeName)
+	BtCreator.show()
 	if(projectName and treeName) then -- user selected 
 		treeNameLabel:SetCaption(projectName .. "." .. treeName)
 		rolesOfCurrentTree = {}

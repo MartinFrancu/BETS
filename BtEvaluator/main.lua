@@ -8,10 +8,7 @@ local CustomEnvironment = Utils.CustomEnvironment
 local Debug = Utils.Debug
 local Logger = Debug.Logger
 
-local SensorManager = require("SensorManager")
-
 local getGameFrame = Spring.GetGameFrame;
-
 
 -- ==== tree instance data in Lua ====
 local ALL_UNITS = 0;
@@ -20,6 +17,7 @@ local parentReference = {}
 local treeInstances = {}
 WG.unitToRoleMap = unitToRoleMap
 
+local globalBlackboard = {}
 local function makeInstance(instanceId, project, roles)
 	local instance = {
 		id = instanceId,
@@ -27,6 +25,7 @@ local function makeInstance(instanceId, project, roles)
 		inputs = {},
 		roles = {},
 		nodes = {},
+		instanceBlackboard = {},
 		subblackboards = {},
 		activeNodes = {},
 	}
@@ -107,6 +106,17 @@ local function getUnitsActiveCommands(unitId)
 	end
 	return t
 end
+
+
+CustomEnvironment.add("units", { group = true }, function(p)
+	return p.group
+end)
+CustomEnvironment.add("bb", { group = true }, function(p)
+	return (p.group[parentReference] or {}).instanceBlackboard
+end)
+CustomEnvironment.add("global", nil, function(p)
+	return globalBlackboard
+end)
 
 -- ==== BtEvaluator interface definitions ====
 local BtEvaluator = Sentry:New()
@@ -372,13 +382,17 @@ function BtEvaluator.getInstances()
 	return result
 end
 
+local SensorManager = require("SensorManager")
+BtEvaluator.SensorManager = SensorManager
+
+
 function BtEvaluator.reloadCaches()
 	SensorManager.reload()
 	BtEvaluator.scripts = {}
 end
 
 
-BtEvaluator.SensorManager = SensorManager
+
 
 
 -- ==== luaCommand handling ====
@@ -733,7 +747,7 @@ local handlers = {
 		local instanceId = params.id
 		local instance = treeInstances[instanceId]
 		if(instance)then
-			params.blackboard = instance.blackboard
+			params.blackboard = setmetatable({ bb = instance.instanceBlackboard, global = globalBlackboard }, { __index = instance.blackboard })
 		end
 		return BtEvaluator.OnUpdateStates:Invoke(params)
 	end,

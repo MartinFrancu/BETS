@@ -131,6 +131,8 @@ function Command:loadMethods(...)
 				project = project,
 			})
 			environment.Sensors = env.Sensors
+			environment.global = env.global
+			environment.bb = env.bb
 			return run(self, unitIDs, ...)
 		end
 	end

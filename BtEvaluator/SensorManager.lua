@@ -16,9 +16,7 @@ local sensorContentType = ProjectManager.makeRegularContentType("Sensors", "lua"
 local sensorEnvironment
 local function prepareSensorEnvironment()
 	sensorEnvironment = CustomEnvironment:New({
-		Global = globalData,
-	}, {
-		units = function(p) return p.group end,
+		GlobalSensorData = globalData,
 	})
 end
 prepareSensorEnvironment()
