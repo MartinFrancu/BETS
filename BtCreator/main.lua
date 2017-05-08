@@ -267,7 +267,7 @@ local function saveTree(treeName)
 	local outputs = WG.nodeList[rootID].outputs
 	if(outputs ~= nil) then
 		for i=1,#outputs do
-			table.insert(protoTree.outputs, {["name"] = outputs[i][1].text,})
+			table.insert(protoTree.outputs, {["name"] = outputs[i].editBox.text,})
 		end
 	end
 	Logger.assert("save-and-load", protoTree:Save(treeName))
