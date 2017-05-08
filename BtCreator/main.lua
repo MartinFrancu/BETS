@@ -842,13 +842,8 @@ end
 function widget:IsAbove(x,y)
 	y = Screen0.height - y
 	if (btCreatorWindow.visible and
-			x > btCreatorWindow.x and x < btCreatorWindow.x + btCreatorWindow.width and 
-			y > btCreatorWindow.y and y < btCreatorWindow.y + btCreatorWindow.height) then
-			return true
-	end
-	if (nodePoolPanel.visible and 
-			x > nodePoolPanel.x and x < nodePoolPanel.x + nodePoolPanel.width and 
-			y > nodePoolPanel.y and y < nodePoolPanel.y + nodePoolPanel.height) then
+			x > rootPanel.x and x < rootPanel.x + rootPanel.width and 
+			y > rootPanel.y and y < rootPanel.y + rootPanel.height) then
 			return true
 	end
 	return false
