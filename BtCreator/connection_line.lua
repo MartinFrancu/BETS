@@ -47,10 +47,10 @@ WG.BtConnectionLine = WG.BtConnectionLine or (function()
 				local linxInLength = bigDistance			
 				
 				local lineVx = lineOutx + STATIC_FIRST_SEGEMENT_LENGTH - transparentBorderWidth
-				local lineInx = connectionIn.parent.x - bigDistance + transparentBorderWidth - 2
+				local lineInx = connectionIn.parent.x - bigDistance + transparentBorderWidth - 4
 				local lineIny = connectionIn.parent.y + connectionIn.y
 				
-				if (lineOutx + STATIC_FIRST_SEGEMENT_LENGTH > connectionIn.parent.x) then
+				if (lineVx + transparentBorderWidth > connectionIn.parent.x - transparentBorderWidth) then
 					lineInx = connectionIn.parent.x - STATIC_FIRST_SEGEMENT_LENGTH
 					linxInLength = STATIC_FIRST_SEGEMENT_LENGTH + 1
 					lineVx = lineInx - transparentBorderWidth
