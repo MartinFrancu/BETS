@@ -231,7 +231,8 @@ function referenceNode.listenerChooseTree(button)
 		resizable = true,
 		skinName = 'DarkGlass',
 	}
-	ProjectDialog.setUpDialog(dialogWindow, treeContentType, false, dialogWindow, setTreeCallback)
+	ProjectDialog.setUpDialog(dialogWindow, treeContentType, false, dialogWindow, setTreeCallback, WG.BtCreator.Get().setDisableChildrenHitTest)
+	WG.BtCreator.Get().setDisableChildrenHitTest(true)
 	return true
 end
 

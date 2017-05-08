@@ -100,6 +100,10 @@ function BtCreator.showNewTree()
 	listenerClickOnNewTree()
 end
 
+function BtCreator.setDisableChildrenHitTest(bool)
+	rootPanel.disableChildrenHitTest = bool
+end
+
 function BtCreator.hide()
 	if(sensorsWindow and sensorsWindow.visible) then
 		sensorsWindow:Hide()
@@ -333,9 +337,9 @@ function listenerClickOnSaveTree()
 	end
 end
 
-local function onModalDialog(show)
-	rootPanel.disableChildrenHitTest = show
-end
+-- local function onModalDialog(show)
+	-- rootPanel.disableChildrenHitTest = show
+-- end
 
 local function onHidingDialog(show)
 	if show then
@@ -347,7 +351,7 @@ end
 
 function listenerClickOnSaveAsTree()
 	local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
-	ProjectDialog.showDialogWindow(onModalDialog, treeContentType, 
+	ProjectDialog.showDialogWindow(BtCreator.setDisableChildrenHitTest, treeContentType, 
 		ProjectDialog.SAVE_DIALOG_FLAG, saveAsTreeDialogCallback, "Save tree as:")
 end
 
