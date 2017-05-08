@@ -71,6 +71,9 @@ local moveWindowFrom
 local moveWindowFromMouse
 local moveCanvasImg
 
+local rootDefaultX = 5
+local rootDefaultY = 60
+
 function BtCreator.show()
 	if(not rootPanel.visible) then
 		rootPanel:Show()
@@ -253,7 +256,7 @@ local function saveTree(treeName)
 	protoTree.inputs = {}
 	protoTree.outputs = {}
 	local r = WG.nodeList[rootID]
-	protoTree.additionalParameters = { root = { x = r.x, y = r.y, width = r.width, height = r.height } }
+	protoTree.additionalParameters = { root = { width = r.width, height = r.height } }
 
 	local inputs = WG.nodeList[rootID].inputs
 	if(inputs ~= nil) then
@@ -809,8 +812,6 @@ function zoomCanvasOut(self, x, y)
 end
 
 function listenerMouseWheelScroll(self, x, y, zoomIn)
-	-- local zoomedOut = false
-	-- if(zoomIn) then
 	if(zoomIn and self.zoomedOut) then
 		zoomCanvasIn(self, x, y)
 	elseif(not zoomIn and not self.zoomedOut) then
@@ -819,11 +820,12 @@ function listenerMouseWheelScroll(self, x, y, zoomIn)
 	return self
 end
 
+		
 function createRoot()
 	return Chili.TreeNode:New{
 		parent = btCreatorWindow,
 		nodeType = "Root",
-		y = btCreatorWindow.height*0.5 - 40,
+		y = btCreatorWindow.y / 2 - 40,
 		x = 5,
 		width = 180,
 		height = 80,
@@ -943,7 +945,7 @@ function widget:Initialize()
 		nodePoolItem.new(treenode, nodePoolPanel)
 	end
 
-	addNodeToCanvas( createRoot() )
+	addNodeToCanvas(createRoot())
 
 	buttonPanel = Chili.Control:New{
 		parent = rootPanel,
@@ -1243,15 +1245,19 @@ function formBehaviourTree()
 
 	local bt = BehaviourTree:New()
 	local nodeMap = {}
+	local root = WG.nodeList[rootID]
+	
 	for id,node in pairs(WG.nodeList) do
 		if(node.id ~= rootID)then
 			local params = {}
 			
-			-- TODO: OH: change serialized x,y to be relative to the position of the root node (root node then ends up being on 0,0)
-			
 			for _, key in ipairs(fieldsToSerialize) do
 				if(node[key]) then
-					if(type(node[key]=="table")) then
+					if key == 'x' or key == 'y' then
+						Logger.log("save-and-load",  key, " - ", node[key], "; node - ", node[key],"; root - ", root[key])
+						params[key] = node[key] - root[key]
+						Logger.log("save-and-load", "res - ", params[key])
+					elseif(type(node[key]=="table")) then
 						params[key] = copyTable(node[key])
 					else
 						params[key] = node[key]
@@ -1469,18 +1475,17 @@ function loadBehaviourTree(bt)
 	
 	-- load root node position and size
 	local serRoot = (bt.additionalParameters or { root = nil }).root
+	local root = WG.nodeList[rootID]
 	if serRoot then
-		local root = WG.nodeList[rootID]
-		local diffx = root.x - serRoot.x
-		local diffy = root.y - serRoot.y
-		root.x = serRoot.x
-		root.y = serRoot.y
+		root.x = serRoot.x or 0
+		root.y = serRoot.y or 0
 		root.width = serRoot.width
 		root.height = serRoot.height
 		root.nodeWindow:SetPos(root.x, root.y, root.width, root.height)
 		root.nodeWindow:Invalidate()
-		moveCanvas(diffx, diffy)
 	end
+	
+	moveCanvas(5, btCreatorWindow.height / 2 - root.height / 2)
 end
 
 
