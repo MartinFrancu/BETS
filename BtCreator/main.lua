@@ -378,7 +378,7 @@ function listenerClickOnShowSensors()
 		parent = Screen0,
 		name = "SensorsWindow",
 		x = buttonPanel.x + showSensorsButton.x - 10,
-		y = buttonPanel.y + showSensorsButton.y - (#sensors*20 + 60) + 5,
+		y = rootPanel.y + buttonPanel.y + showSensorsButton.y - (#sensors*20 + 60) + 5,
 		width = minWidth,
 		height = #sensors*20 + 60,
 		skinName='DarkGlass',
@@ -1033,7 +1033,7 @@ function widget:Initialize()
 			function()
 				blackboard.setWindowPosition(
 					buttonPanel.x + showSensorsButton.x + showSensorsButton.width - 5 - 130,
-					buttonPanel.y - (60+10*20) + 5
+					rootPanel.y - (60+10*20) + 5
 				)
 				blackboard.listenerClickOnShowBlackboard()
 			end )
