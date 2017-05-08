@@ -1,6 +1,11 @@
 {
 	"additionalNodes": [],
-	"defaultRole": "Default role",
+	"additionalParameters": {
+		"root": {
+			"height": 128,
+			"width": 216
+		}
+	},
 	"inputs": [ {
 		"command": "BETS_POSITION",
 		"name": "pos1"
@@ -8,24 +13,28 @@
 		"command": "BETS_POSITION",
 		"name": "pos2"
 	} ],
+	"outputs": [],
 	"properties": {
 		"4fJhWE0au3Cj9V5wF0WTk8WyRfufTxa9": {
 			"height": 90,
-			"width": 152.400009,
-			"x": 485.5,
-			"y": 77
+			"title": "Common.move",
+			"width": 176,
+			"x": 480.5,
+			"y": -116
 		},
 		"PhVzZ4N4vehUHFfZEqovKYQUnpagwAM2": {
-			"height": 50,
-			"width": 160,
-			"x": 240,
-			"y": 117
+			"height": 54,
+			"title": "sequence",
+			"width": 183,
+			"x": 235,
+			"y": -76
 		},
 		"QbA1BnFYVVpCff9JHl01i77aeWTH4K4q": {
 			"height": 90,
-			"width": 152.400009,
-			"x": 486.5,
-			"y": 190
+			"title": "Common.move",
+			"width": 176,
+			"x": 481.5,
+			"y": -3
 		}
 	},
 	"roles": [ {

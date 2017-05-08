@@ -1,16 +1,23 @@
 {
 	"additionalNodes": [],
-	"defaultRole": "Default role",
+	"additionalParameters": {
+		"root": {
+			"height": 108,
+			"width": 216
+		}
+	},
 	"inputs": [ {
 		"command": "BETS_POSITION",
 		"name": "moveTo"
 	} ],
+	"outputs": [],
 	"properties": {
 		"yykifcvKSzNXd8dc23648VrhONkTvdy2": {
 			"height": 90,
-			"width": 125.214294,
-			"x": 431,
-			"y": 218
+			"title": "Common.move",
+			"width": 158,
+			"x": 426,
+			"y": 62
 		}
 	},
 	"roles": [ {

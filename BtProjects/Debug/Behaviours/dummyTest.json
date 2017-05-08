@@ -3,9 +3,7 @@
 	"additionalParameters": {
 		"root": {
 			"height": 170,
-			"width": 216,
-			"x": 5,
-			"y": 156
+			"width": 216
 		}
 	},
 	"inputs": [ {
@@ -20,36 +18,36 @@
 			"height": 74,
 			"title": "Common.luaecho",
 			"width": 245,
-			"x": 445.142883,
-			"y": 53.5
+			"x": 440.142883,
+			"y": -102.5
 		},
 		"8TU6gwWgFoHWqOcOKQvt1wDQ20Sgz7G1": {
 			"height": 59,
 			"title": "sequence",
 			"width": 185,
-			"x": 250.750031,
-			"y": 160.5
+			"x": 245.750031,
+			"y": 4.5
 		},
 		"ATabOMetaI45nhmLU0VtqYXZR81L2PJl": {
 			"height": 54,
 			"title": "Debug.dummy",
 			"width": 159,
-			"x": 464,
-			"y": 209.5
+			"x": 459,
+			"y": 53.5
 		},
 		"EQAaU0VEpEIIOF2CLt5O2C4yxVpEEEL2": {
 			"height": 92,
 			"title": "Common.store",
 			"width": 225,
-			"x": 459.428589,
-			"y": 268
+			"x": 454.428589,
+			"y": 112
 		},
 		"M0keGjGIWilBWcjGDCz34WaybgmXASAI": {
 			"height": 74,
 			"title": "Common.luaecho",
 			"width": 361,
-			"x": 453.142883,
-			"y": 128
+			"x": 448.142883,
+			"y": -28
 		}
 	},
 	"roles": [ {

@@ -1,6 +1,11 @@
 {
 	"additionalNodes": [],
-	"defaultRole": "Default role",
+	"additionalParameters": {
+		"root": {
+			"height": 148,
+			"width": 216
+		}
+	},
 	"inputs": [ {
 		"command": "BETS_POSITION",
 		"name": "input1"
@@ -11,30 +16,35 @@
 		"command": "BETS_AREA",
 		"name": "input3"
 	} ],
+	"outputs": [],
 	"properties": {
 		"SHPfjg6JsJT9RMGYHkPnCDoZijfGuEdt": {
 			"height": 60,
-			"width": 110,
-			"x": 249.499985,
-			"y": 123
+			"title": "sequence",
+			"width": 143,
+			"x": 244.499985,
+			"y": -70
 		},
 		"nBQuzoQaoDP4FTSxuWGzIbKmqMR8DbIZ": {
-			"height": 90,
-			"width": 141.000031,
-			"x": 369.5,
-			"y": 66
+			"height": 92,
+			"title": "Common.randomVector",
+			"width": 213,
+			"x": 364.5,
+			"y": -127
 		},
 		"vcLWOsXXlUOGVkS7XH4zS7lFHelFTHc0": {
 			"height": 90,
-			"width": 113,
-			"x": 399.5,
-			"y": 160
+			"title": "Common.move",
+			"width": 158,
+			"x": 394.5,
+			"y": -33
 		},
 		"yRVLAarGZy7eoSBdzzL6o0608BbqmjDm": {
 			"height": 90,
-			"width": 113,
-			"x": 390.5,
-			"y": 265
+			"title": "Common.move",
+			"width": 158,
+			"x": 385.5,
+			"y": 72
 		}
 	},
 	"roles": [ {
