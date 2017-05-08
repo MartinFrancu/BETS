@@ -158,7 +158,7 @@ skin.scrollpanel = {
   BorderTileImage = ":cl:panel2_border.png",
   bordertiles = {14,14,14,14},
 
-  BackgroundTileImage = ":cl:panel2_bg.png",
+  BackgroundTileImage = ":cl:panel2_bg - BETS.png",
   bkgndtiles = {14,14,14,14},
 
   TileImage = ":cl:tech_scrollbar.png",

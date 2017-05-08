@@ -736,7 +736,7 @@ end
 
 function listenerOnResizeBtCreator(self)
 	if(nodePoolPanel) then
-		nodePoolPanel:SetPos(self.x - nodePoolPanel.width, self.y, nil, self.height)
+		nodePoolPanel:SetPos(self.x - nodePoolPanel.width, self.y, nil, self.height - 10)
 	end
 	if(buttonPanel) then
 		buttonPanel:SetPos(self.x, self.y - 30, self.width)
@@ -901,7 +901,10 @@ function widget:Initialize()
 		width  = 125,
 		minWidth = 115,
 		height = '41.5%',
-		skinName='DarkGlass',
+		borderColor = {0.3,0.3,0.3,1},
+		borderColor2 = {0.3,0.3,0.3,1},
+		backgroundColor = {0,0,0,1},
+		skinName='Robocracy',
 		tooltip = "The Node Pool \nDrag&drop individual nodes from Node Pool onto Canvas and start creating a behaviour. ",
 	}
 	nodePoolLabel = Chili.Label:New{
