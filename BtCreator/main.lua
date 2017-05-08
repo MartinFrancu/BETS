@@ -821,12 +821,18 @@ function listenerMouseWheelScroll(self, x, y, zoomIn)
 end
 
 		
-function createRoot()
+function createRoot(center)
+	local rootX, rootY = 0, 0
+	if center then
+		rootX = 5
+		rootY = btCreatorWindow.height / 2 - 40
+	end
+	
 	return Chili.TreeNode:New{
 		parent = btCreatorWindow,
 		nodeType = "Root",
-		y = btCreatorWindow.y / 2 - 40,
-		x = 5,
+		y = rootY,
+		x = rootX,
 		width = 180,
 		height = 80,
 		draggable = true,
@@ -940,7 +946,7 @@ function widget:Initialize()
 		nodePoolItem.new(treenode, nodePoolPanel)
 	end
 
-	addNodeToCanvas(createRoot())
+	addNodeToCanvas(createRoot(true))
 
 	buttonPanel = Chili.Control:New{
 		parent = rootPanel,
@@ -1249,9 +1255,7 @@ function formBehaviourTree()
 			for _, key in ipairs(fieldsToSerialize) do
 				if(node[key]) then
 					if key == 'x' or key == 'y' then
-						Logger.log("save-and-load",  key, " - ", node[key], "; node - ", node[key],"; root - ", root[key])
 						params[key] = node[key] - root[key]
-						Logger.log("save-and-load", "res - ", params[key])
 					elseif(type(node[key]=="table")) then
 						params[key] = copyTable(node[key])
 					else
@@ -1312,7 +1316,7 @@ function clearCanvas(omitRoot)
 	WG.selectedNodes = {}
 
 	if(not omitRoot)then
-		addNodeToCanvas( createRoot() )
+		addNodeToCanvas( createRoot(true) )
 	end
 end
 
