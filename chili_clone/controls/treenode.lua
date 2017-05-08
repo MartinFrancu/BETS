@@ -212,6 +212,7 @@ function TreeNode:UpdateDimensions()
 	if(self.connectionOut) then
 		self.connectionOut:Show()
 	end
+	self.nameEditBox:UpdateLayout()
 	local nameWidth = self.nameEditBox.width + 35
 	if(self.icon) then
 		nameWidth = nameWidth + 20
@@ -227,7 +228,6 @@ function TreeNode:UpdateDimensions()
 		self.width = maxWidth
 		self.height = maxHeight
 	end
-
 	self.nodeWindow:CallListeners( self.nodeWindow.OnResize )
 end
 
