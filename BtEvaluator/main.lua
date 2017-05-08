@@ -235,10 +235,6 @@ local function locateItem(items, name)
 	return nil
 end
 function BtEvaluator.dereferenceTree(treeDefinition)
-	-- TODO: solve local contexts -- referenced tree may be from a difference project
-	-- TODO: differentiate between inputs and outputs and also other types of inputs
-	-- TODO: actually look up whether the given inputs/outputs match inputs/outputs from the referenced tree
-
 	local referencedMap = {}
 	local failure, message = treeDefinition:Visit(function(node)
 		if(node.nodeType == "reference")then
@@ -277,14 +273,17 @@ function BtEvaluator.dereferenceTree(treeDefinition)
 			end
 			-- ignore missing outputs in referenced node
 			
-			local parameters, count = {}, 0
+			local count, parameters = 1, {
+				{ name = "project", value = referenced.project }
+			}
 			for i, input in ipairs(node.referenceInputs) do
 				if(input.matchedInput)then
 					count = count + 1
 					parameters[count] = {
-						name = input.name,
+						name = "ref_" .. input.name,
 						value = {
-							type = (input.matchedInput.command ~= "Variable" and "input" or "parameter"),
+							type = "input",
+							command = (input.matchedInput.command ~= "Variable" and input.matchedInput.command or nil),
 							expression = input.value,
 						},
 					}
@@ -297,7 +296,7 @@ function BtEvaluator.dereferenceTree(treeDefinition)
 				if(matchedOutput)then
 					count = count + 1
 					parameters[count] = {
-						name = output.name,
+						name = "ref_" .. output.name,
 						value = {
 							type = "output",
 							expression = output.value,
@@ -311,9 +310,6 @@ function BtEvaluator.dereferenceTree(treeDefinition)
 			node.referenceInputs = nil
 			node.referenceOutputs = nil
 
-			
-			-- TODO: do something with referenced.project
-			
 			referencedMap[referencedName] = true
 		end
 	end)
@@ -481,6 +477,7 @@ function BtEvaluator.OnStartTree(params)
 	local blackboard = getBlackboardForInstance(params.treeId)
 	local subblackboard = instance.subblackboards[params.id]
 	local units = instance.roles[params.roleId + 1]
+	local projectSwitch = (params.project and params.project ~= "") and params.project or instance.project
 	if(not subblackboard)then
 		subblackboard = {}
 		instance.subblackboards[params.id] = subblackboard
@@ -500,7 +497,7 @@ function BtEvaluator.OnStartTree(params)
 				inputExpressions[k] = expr;
 				local success, value = pcall(expr.get)
 				if(success)then
-					if(v.type == "input" and not value)then
+					if(v.command and not value)then
 						Logger.log("subtree", "Subtree '", params.id, "@", params.treeId, "' has a nil parameter '", k, "'." )
 						return "F"
 					end
@@ -518,14 +515,15 @@ function BtEvaluator.OnStartTree(params)
 		instance.subtreeStack = stack
 	end
 	stack.length = stack.length + 1
-	stack[stack.length] = { blackboard = instance.blackboard }
+	stack[stack.length] = { blackboard = instance.blackboard, project = instance.project }
 	instance.blackboard = subblackboard
-	
+	instance.project = projectSwitch
 	return "S"
 end
 function BtEvaluator.OnEnterTree(params)
 	local instance = treeInstances[params.treeId]
 	local subblackboard = instance.subblackboards[params.id]
+	local projectSwitch = (params.project and params.project ~= "") and params.project or instance.project
 	if(not subblackboard)then
 		Logger.error("subtree", "Attempt to enter a subtree '", params.id, "@", params.treeId, "' that was not started.")
 		return "F"
@@ -537,9 +535,9 @@ function BtEvaluator.OnEnterTree(params)
 		instance.subtreeStack = stack
 	end
 	stack.length = stack.length + 1
-	stack[stack.length] = { blackboard = instance.blackboard }
+	stack[stack.length] = { blackboard = instance.blackboard, project = instance.project }
 	instance.blackboard = subblackboard
-	
+	instance.project = projectSwitch
 	return "S"
 end
 function BtEvaluator.OnExitTree(params)
@@ -559,6 +557,7 @@ function BtEvaluator.OnExitTree(params)
 	
 	local stack = instance.subtreeStack
 	instance.blackboard = stack[stack.length].blackboard
+	instance.project = stack[stack.length].project
 	stack[stack.length] = nil
 	stack.length = stack.length - 1
 end

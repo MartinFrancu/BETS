@@ -19,30 +19,37 @@
 		"4E2xqgVDS9JfVCJg2b7FdBGUMcrYCwmt": {
 			"height": 74,
 			"title": "Common.luaecho",
-			"width": 229,
+			"width": 245,
 			"x": 445.142883,
 			"y": 53.5
 		},
 		"8TU6gwWgFoHWqOcOKQvt1wDQ20Sgz7G1": {
 			"height": 59,
 			"title": "sequence",
-			"width": 135,
+			"width": 185,
 			"x": 250.750031,
 			"y": 160.5
 		},
 		"ATabOMetaI45nhmLU0VtqYXZR81L2PJl": {
 			"height": 54,
 			"title": "Debug.dummy",
-			"width": 152,
-			"x": 494,
-			"y": 149.5
+			"width": 159,
+			"x": 464,
+			"y": 209.5
 		},
 		"EQAaU0VEpEIIOF2CLt5O2C4yxVpEEEL2": {
 			"height": 92,
 			"title": "Common.store",
-			"width": 198,
-			"x": 455.428589,
-			"y": 230
+			"width": 225,
+			"x": 459.428589,
+			"y": 268
+		},
+		"M0keGjGIWilBWcjGDCz34WaybgmXASAI": {
+			"height": 74,
+			"title": "Common.luaecho",
+			"width": 361,
+			"x": 453.142883,
+			"y": 128
 		}
 	},
 	"roles": [ {
@@ -57,6 +64,18 @@
 			"parameters": [ {
 				"name": "msg",
 				"value": "\"x: \" .. tostring(x)"
+			}, {
+				"name": "scriptName",
+				"value": "Common.luaecho"
+			} ],
+			"scriptName": "Common.luaecho"
+		}, {
+			"children": [],
+			"id": "M0keGjGIWilBWcjGDCz34WaybgmXASAI",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "msg",
+				"value": "\"flipSensor: \" .. tostring(Sensors.flipSensor())"
 			}, {
 				"name": "scriptName",
 				"value": "Common.luaecho"
