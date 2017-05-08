@@ -741,6 +741,9 @@ function listenerOnResizeBtCreator(self)
 	if(minimizeButton) then
 		minimizeButton:SetPos(self.width - 45)
 	end
+	if btCreatorWindow then
+		rootPanel:Resize(btCreatorWindow.x + btCreatorWindow.width, btCreatorWindow.y + btCreatorWindow.height)
+	end
 end
 
 local scale = 2
