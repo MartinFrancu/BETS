@@ -279,12 +279,12 @@ function BtEvaluator.dereferenceTree(treeDefinition)
 			
 			local parameters, count = {}, 0
 			for i, input in ipairs(node.referenceInputs) do
-				count = count + 1
 				if(input.matchedInput)then
+					count = count + 1
 					parameters[count] = {
 						name = input.name,
 						value = {
-							type = (input.matchedInput.command ~= "Variable" and "parameter" or "input"),
+							type = (input.matchedInput.command ~= "Variable" and "input" or "parameter"),
 							expression = input.value,
 						},
 					}
@@ -293,9 +293,9 @@ function BtEvaluator.dereferenceTree(treeDefinition)
 				end
 			end
 			for i, output in ipairs(node.referenceOutputs) do
-				count = count + 1
-				local matchedOutput = locateItem(node.outputs, output.name)
+				local matchedOutput = locateItem(referenced.outputs, output.name)
 				if(matchedOutput)then
+					count = count + 1
 					parameters[count] = {
 						name = output.name,
 						value = {
@@ -308,6 +308,8 @@ function BtEvaluator.dereferenceTree(treeDefinition)
 				end
 			end
 			node.parameters = parameters
+			node.referenceInputs = nil
+			node.referenceOutputs = nil
 
 			
 			-- TODO: do something with referenced.project

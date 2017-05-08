@@ -2,38 +2,47 @@
 	"additionalNodes": [],
 	"additionalParameters": {
 		"root": {
-			"height": 103,
-			"width": 196,
+			"height": 170,
+			"width": 216,
 			"x": 5,
-			"y": 173.5
+			"y": 156
 		}
 	},
 	"inputs": [ {
 		"command": "Variable",
 		"name": "x"
 	} ],
-	"outputs": [],
+	"outputs": [ {
+		"name": "y"
+	} ],
 	"properties": {
 		"4E2xqgVDS9JfVCJg2b7FdBGUMcrYCwmt": {
-			"height": 70,
+			"height": 74,
 			"title": "Common.luaecho",
-			"width": 187.428574,
-			"x": 381.142883,
-			"y": 95
+			"width": 229,
+			"x": 445.142883,
+			"y": 53.5
 		},
 		"8TU6gwWgFoHWqOcOKQvt1wDQ20Sgz7G1": {
-			"height": 60,
+			"height": 59,
 			"title": "sequence",
-			"width": 122.214294,
-			"x": 231.750031,
-			"y": 148
+			"width": 135,
+			"x": 250.750031,
+			"y": 160.5
 		},
 		"ATabOMetaI45nhmLU0VtqYXZR81L2PJl": {
-			"height": 50,
+			"height": 54,
 			"title": "Debug.dummy",
-			"width": 131.928589,
-			"x": 415,
-			"y": 224
+			"width": 152,
+			"x": 494,
+			"y": 149.5
+		},
+		"EQAaU0VEpEIIOF2CLt5O2C4yxVpEEEL2": {
+			"height": 92,
+			"title": "Common.store",
+			"width": 198,
+			"x": 455.428589,
+			"y": 230
 		}
 	},
 	"roles": [ {
@@ -62,6 +71,21 @@
 				"value": "Debug.dummy"
 			} ],
 			"scriptName": "Debug.dummy"
+		}, {
+			"children": [],
+			"id": "EQAaU0VEpEIIOF2CLt5O2C4yxVpEEEL2",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "var",
+				"value": "y"
+			}, {
+				"name": "value",
+				"value": "128"
+			}, {
+				"name": "scriptName",
+				"value": "Common.store"
+			} ],
+			"scriptName": "Common.store"
 		} ],
 		"id": "8TU6gwWgFoHWqOcOKQvt1wDQ20Sgz7G1",
 		"nodeType": "sequence",
