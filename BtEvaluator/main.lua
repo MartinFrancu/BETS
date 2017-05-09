@@ -245,7 +245,7 @@ local function locateItem(items, name)
 	return nil
 end
 function BtEvaluator.dereferenceTree(treeDefinition)
-	local referencedMap = {}
+	local referencedMap, referenceStack = {}, {}
 	local failure, message = treeDefinition:Visit(function(node)
 		if(node.nodeType == "reference")then
 			local behaviourNameParameter = locateItem(node.parameters, "behaviourName")
@@ -261,8 +261,8 @@ function BtEvaluator.dereferenceTree(treeDefinition)
 			if(type(referencedName) ~= "string")then
 				return makeError("'behaviourName' parameter has to be a string.")
 			end
-			if(referencedMap[referencedName])then
-				return makeError("Cyclic reference to '" .. referenceName .. "'.")
+			if(referenceStack[referencedName])then
+				return makeError("Cyclic reference to '" .. referencedName .. "'.")
 			end
 			
 			local referenced, message = BehaviourTree.load(referencedName)
@@ -320,7 +320,14 @@ function BtEvaluator.dereferenceTree(treeDefinition)
 			node.referenceInputs = nil
 			node.referenceOutputs = nil
 
+			node.referencedName = referencedName
 			referencedMap[referencedName] = true
+			referenceStack[referencedName] = true
+		end
+	end, function(node)
+		if(node.nodeType == "reference")then
+			referenceStack[node.referencedName] = nil
+			node.referencedName = nil
 		end
 	end)
 	

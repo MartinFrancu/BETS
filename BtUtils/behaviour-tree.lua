@@ -131,7 +131,7 @@ return Utils:Assign("BehaviourTree", function()
 	end
 
 	-- implementation of BehaviourTree:Visit
-	local function visit(f, node)
+	local function visit(f, g, node)
 		if(not node) then
 			return
 		end
@@ -142,19 +142,24 @@ return Utils:Assign("BehaviourTree", function()
 		end
 		
 		for _, child in ipairs(node.children) do
-			local results = visit(f, child)
+			local results = visit(f, g, child)
 			if(results and results[1] ~= nil)then
 				return results
 			end
+		end
+		
+		if(g)then
+			g(node)
 		end
 	end
 	
 	--- Invokes the given function on all nodes of the tree depth-first.
 	-- The traversing of the tree is terminated early if the function returns something.
 	-- @func f The function that is to be invoked for every node.
+	-- @func[opt] after Function that should be invoked when traversing out from the tree.
 	-- @return Whatever the function `f` returned along the way, or `nil`
-	function treePrototype:Visit(f)
-		return unpack(visit(f, self.root) or {})
+	function treePrototype:Visit(f, after)
+		return unpack(visit(f, after, self.root) or {})
 	end
 
 	-- loading
