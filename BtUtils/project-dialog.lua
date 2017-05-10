@@ -317,17 +317,17 @@ return Utils:Assign("ProjectDialog", function()
 		cancelButton.showDialogHandler = showDialogHandler
 	end
 	
-	function ProjectDialog.showDialogWindow(parentHandler, contentType, dialogFlag , callbackFunction, title, pare)
+	function ProjectDialog.showDialogWindow(parentHandler, contentType, dialogFlag , callbackFunction, title, xIn, yIn)
 		local dialogWindow = Chili.Window:New{
 			parent = Chili.Screen0,
-			x = 300,
-			y = 500,
+			x = xIn or 300,
+			y = yIn or 500,
 			width = 400,
 			height = 185,
 			padding = {10,10,10,10},
 			draggable = true,
 			resizable = true,
-			skinName = 'DarkGlass',
+			skinName = "Robocracy", --'DarkGlass',
 		}
 		dialogWindow.callback = callbackFunction
 		local label = Chili.Label:New{
