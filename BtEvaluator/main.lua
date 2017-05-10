@@ -411,7 +411,6 @@ local CommandManager = require("command")
 BtEvaluator.CommandManager = CommandManager
 baseCommandClass = CommandManager.baseClass
 
-
 local function getCommandClass(name)
 	c = BtEvaluator.scripts[name]
 	if not c then 

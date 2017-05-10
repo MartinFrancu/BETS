@@ -57,6 +57,8 @@ local commandEnvironment = CustomEnvironment:New({
 	})
 })
 
+local hardcodedCommands = require("hardcodedCommand")
+
 local CommandManager = {}
 CommandManager.contentType = ProjectManager.makeRegularContentType("Commands", "lua")
 
@@ -139,6 +141,12 @@ function Command:loadMethods(...)
 end
 	
 function Command:Extend(scriptName)
+	local hardcoded = hardcodedCommands[scriptName]
+	if(hardcoded)then
+		Logger.log("script-load", "Hardcoded command '", scriptName, "' detected.")
+		return hardcoded
+	end
+
 	Logger.log("script-load", "Loading command from file " .. scriptName)
 
 	Logger.log("script-load", "scriptName: ", scriptName)
@@ -260,6 +268,7 @@ function Command:UnitIdle(unitID)
 	return self.idleUnits[unitID]
 end
 
+
 function CommandManager.getAvailableCommandScripts()
 	local commandList = ProjectManager.listAll(CommandManager.contentType)
 	local paramsDefs = {}
@@ -288,6 +297,12 @@ function CommandManager.getAvailableCommandScripts()
 			error("script-load".. "Script ".. data.qualifiedName .. " is missing the getInfo() function or it contains an error: ".. info)
 		end
 	end
+	
+	for k, hardcoded in pairs(hardcodedCommands) do
+		paramsDefs[k] = hardcoded.parameterDefs or {}
+		tooltips[k] = hardcoded.tooltip
+	end
+	
 	return paramsDefs, tooltips
 end
 

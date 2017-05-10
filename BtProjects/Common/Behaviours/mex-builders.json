@@ -18,7 +18,7 @@
 		},
 		"4kTzE0e6W464qLGis1srSo8k3yEemxbB": {
 			"height": 94,
-			"title": "Common.store",
+			"title": "store",
 			"width": 360,
 			"x": 615,
 			"y": -1
@@ -53,7 +53,7 @@
 		},
 		"JwDZTBGPLJs2wCsRxldqDdp8gDDBt5f5": {
 			"height": 94,
-			"title": "Common.store",
+			"title": "store",
 			"width": 227,
 			"x": 96,
 			"y": -195
@@ -109,7 +109,7 @@
 		},
 		"WuBB9yqsocnYsFfO5q6HplXlDpCq9TvF": {
 			"height": 94,
-			"title": "Common.store",
+			"title": "store",
 			"width": 241,
 			"x": 384,
 			"y": -173
@@ -191,9 +191,9 @@
 				"value": "groupExtents().center"
 			}, {
 				"name": "scriptName",
-				"value": "Common.store"
+				"value": "store"
 			} ],
-			"scriptName": "Common.store"
+			"scriptName": "store"
 		}, {
 			"children": [ {
 				"children": [ {
@@ -208,9 +208,9 @@
 						"value": "closestMetal(center).pos"
 					}, {
 						"name": "scriptName",
-						"value": "Common.store"
+						"value": "store"
 					} ],
-					"scriptName": "Common.store"
+					"scriptName": "store"
 				}, {
 					"children": [ {
 						"children": [],
@@ -255,9 +255,9 @@
 							"value": "(groupExtents() or { center = target}).center"
 						}, {
 							"name": "scriptName",
-							"value": "Common.store"
+							"value": "store"
 						} ],
-						"scriptName": "Common.store"
+						"scriptName": "store"
 					}, {
 						"children": [],
 						"id": "uClz1vl9p6zlLSXAkRnOfe5yrfQlu5FV",

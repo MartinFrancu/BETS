@@ -601,39 +601,6 @@ local function addNodeIntoNodepool(treenodeParams)
 	table.insert(nodePoolList, Chili.TreeNode:New(treenodeParams))
 end
 
-local function populateNodePoolWithTreeNodes(heightSum, nodes)
-	table.sort(nodes, function(a, b) return a.name < b.name end)
-	for i=1,#nodes do
-		if (nodes[i].nodeType ~= "luaCommand") then
-			Logger.log("icons", LUAUI_DIRNAME .. "Widgets/BtTreenodeIcons/"..nodes[i].name..".png____", "nodeType: ",nodes[i].nodeType)
-			local nodeParams = {
-				name = nodes[i].name,
-				hasConnectionOut = (nodes[i].children == nil) or (type(nodes[i].children) == "table" and #nodes[i].children ~= 0),
-				nodeType = nodes[i].name, -- TODO use name parameter instead of nodeType
-				-- parent = nodePoolPanel,
-				y = heightSum,
-				iconPath = LUAUI_DIRNAME .. "Widgets/BtTreenodeIcons/"..nodes[i].name..".png",
-				tooltip = nodes[i].tooltip or "",
-				draggable = false,
-				resizable = false,
-				connectable = false,
-				parameters = copyTable(nodes[i]["parameters"]),
-				isReferenceNode = nodes[i].isReferenceNode
-			}
-			-- Make value field from defaultValue.
-			processTreenodeParameters(nodeParams.nodeType, nodeParams.parameters, nodeParams.hasConnectionIn, nodeParams.hasConnectionOut, nodeParams.tooltip, nodeParams.iconPath, nodeParams.isReferenceNode)
-
-			if(nodes[i].defaultHeight) then
-				nodeParams.height = math.max(50 + #nodeParams["parameters"]*20, nodes[i].defaultHeight)
-			end
-			heightSum = heightSum + (nodeParams.height or 60)
-
-			addNodeIntoNodepool(nodeParams)
-		end
-	end
-	return heightSum
-end
-
 local function getFileExtension(filename)
   return filename:match("^.+(%..+)$")
 end
@@ -662,31 +629,74 @@ end
 local function fillNodeListWithNodes(nodes)
 	nodePoolList = {}
 	nodeDefinitionInfo = {}
-	local heightSum = 30 -- skip NodePoolLabel
-	heightSum = populateNodePoolWithTreeNodes(heightSum, nodes) -- others than lua script commands
+	
+	local nodeParamsList, nodeParamsListCount = {}, 0
+	-- others than lua script commands
+	for i=1,#nodes do
+		if (nodes[i].nodeType ~= "luaCommand") then
+			Logger.log("icons", LUAUI_DIRNAME .. "Widgets/BtTreenodeIcons/"..nodes[i].name..".png____", "nodeType: ",nodes[i].nodeType)
+			local nodeParams = {
+				name = nodes[i].name,
+				hasConnectionOut = (nodes[i].children == nil) or (type(nodes[i].children) == "table" and #nodes[i].children ~= 0),
+				nodeType = nodes[i].name, -- TODO use name parameter instead of nodeType
+				-- parent = nodePoolPanel,
+				iconPath = LUAUI_DIRNAME .. "Widgets/BtTreenodeIcons/"..nodes[i].name..".png",
+				tooltip = nodes[i].tooltip or "",
+				draggable = false,
+				resizable = false,
+				connectable = false,
+				parameters = copyTable(nodes[i]["parameters"]),
+				isReferenceNode = nodes[i].isReferenceNode,
+				isInProject = false,
+			}
+			-- Make value field from defaultValue.
+			processTreenodeParameters(nodeParams.nodeType, nodeParams.parameters, nodeParams.hasConnectionIn, nodeParams.hasConnectionOut, nodeParams.tooltip, nodeParams.iconPath, nodeParams.isReferenceNode)
+
+			if(nodes[i].defaultHeight) then
+				nodeParams.height = math.max(50 + #nodeParams["parameters"]*20, nodes[i].defaultHeight)
+			end
+			
+			nodeParamsListCount = nodeParamsListCount + 1
+			nodeParamsList[nodeParamsListCount] = nodeParams
+		end
+	end
+	
 	-- load lua commands
 	local paramDefs, tooltips = BtEvaluator.CommandManager.getAvailableCommandScripts()
 	local scriptIcons = getAvailableCommandScriptsIcons()
 	local scriptList = sortedKeyList(paramDefs)
-	for _, scriptName in ipairs(scriptList) do
-		local params = paramDefs[scriptName]
+	for scriptName, params in pairs(paramDefs) do
+		local isInProject = scriptName:match("%.")
 		local nodeParams = {
 			name = scriptName,
 			hasConnectionOut = false,
 			nodeType = scriptName,
 			-- parent = nodePoolPanel,
 			y = heightSum,
-			iconPath = scriptIcons[scriptName],
+			iconPath = isInProject and scriptIcons[scriptName] or (LUAUI_DIRNAME .. "Widgets/BtTreenodeIcons/"..scriptName..".png"),
 			tooltip = tooltips[scriptName],
 			draggable = false,
 			resizable = false,
 			connectable = false,
 			parameters = copyTable(params),
+			isInProject = isInProject,
 		}
 		processTreenodeParameters(nodeParams.nodeType, nodeParams.parameters, nodeParams.hasConnectionIn, nodeParams.hasConnectionOut, nodeParams.tooltip, nodeParams.iconPath, nodeParams.isReferenceNode)
 		isScript[scriptName] = true
 		nodeParams.width = 110
 		nodeParams.height = 50 + #nodeParams.parameters * 20
+		
+		nodeParamsListCount = nodeParamsListCount + 1
+		nodeParamsList[nodeParamsListCount] = nodeParams
+	end
+	
+	function getSortKey(t) return t.isInProject and t.name:lower() or ("." .. t.name:lower()) end
+	table.sort(nodeParamsList, function(a, b) return getSortKey(a) < getSortKey(b) end)
+	
+	local heightSum = 30 -- skip NodePoolLabel
+	for i = 1, nodeParamsListCount do
+		local nodeParams = nodeParamsList[i]
+		nodeParams.y = heightSum
 		heightSum = heightSum + (nodeParams.height or 60)
 		addNodeIntoNodepool(nodeParams)
 	end
@@ -1380,38 +1390,52 @@ local function loadBehaviourNode(bt, btNode)
 	if (btNode.scriptName ~= nil) then
 		info = nodeDefinitionInfo[btNode.scriptName]
 		if(not info) then
-			error("Trying to load unknown node: ".. btNode.scriptName)
+			Logger.warn("save-and-load", "Trying to load unknown node: ".. btNode.scriptName)
 		end
 	else
 		info = nodeDefinitionInfo[btNode.nodeType]
 		if(not info) then
-			error("Trying to load unknown lua script node: ".. btNode.nodeType)
+			Logger.warn("save-and-load", "Trying to load unknown lua script node: ".. btNode.nodeType)
 		end
 	end
 
-	for k,v in pairs(info) do
-		if(type(v) == "table") then
-			params[k] = copyTable(v)
-		else
-			params[k] = v
+	if(info)then
+		for k,v in pairs(info) do
+			if(type(v) == "table") then
+				params[k] = copyTable(v)
+			else
+				params[k] = v
+			end
 		end
+	else
+		params = {
+			nodeType = btNode.nodeType,
+			iconPath = LUAUI_DIRNAME .. "Widgets/BtTreenodeIcons/error.png",
+		}
 	end
 	for k, v in pairs(btNode) do
 		if(k=="parameters") then
-
 			Logger.log("save-and-load", "params: ", params, ", params.parameters: ", params.parameters)
-			for i=1,#v do
-				if (v[i].name ~= "scriptName") then
-					if(not params.parameters[i])then
-						Logger.error("save-and-load", "Parameter names do not match: N/A != ", v[i].name, " of node "..btNode.nodeType or btNode.scriptName)
-					end
-				
-					if(params.parameters[i].name ~= v[i].name)then
-						Logger.error("save-and-load", "Parameter names do not match: ", params.parameters[i].name, " != ", v[i].name, " of node "..btNode.nodeType or btNode.scriptName)
-					end
+			if(params.parameters)then
+				for i=1,#v do
+					if (v[i].name ~= "scriptName") then
+						if(not params.parameters[i])then
+							Logger.error("save-and-load", "Parameter names do not match: N/A != ", v[i].name, " of node "..btNode.nodeType or btNode.scriptName)
+						end
+					
+						if(params.parameters[i].name ~= v[i].name)then
+							Logger.error("save-and-load", "Parameter names do not match: ", params.parameters[i].name, " != ", v[i].name, " of node "..btNode.nodeType or btNode.scriptName)
+						end
 
-					Logger.log("save-and-load", "params.parameters[i]: ", params.parameters[i], ", v[i]: ", v[i])
-					params.parameters[i].value = v[i].value
+						Logger.log("save-and-load", "params.parameters[i]: ", params.parameters[i], ", v[i]: ", v[i])
+						params.parameters[i].value = v[i].value
+					end
+				end
+			else
+				params[k] = copyTable(v)
+				for i = 1,#v do
+					params[k][i].variableType = "expression"
+					params[k][i].componentType = "editBox"
 				end
 			end
 		elseif(k == 'referenceInputs' or k == 'referenceOutputs')then
@@ -1434,7 +1458,7 @@ local function loadBehaviourNode(bt, btNode)
 	params.connectable = true
 	params.draggable = true
 	
-	if (btNode.scriptName ~= nil) then
+	if (info and btNode.scriptName ~= nil) then
 		params.nodeType = btNode.scriptName
 	end
 	

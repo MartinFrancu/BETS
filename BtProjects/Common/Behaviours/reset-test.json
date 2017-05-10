@@ -182,9 +182,9 @@
 				"value": "groupExtents().center"
 			}, {
 				"name": "scriptName",
-				"value": "Common.store"
+				"value": "store"
 			} ],
-			"scriptName": "Common.store"
+			"scriptName": "store"
 		}, {
 			"children": [ {
 				"children": [],

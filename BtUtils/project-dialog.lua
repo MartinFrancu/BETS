@@ -101,8 +101,11 @@ return Utils:Assign("ProjectDialog", function()
 	
 	--- This will attach corresponding chili components of save/load dialog to given parent.
 	function ProjectDialog.setUpDialog(parent, contentType, creatingEnabled, callbackObject, callbackFunction, showDialogHandler)
+		callbackFunction = Sanitizer.sanitize(callbackFunction)
+		
 		-- get project manager
 		local pM =  Utils.ProjectManager
+		local sanitizer = Utils.Sanitizer.forCurrentWidget()
 		
 		local newProjectEditBox = Chili.EditBox:New{
 			parent = parent,
@@ -131,7 +134,7 @@ return Utils:Assign("ProjectDialog", function()
 			width = 200,
 			height = 35,
 			items = {"noItem"},
-			OnSelect = {onSelectItem},
+			OnSelect = {sanitizer:AsHandler(onSelectItem)},
 			newItemEditBox = newItemEditBox,
 			newItemString = NEW_ITEM_STRING,
 			newItemLabel = newLabel,
@@ -155,7 +158,7 @@ return Utils:Assign("ProjectDialog", function()
 			width = 120,
 			height = 35,
 			items = projectNames,
-			OnSelect = {onSelectProject},
+			OnSelect = {sanitizer:AsHandler(onSelectProject)},
 			newProjectEditBox = newProjectEditBox,
 			newProjectString = NEW_PROJECT_STRING,
 			newItemString = NEW_ITEM_STRING,
@@ -173,7 +176,7 @@ return Utils:Assign("ProjectDialog", function()
 			width = 100,
 			height = 30,
 			caption = "DONE",
-			OnClick = {doneButtonListener},
+			OnClick = {sanitizer:AsHandler(doneButtonListener)},
 			skinName = 'DarkGlass',
 			focusColor = {1,0.5,0,0.5},
 		}
@@ -194,7 +197,7 @@ return Utils:Assign("ProjectDialog", function()
 			width = 100,
 			height = 30,
 			caption = "CANCEL",
-			OnClick = {cancelButtonListener},
+			OnClick = {sanitizer:AsHandler(cancelButtonListener)},
 			skinName = 'DarkGlass',
 			focusColor = {1,0.5,0,0.5},
 		}
@@ -233,8 +236,9 @@ return Utils:Assign("ProjectDialog", function()
 	
 	--- This will attach corresponding chili components of new item dialog to given parent.
 	function ProjectDialog.setUpDialogNewItem(parent, contentType, callbackObject, callbackFunction, showDialogHandler)
-		-- get project manager
+		callbackFunction = Sanitizer.sanitize(callbackFunction)
 		
+		local sanitizer = Utils.Sanitizer.forCurrentWidget()
 		local firstLineY = 20
 		local secondLineY = 60
 		local thirdLineY = 80
@@ -276,7 +280,7 @@ return Utils:Assign("ProjectDialog", function()
 			width = 120,
 			height = 35,
 			items = projectNames,
-			OnSelect = {onSelectProjectNew},
+			OnSelect = {sanitizer:AsHandler(onSelectProjectNew)},
 			newProjectEditBox = newProjectEditBox,
 			newProjectString = NEW_PROJECT_STRING,
 			projectManager = ProjectManager,
@@ -291,7 +295,7 @@ return Utils:Assign("ProjectDialog", function()
 			width = 100,
 			height = 30,
 			caption = "DONE",
-			OnClick = {doneButtonListenerNew},
+			OnClick = {sanitizer:AsHandler(doneButtonListenerNew)},
 			skinName = 'DarkGlass',
 		}
 		doneButton.callback = callbackFunction
@@ -309,7 +313,7 @@ return Utils:Assign("ProjectDialog", function()
 			width = 100,
 			height = 30,
 			caption = "CANCEL",
-			OnClick = {cancelButtonListener},
+			OnClick = {sanitizer:AsHandler(cancelButtonListener)},
 			skinName = 'DarkGlass',
 		}
 		cancelButton.callback = callbackFunction
@@ -318,6 +322,10 @@ return Utils:Assign("ProjectDialog", function()
 	end
 	
 	function ProjectDialog.showDialogWindow(parentHandler, contentType, dialogFlag , callbackFunction, title, xIn, yIn)
+		parentHandler = Sanitizer.sanitize(parentHandler)
+		callbackFunction = Sanitizer.sanitize(callbackFunction)
+		local sanitizer = Utils.Sanitizer.forCurrentWidget()
+		
 		local dialogWindow = Chili.Window:New{
 			parent = Chili.Screen0,
 			x = xIn or 300,
@@ -348,14 +356,16 @@ return Utils:Assign("ProjectDialog", function()
 			skinName = 'DarkGlass',
 		}
 		
+		local sanitizedHideWindowAndCall = sanitizer:Sanitize(hideWindowAndCall)
+		
 		if(dialogFlag == ProjectDialog.LOAD_DIALOG_FLAG) then
-			ProjectDialog.setUpDialog(panel, contentType, false, dialogWindow, hideWindowAndCall, parentHandler)
+			ProjectDialog.setUpDialog(panel, contentType, false, dialogWindow, sanitizedHideWindowAndCall, parentHandler)
 		end
 		if(dialogFlag == ProjectDialog.SAVE_DIALOG_FLAG) then
-			ProjectDialog.setUpDialog(panel, contentType, true, dialogWindow, hideWindowAndCall, parentHandler)
+			ProjectDialog.setUpDialog(panel, contentType, true, dialogWindow, sanitizedHideWindowAndCall, parentHandler)
 		end
 		if(dialogFlag == ProjectDialog.NEW_DIALOG_FLAG) then
-			ProjectDialog.setUpDialogNewItem(panel, contentType, dialogWindow, hideWindowAndCall, parentHandler)
+			ProjectDialog.setUpDialogNewItem(panel, contentType, dialogWindow, sanitizedHideWindowAndCall, parentHandler)
 		end
 		
 		parentHandler(true)

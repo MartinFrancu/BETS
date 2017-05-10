@@ -25,7 +25,7 @@
 		},
 		"xnH96b16YDklbVSfPqSroXug19bFsHHo": {
 			"height": 72,
-			"title": "Common.luaecho",
+			"title": "echo",
 			"width": 180,
 			"x": 506.142883,
 			"y": 118
@@ -67,9 +67,9 @@
 				"value": "temp"
 			}, {
 				"name": "scriptName",
-				"value": "Common.luaecho"
+				"value": "echo"
 			} ],
-			"scriptName": "Common.luaecho"
+			"scriptName": "echo"
 		} ],
 		"id": "YJzp57q9hKBUW1ZQ8B37SweQsD9w4rI2",
 		"nodeType": "sequence",

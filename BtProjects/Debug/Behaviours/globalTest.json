@@ -11,7 +11,7 @@
 	"properties": {
 		"8J6bLIVp8l7ubmtqwHnc1tF5nVg5vQEk": {
 			"height": 74,
-			"title": "Common.luaecho",
+			"title": "echo",
 			"width": 267,
 			"x": 300,
 			"y": 68
@@ -30,8 +30,8 @@
 			"value": "\"global.y: \" .. tostring(global.x)"
 		}, {
 			"name": "scriptName",
-			"value": "Common.luaecho"
+			"value": "echo"
 		} ],
-		"scriptName": "Common.luaecho"
+		"scriptName": "echo"
 	}
 }

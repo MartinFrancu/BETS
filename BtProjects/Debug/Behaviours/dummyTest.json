@@ -16,7 +16,7 @@
 	"properties": {
 		"4E2xqgVDS9JfVCJg2b7FdBGUMcrYCwmt": {
 			"height": 74,
-			"title": "Common.luaecho",
+			"title": "echo",
 			"width": 245,
 			"x": 440.142822,
 			"y": -102.5
@@ -37,28 +37,28 @@
 		},
 		"EQAaU0VEpEIIOF2CLt5O2C4yxVpEEEL2": {
 			"height": 92,
-			"title": "Common.store",
+			"title": "store",
 			"width": 225,
 			"x": 447.428589,
 			"y": 111
 		},
 		"M0keGjGIWilBWcjGDCz34WaybgmXASAI": {
 			"height": 74,
-			"title": "Common.luaecho",
+			"title": "echo",
 			"width": 361,
 			"x": 448.142822,
 			"y": -28
 		},
 		"RgpD5lj3ECZ35PWrifxVFkmnH5a1ek19": {
 			"height": 92,
-			"title": "Common.store",
+			"title": "store",
 			"width": 155,
 			"x": 463,
 			"y": 303
 		},
 		"yHs9RHCawahHa6j6p6LbwOdafaABK1VV": {
 			"height": 94,
-			"title": "Common.store",
+			"title": "store",
 			"width": 222,
 			"x": 449,
 			"y": 195
@@ -78,9 +78,9 @@
 				"value": "\"x: \" .. tostring(x)"
 			}, {
 				"name": "scriptName",
-				"value": "Common.luaecho"
+				"value": "echo"
 			} ],
-			"scriptName": "Common.luaecho"
+			"scriptName": "echo"
 		}, {
 			"children": [],
 			"id": "M0keGjGIWilBWcjGDCz34WaybgmXASAI",
@@ -90,9 +90,9 @@
 				"value": "\"flipSensor: \" .. tostring(Sensors.flipSensor())"
 			}, {
 				"name": "scriptName",
-				"value": "Common.luaecho"
+				"value": "echo"
 			} ],
-			"scriptName": "Common.luaecho"
+			"scriptName": "echo"
 		}, {
 			"children": [],
 			"id": "ATabOMetaI45nhmLU0VtqYXZR81L2PJl",
@@ -114,9 +114,9 @@
 				"value": "128"
 			}, {
 				"name": "scriptName",
-				"value": "Common.store"
+				"value": "store"
 			} ],
-			"scriptName": "Common.store"
+			"scriptName": "store"
 		}, {
 			"children": [],
 			"id": "yHs9RHCawahHa6j6p6LbwOdafaABK1VV",
@@ -129,9 +129,9 @@
 				"value": "((bb.x or 0) + 1) % 10"
 			}, {
 				"name": "scriptName",
-				"value": "Common.store"
+				"value": "store"
 			} ],
-			"scriptName": "Common.store"
+			"scriptName": "store"
 		}, {
 			"children": [],
 			"id": "RgpD5lj3ECZ35PWrifxVFkmnH5a1ek19",
@@ -144,9 +144,9 @@
 				"value": "bb.x"
 			}, {
 				"name": "scriptName",
-				"value": "Common.store"
+				"value": "store"
 			} ],
-			"scriptName": "Common.store"
+			"scriptName": "store"
 		} ],
 		"id": "8TU6gwWgFoHWqOcOKQvt1wDQ20Sgz7G1",
 		"nodeType": "sequence",

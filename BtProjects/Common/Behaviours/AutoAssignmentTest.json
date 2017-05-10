@@ -11,7 +11,7 @@
 	"properties": {
 		"dCtMCf1LDu13EzTrvX1TsLHggsZj4xVV": {
 			"height": 72,
-			"title": "Common.luaecho",
+			"title": "echo",
 			"width": 236,
 			"x": 531,
 			"y": -86
@@ -25,7 +25,7 @@
 		},
 		"wp4vovvQ9HIVcemnw1D4leQnvXmwyySM": {
 			"height": 72,
-			"title": "Common.luaecho",
+			"title": "echo",
 			"width": 236,
 			"x": 533,
 			"y": 4
@@ -48,9 +48,9 @@
 				"value": "Echo message"
 			}, {
 				"name": "scriptName",
-				"value": "Common.luaecho"
+				"value": "echo"
 			} ],
-			"scriptName": "Common.luaecho"
+			"scriptName": "echo"
 		}, {
 			"children": [],
 			"id": "wp4vovvQ9HIVcemnw1D4leQnvXmwyySM",
@@ -60,9 +60,9 @@
 				"value": "Echo message"
 			}, {
 				"name": "scriptName",
-				"value": "Common.luaecho"
+				"value": "echo"
 			} ],
-			"scriptName": "Common.luaecho"
+			"scriptName": "echo"
 		} ],
 		"id": "kyiMIJ7BAtumKJhMiUFPyMt581KGePUy",
 		"nodeType": "roleSplit",
