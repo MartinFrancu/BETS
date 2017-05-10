@@ -181,7 +181,9 @@ local BehaviourImageContentType = ProjectManager.makeRegularContentType(Behaviou
 ------------CHANGE LATER:
 local BehaviourDefaultImageContentType = ProjectManager.makeRegularContentType("Behaviours", "png")
 ------------CHANGE LATER END
-local function registerCommandForTree(treeName)
+
+--- This method register command for tree if it has an icon
+local function tryRegisterCommandForTree(treeName)
 	-- should I check if there is such file??
 	
 	-- is there icon:
@@ -191,30 +193,28 @@ local function registerCommandForTree(treeName)
 	local UIover
 	if gotIcon then
 		UIover = {texture = iconFileName }
-	else
-		local defaultIconPath = ProjectManager.findFile(BehaviourDefaultImageContentType, "Common", DEFAULT_ICON_NAME)
-		UIover = {caption = treeName:gsub("%.", "\n"), texture = defaultIconPath} --'LuaUI/Images/commands/bold/restore.png' }
+			local commandName =  "BT_" ..  treeName
+		local description = {
+			type = CMDTYPE.ICON,
+			name = commandName,
+			cursor = 'Attack',
+			action = 'Attack',
+			tooltip = "Behaviour " .. treeName,
+			hidden = false,
+			UIoverride = UIover
+		}
+		registerCommand(description) 
 	end
 	
-	local commandName =  "BT_" ..  treeName
-	local description = {
-		type = CMDTYPE.ICON,
-		name = commandName,
-		cursor = 'Attack',
-		action = 'Attack',
-		tooltip = "Behaviour " .. treeName,
-		hidden = false,
-		UIoverride = UIover
-	}
-	registerCommand(description) 
+
 end
 
-WG.BtRegisterCommandForTree = registerCommandForTree
+WG.BtRegisterCommandForTree = tryRegisterCommandForTree
 
 local function registerCommandsForBehaviours()
 	local qualifiedNames = BehaviourTree.list()
 	for _,treeName in pairs(qualifiedNames) do
-		registerCommandForTree(treeName)
+		tryRegisterCommandForTree(treeName)
 	end
 end
 
