@@ -25,7 +25,7 @@
 		},
 		"ytVCQqVeUzO5Ip0vUXzz1JOpfXh6kNHj": {
 			"height": 110,
-			"title": "Common.randomVector",
+			"title": "Debug.randomVector",
 			"width": 213,
 			"x": 255,
 			"y": -127
@@ -49,9 +49,9 @@
 				"value": "y"
 			}, {
 				"name": "scriptName",
-				"value": "Common.randomVector"
+				"value": "Debug.randomVector"
 			} ],
-			"scriptName": "Common.randomVector"
+			"scriptName": "Debug.randomVector"
 		}, {
 			"children": [],
 			"id": "dEHOrJf8Xf2wEBZXy6hd0kcL56tqEc8z",
