@@ -26,7 +26,8 @@ return Utils:Assign("ProjectDialog", function()
 	ProjectDialog.LOAD_DIALOG_FLAG = "LOAD"
 	ProjectDialog.SAVE_DIALOG_FLAG = "SAVE"
 	ProjectDialog.NEW_DIALOG_FLAG = "NEW"
-		
+	
+	local PATH = "LuaUI/Widgets/BtUtils/"
 	local dialogWindow
 	
 	local function onSelectItem(self)
@@ -326,18 +327,23 @@ return Utils:Assign("ProjectDialog", function()
 		callbackFunction = Sanitizer.sanitize(callbackFunction)
 		local sanitizer = Utils.Sanitizer.forCurrentWidget()
 		
+		local winWidth = 400
+		local winHeight = 185
+		
 		local dialogWindow = Chili.Window:New{
 			parent = Chili.Screen0,
 			x = xIn or 300,
 			y = yIn or 500,
-			width = 400,
-			height = 185,
+			width =  winWidth,
+			height = winHeight,
 			padding = {10,10,10,10},
 			draggable = true,
 			resizable = true,
-			skinName = "Robocracy", --'DarkGlass',
+			skinName = 'DarkGlass',
 		}
 		dialogWindow.callback = callbackFunction
+		
+		Spring.Echo("here" .. PATH .. "black.png")
 		local label = Chili.Label:New{
 			parent = dialogWindow,
 			x = 5,
@@ -369,6 +375,16 @@ return Utils:Assign("ProjectDialog", function()
 		end
 		
 		parentHandler(true)
+		
+		local backgroundImage = Chili.Image:New{
+			parent = dialogWindow,
+			x = 0,
+			y = 0,
+			width =  winWidth,
+			height = winHeight,
+			file = PATH .. "black.png",
+			keepAspect = false,
+		}
 	end
 	
 	return ProjectDialog

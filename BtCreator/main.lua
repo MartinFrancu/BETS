@@ -341,14 +341,6 @@ end
 	-- rootPanel.disableChildrenHitTest = show
 -- end
 
-local function onHidingDialog(show)
-	if show then
-		BtCreator.hide()
-	else
-		BtCreator.show()
-	end
-end
-
 function listenerClickOnSaveAsTree()
 	local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
 	ProjectDialog.showDialogWindow(BtCreator.setDisableChildrenHitTest, treeContentType, 
@@ -356,6 +348,7 @@ function listenerClickOnSaveAsTree()
 end
 
 afterRoleManagement = function (self, rolesData)
+	BtCreator.show()
 	rolesOfCurrentTree = rolesData
 	if(saveTreeOncePossible) then
 		listenerClickOnSaveTree()
@@ -425,7 +418,7 @@ end
 
 function listenerClickOnNewTree()
 	local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
-	ProjectDialog.showDialogWindow(onHidingDialog, treeContentType, 
+	ProjectDialog.showDialogWindow(BtCreator.setDisableChildrenHitTest, treeContentType, 
 			ProjectDialog.NEW_DIALOG_FLAG, newTreeDialogCallback, "Name the new tree:")	
 end
 
@@ -458,7 +451,7 @@ end
 
 function listenerClickOnLoadTree(self)
 	local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
-	ProjectDialog.showDialogWindow(onHidingDialog, treeContentType, ProjectDialog.LOAD_DIALOG_FLAG, 
+	ProjectDialog.showDialogWindow(BtCreator.setDisableChildrenHitTest, treeContentType, ProjectDialog.LOAD_DIALOG_FLAG, 
 		loadTreeDialogCallback, "Select tree to be loaded:")
 end
 
