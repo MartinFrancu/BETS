@@ -434,7 +434,7 @@ function getBehaviourTree(treeName)
 end 
 
 function loadTree(treeName)
-	referenceNodeID = ""
+	referenceNodeID = nil
 	getBehaviourTree(treeName)
 	treeNameLabel:SetCaption(treeName)
 end
@@ -531,7 +531,7 @@ local function updateStatesMessage(params)
 	local shouldPause
 	for id, node in pairs(WG.nodeList) do
 		local color = DEFAULT_COLOR;
-		if(referenceNodeID ~= '') then
+		if(referenceNodeID) then
 			id = referenceNodeID..'-'..id
 		end
 		-- set breakpoint color to all breakpoints, independent from current state

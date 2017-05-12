@@ -7,7 +7,7 @@ local CustomEnvironment = Utils.CustomEnvironment
 local currentlyExecutingCommand = nil
 local unitToOrderIssueingCommandMap = {}
 
-local Results = {
+Results = {
 	SUCCESS = "S",
 	FAILURE = "F",
 	RUNNING = "R",
@@ -300,7 +300,7 @@ function CommandManager.getAvailableCommandScripts()
 	
 	for k, hardcoded in pairs(hardcodedCommands) do
 		paramsDefs[k] = hardcoded.parameterDefs or {}
-		tooltips[k] = hardcoded.tooltip
+		tooltips[k] = hardcoded.tooltip or ""
 	end
 	
 	return paramsDefs, tooltips

@@ -104,12 +104,11 @@ return Utils:Assign("BehaviourTree", function()
 
 	--- Add all nodes from the other tree to the current one.
 	-- @tparam BehaviourTree other The other tree.
-	-- @func f Optional, function that is to be applied to each node of the other tree before it is combined, e.g. ID changes.
+	-- @func f Optional, function that is to be applied to each node of the other tree before it is combined, e.g. ID changes, return value is ignored.
 	-- @treturn Node The original root of the other tree.
 	function treePrototype:Combine(other, f)
-		if(f)then
-			other:Visit(f)
-		end
+		local visitor = f and function(node) node:Relocate(self) f(node) end or function(node) node:Relocate(self) end
+		other:Visit(visitor)
 		
 		local otherRoot = other.root
 		local n = table.getn(self.additionalNodes) + 1
@@ -117,10 +116,6 @@ return Utils:Assign("BehaviourTree", function()
 		for i, v in ipairs(other.additionalNodes) do
 			n = n + 1
 			self.additionalNodes[n] = v
-		end
-		
-		for k, v in pairs(other.properties) do
-			self.properties[k] = v
 		end
 		
 		other.root = nil
@@ -380,6 +375,17 @@ return Utils:Assign("BehaviourTree", function()
 			table.insert(tree.additionalNodes, fromNode)
 		end
 
+		--- Informs the node that it is relocated to a new tree.
+		-- It only affects the internal link to the tree and the `properties` table, the `additionalNodes` and `root` are not affected and have to be handled by the caller.
+		function nodePrototype:Relocate(
+				newTree -- the new BehaviourTree the node now belongs to
+			)
+			newTree.properties[self.id] = tree.properties[self.id]
+			tree.properties[self.id] = nil
+			
+			tree = newTree
+		end
+		
 		--- Changes the ID of the node.
 		-- This has to be used over simply changing the value of the `id` slot in order to properly transfer the additional properties of the node.
 		function nodePrototype:ChangeID(newId)
