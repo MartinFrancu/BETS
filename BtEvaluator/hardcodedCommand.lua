@@ -40,6 +40,17 @@ local hardcodedScripts = {
 			}
 		},
 	},
+	waitUntil = {
+		run = function(unitIDs, p) return p.condition and Results.SUCCESS or Results.RUNNING end,
+		parameterDefs = {
+			{ 
+				name = "condition",
+				variableType = "expression",
+				componentType = "editBox",
+				defaultValue = "true",
+			}
+		},
+	},
 }
 for k, v in pairs(hardcodedScripts) do
 	hardcodedScripts[k] = setmetatable(v, hardcodedCommandMetatable)
