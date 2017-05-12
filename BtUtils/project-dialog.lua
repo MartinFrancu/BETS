@@ -232,6 +232,7 @@ return Utils:Assign("ProjectDialog", function()
 		local selectedItem = self.newItemEditBox.text
 		
 		self.callback(self.callbackObject, selectedProject, selectedItem)
+		self.showDialogHandler(false)
 	end
 		
 	

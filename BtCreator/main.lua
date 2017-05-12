@@ -342,8 +342,7 @@ end
 -- end
 
 function listenerClickOnSaveAsTree()
-	local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
-	ProjectDialog.showDialogWindow(BtCreator.setDisableChildrenHitTest, treeContentType, 
+	ProjectDialog.showDialogWindow(BtCreator.setDisableChildrenHitTest, BehaviourTree.contentType, 
 		ProjectDialog.SAVE_DIALOG_FLAG, saveAsTreeDialogCallback, "Save tree as:")
 end
 
@@ -417,8 +416,7 @@ function newTreeDialogCallback(projectName,treeName)
 end
 
 function listenerClickOnNewTree()
-	local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
-	ProjectDialog.showDialogWindow(BtCreator.setDisableChildrenHitTest, treeContentType, 
+	ProjectDialog.showDialogWindow(BtCreator.setDisableChildrenHitTest, BehaviourTree.contentType, 
 			ProjectDialog.NEW_DIALOG_FLAG, newTreeDialogCallback, "Name the new tree:")	
 end
 
@@ -450,8 +448,7 @@ function loadTreeDialogCallback(project, tree)
 end
 
 function listenerClickOnLoadTree(self)
-	local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
-	ProjectDialog.showDialogWindow(BtCreator.setDisableChildrenHitTest, treeContentType, ProjectDialog.LOAD_DIALOG_FLAG, 
+	ProjectDialog.showDialogWindow(BtCreator.setDisableChildrenHitTest, BehaviourTree.contentType, ProjectDialog.LOAD_DIALOG_FLAG, 
 		loadTreeDialogCallback, "Select tree to be loaded:")
 end
 
