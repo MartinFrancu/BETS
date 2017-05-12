@@ -498,12 +498,16 @@ end
 local function listenerClickOnBreakpoint()
 	for nodeId,_ in pairs(WG.selectedNodes) do
 		local color
-		if(breakpoints[nodeId] == nil and nodeId ~= rootID) then
-			breakpoints[nodeId] = true
-			BtEvaluator.setBreakpoint(treeInstanceId, nodeId)
+		local id = nodeId
+		if(referenceNodeID) then
+			id = referenceNodeID.."-"..nodeId
+		end
+		if(breakpoints[id] == nil and nodeId ~= rootID) then
+			breakpoints[id] = true
+			BtEvaluator.setBreakpoint(treeInstanceId, id)
 			color = BREAKPOINT_COLOR
 		else
-			breakpoints[nodeId] = nil
+			breakpoints[id] = nil
 			BtEvaluator.removeBreakpoint(treeInstanceId, nodeId)
 			color = DEFAULT_COLOR
 		end
