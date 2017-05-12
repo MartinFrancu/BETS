@@ -466,7 +466,7 @@ local function createExpression(expression)
 	if(getter)then
 		setfenv(getter, environment)
 	else
-		getter = function() Logger.error("expression", "Expression ", expression, " could not be compiled into a GETTER: ", getErrMsg) end
+		getter = function() error("Expression " .. expression .. " could not be compiled into a GETTER: " .. getErrMsg) end
 	end
 	if(setter)then
 		setfenv(setter, environment)
@@ -519,11 +519,12 @@ function BtEvaluator.OnStartTree(params)
 				if(success)then
 					if(v.command and not value)then
 						Logger.log("subtree", "Subtree '", params.id, "@", params.treeId, "' has a nil parameter '", k, "'." )
-						return "F"
+						return Results.FAILURE
 					end
 					subblackboard[k] = value
 				else	
 					Logger.error("expression", "Evaluating parameter '", k, "' threw an exception: ", value);
+					return Results.FAILURE
 				end
 			end
 		end
@@ -538,7 +539,7 @@ function BtEvaluator.OnStartTree(params)
 	stack[stack.length] = { blackboard = instance.blackboard, project = instance.project }
 	instance.blackboard = subblackboard
 	instance.project = projectSwitch
-	return "S"
+	return Results.SUCCESS
 end
 function BtEvaluator.OnEnterTree(params)
 	local instance = treeInstances[params.treeId]
@@ -546,7 +547,7 @@ function BtEvaluator.OnEnterTree(params)
 	local projectSwitch = (params.project and params.project ~= "") and params.project or instance.project
 	if(not subblackboard)then
 		Logger.error("subtree", "Attempt to enter a subtree '", params.id, "@", params.treeId, "' that was not started.")
-		return "F"
+		return Results.FAILURE
 	end
 	
 	local stack = instance.subtreeStack
@@ -558,14 +559,14 @@ function BtEvaluator.OnEnterTree(params)
 	stack[stack.length] = { blackboard = instance.blackboard, project = instance.project }
 	instance.blackboard = subblackboard
 	instance.project = projectSwitch
-	return "S"
+	return Results.SUCCESS
 end
 function BtEvaluator.OnExitTree(params)
 	local instance = treeInstances[params.treeId]
 	local subblackboard = instance.subblackboards[params.id]
 	if(subblackboard ~= instance.blackboard)then
 		Logger.error("subtree", "Attempt to exit a subtree '", params.id, "@", params.treeId, "' that was not entered.")
-		return "F"
+		return Results.FAILURE
 	end
 	local node = instance.nodes[params.id]
 	for k, expr in pairs(node.outputExpressions) do
@@ -601,6 +602,7 @@ function BtEvaluator.OnCommand(params)
 				parameters[k] = value
 			else	
 				Logger.error("expression", "Evaluating parameter '", k, "' threw an exception: ", value);
+				return Results.FAILURE
 			end
 		end
 		
@@ -617,7 +619,7 @@ function BtEvaluator.OnCommand(params)
 			end
 		end
 		
-		if(result ~= "R")then
+		if(result ~= Results.RUNNING)then
 			instance.activeNodes[command] = nil
 		end
 		Logger.log("luacommand", "Result: ", result)
@@ -632,7 +634,7 @@ end
 
 function BtEvaluator.OnExpression(params)
 	if(params.func == "RESET")then
-		return "S"
+		return Results.SUCCESS
 	end
 	
 	local blackboard = getBlackboardForInstance(params.treeId)
@@ -643,11 +645,12 @@ function BtEvaluator.OnExpression(params)
 	
 	local success, result = pcall(expr.get)
 	if(success and result)then
-		return "S"
+		return Results.SUCCESS
 	elseif(not success)then
 		Logger.error("expression", result)
+		return Results.FAILURE
 	else
-		return "F"
+		return Results.FAILURE
 	end
 end
 
