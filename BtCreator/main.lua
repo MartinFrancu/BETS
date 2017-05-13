@@ -79,7 +79,6 @@ function BtCreator.markTreeAsChanged()
 	if(not isTreeChanged)then
 		updateStatesMessage({ states = {}, blackboard = {} })
 		isTreeChanged = true
-		Logger.warn("mark-changed", "Kuk.")
 	end
 end
 
