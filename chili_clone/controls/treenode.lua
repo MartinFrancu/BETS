@@ -224,7 +224,11 @@ function TreeNode:UpdateDimensions()
 	maxWidth = math.ceil(max(maxWidth, w+20))
 	maxHeight = math.ceil(max(maxHeight, h+20))
 	if(nodeWindow and nodeWindow.parent and not nodeWindow.parent.zoomedOut) then
-		nodeWindow:SetPos(nil, nil, maxWidth, maxHeight)
+		local x = math.ceil(nodeWindow.x)
+		local y = math.ceil(nodeWindow.y)
+		nodeWindow:SetPos(x, y, maxWidth, maxHeight)
+		self.x = x
+		self.y = y
 		self.width = maxWidth
 		self.height = maxHeight
 	end
