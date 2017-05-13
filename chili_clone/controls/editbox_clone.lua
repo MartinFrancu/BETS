@@ -333,6 +333,9 @@ function EditBox:KeyPress(key, mods, isRepeat, label, unicode, ...)
 	inherited.KeyPress(self, key, mods, isRepeat, label, unicode, ...)
 	self:UpdateLayout()
 	self:Invalidate()
+	if(self.parent and self.parent.treeNode) then
+		self.parent.treeNode:UpdateDimensions()
+	end
 	return self
 end
 
