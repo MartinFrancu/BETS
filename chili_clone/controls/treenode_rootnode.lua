@@ -70,6 +70,7 @@ local function listenerAddInput(button)
 	updateOutputsLayout(button.parent.treeNode)
 	button.parent.treeNode:UpdateDimensions()
 	button.parent:Invalidate()
+	WG.BtCreator.Get().markTreeAsChanged()
 	return true
 end
 
@@ -105,6 +106,7 @@ local function listenerAddOutput(button)
 	table.insert(outputs, { ["editBox"]=editBox,["button"]=button })
 	button.parent.treeNode:UpdateDimensions()
 	button.parent:Invalidate()
+	WG.BtCreator.Get().markTreeAsChanged()
 	return true
 end
 
@@ -132,6 +134,7 @@ function listenerRemoveInput(self)
 	updateInputsLayout(self.parent.treeNode)
 	updateOutputsLayout(self.parent.treeNode)
 	self:Dispose() 
+	WG.BtCreator.Get().markTreeAsChanged()
 	return true
 end
 
@@ -145,6 +148,7 @@ function listenerRemoveOutput(self)
 	table.remove(outputs, i)
 	updateOutputsLayout(self.parent.treeNode)
 	self:Dispose()
+	WG.BtCreator.Get().markTreeAsChanged()
 	return true
 end
 

@@ -365,7 +365,17 @@ function createNextParameterObject(obj)
 					else
 						resetAutocomplete(element)
 					end
+					
+					if(element.text ~= element.validatedValue)then
+						WG.BtCreator.Get().markTreeAsChanged()
+					end
+					
 					return true
+				end
+			},
+			OnTextInput = {
+				function()
+					WG.BtCreator.Get().markTreeAsChanged()
 				end
 			},
 		}

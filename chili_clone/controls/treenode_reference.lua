@@ -73,7 +73,7 @@ local function addLabelEditboxPair(nodeWindow_, components, y, label, text, inva
 					self:Dispose()
 					
 					disposePreviousInputOutputComponents()
-					referenceNode.addInputOutputComponents(nodeWindow,treeName)
+					referenceNode.addInputOutputComponents(nodeWindow,nodeWindow.treeNode.parameterObjects[1].label,treeName)
 				end
 			},
 		}
@@ -92,6 +92,20 @@ local function addLabelEditboxPair(nodeWindow_, components, y, label, text, inva
 		autosize = true,
 		minWidth = 70,
 		text = text or "",
+		OnKeyPress = {
+			function(element, key)
+				if(element.text ~= element.validatedValue)then
+					WG.BtCreator.Get().markTreeAsChanged()
+				end
+				
+				return true
+			end
+		},
+		OnTextInput = {
+			function()
+				WG.BtCreator.Get().markTreeAsChanged()
+			end
+		},
 	}
 	if(invalid) then
 		components.label.font.color = {1,0.1,0,1}
@@ -202,6 +216,7 @@ function referenceNode.addInputOutputComponents(nodeWindow,treeNameLabel, treeNa
 		addLabelEditboxPair(nodeWindow, treeNode.referenceOutputObjects[i], positiony, name, value, true, treeNode.referenceOutputs)
 	end
 	positiony = positiony + yoffset
+	WG.BtCreator.Get().markTreeAsChanged()
 end
 
 local function setTreeCallback(projectName, behaviour)

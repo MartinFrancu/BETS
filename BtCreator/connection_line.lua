@@ -4,6 +4,8 @@ local connectionLine
 WG.BtConnectionLine = WG.BtConnectionLine or (function()
 	if(not connectionLine) then 
 		local Chili
+		local Utils = Utils or VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
+		local BtCreator = Utils.Surrogate:New(function() return BtCreator or (WG.BtCreator and WG.BtCreator.Get()) end)
 		
 		local connectionLines = {}
 		
@@ -169,6 +171,7 @@ WG.BtConnectionLine = WG.BtConnectionLine or (function()
 				table.insert( connectionIn.treeNode.attachedLines,  lineIndex )
 				table.insert( connectionOut.treeNode.attachedLines, lineIndex )
 				
+				BtCreator.markTreeAsChanged()
 				Logger.log("connection-lines", "connectionLines.add(), #connectionLines="..#connectionLines..", connectionLines after:"..dump(connectionLines, 2))
 			end,
 			
@@ -277,6 +280,7 @@ WG.BtConnectionLine = WG.BtConnectionLine or (function()
 					end
 				end
 				Logger.log("connection-lines", "connectionLine.remove(), connectionLines after:"..dump(connectionLines, 2))
+				BtCreator.markTreeAsChanged()
 				return true
 			end,
 			

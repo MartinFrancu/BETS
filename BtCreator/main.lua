@@ -25,9 +25,9 @@ local noNameString = "--NO NAME GIVEN--"
 
 local rolesOfCurrentTree = {}
 
-local roleManager = require("role_manager") -- make sure to have sanitizer and Utils there
+local roleManager = require("role_manager")
 
-local btCheat = require("cheat") -- make sure to have sanitizer and Utils there
+local btCheat = require("cheat")
 
 --- Keys are node IDs, values are Treenode objects.
 WG.nodeList = {}
@@ -73,6 +73,16 @@ local moveCanvasImg
 local rootDefaultX = 5
 local rootDefaultY = 60
 
+local updateStatesMessage
+local isTreeChanged = false
+function BtCreator.markTreeAsChanged()
+	if(not isTreeChanged)then
+		updateStatesMessage({ states = {}, blackboard = {} })
+		isTreeChanged = true
+		Logger.warn("mark-changed", "Kuk.")
+	end
+end
+
 function BtCreator.show()
 	if(not rootPanel.visible) then
 		rootPanel:Show()
@@ -85,10 +95,11 @@ function BtCreator.showTree(tree, instanceId)
 	treeInstanceId = instanceId
 end
 
-
 function BtCreator.showReferencedTree(treeName, _referenceNodeID)
 	-- loadTree() nillates the referenceNodeID so set it after loadTree() call
+	local temp = isTreeChanged
 	loadTree(treeName)
+	isTreeChanged = temp
 	referenceNodeID = _referenceNodeID
 end
 
@@ -141,6 +152,7 @@ local function addNodeToCanvas(node)
 	WG.nodeList[node.id] = node
 	WG.clearSelection()
 	WG.addNodeToSelection(WG.nodeList[node.id].nodeWindow)
+	BtCreator.markTreeAsChanged()
 end
 
 local function removeNodeFromCanvas(id)
@@ -154,6 +166,7 @@ local function removeNodeFromCanvas(id)
 	WG.nodeList[id] = nil
 	btCreatorWindow:Invalidate()
 	btCreatorWindow:RequestUpdate()
+	BtCreator.markTreeAsChanged()
 end
 
 --- x,y are the coordinates of top left corner where to place the node
@@ -294,6 +307,7 @@ local function saveTree(treeName)
 		end
 	end
 	Logger.assert("save-and-load", protoTree:Save(treeName))
+	isTreeChanged = false
 	WG.clearSelection()
 	
 	Logger.loggedCall("Errors", "BtCreator", 
@@ -336,7 +350,6 @@ function saveAsTreeDialogCallback(project, tree)
 			saveTreeOncePossible = true
 			roleManager.showRolesManagement(Screen0, resultTree, rolesOfCurrentTree, self, afterRoleManagement)
 		end
-			
 	end
 end
 
@@ -367,7 +380,7 @@ end
 afterRoleManagement = function (self, rolesData)
 	BtCreator.show()
 	rolesOfCurrentTree = rolesData
-	if(saveTreeOncePossible) then
+	if(OncePossible) then
 		listenerClickOnSaveTree()
 		saveTreeOncePossible = false 
 	end
@@ -430,6 +443,7 @@ function newTreeDialogCallback(projectName,treeName)
 		treeNameLabel:SetCaption(projectName .. "." .. treeName)
 		rolesOfCurrentTree = {}
 		clearCanvas()
+		isTreeChanged = true
 	end
 end
 
@@ -456,6 +470,7 @@ function loadTree(treeName)
 	referenceNodeID = nil
 	getBehaviourTree(treeName)
 	treeNameLabel:SetCaption(treeName)
+	isTreeChanged = false
 end
 
 function loadTreeDialogCallback(project, tree)
@@ -547,7 +562,11 @@ end
 --- Called after every tick from BtEvaluator, it changes node background/border colors according to the
 --- node states. When referenced tree is opened, it has ids in the form 
 --- [referenceNodeID]-[internalNodeIDs].
-local function updateStatesMessage(params)
+function updateStatesMessage(params)
+	if(isTreeChanged)then
+		return
+	end
+
 	local states = params.states
 	local shouldPause
 	for id, node in pairs(WG.nodeList) do
