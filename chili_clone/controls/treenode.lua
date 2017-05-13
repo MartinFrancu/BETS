@@ -445,6 +445,9 @@ function createNextParameterObject(obj)
 			referenceNode.addInputOutputComponents(obj.nodeWindow, result.label, result.label.caption)
 		end
 	end
+	if(result.editBox) then
+		result.editBox:UpdateLayout()
+	end
 	return result
 end
 
