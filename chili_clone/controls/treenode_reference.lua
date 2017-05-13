@@ -1,6 +1,8 @@
 local referenceNode = {}
 
 local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
+local Debug = Utils.Debug;
+local Logger = Debug.Logger
 local ProjectDialog = Utils.ProjectDialog
 local BehaviourTree = Utils.BehaviourTree
 local dump = Utils.Debug.dump
@@ -202,14 +204,13 @@ function referenceNode.addInputOutputComponents(nodeWindow,treeNameLabel, treeNa
 	positiony = positiony + yoffset
 end
 
-local function setTreeCallback(window, projectName, behaviour)
+local function setTreeCallback(projectName, behaviour)
 	if(projectName and behaviour) then
 		treeName = projectName.."."..behaviour		
 		-- remove older components if any
 		disposePreviousInputOutputComponents()
 		referenceNode.addInputOutputComponents(nodeWindow,nodeWindow.treeNode.parameterObjects[1].label,treeName)
 	end
-	window:Dispose()
 	local label = nodeWindow.treeNode.parameterObjects[1].label
 	label:UpdateLayout()
 	nodeWindow.treeNode.parameterObjects[1].button.x = label.x + label.width + 5
@@ -217,25 +218,15 @@ local function setTreeCallback(window, projectName, behaviour)
 	nodeWindow = nil
 end
 
+
 function referenceNode.listenerChooseTree(button)
 	local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
 	nodeWindow = button.parent
-	if(dialogWindow) then
-		dialogWindow:Dispose()
-	end
-	dialogWindow = Window:New{
-		parent = Screen0,
-		x = 300,
-		y = 800,
-		width = 400,
-		height = 150,
-		padding = {10,10,10,10},
-		draggable = true,
-		resizable = true,
-		skinName = 'DarkGlass',
-	}
-	ProjectDialog.setUpDialog(dialogWindow, treeContentType, false, dialogWindow, setTreeCallback, WG.BtCreator.Get().setDisableChildrenHitTest)
-	WG.BtCreator.Get().setDisableChildrenHitTest(true)
+
+	local screenX,screenY = button:LocalToScreen(0,0)
+	nodeWindow = button.parent
+	ProjectDialog.showDialogWindow(WG.BtCreator.Get().setDisableChildrenHitTest, BehaviourTree.contentType, ProjectDialog.LOAD_DIALOG_FLAG, 
+		setTreeCallback , "Select tree to be loaded:",screenX, screenY)
 	return true
 end
 

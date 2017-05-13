@@ -340,7 +340,7 @@ function saveAsTreeDialogCallback(project, tree)
 	end
 end
 
-function listenerClickOnSaveTree()
+function listenerClickOnSaveTree(self)
 	local qualifiedName = treeNameLabel.caption
 	local length = string.len(qualifiedName)
 	local position = string.find(qualifiedName, '%.')
@@ -349,7 +349,7 @@ function listenerClickOnSaveTree()
 		local name = string.sub(qualifiedName, position+1,length )
 		saveAsTreeDialogCallback(project, name)
 	else
-		listenerClickOnSaveAsTree()
+		listenerClickOnSaveAsTree(self)
 	end
 end
 
@@ -357,9 +357,11 @@ end
 	-- rootPanel.disableChildrenHitTest = show
 -- end
 
-function listenerClickOnSaveAsTree()
+function listenerClickOnSaveAsTree(self)
+	local screenX,screenY = self:LocalToScreen(0,0)
+
 	ProjectDialog.showDialogWindow(BtCreator.setDisableChildrenHitTest, BehaviourTree.contentType, 
-		ProjectDialog.SAVE_DIALOG_FLAG, saveAsTreeDialogCallback, "Save tree as:")
+		ProjectDialog.SAVE_DIALOG_FLAG, saveAsTreeDialogCallback, "Save tree as:", screenX,screenY)
 end
 
 afterRoleManagement = function (self, rolesData)
@@ -431,9 +433,10 @@ function newTreeDialogCallback(projectName,treeName)
 	end
 end
 
-function listenerClickOnNewTree()
+function listenerClickOnNewTree(self)
+	local screenX,screenY = self:LocalToScreen(0,0)
 	ProjectDialog.showDialogWindow(BtCreator.setDisableChildrenHitTest, BehaviourTree.contentType, 
-			ProjectDialog.NEW_DIALOG_FLAG, newTreeDialogCallback, "Name the new tree:")	
+			ProjectDialog.NEW_DIALOG_FLAG, newTreeDialogCallback, "Name the new tree:", screenX, screenY)	
 end
 
 local serializedTreeName
@@ -464,8 +467,9 @@ function loadTreeDialogCallback(project, tree)
 end
 
 function listenerClickOnLoadTree(self)
+	local screenX,screenY = self:LocalToScreen(0,0)
 	ProjectDialog.showDialogWindow(BtCreator.setDisableChildrenHitTest, BehaviourTree.contentType, ProjectDialog.LOAD_DIALOG_FLAG, 
-		loadTreeDialogCallback, "Select tree to be loaded:")
+		loadTreeDialogCallback, "Select tree to be loaded:",screenX, screenY)
 end
 
 function listenerClickOnRoleManager(self)
