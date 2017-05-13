@@ -104,7 +104,7 @@ function referenceNode.addInputOutputComponents(nodeWindow,treeNameLabel, treeNa
 	local bt = BehaviourTree.load(treeName)
 	local inputs = bt.inputs
 	local outputs = bt.outputs or {}
-	local positiony = 68
+	local positiony = 50
 	local yoffset = 21
 	-- First update label with treeName, make it clickthrough
 	treeNameLabel:SetCaption(treeName)
@@ -210,6 +210,9 @@ local function setTreeCallback(window, projectName, behaviour)
 		referenceNode.addInputOutputComponents(nodeWindow,nodeWindow.treeNode.parameterObjects[1].label,treeName)
 	end
 	window:Dispose()
+	local label = nodeWindow.treeNode.parameterObjects[1].label
+	label:UpdateLayout()
+	nodeWindow.treeNode.parameterObjects[1].button.x = label.x + label.width + 5
 	nodeWindow.treeNode:UpdateDimensions()
 	nodeWindow = nil
 end

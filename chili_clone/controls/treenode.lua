@@ -416,24 +416,29 @@ function createNextParameterObject(obj)
 		result.comboBox:Select(defaultIndex)
 	elseif(param["componentType"] and param["componentType"]:lower() == "treepicker") then
 		result.componentType = "treePicker"
-		result.button = Button:New{
-			parent = obj.nodeWindow,
-			x = 18,
-			y = 24,
-			caption = "Choose Tree",
-			tooltip = "Choose from available behaviour trees the one which should be referenced by this node. ",
-			width = 110,
-			height = 20,
-			
-			OnClick = { referenceNode.listenerChooseTree },
-		}
 		result.label = Label:New{
 			parent = obj.nodeWindow,
 			x = 18,
-			y = result.button.y + 23,
+			y = 30,
 			caption =  tostring(param["value"] or ""),
-			tooltip = "Chosen tree to be referenced, on click it will open currently selected tree in BtCreator. ",
+			tooltip = "Choose tree to be referenced, it will open tree selection dialog with all available trees. ",
 			autosize = true,
+		}
+		result.label:UpdateLayout()
+		local x = result.label.x + result.label.width + 5
+		if(result.label.caption == "")then
+			x = 18
+		end
+		result.button = Button:New{
+			parent = obj.nodeWindow,
+			x = x,
+			y = result.label.y,
+			caption = "...",
+			tooltip = "Choose from available behaviour trees the one which should be referenced by this node. ",
+			width = 30,
+			height = 20,
+			
+			OnClick = { referenceNode.listenerChooseTree },
 		}
 		result.label.font.color = {1,1,1,0.8}
 		if(obj.draggable and result.label.caption ~= "") then
