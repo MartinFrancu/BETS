@@ -476,12 +476,12 @@ end
 -- Messages from/to BtEvaluator
 -- //////////////////////////////////////////////////////////////////////
 
-local DEFAULT_COLOR = {1,1,1,0.6}
-local RUNNING_COLOR = {1,0.5,0,0.6}
-local SUCCESS_COLOR = {0.5,1,0.5,0.6}
-local FAILURE_COLOR = {1,0.25,0.25,0.6}
-local STOPPED_COLOR = {0.2,0.6,1,1}
-local BREAKPOINT_COLOR = {0,0,1,0.6}
+local DEFAULT_IMAGE    = LUAUI_DIRNAME.."Widgets/chili_clone/skins/DarkGlass/glass_.png"
+local RUNNING_IMAGE    = LUAUI_DIRNAME.."Widgets/BtCreator/treenode_running_.png"
+local SUCCESS_IMAGE    = LUAUI_DIRNAME.."Widgets/BtCreator/treenode_success_.png"
+local FAILURE_IMAGE    = LUAUI_DIRNAME.."Widgets/BtCreator/treenode_failure_.png"
+local STOPPED_IMAGE    = LUAUI_DIRNAME.."Widgets/BtCreator/treenode_stopped_.png"
+local BREAKPOINT_IMAGE = LUAUI_DIRNAME.."Widgets/BtCreator/treenode_breakpt_.png"
 
 local breakpoints = {}
 
@@ -494,22 +494,23 @@ end
 
 local function listenerClickOnBreakpoint()
 	for nodeId,_ in pairs(WG.selectedNodes) do
-		local color
 		local id = nodeId
 		if(referenceNodeID) then
 			id = referenceNodeID.."-"..nodeId
 		end
+		local img
 		if(breakpoints[id] == nil and nodeId ~= rootID) then
 			breakpoints[id] = true
 			BtEvaluator.setBreakpoint(treeInstanceId, id)
-			color = BREAKPOINT_COLOR
+			img = BREAKPOINT_IMAGE
 		else
 			breakpoints[id] = nil
 			BtEvaluator.removeBreakpoint(treeInstanceId, nodeId)
-			color = DEFAULT_COLOR
+			img = DEFAULT_IMAGE
 		end
 		if(nodeId ~= rootID) then
-			setBackgroundColor(WG.nodeList[nodeId].nodeWindow, color)
+			WG.nodeList[nodeId].nodeWindow.TileImage = img
+			WG.nodeList[nodeId].nodeWindow:Invalidate()
 		end
 	end
 	-- Spring.Echo("Breakpoints: "..dump(breakpoints))
@@ -530,33 +531,35 @@ local function updateStatesMessage(params)
 	local states = params.states
 	local shouldPause
 	for id, node in pairs(WG.nodeList) do
-		local color = DEFAULT_COLOR;
+		local nodeWindow = node.nodeWindow
 		if(referenceNodeID) then
 			id = referenceNodeID..'-'..id
 		end
-		-- set breakpoint color to all breakpoints, independent from current state
+		nodeWindow.TileImage = DEFAULT_IMAGE
+		-- set breakpoint color to all breakpoints, before all states
 		if(breakpoints[id]) then  --and ((states[id] and states[id]:upper() ~= "STOPPED") or states[id]==nil)) then
-			 color = BREAKPOINT_COLOR
+			nodeWindow.TileImage = BREAKPOINT_IMAGE
 		end
 		if(states[id] ~= nil) then
 			if(states[id]:upper() == "RUNNING") then
-				color = RUNNING_COLOR
+				nodeWindow.TileImage = RUNNING_IMAGE
 			elseif(states[id]:upper() == "SUCCESS") then
-				color = SUCCESS_COLOR
+				nodeWindow.TileImage = SUCCESS_IMAGE
 			elseif(states[id]:upper() == "FAILURE") then
-				color = FAILURE_COLOR
+				nodeWindow.TileImage = FAILURE_IMAGE
 			elseif(states[id]:upper() == "STOPPED") then
-				color = STOPPED_COLOR
+				nodeWindow.TileImage = STOPPED_IMAGE
 				shouldPause = true
 			else
 				Logger.error("communication", "Unknown state received from AI, for node id: ", id)
 			end
 		end
-		setBackgroundColor(node.nodeWindow, color)
+		nodeWindow:Invalidate()
 	end
 	local children = WG.nodeList[rootID]:GetChildren()
 	if(#children > 0) then
-		setBackgroundColor(WG.nodeList[rootID].nodeWindow, children[1].nodeWindow.backgroundColor)
+		WG.nodeList[rootID].nodeWindow.TileImage = children[1].nodeWindow.TileImage
+		WG.nodeList[rootID].nodeWindow:Invalidate()
 	end
 	blackboard.showCurrentBlackboard(params.blackboard)
 	if(shouldPause) then
@@ -856,7 +859,7 @@ end
 
 function widget:IsAbove(x,y)
 	y = Screen0.height - y
-	if (btCreatorWindow.visible and
+	if (rootPanel.visible and
 			x > rootPanel.x and x < rootPanel.x + rootPanel.width and 
 			y > rootPanel.y and y < rootPanel.y + rootPanel.height) then
 			return true
