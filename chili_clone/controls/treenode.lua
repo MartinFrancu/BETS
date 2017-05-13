@@ -503,37 +503,9 @@ end
 
 -- Dispose this treeNode without connection lines connected to it.
 function TreeNode:Dispose()
-	if(self.connectionIn) then
-		self.connectionIn:Dispose()
-	end
-	if(self.connectionOut) then
-		self.connectionOut:Dispose()
-	end
-	if(self.nameEditBox) then
-		self.nameEditBox:Dispose()
-	end
-	if(self.icon) then
-		self.icon:Dispose()
-	end
-	if(self.parameterObjects) then
-		for i=1,#self.parameterObjects do
-			if(self.parameterObjects[i]["label"]) then
-				self.parameterObjects[i]["label"]:Dispose()
-			end
-			if(self.parameterObjects[i]["editBox"]) then
-				self.parameterObjects[i]["editBox"]:Dispose()
-			end
-			if(self.parameterObjects[i]["comboBox"]) then
-				self.parameterObjects[i]["comboBox"]:Dispose()
-			end
-			if(self.parameterObjects[i]["checkBox"]) then
-				self.parameterObjects[i]["checkBox"]:Dispose()
-			end
-		end
-	end
-	if(self.nodeWindow) then
-		self.nodeWindow:Dispose()
-	end
+	self.nodeWindow:ClearChildren()
+	self.nodeWindow:Dispose()
+	self:ClearChildren()
 end
 
 local clickedConnection

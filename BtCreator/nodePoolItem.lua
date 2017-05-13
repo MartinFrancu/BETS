@@ -53,6 +53,10 @@ local function listenerOnMouseUp(self, x, y)
 	return self
 end
 
+function nodePoolItem.reset()
+	count = 0
+end
+
 --- Create a nodePoolItem from given treenode
 function nodePoolItem.new(treenode, nodePoolPanel)
 	local iconPath = treenode.iconPath

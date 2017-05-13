@@ -4,7 +4,6 @@ local BtEvaluator
 
 local rootPanel
 local btCreatorWindow
-local nodePoolLabel
 local nodePoolPanel
 local buttonPanel
 local loadTreeButton
@@ -114,6 +113,23 @@ function BtCreator.hide()
 	if(rootPanel.visible) then
 		rootPanel:Hide()
 	end
+end
+
+function BtCreator.reloadNodePool()
+	-- for _,nodeItem in pairs(nodePoolList)
+	for _,node in pairs(nodePoolList) do
+		node:Dispose()
+	end
+	nodePoolList = {}
+	nodePoolPanel:Invalidate()
+	
+	nodePoolPanel:ClearChildren()
+	
+	BtEvaluator.requestNodeDefinitions()
+	populateNodePool()
+	
+	nodePoolPanel:UpdateLayout()
+	nodePoolPanel:UpdateClientArea()
 end
 
 --- Adds Treenode to canvas, and also selects it.
@@ -832,7 +848,24 @@ function listenerMouseWheelScroll(self, x, y, zoomIn)
 	return self
 end
 
-		
+function populateNodePool()
+	Chili.Label:New{
+		parent = nodePoolPanel,
+		x = '20%',
+		y = '3%',
+		width  = '10%',
+		height = '10%',
+		caption = "Node Pool",
+		skinName='DarkGlass',
+	}
+	local nodePoolItem = require("nodePoolItem")
+	nodePoolItem.reset()
+	nodePoolItem.initialize(btCreatorWindow, placeTreeNodeOnCanvas)
+	for i,treenode in pairs(nodePoolList) do
+		nodePoolItem.new(treenode, nodePoolPanel)
+	end
+end
+
 function createRoot(center)
 	local rootX, rootY = 0, 0
 	if center then
@@ -919,15 +952,6 @@ function widget:Initialize()
 		skinName='Robocracy',
 		tooltip = "The Node Pool \nDrag&drop individual nodes from Node Pool onto Canvas and start creating a behaviour. ",
 	}
-	nodePoolLabel = Chili.Label:New{
-		parent = nodePoolPanel,
-		x = '20%',
-		y = '3%',
-		width  = '10%',
-		height = '10%',
-		caption = "Node Pool",
-		skinName='DarkGlass',
-	}
 	Logger.log("reloading", "BtCreator widget:Initialize after requestNodeDefinitions. nodeDefinitionInfo: "..dump(nodeDefinitionInfo, 3))
 
 	local maxNodeWidth = 110
@@ -955,11 +979,7 @@ function widget:Initialize()
 		OnMouseUp = { sanitizer:AsHandler(listenerOnMouseUpCanvas) },
 		OnMouseMove = { sanitizer:AsHandler(listenerOnMouseMoveCanvas) },
 	}
-	local nodePoolItem = require("nodePoolItem")
-	nodePoolItem.initialize(btCreatorWindow, placeTreeNodeOnCanvas)
-	for i,treenode in pairs(nodePoolList) do
-		nodePoolItem.new(treenode, nodePoolPanel)
-	end
+	populateNodePool()
 
 	addNodeToCanvas(createRoot(true))
 
