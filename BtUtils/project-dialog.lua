@@ -23,11 +23,16 @@ return Utils:Assign("ProjectDialog", function()
 	local NEW_ITEM_STRING = "--NEW ITEM--"
 	local NEW_PROJECT_STRING = "--NEW PROJECT--"
 	
+	
 	ProjectDialog.LOAD_DIALOG_FLAG = "LOAD"
 	ProjectDialog.SAVE_DIALOG_FLAG = "SAVE"
 	ProjectDialog.NEW_DIALOG_FLAG = "NEW"
 	
-	local PATH = "LuaUI/Widgets/BtUtils/"
+	
+	local PATH = LUAUI_DIRNAME.."Widgets/BtUtils/"
+	local BACKGROUND_IMAGE_NAME = "black.png"
+
+	
 	local dialogWindow
 	
 	local function onSelectItem(self)
@@ -342,9 +347,13 @@ return Utils:Assign("ProjectDialog", function()
 			resizable = true,
 			skinName = 'DarkGlass',
 		}
+		dialogWindow.backgroundColor = {1,1,1,1}
+		dialogWindow.TileImage = PATH .. BACKGROUND_IMAGE_NAME
+		dialogWindow:Invalidate()
+
+		
 		dialogWindow.callback = callbackFunction
 		
-		Spring.Echo("here" .. PATH .. "black.png")
 		local label = Chili.Label:New{
 			parent = dialogWindow,
 			x = 5,
@@ -376,16 +385,6 @@ return Utils:Assign("ProjectDialog", function()
 		end
 		
 		parentHandler(true)
-		
-		local backgroundImage = Chili.Image:New{
-			parent = dialogWindow,
-			x = 0,
-			y = 0,
-			width =  winWidth,
-			height = winHeight,
-			file = PATH .. "black.png",
-			keepAspect = false,
-		}
 	end
 	
 	return ProjectDialog
