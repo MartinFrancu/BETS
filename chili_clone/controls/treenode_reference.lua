@@ -117,8 +117,8 @@ end
 --- Is called both from treenode.lua - in treenode constructor - and on clicking 'Choose tree' button.
 function referenceNode.addInputOutputComponents(nodeWindow,treeNameLabel, treeName_)
 	treeName = treeName_
-	local bt = BehaviourTree.load(treeName)
-	local inputs = bt.inputs
+	local bt = BehaviourTree.load(treeName) or {}
+	local inputs = bt.inputs or {}
 	local outputs = bt.outputs or {}
 	local positiony = 50
 	local yoffset = 21
