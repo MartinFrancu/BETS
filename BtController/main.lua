@@ -108,13 +108,13 @@ local function removeAllMarks()
 end
 
 local function unmarkUnits(treeHandle,role)
-	local units = TreeHandle.unitsInTreeRole(treeHandle.InstanceId, role)
+	local units = TreeHandle.unitsInTreeRole(treeHandle.instanceId, role)
 	removeMarks(units)	
 end
 
 local function markUnits(treeHandle, role)
 	local locked = treeHandle.unitsLocked
-	local units = TreeHandle.unitsInTreeRole(treeHandle.InstanceId, role)
+	local units = TreeHandle.unitsInTreeRole(treeHandle.instanceId, role)
 	addMarks(units, locked)
 end
 
@@ -214,7 +214,7 @@ function addTreeToTreeTabPanel(treeHandle)
 	end
 
 	
-	local newTab =  {name = treeHandle.Name, children = chiliComponents}
+	local newTab =  {name = treeHandle.name, children = chiliComponents}
 	treeTabPanel:AddTab(newTab)
 	highlightTab(newTab.name)
 	
@@ -222,7 +222,7 @@ function addTreeToTreeTabPanel(treeHandle)
 	addFieldToBarItem(treeTabPanel, newTab.name, "MouseDown", sanitizer:AsHandler(tabBarItemMouseDownBETS) )
 	addFieldToBarItemList(treeTabPanel, newTab.name, "OnClick", sanitizer:AsHandler(listenerBarItemClick) )
 	addFieldToBarItem(treeTabPanel, newTab.name, "TreeHandle", treeHandle)
-	addFieldToBarItem(treeTabPanel, newTab.name, "tooltip", treeHandle.Name .. " is an instance of the behaviour tree ".. treeHandle.TreeType .. ". Can be closed on middle mouse button click. ")
+	addFieldToBarItem(treeTabPanel, newTab.name, "tooltip", treeHandle.name .. " is an instance of the behaviour tree ".. treeHandle.treeType .. ". Can be closed on middle mouse button click. ")
 	
 	moveToEndAddTab(treeTabPanel)
 end
@@ -238,28 +238,28 @@ function removeTreeBtController(tabs,treeHandle)
 	local tabBar = tabs.children[tabBarChildIndex]
 	
 	-- is it currently shown?
-	if treeHandle.Name == tabBar.selected_obj.caption and BtCreator then
+	if treeHandle.name == tabBar.selected_obj.caption and BtCreator then
 		-- hiding disabled as the tabs are no longer linked to each other
 		--BtCreator.hide()
 	end
 	
-	tabBar:Remove(treeHandle.Name)
+	tabBar:Remove(treeHandle.name)
 	-- remove chili elements ?
-	local deleteFrame = tabs.tabIndexMapping[treeHandle.Name]
+	local deleteFrame = tabs.tabIndexMapping[treeHandle.name]
 	tabs.currentTab:RemoveChild(deleteFrame)
 	-- remove from tabPanel name-frame map
-	tabs.tabIndexMapping[treeHandle.Name] = nil
+	tabs.tabIndexMapping[treeHandle.name] = nil
 	-- make sure addtab is in right place
 	moveToEndAddTab(tabs)
 	
 	-- remove markes above units
 	unmarkAllUnitsInTree(treeHandle)
 	-- remove records of unit assignment:
-	TreeHandle.removeUnitsFromTree(treeHandle.InstanceId)
+	TreeHandle.removeUnitsFromTree(treeHandle.instanceId)
 	
 	if(treeHandle.Created) then
 		-- remove send message to BtEvaluator
-		BtEvaluator.removeTree(treeHandle.InstanceId)
+		BtEvaluator.removeTree(treeHandle.instanceId)
 	end
 end
 
@@ -270,12 +270,12 @@ function reloadTree(tabs, treeHandle)
 	-- remove tree instance in BtEvaluator if it is created:
 	if(treeHandle.Created) then
 		-- remove send message to BtEvaluator
-		BtEvaluator.removeTree(treeHandle.InstanceId)
+		BtEvaluator.removeTree(treeHandle.instanceId)
 	end
 	-- get the new tree specification and GUI components:
 	treeHandle:ReloadTree()
 	-- GUI components:
-	local tabFrame = tabs.tabIndexMapping[treeHandle.Name]
+	local tabFrame = tabs.tabIndexMapping[treeHandle.name]
 	-- remove old GUI components:
 	tabFrame:ClearChildren()
 	tabFrame:RequestUpdate()
@@ -316,7 +316,7 @@ function BtController.reloadTreeType(treeTypeName)
 	for index,item in ipairs(barItems) do
 		-- if there is TreeHandle in this item and the tree type is right one:
 		if( (item.TreeHandle ~= nil) 
-			and (item.TreeHandle.TreeType == treeTypeName) )
+			and (item.TreeHandle.treeType == treeTypeName) )
 		then
 			--table.insert(toReload, item.TreeHandle)
 			reloadTree(treeTabPanel, item.TreeHandle)
@@ -359,7 +359,7 @@ end
 function logUnitsToTreesMap(category)
 	Logger.log(category, " ***** unitsToTreesMapLog: *****" )
 	for unitId, unitData in pairs(TreeHandle.unitsToTreesMap) do
-		Logger.log(category, "unitId ", unitId, " instId ", unitData.InstanceId, " label inst: ", unitData.TreeHandle.Roles[unitData.Role].unitCountButton.instanceId, " treeHandleId: ", unitData.TreeHandle.InstanceId, " button insId: ", unitData.TreeHandle.Roles[unitData.Role].assignButton.instanceId, " treeHandleName ", unitData.TreeHandle.Name )
+		Logger.log(category, "unitId ", unitId, " instId ", unitData.instanceId, " label inst: ", unitData.TreeHandle.Roles[unitData.Role].unitCountButton.instanceId, " treeHandleId: ", unitData.TreeHandle.instanceId, " button insId: ", unitData.TreeHandle.Roles[unitData.Role].assignButton.instanceId, " treeHandleName ", unitData.TreeHandle.name )
 	end
 	Logger.log(category, "***** end *****" )
 end
@@ -401,7 +401,7 @@ function automaticRoleAssignment(treeHandle, selectedUnits)
 		local unitDefId = Spring.GetUnitDefID(unitId)
 		local thWithRemovedUnit = TreeHandle.removeUnitFromCurrentTree(unitId)
 		if thWithRemovedUnit then
-			treeHandlesWithRemovedUnits[thWithRemovedUnit.InstanceId] = thWithRemovedUnit
+			treeHandlesWithRemovedUnits[thWithRemovedUnit.instanceId] = thWithRemovedUnit
 		end
 		if(UnitDefs[unitDefId] ~= nil)then  
 			local name = UnitDefs[unitDefId].name
@@ -440,7 +440,7 @@ end
 -- Calls required functions to create tree in BtEvaluator
 function createTreeInBtEvaluator(treeHandle)
 	BtEvaluator.dereferenceTree(treeHandle.Tree)
-	BtEvaluator.createTree(treeHandle.InstanceId, treeHandle.Tree, treeHandle.Inputs)
+	BtEvaluator.createTree(treeHandle.instanceId, treeHandle.Tree, treeHandle.Inputs)
 end
 
 -- Reports units assigned to all roles to BtEvaluator
@@ -452,16 +452,16 @@ function reportAssignedUnits(treeHandle)
 	local originallySelectedUnits = spGetSelectedUnits()
 	for name,roleData in pairs(treeHandle.Roles) do
 		-- now I need to share information with the BtEvaluator
-		local unitsInThisRole = TreeHandle.unitsInTreeRole(treeHandle.InstanceId, name)
+		local unitsInThisRole = TreeHandle.unitsInTreeRole(treeHandle.instanceId, name)
 		spSelectUnits(unitsInThisRole)
-		BtEvaluator.assignUnits(unitsInThisRole, treeHandle.InstanceId, roleData.roleIndex)
+		BtEvaluator.assignUnits(unitsInThisRole, treeHandle.instanceId, roleData.roleIndex)
 	end
 	spSelectUnits(originallySelectedUnits)
 end
 
 -- Reports users input for given input slot to BtEvaluator.
 function reportInputToBtEval(treeHandle, inputName)
-	BtEvaluator.setInput(treeHandle.InstanceId , inputName, treeHandle.Inputs[inputName]) 
+	BtEvaluator.setInput(treeHandle.instanceId , inputName, treeHandle.Inputs[inputName]) 
 end 
 
 -- Remove trees without units which require units.
@@ -529,10 +529,13 @@ end
 function listenerBarItemClick(self, x, y, button, ...)
 	if button == 1 then
 		-- select assigned units, if any
-		local unitsToSelect = TreeHandle.unitsInTree(self.TreeHandle.InstanceId)
+		local unitsToSelect = TreeHandle.unitsInTree(self.TreeHandle.instanceId)
 		spSelectUnits(unitsToSelect)
-
-		self.TreeHandle:UpdateTreeStatus()
+		
+		local tH = self.TreeHandle
+		tH:UpdateTreeStatus()
+		
+		BtCreator.focusTree(tH.treeType, tH.name, tH.instanceId)
 		
 		-- ORIGINAL LISTENER FORM BarItem:
 		if not self.parent then return end
@@ -556,11 +559,11 @@ function listenerAssignUnitsButton(self,x,y, ...)
 	local treeHandlesWithRemovedUnits = {}
 	local removedUnits = {}
 	for unitId,treeAndRole in pairs(TreeHandle.unitsToTreesMap) do	
-		if(treeAndRole.InstanceId == self.TreeHandle.InstanceId) and (treeAndRole.Role == self.Role) then
+		if(treeAndRole.instanceId == self.TreeHandle.instanceId) and (treeAndRole.Role == self.Role) then
 			removedUnits[#removedUnits +1] = unitId
 			local thWithRemovedUnit = TreeHandle.removeUnitFromCurrentTree(unitId)
 			if thWithRemovedUnit then
-				treeHandlesWithRemovedUnits[thWithRemovedUnit.InstanceId] = thWithRemovedUnit
+				treeHandlesWithRemovedUnits[thWithRemovedUnit.instanceId] = thWithRemovedUnit
 			end
 		end
 	end
@@ -583,7 +586,7 @@ function listenerAssignUnitsButton(self,x,y, ...)
 			self.TreeHandle.Created = true
 			reportAssignedUnits(self.TreeHandle)
 		end
-		BtEvaluator.assignUnits(selectedUnits, self.TreeHandle.InstanceId, self.roleIndex)
+		BtEvaluator.assignUnits(selectedUnits, self.TreeHandle.instanceId, self.roleIndex)
 	end
 	-- put markers over units in selection:
 	markUnits(self.TreeHandle,  self.Role)
@@ -612,7 +615,7 @@ function listenerInputButton(self,x,y,button, ...)
 		TreeHandle = self.TreeHandle,
 		InputName = self.InputName,
 		CommandName = self.CommandName,
-		InstanceId = self.InstanceId,
+		instanceId = self.instanceId,
 	}
 	
 	local f = function()
@@ -671,11 +674,12 @@ local function listenerClickBtCreator(self, x, y, button)
 	local barItem = tabBar.selected_obj
 	-- if it is not + then show BtCreator (send him message)
 	if(barItem.caption ~= "+") then
+		local tH = barItem.TreeHandle
 		-- tree tab is selected (not add tree tab)
 		if(barItem.TreeHandle.Created) then 
-			BtEvaluator.reportTree(barItem.TreeHandle.InstanceId)
+			BtEvaluator.reportTree(tH.instanceId)
 		end
-		BtCreator.showTree(barItem.TreeHandle.TreeType, barItem.TreeHandle.InstanceId)
+		BtCreator.showTree(tH.treeType, tH.name, tH.instanceId)
 	else
 		-- add tree tab is selected
 		BtCreator.show()
@@ -693,8 +697,8 @@ function instantiateTree(treeType, instanceName, requireUnits)
 	
 	
 	local newTreeHandle = TreeHandle:New{
-		Name = instanceName,
-		TreeType = treeType,
+		name = instanceName,
+		treeType = treeType,
 		AssignUnitListener = sanitizer:AsHandler(listenerAssignUnitsButton),
 		InputButtonListener = sanitizer:AsHandler(listenerInputButton),
 		lockImageListener = sanitizer:AsHandler(listenerLockImage),
@@ -1131,7 +1135,7 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 					tH.Created = true
 					createTreeInBtEvaluator(tH)
 					reportAssignedUnits(tH)
-					BtEvaluator.reportTree(tH.InstanceId)
+					BtEvaluator.reportTree(tH.instanceId)
 					tH:UpdateTreeStatus()
 				else
 					-- tree is ready, we can report just input

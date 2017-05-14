@@ -48,11 +48,15 @@ local BtCreator = {} -- if we need events, change to Sentry:New()
 
 
 local treeNameLabel
+local treeInstanceNameLabel
+
 local noNameString = "--NO NAME GIVEN--"
+local noInstanceString = "---"
 
 local currentTree = {
 	treeName = noNameString,
 	instanceId = nil,
+	instanceName = noInstanceString,
 	roles = {},
 	saveOncePossible = false,
 	changed = false,
@@ -64,6 +68,15 @@ function currentTree.setName(newTreeName)
 		treeNameLabel:SetCaption(newTreeName)
 	end
 end
+
+function currentTree.setInstanceName(instName)
+	currentTree.instanceName = instName
+	if(treeInstanceNameLabel) then
+		treeInstanceNameLabel:SetCaption(instName)
+	end
+end
+
+
 --- This function creates project and directory for given content type
 local function setUpDir(contentType, projectName)
 	if(not ProjectManager.isProject(projectName))then
@@ -116,6 +129,7 @@ local updateStatesMessage
 function BtCreator.markTreeAsChanged()
 	if(not currentTree.changed)then
 		updateStatesMessage({ states = {}, blackboard = {} })
+		currentTree.setInstanceName("edited tree")
 		currentTree.changed = true
 	end
 end
@@ -126,10 +140,11 @@ function BtCreator.show()
 	end
 end
 
-function BtCreator.showTree(tree, instanceId)
+function BtCreator.showTree(tree, instanceName, instanceId)
 	BtCreator.show()
 	loadTree(tree)
 	currentTree.instanceId  = instanceId --treeInstanceId
+	currentTree.setInstanceName(instanceName)
 end
 
 function BtCreator.showReferencedTree(treeName, _referenceNodeID)
@@ -145,6 +160,15 @@ function BtCreator.showNewTree()
 		rootPanel:Show()
 	end
 	listenerClickOnNewTree()
+end
+-- called when new tree tabItem in BtController is selected
+function BtCreator.focusTree( treeType, instanceName, instanceId)
+	Logger.log("dialogs",
+		"ct.treeName: ",currentTree.treeName, " treeType: ", treeType, " edited: ", currentTree.changed )
+	if(currentTree.treeName == treeType and (currentTree.changed == false) ) then
+		BtEvaluator.reportTree(instanceId)
+		BtCreator.showTree(treeType, instanceName, instanceId)
+	end
 end
 
 function BtCreator.setDisableChildrenHitTest(bool)
@@ -307,7 +331,6 @@ local afterRoleManagement
 -- does create new project and directory if necessary 
 -- does not create file if treeName is not qualifiedName and throws error.
 local function saveTree(treeName)
-	Logger.log("dialogs", "tree name1: ", treeName)
 	local zoomedOut = btCreatorWindow.zoomedOut
 	local w = btCreatorWindow.width
 	local h = btCreatorWindow.height
@@ -358,7 +381,7 @@ local function saveTree(treeName)
 	setUpDir(BehaviourTree.contentType, project)
 	
 	Logger.assert("save-and-load", protoTree:Save(treeName))
-	currentTree.changed = false --isTreeChanged = false
+	--currentTree.changed = false --isTreeChanged = false
 	WG.clearSelection()
 	
 	Logger.loggedCall("Errors", "BtCreator", 
@@ -388,10 +411,13 @@ function saveAsTreeDialogCallback(project, tree)
 			rolesCount = rolesCount + 1
 		end
 		local qualifiedName = project .. "." .. tree
-		currentTree.setName(qualifiedName)
+		
 		if((maxSplit == rolesCount) and (rolesCount > 0) ) then --roles are plausible:
 			-- if new project I should create it  
 			saveTree(qualifiedName)	
+			currentTree.setName(qualifiedName)
+			currentTree.setInstanceName("tree saved")
+			currentTree.changed = false
 		else
 			-- we need to get user to define roles first:
 			currentTree.saveOncePossible = true
@@ -486,7 +512,8 @@ function newTreeDialogCallback(projectName,treeName)
 		currentTree.setName(qualifiedName)
 		currentTree.roles = {}
 		clearCanvas()
-		currentTree.changed = true --isTreeChanged = true
+		BtCreator.markTreeAsChanged()
+		currentTree.setInstanceName("new tree")
 	end
 end
 
@@ -514,8 +541,8 @@ function loadTree(treeName)
 	referenceNodeID = nil
 	getBehaviourTree(treeName)
 	currentTree.setName(treeName)
-	--treeNameLabel:SetCaption(treeName)
-	currentTree.changed = false -- isTreeChanged = false
+	currentTree.setInstanceName("loaded from disk")
+	currentTree.changed = false 
 end
 
 function loadTreeDialogCallback(project, tree)
@@ -1199,7 +1226,7 @@ function widget:Initialize()
 	treeNameLabel = Chili.Label:New{
 		parent = btCreatorWindow,
 		caption = currentTree.treeName,
-		width = 70,
+		width = 160,
 		x = '40%',
 		y = 5,
 		align = 'left',
@@ -1214,6 +1241,25 @@ function widget:Initialize()
 	}
 	treeNameLabel.font.size = 16
 	treeNameLabel:RequestUpdate()
+	
+	treeInstanceNameLabel = Chili.Label:New{
+		parent = btCreatorWindow,
+		caption = currentTree.instanceName,
+		width = 70,
+		x = treeNameLabel.x + (treeNameLabel.width/2),
+		y = treeNameLabel.y + treeNameLabel.height  ,
+		align = 'left',
+		-- skinName = 'DarkGlass',
+		borderColor = {1,1,1,0.2},
+		borderColor2 = {1,1,1,0.2},
+		borderThickness = 0,
+		backgroundColor = {0,0,0,0},
+		minWidth = 120,
+		autosize = true,
+		tooltip = "Instance name of currently shown tree (debugging).",
+	}
+	treeInstanceNameLabel.font.size = 16
+	treeInstanceNameLabel:RequestUpdate()
 	
 	moveCanvasImg = Chili.Image:New{
 		parent = btCreatorWindow,

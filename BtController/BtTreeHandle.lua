@@ -48,13 +48,13 @@ end
 
 TreeHandle = {}
 -- This table is indexed by unitId and contains structures:
--- {InstanceId = "", Role = "", TreeHandle = treehandle} 
+-- {instanceId = "", Role = "", TreeHandle = treehandle} 
 TreeHandle.unitsToTreesMap = {}
 --[[
 TreeHandle = {
-			Name = "no_name", 
-			TreeType = "no_tree_type", 
-			InstanceId = "default", 
+			name = "no_name", 
+			treeType = "no_tree_type", 
+			instanceId = "default", 
 			Tree = "no_tree", 
 			ChiliComponentsGeneral = {},
 			ChiliComponentsRoles = {},
@@ -70,9 +70,9 @@ TreeHandle = {
 			} 
 --]]			
 --[[-----------------------------------------------------------------------------------
---	Contains	Name = "name of tree"
---				TreeType = loaded tree into table
--- 				InstanceId = id of this given instance 
+--	Contains	name = "name of tree"
+--				treeType = loaded tree into table
+-- 				instanceId = id of this given instance 
 --				chiliComponents = array ofchili components corresponding to this tree
 --				Roles = table indexed by roleName containing reference to 
 --					chili components and other stuff: {assignButton = , unitCountButton =, roleIndex =, unitTypes  }
@@ -129,7 +129,7 @@ end
 
 -- Function responsible for selecting units in given role.
 function TreeHandle.selectUnitsInRolesListener(button, ...) 
-	local unitsInThisRole = TreeHandle.unitsInTreeRole(button.TreeHandle.InstanceId, button.Role)
+	local unitsInThisRole = TreeHandle.unitsInTreeRole(button.TreeHandle.instanceId, button.Role)
 	Spring.SelectUnitArray(unitsInThisRole)
 end
 
@@ -168,7 +168,7 @@ function createChiliComponentsRoles(obj,xOffSet,yOffSet)
 			TreeHandle = obj,
 			Role = roleName,
 			roleIndex = roleInd,
-			instanceId = obj.InstanceId,
+			instanceId = obj.instanceId,
 			tooltip = "Assigns currently selected units to this role",
 		}
 		table.insert(obj.ChiliComponentsRoles, roleAssignmentButton)
@@ -182,7 +182,7 @@ function createChiliComponentsRoles(obj,xOffSet,yOffSet)
 			caption = 0, 
 			skinName = "DarkGlass",
 			focusColor = {1.0,0.5,0.0,0.5},
-			instanceId = obj.InstanceId,
+			instanceId = obj.instanceId,
 			tooltip = "How many units are in tree currently, click selects them.",
 			TreeHandle = obj,
 			Role = roleName,
@@ -236,7 +236,7 @@ function createChiliComponentsInput(obj, xOffSet, yOffSet)
 			TreeHandle = obj,
 			InputName = inputName,
 			CommandName = input.command,
-			InstanceId = obj.InstanceId,
+			instanceId = obj.instanceId,
 			backgroundColor = CONSTANTS.FAILURE_COLOR,
 			tooltip = "Give required input (red = not given yet, green = given)",
 		}
@@ -254,8 +254,8 @@ end
 function TreeHandle:New(obj)
 	setmetatable(obj, self)
 	self.__index = self
-	obj.InstanceId = generateID()
-	obj.Tree = BehaviourTree.load(obj.TreeType)
+	obj.instanceId = generateID()
+	obj.Tree = BehaviourTree.load(obj.treeType)
 	
 	obj.ChiliComponentsGeneral = {}
 	obj.ChiliComponentsRoles = {}
@@ -272,7 +272,7 @@ function TreeHandle:New(obj)
 		height = 30,
 		width =  100,
 		minWidth = 50,
-		caption =  obj.TreeType,
+		caption =  obj.treeType,
 		skinName = "DarkGlass",
 		tooltip = "Name of tree type, (state)",
 	}
@@ -364,7 +364,7 @@ end
 -- this will remove all units from given tree and adjust gui componnets
 function TreeHandle.removeUnitsFromTree(instanceId)
 	for unitId, unitData in pairs(TreeHandle.unitsToTreesMap) do
-		if(unitData.InstanceId == instanceId) then
+		if(unitData.instanceId == instanceId) then
 			unitData.TreeHandle:DecreaseUnitCount(unitData.Role)
 			TreeHandle.unitsToTreesMap[unitId] = nil
 		end
@@ -387,7 +387,7 @@ end
 function TreeHandle.unitsInTreeRole(instanceId,roleName)
 	local unitsInThisTree = {}
 	for unitId, unitEntry in pairs(TreeHandle.unitsToTreesMap) do
-		if( (unitEntry.InstanceId == instanceId) and (unitEntry.Role == roleName)) then
+		if( (unitEntry.instanceId == instanceId) and (unitEntry.Role == roleName)) then
 			table.insert(unitsInThisTree, unitId)
 		end
 	end
@@ -401,7 +401,7 @@ function TreeHandle.assignUnitToTree(unitId, treeHandle, roleName)
 		TreeHandle.removeUnitFromCurrentTree(unitId)
 	end
 	TreeHandle.unitsToTreesMap[unitId] = {
-		InstanceId = treeHandle.InstanceId, 
+		instanceId = treeHandle.instanceId, 
 		Role = roleName,
 		TreeHandle = treeHandle
 		}
@@ -412,7 +412,7 @@ end
 function TreeHandle.unitsInTree(instanceId)
 	local unitsInThisTree = {}
 	for unitId, unitEntry in pairs(TreeHandle.unitsToTreesMap) do
-		if(unitEntry.InstanceId == instanceId) then
+		if(unitEntry.instanceId == instanceId) then
 			table.insert(unitsInThisTree, unitId)
 		end
 	end
@@ -424,13 +424,13 @@ function TreeHandle:ReloadTree()
 	-- remember all units assigned in this tree
 	local assignedUnits = {}
 	for _,roleData in pairs(self.Tree.roles) do		
-		local unitsInRole = TreeHandle.unitsInTreeRole(self.InstanceId, roleData.name)
+		local unitsInRole = TreeHandle.unitsInTreeRole(self.instanceId, roleData.name)
 		if( table.getn(unitsInRole) > 0) then
 			assignedUnits[roleData.name] = unitsInRole
 		end
 	end
 	-- free all units
-	 TreeHandle.removeUnitsFromTree(self.InstanceId)
+	 TreeHandle.removeUnitsFromTree(self.instanceId)
 	
 	-- inputs:
 	-- collect cmd corresponding to inputs:
@@ -444,7 +444,7 @@ function TreeHandle:ReloadTree()
 	self.Inputs = {}
 			
 	-- getting a new tree:
-	self.Tree = BehaviourTree.load(self.TreeType)
+	self.Tree = BehaviourTree.load(self.treeType)
 	-- reload UI:---------------------------------------------------------------
 	
 	-- remove old components 
