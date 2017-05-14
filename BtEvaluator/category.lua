@@ -18,8 +18,11 @@ function CategoryManager.loadCategory(...)
 	local idToDataMap = {}
 	local nameToDataMap = {}
 	for i, data in ipairs(categoryData.types) do
-		idToDataMap[data.id] = data
 		nameToDataMap[data.name] = data
+		local id = (UnitDefNames[data.name] or {}).id
+		if(id)then
+			idToDataMap[id] = data
+		end
 	end
 	
 	return setmetatable({}, {

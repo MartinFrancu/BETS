@@ -20,10 +20,6 @@ local showBtCheatButton
 
 
 
-local roleManager = require("role_manager")
-
-local btCheat = require("cheat")
-
 --- Keys are node IDs, values are Treenode objects.
 WG.nodeList = {}
 local nodePoolList = {}
@@ -43,8 +39,13 @@ local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyT
 local nodeDefinitionInfo = {}
 local isScript = {}
 
--- BtEvaluator interface definitions
-local BtCreator = {} -- if we need events, change to Sentry:New()
+-- BtCreator interface definitions
+BtCreator = {} -- if we need events, change to Sentry:New()
+local BtCreator = BtCreator
+
+local roleManager = require("role_manager")
+local btCheat = require("cheat")
+
 
 
 local treeNameLabel
