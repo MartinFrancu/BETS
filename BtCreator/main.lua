@@ -18,7 +18,6 @@ local roleManagerButton
 local newTreeButton
 local showBtCheatButton
 
-local saveTreeOncePossible
 
 
 local roleManager = require("role_manager")
@@ -53,7 +52,8 @@ local noNameString = "--NO NAME GIVEN--"
 
 local currentTree = {
 	treeName = noNameString,
-	roles = {}
+	roles = {},
+	saveOncePossible = false,
 }
 
 function currentTree.setName(newTreeName) 
@@ -72,8 +72,18 @@ local function setUpDir(contentType, projectName)
 	Spring.CreateDir(path:match("^(.+)/"))
 end
 
-local function projectFromQname(qualifiedName)
-	
+local function separateProjectAndName(qualifiedName)
+	-- Here I should move all the project creations etc..
+	local length = string.len(qualifiedName)
+	local position = string.find(qualifiedName, '%.')
+	if(position and position ~= length and position ~= 1) then
+		-- current name makes sense, simulate user selection of this name:
+		local project = string.sub(qualifiedName, 1, position-1)
+		local name = string.sub(qualifiedName, position+1,length )
+		return project, name
+	else
+		return
+	end
 end
 
 
@@ -292,7 +302,10 @@ end
 local afterRoleManagement
 
 -- does not check if tree makes sense
+-- does create new project and directory if necessary 
+-- does not create file if treeName is not qualifiedName and throws error.
 local function saveTree(treeName)
+	Logger.log("dialogs", "tree name1: ", treeName)
 	local zoomedOut = btCreatorWindow.zoomedOut
 	local w = btCreatorWindow.width
 	local h = btCreatorWindow.height
@@ -332,21 +345,15 @@ local function saveTree(treeName)
 		end
 	end
 	-- Here I should move all the project creations etc..
-	local length = string.len(treeName)
-	local position = string.find(treeName, '%.')
-	Logger.log("dialogs", "saving: length: " ..length.. " pos: " .. position)
-	if(position or position ~= length or position ~= 1) then
-		-- current name makes sense, simulate user selection of this name:
-		local project = string.sub(treeName, 1, position-1)
-		local name = string.sub(treeName, position+1,length )
-		setUpDir(BehaviourTree.contentType, project)
-	else
-		-- current name does not seem to nake sense, need to ask user:
+	local project, tree = separateProjectAndName(treeName)
+	if(not project or not tree)then
+		-- name is not in format of qualifiedName
 		Logger.log("Errors", 
-			"BtCreator saveTree: given qualified tree name does not contain project name."
+			"BtCreator saveTree: invalid qualified Name"
 			 .. " treeName:" .. treeName)
 		return
 	end
+	setUpDir(BehaviourTree.contentType, project)
 	
 	Logger.assert("save-and-load", protoTree:Save(treeName))
 	isTreeChanged = false
@@ -371,7 +378,6 @@ function saveAsTreeDialogCallback(project, tree)
 	if project and tree then 
 		-- we have treetree name
 		-- now we need to check if roles are plausible:
-		
 		local resultTree = formBehaviourTree()
 		-- are there enough roles?
 		local maxSplit = maxRoleSplit(resultTree)
@@ -386,7 +392,7 @@ function saveAsTreeDialogCallback(project, tree)
 			saveTree(qualifiedName)	
 		else
 			-- we need to get user to define roles first:
-			saveTreeOncePossible = true
+			currentTree.saveOncePossible = true
 			roleManager.showRolesManagement(Screen0, resultTree, currentTree.roles , self, afterRoleManagement) --rolesOfCurrentTree
 		end
 	end
@@ -394,16 +400,11 @@ end
 
 function listenerClickOnSaveTree(self)
 	local qualifiedName = currentTree.treeName 
-	local length = string.len(qualifiedName)
-	local position = string.find(qualifiedName, '%.')
-	if(position or position ~= length or position ~= 1) then
-		-- current name makes sense, simulate user selection of this name:
-		local project = string.sub(qualifiedName, 1, position-1)
-		local name = string.sub(qualifiedName, position+1,length )
-		saveAsTreeDialogCallback(project, name)
+	local project, treeName = separateProjectAndName(qualifiedName)
+	if(project and treeName )then 
+		saveAsTreeDialogCallback(project, treeName)
 	else
-		-- current name does not seem to nake sense, need to ask user:
-		listenerClickOnSaveAsTree(self)
+		listenerClickOnSaveAsTree(saveTreeButton)
 	end
 end
 
@@ -418,9 +419,9 @@ end
 afterRoleManagement = function (self, rolesData)
 	BtCreator.show()
 	currentTree.roles = rolesData
-	if(saveTreeOncePossible) then
+	if(currentTree.saveOncePossible) then
 		listenerClickOnSaveTree(saveTreeButton) 
-		saveTreeOncePossible = false 
+		currentTree.saveOncePossible = false 
 	end
 end
 
