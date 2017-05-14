@@ -23,7 +23,19 @@ local saveTreeOncePossible
 local treeNameLabel
 local noNameString = "--NO NAME GIVEN--"
 
-local rolesOfCurrentTree = {}
+local currentTree = {
+	treeName = noNameString,
+	roles = {}
+}
+
+function currentTree.setName(newTreeName) 
+	currentTree.treeName = newTreeName
+	if(treeNameLabel) then
+		treeNameLabel:SetCaption(newTreeName)
+	end
+end
+
+--local rolesOfCurrentTree = {}
 
 local roleManager = require("role_manager")
 
@@ -284,7 +296,7 @@ local function saveTree(treeName)
 		end
 		updateSerializedIDs()
 	end
-	protoTree.roles = rolesOfCurrentTree
+	protoTree.roles = currentTree.roles -- rolesOfCurrentTree
 	protoTree.inputs = {}
 	protoTree.outputs = {}
 	local r = WG.nodeList[rootID]
@@ -333,11 +345,12 @@ function saveAsTreeDialogCallback(project, tree)
 		-- are there enough roles?
 		local maxSplit = maxRoleSplit(resultTree)
 		local rolesCount = 0
-		for _,role in pairs(rolesOfCurrentTree) do
+		for _,role in pairs(currentTree.roles ) do --rolesOfCurrentTree
 			rolesCount = rolesCount + 1
 		end
 		local qualifiedName = project .. "." .. tree
-		treeNameLabel:SetCaption(qualifiedName)
+		currentTree.setName(qualifiedName)
+		--treeNameLabel:SetCaption(qualifiedName)
 		if((maxSplit == rolesCount) and (rolesCount > 0) ) then --roles are plausible:
 			-- if new project I should create it  
 			if(not ProjectManager.isProject(project))then
@@ -347,13 +360,13 @@ function saveAsTreeDialogCallback(project, tree)
 		else
 			-- we need to get user to define roles first:
 			saveTreeOncePossible = true
-			roleManager.showRolesManagement(Screen0, resultTree, rolesOfCurrentTree, self, afterRoleManagement)
+			roleManager.showRolesManagement(Screen0, resultTree, currentTree.roles , self, afterRoleManagement) --rolesOfCurrentTree
 		end
 	end
 end
 
 function listenerClickOnSaveTree(self)
-	local qualifiedName = treeNameLabel.caption
+	local qualifiedName = currentTree.treeName --treeNameLabel.caption
 	local length = string.len(qualifiedName)
 	local position = string.find(qualifiedName, '%.')
 	if(position or position == length or position == 1) then
@@ -378,7 +391,8 @@ end
 
 afterRoleManagement = function (self, rolesData)
 	BtCreator.show()
-	rolesOfCurrentTree = rolesData
+	currentTree.roles = rolesData
+	--rolesOfCurrentTree = rolesData
 	if(OncePossible) then
 		listenerClickOnSaveTree()
 		saveTreeOncePossible = false 
@@ -438,9 +452,13 @@ end
 
 function newTreeDialogCallback(projectName,treeName)
 	BtCreator.show()
-	if(projectName and treeName) then -- user selected 
-		treeNameLabel:SetCaption(projectName .. "." .. treeName)
-		rolesOfCurrentTree = {}
+	if(projectName and treeName) then -- user selected
+		-- does given project exists??
+		qualifiedName = projectName .. "." .. treeName
+		currentTree.setName(qualifiedName)
+		--treeNameLabel:SetCaption()
+		currentTree.roles = {}
+		--rolesOfCurrentTree = {}
 		clearCanvas()
 		isTreeChanged = true
 	end
@@ -459,7 +477,8 @@ function getBehaviourTree(treeName)
 	if(bt)then
 		clearCanvas()
 		loadBehaviourTree(bt)
-		rolesOfCurrentTree = bt.roles or {}
+		currentTree.roles = bt.roles or {}
+		--rolesOfCurrentTree = bt.roles or {}
 	else
 		error("BehaviourTree " .. treeName .. " instance not found. " .. debug.traceback())
 	end
@@ -468,7 +487,8 @@ end
 function loadTree(treeName)
 	referenceNodeID = nil
 	getBehaviourTree(treeName)
-	treeNameLabel:SetCaption(treeName)
+	currentTree.setName(treeName)
+	--treeNameLabel:SetCaption(treeName)
 	isTreeChanged = false
 end
 
@@ -489,7 +509,7 @@ end
 function listenerClickOnRoleManager(self)
 	local currentTree = formBehaviourTree()
 	self.hideFunction()
-	roleManager.showRolesManagement(Screen0, currentTree, rolesOfCurrentTree, self, afterRoleManagement)
+	roleManager.showRolesManagement(Screen0, currentTree, currentTree.roles , self, afterRoleManagement) --rolesOfCurrentTree
 end
 
 function listenerClickOnCheat(self)
@@ -1152,7 +1172,7 @@ function widget:Initialize()
 
 	treeNameLabel = Chili.Label:New{
 		parent = btCreatorWindow,
-		caption = noNameString,
+		caption = currentTree.treeName,
 		width = 70,
 		x = '40%',
 		y = 5,
@@ -1213,7 +1233,6 @@ function widget:Initialize()
 	}	
 	
 	
-	-- treeNameLabel.font.size = 16
 	listenerClickOnMinimize()
 	WG.BtCreator = sanitizer:Export(BtCreator)
 	
@@ -1511,7 +1530,8 @@ local function loadBehaviourNode(bt, btNode)
 end
 
 function loadBehaviourTree(bt)
-	serializedTreeName = treeNameLabel.caption -- to be able to regenerate ids of deserialized nodes, when saved with different name
+	serializedTreeName = currentTree.treeName 
+	--treeNameLabel.caption -- to be able to regenerate ids of deserialized nodes, when saved with different name
 	local root = loadBehaviourNode(bt, bt.root)
 	if(root)then
 		connectionLine.add(WG.nodeList[rootID].connectionOut, root.connectionIn)
