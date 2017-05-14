@@ -75,8 +75,11 @@ function CategoryManager.forProject(localProject)
 end
 
 function CategoryManager.reload()
+	local temp = CategoryManager.reload
+	CategoryManager.reload = function() end
 	categories = {}
 	managers:Reload()
+	CategoryManager.reload = temp
 end
 
 CustomEnvironment.add("Categories", { }, function(p)
