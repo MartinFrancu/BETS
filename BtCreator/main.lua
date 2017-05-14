@@ -52,8 +52,10 @@ local noNameString = "--NO NAME GIVEN--"
 
 local currentTree = {
 	treeName = noNameString,
+	instanceId = nil,
 	roles = {},
 	saveOncePossible = false,
+	changed = false,
 }
 
 function currentTree.setName(newTreeName) 
@@ -93,7 +95,7 @@ local connectionLine = require("connection_line")
 local blackboard = require("blackboard")
 
 
-local treeInstanceId
+
 --- When opening tree through reference node, the id of the reference node is stored here.
 --- Needs to be nilled on any other type of tree loading. 
 local referenceNodeID
@@ -110,11 +112,11 @@ local rootDefaultX = 5
 local rootDefaultY = 60
 
 local updateStatesMessage
-local isTreeChanged = false
+
 function BtCreator.markTreeAsChanged()
-	if(not isTreeChanged)then
+	if(not currentTree.changed)then
 		updateStatesMessage({ states = {}, blackboard = {} })
-		isTreeChanged = true
+		currentTree.changed = true
 	end
 end
 
@@ -127,14 +129,14 @@ end
 function BtCreator.showTree(tree, instanceId)
 	BtCreator.show()
 	loadTree(tree)
-	treeInstanceId = instanceId
+	currentTree.instanceId  = instanceId --treeInstanceId
 end
 
 function BtCreator.showReferencedTree(treeName, _referenceNodeID)
 	-- loadTree() nillates the referenceNodeID so set it after loadTree() call
-	local temp = isTreeChanged
+	local temp = currentTree.changed --isTreeChanged
 	loadTree(treeName)
-	isTreeChanged = temp
+	currentTree.changed = temp
 	referenceNodeID = _referenceNodeID
 end
 
@@ -356,7 +358,7 @@ local function saveTree(treeName)
 	setUpDir(BehaviourTree.contentType, project)
 	
 	Logger.assert("save-and-load", protoTree:Save(treeName))
-	isTreeChanged = false
+	currentTree.changed = false --isTreeChanged = false
 	WG.clearSelection()
 	
 	Logger.loggedCall("Errors", "BtCreator", 
@@ -484,7 +486,7 @@ function newTreeDialogCallback(projectName,treeName)
 		currentTree.setName(qualifiedName)
 		currentTree.roles = {}
 		clearCanvas()
-		isTreeChanged = true
+		currentTree.changed = true --isTreeChanged = true
 	end
 end
 
@@ -513,7 +515,7 @@ function loadTree(treeName)
 	getBehaviourTree(treeName)
 	currentTree.setName(treeName)
 	--treeNameLabel:SetCaption(treeName)
-	isTreeChanged = false
+	currentTree.changed = false -- isTreeChanged = false
 end
 
 function loadTreeDialogCallback(project, tree)
@@ -579,11 +581,11 @@ local function listenerClickOnBreakpoint()
 		local img
 		if(breakpoints[id] == nil and nodeId ~= rootID) then
 			breakpoints[id] = true
-			BtEvaluator.setBreakpoint(treeInstanceId, id)
+			BtEvaluator.setBreakpoint(currentTree.instanceId , id) --treeInstanceId
 			img = BREAKPOINT_IMAGE
 		else
 			breakpoints[id] = nil
-			BtEvaluator.removeBreakpoint(treeInstanceId, nodeId)
+			BtEvaluator.removeBreakpoint(currentTree.instanceId, nodeId) --treeInstanceId
 			img = DEFAULT_IMAGE
 		end
 		if(nodeId ~= rootID) then
@@ -596,7 +598,7 @@ end
 
 local pausedByBtCreator = false
 local function listenerClickOnContinue()
-	BtEvaluator.tickTree(treeInstanceId)
+	BtEvaluator.tickTree(currentTree.instanceId) --treeInstanceId
 	if(not pausedByBtCreator)then
 		Spring.SendCommands("pause")
 	end
@@ -606,7 +608,7 @@ end
 --- node states. When referenced tree is opened, it has ids in the form 
 --- [referenceNodeID]-[internalNodeIDs].
 function updateStatesMessage(params)
-	if(isTreeChanged)then
+	if(currentTree.changed )then --isTreeChanged
 		return
 	end
 
