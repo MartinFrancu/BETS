@@ -20,22 +20,6 @@ local showBtCheatButton
 
 local saveTreeOncePossible
 
-local treeNameLabel
-local noNameString = "--NO NAME GIVEN--"
-
-local currentTree = {
-	treeName = noNameString,
-	roles = {}
-}
-
-function currentTree.setName(newTreeName) 
-	currentTree.treeName = newTreeName
-	if(treeNameLabel) then
-		treeNameLabel:SetCaption(newTreeName)
-	end
-end
-
---local rolesOfCurrentTree = {}
 
 local roleManager = require("role_manager")
 
@@ -62,6 +46,36 @@ local isScript = {}
 
 -- BtEvaluator interface definitions
 local BtCreator = {} -- if we need events, change to Sentry:New()
+
+
+local treeNameLabel
+local noNameString = "--NO NAME GIVEN--"
+
+local currentTree = {
+	treeName = noNameString,
+	roles = {}
+}
+
+function currentTree.setName(newTreeName) 
+	currentTree.treeName = newTreeName
+	if(treeNameLabel) then
+		treeNameLabel:SetCaption(newTreeName)
+	end
+end
+--- This function creates project and directory for given content type
+local function setUpDir(contentType, projectName)
+	if(not ProjectManager.isProject(projectName))then
+			-- if new project I should create it 
+			ProjectManager.createProject(projectName)
+	end 
+	local path,params = ProjectManager.findFile(contentType, projectName, "dummyName")
+	Spring.CreateDir(path:match("^(.+)/"))
+end
+
+local function projectFromQname(qualifiedName)
+	
+end
+
 
 -- connection lines functions
 local connectionLine = require("connection_line")
@@ -296,7 +310,7 @@ local function saveTree(treeName)
 		end
 		updateSerializedIDs()
 	end
-	protoTree.roles = currentTree.roles -- rolesOfCurrentTree
+	protoTree.roles = currentTree.roles
 	protoTree.inputs = {}
 	protoTree.outputs = {}
 	local r = WG.nodeList[rootID]
@@ -317,6 +331,23 @@ local function saveTree(treeName)
 			table.insert(protoTree.outputs, {["name"] = outputs[i].editBox.text,})
 		end
 	end
+	-- Here I should move all the project creations etc..
+	local length = string.len(treeName)
+	local position = string.find(treeName, '%.')
+	Logger.log("dialogs", "saving: length: " ..length.. " pos: " .. position)
+	if(position or position ~= length or position ~= 1) then
+		-- current name makes sense, simulate user selection of this name:
+		local project = string.sub(treeName, 1, position-1)
+		local name = string.sub(treeName, position+1,length )
+		setUpDir(BehaviourTree.contentType, project)
+	else
+		-- current name does not seem to nake sense, need to ask user:
+		Logger.log("Errors", 
+			"BtCreator saveTree: given qualified tree name does not contain project name."
+			 .. " treeName:" .. treeName)
+		return
+	end
+	
 	Logger.assert("save-and-load", protoTree:Save(treeName))
 	isTreeChanged = false
 	WG.clearSelection()
@@ -350,12 +381,8 @@ function saveAsTreeDialogCallback(project, tree)
 		end
 		local qualifiedName = project .. "." .. tree
 		currentTree.setName(qualifiedName)
-		--treeNameLabel:SetCaption(qualifiedName)
 		if((maxSplit == rolesCount) and (rolesCount > 0) ) then --roles are plausible:
 			-- if new project I should create it  
-			if(not ProjectManager.isProject(project))then
-				ProjectManager.createProject(project)
-			end
 			saveTree(qualifiedName)	
 		else
 			-- we need to get user to define roles first:
@@ -366,21 +393,20 @@ function saveAsTreeDialogCallback(project, tree)
 end
 
 function listenerClickOnSaveTree(self)
-	local qualifiedName = currentTree.treeName --treeNameLabel.caption
+	local qualifiedName = currentTree.treeName 
 	local length = string.len(qualifiedName)
 	local position = string.find(qualifiedName, '%.')
-	if(position or position == length or position == 1) then
+	if(position or position ~= length or position ~= 1) then
+		-- current name makes sense, simulate user selection of this name:
 		local project = string.sub(qualifiedName, 1, position-1)
 		local name = string.sub(qualifiedName, position+1,length )
 		saveAsTreeDialogCallback(project, name)
 	else
+		-- current name does not seem to nake sense, need to ask user:
 		listenerClickOnSaveAsTree(self)
 	end
 end
 
--- local function onModalDialog(show)
-	-- rootPanel.disableChildrenHitTest = show
--- end
 
 function listenerClickOnSaveAsTree(self)
 	local screenX,screenY = self:LocalToScreen(0,0)
@@ -392,9 +418,8 @@ end
 afterRoleManagement = function (self, rolesData)
 	BtCreator.show()
 	currentTree.roles = rolesData
-	--rolesOfCurrentTree = rolesData
-	if(OncePossible) then
-		listenerClickOnSaveTree()
+	if(saveTreeOncePossible) then
+		listenerClickOnSaveTree(saveTreeButton) 
 		saveTreeOncePossible = false 
 	end
 end
@@ -453,12 +478,10 @@ end
 function newTreeDialogCallback(projectName,treeName)
 	BtCreator.show()
 	if(projectName and treeName) then -- user selected
-		-- does given project exists??
+		-- if new project I should create it 
 		qualifiedName = projectName .. "." .. treeName
 		currentTree.setName(qualifiedName)
-		--treeNameLabel:SetCaption()
 		currentTree.roles = {}
-		--rolesOfCurrentTree = {}
 		clearCanvas()
 		isTreeChanged = true
 	end
