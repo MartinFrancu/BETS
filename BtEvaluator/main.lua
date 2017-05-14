@@ -351,6 +351,8 @@ function BtEvaluator.createTree(instanceId, treeDefinition, inputs)
 		instance.inputs[k] = v
 	end
 	
+	BtEvaluator.OnInstanceCreated(instanceId, instance)
+	
 	return instance;
 end
 function BtEvaluator.setInput(instanceId, inputName, data)
@@ -368,7 +370,9 @@ end
 function BtEvaluator.removeTree(instanceId)
 	BtEvaluator.resetTree(instanceId)
 	removeInstance(instanceId)
-	return BtEvaluator.sendMessage("REMOVE_TREE", { instanceId = instanceId })
+	local result, message = BtEvaluator.sendMessage("REMOVE_TREE", { instanceId = instanceId })
+	BtEvaluator.OnInstanceRemoved(instanceId)
+	return result, message
 end
 function BtEvaluator.reportTree(instanceId)
 	return BtEvaluator.sendMessage("REPORT_TREE", { instanceId = instanceId })
@@ -496,7 +500,7 @@ local function createExpression(expression)
 end
 
 
-function BtEvaluator.OnStartTree(params)
+local function handleStartTree(params)
 	local instance = treeInstances[params.treeId]
 	local blackboard = getBlackboardForInstance(params.treeId)
 	local subblackboard = instance.subblackboards[params.id]
@@ -545,7 +549,7 @@ function BtEvaluator.OnStartTree(params)
 	instance.project = projectSwitch
 	return Results.SUCCESS
 end
-function BtEvaluator.OnEnterTree(params)
+local function handleEnterTree(params)
 	local instance = treeInstances[params.treeId]
 	local subblackboard = instance.subblackboards[params.id]
 	local projectSwitch = (params.project and params.project ~= "") and params.project or instance.project
@@ -565,7 +569,7 @@ function BtEvaluator.OnEnterTree(params)
 	instance.project = projectSwitch
 	return Results.SUCCESS
 end
-function BtEvaluator.OnExitTree(params)
+local function handleExitTree(params)
 	local instance = treeInstances[params.treeId]
 	local subblackboard = instance.subblackboards[params.id]
 	if(subblackboard ~= instance.blackboard)then
@@ -587,7 +591,7 @@ function BtEvaluator.OnExitTree(params)
 	stack.length = stack.length - 1
 end
 
-function BtEvaluator.OnCommand(params)
+local function handleCommand(params)
 	local instance = treeInstances[params.treeId]
 	local command = getCommand(params.name, params.id, params.treeId)
 	local blackboard = getBlackboardForInstance(params.treeId)
@@ -636,7 +640,7 @@ function BtEvaluator.OnCommand(params)
 	end
 end
 
-function BtEvaluator.OnExpression(params)
+local function handleExpression(params)
 	if(params.func == "RESET")then
 		return Results.SUCCESS
 	end
@@ -750,11 +754,11 @@ local handlers = {
 	end,
 	
 	-- event messages
-	["COMMAND"] = asHandler(BtEvaluator.OnCommand),
-	["EXPRESSION"] = asHandler(BtEvaluator.OnExpression),
-	["ENTER_SUBTREE"] = asHandler(BtEvaluator.OnEnterTree),
-	["START_SUBTREE"] = asHandler(BtEvaluator.OnStartTree),
-	["EXIT_SUBTREE"] = asHandler(BtEvaluator.OnExitTree),
+	["COMMAND"] = asHandler(handleCommand),
+	["EXPRESSION"] = asHandler(handleExpression),
+	["ENTER_SUBTREE"] = asHandler(handleEnterTree),
+	["START_SUBTREE"] = asHandler(handleStartTree),
+	["EXIT_SUBTREE"] = asHandler(handleExitTree),
 	["UPDATE_STATES"] = function(data)
 		local params = data.asJSON()
 		local instanceId = params.id

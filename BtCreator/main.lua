@@ -163,12 +163,9 @@ function BtCreator.showNewTree()
 end
 -- called when new tree tabItem in BtController is selected
 function BtCreator.focusTree( treeType, instanceName, instanceId)
-	Logger.log("dialogs",
-		"ct.treeName: ",currentTree.treeName, " treeType: ", treeType, " edited: ", currentTree.changed )
-	if(currentTree.treeName == treeType and (currentTree.changed == false) ) then
-		BtEvaluator.reportTree(instanceId)
-		BtCreator.showTree(treeType, instanceName, instanceId)
-	end
+	currentTree.instanceId = instanceId
+	currentTree.setInstanceName(instanceName)
+	BtEvaluator.reportTree(instanceId)
 end
 
 function BtCreator.setDisableChildrenHitTest(bool)
@@ -1027,6 +1024,11 @@ function widget:Initialize()
 
 	BtEvaluator.OnNodeDefinitions = fillNodeListWithNodes
 	BtEvaluator.OnUpdateStates = updateStatesMessage
+	BtEvaluator.OnInstanceCreated = function(instanceId)
+		if(currentTree.instanceId == instanceId)then
+			BtEvaluator.reportTree(instanceId)
+		end
+	end
 
 	loadSensorAutocompleteTable()
 	
