@@ -389,12 +389,16 @@ function BtEvaluator.getInstances()
 	return result
 end
 
-local SensorManager = require("SensorManager")
+
+local SensorManager = require("sensor")
 BtEvaluator.SensorManager = SensorManager
 
+local CategoryManager = require("category")
+BtEvaluator.CategoryManager = CategoryManager
 
 function BtEvaluator.reloadCaches()
 	SensorManager.reload()
+	CategoryManager.reload()
 	BtEvaluator.scripts = {}
 end
 

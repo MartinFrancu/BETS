@@ -1,0 +1,74 @@
+{
+	"additionalNodes": [],
+	"additionalParameters": {
+		"root": {
+			"height": 88,
+			"width": 180
+		}
+	},
+	"inputs": [],
+	"outputs": [],
+	"properties": {
+		"41mY8uQ81d7jBY94b7muhHB69xYXwv4x": {
+			"height": 72,
+			"title": "echo",
+			"width": 179,
+			"x": 720,
+			"y": -84
+		},
+		"bXk0rGLfN64DwH6fPoluCqm7EQDr9cnC": {
+			"height": 72,
+			"title": "echo",
+			"width": 209,
+			"x": 760,
+			"y": 56
+		},
+		"yi5MEw2Ir5bOqJ5tuZb0gH5qXhjBNG7K": {
+			"height": 90,
+			"title": "luaCondition",
+			"width": 449,
+			"x": 244,
+			"y": -4
+		}
+	},
+	"roles": [ {
+		"categories": [],
+		"name": "Role 0"
+	} ],
+	"root": {
+		"children": [ {
+			"children": [],
+			"id": "41mY8uQ81d7jBY94b7muhHB69xYXwv4x",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "msg",
+				"value": "\"Is ground unit.\""
+			}, {
+				"name": "scriptName",
+				"value": "echo"
+			} ],
+			"scriptName": "echo"
+		}, {
+			"children": [],
+			"id": "bXk0rGLfN64DwH6fPoluCqm7EQDr9cnC",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "msg",
+				"value": "\"Is NOT ground unit\""
+			}, {
+				"name": "scriptName",
+				"value": "echo"
+			} ],
+			"scriptName": "echo"
+		} ],
+		"id": "yi5MEw2Ir5bOqJ5tuZb0gH5qXhjBNG7K",
+		"nodeType": "luaCondition",
+		"parameters": [ {
+			"name": "expression",
+			"value": "Categories.Common.groundUnits[Spring.GetUnitDefID(units[1])]"
+		}, {
+			"name": "repeat",
+			"value": "false"
+		} ]
+	}
+}
