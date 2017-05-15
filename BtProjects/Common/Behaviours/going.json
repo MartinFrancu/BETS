@@ -1,0 +1,44 @@
+{
+	"additionalNodes": [],
+	"additionalParameters": {
+		"root": {
+			"height": 108,
+			"width": 216
+		}
+	},
+	"inputs": [ {
+		"command": "BETS_POSITION",
+		"name": "moveTo"
+	} ],
+	"outputs": [],
+	"properties": {
+		"yykifcvKSzNXd8dc23648VrhONkTvdy2": {
+			"height": 90,
+			"title": "Common.move",
+			"width": 158,
+			"x": 426,
+			"y": 62
+		}
+	},
+	"roles": [ {
+		"categories": [],
+		"name": "Default role",
+		"types": []
+	} ],
+	"root": {
+		"children": [],
+		"id": "yykifcvKSzNXd8dc23648VrhONkTvdy2",
+		"nodeType": "luaCommand",
+		"parameters": [ {
+			"name": "pos",
+			"value": "moveTo"
+		}, {
+			"name": "fight",
+			"value": "false"
+		}, {
+			"name": "scriptName",
+			"value": "Common.move"
+		} ],
+		"scriptName": "Common.move"
+	}
+}

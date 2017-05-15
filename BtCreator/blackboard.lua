@@ -2,10 +2,9 @@
 
 local blackboard = {}
 
-local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
 local sanitizer = Utils.Sanitizer.forWidget(widget)
 
-local Chili = WG.ChiliClone
+local Chili = Utils.Chili
 local Screen0 = Chili.Screen0
 
 local blackboardWindowState

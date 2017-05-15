@@ -1,0 +1,106 @@
+{
+	"additionalNodes": [],
+	"additionalParameters": {
+		"root": {
+			"height": 148,
+			"width": 216
+		}
+	},
+	"inputs": [ {
+		"command": "BETS_POSITION",
+		"name": "input1"
+	}, {
+		"command": "BETS_UNIT",
+		"name": "input2"
+	}, {
+		"command": "BETS_AREA",
+		"name": "input3"
+	} ],
+	"outputs": [],
+	"properties": {
+		"SHPfjg6JsJT9RMGYHkPnCDoZijfGuEdt": {
+			"height": 60,
+			"title": "sequence",
+			"width": 143,
+			"x": 244.499985,
+			"y": -70
+		},
+		"nBQuzoQaoDP4FTSxuWGzIbKmqMR8DbIZ": {
+			"height": 92,
+			"title": "Debug.randomVector",
+			"width": 213,
+			"x": 364.5,
+			"y": -127
+		},
+		"vcLWOsXXlUOGVkS7XH4zS7lFHelFTHc0": {
+			"height": 90,
+			"title": "Common.move",
+			"width": 158,
+			"x": 394.5,
+			"y": -33
+		},
+		"yRVLAarGZy7eoSBdzzL6o0608BbqmjDm": {
+			"height": 90,
+			"title": "Common.move",
+			"width": 158,
+			"x": 385.5,
+			"y": 72
+		}
+	},
+	"roles": [ {
+		"categories": [],
+		"name": "Default role",
+		"types": []
+	} ],
+	"root": {
+		"children": [ {
+			"children": [],
+			"id": "nBQuzoQaoDP4FTSxuWGzIbKmqMR8DbIZ",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "x",
+				"value": "x"
+			}, {
+				"name": "y",
+				"value": "y"
+			}, {
+				"name": "scriptName",
+				"value": "Debug.randomVector"
+			} ],
+			"scriptName": "Debug.randomVector"
+		}, {
+			"children": [],
+			"id": "vcLWOsXXlUOGVkS7XH4zS7lFHelFTHc0",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "pos",
+				"value": "x"
+			}, {
+				"name": "fight",
+				"value": "false"
+			}, {
+				"name": "scriptName",
+				"value": "Common.move"
+			} ],
+			"scriptName": "Common.move"
+		}, {
+			"children": [],
+			"id": "yRVLAarGZy7eoSBdzzL6o0608BbqmjDm",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "pos",
+				"value": "100"
+			}, {
+				"name": "fight",
+				"value": "false"
+			}, {
+				"name": "scriptName",
+				"value": "Common.move"
+			} ],
+			"scriptName": "Common.move"
+		} ],
+		"id": "SHPfjg6JsJT9RMGYHkPnCDoZijfGuEdt",
+		"nodeType": "sequence",
+		"parameters": []
+	}
+}

@@ -1,0 +1,64 @@
+{
+	"name": "transports",
+	"types": [ {
+		"humanName": "Atlas",
+		"id": 27,
+		"name": "armatlas"
+	}, {
+		"humanName": "Dragonfly",
+		"id": 53,
+		"name": "armdragf"
+	}, {
+		"humanName": "Seahook",
+		"id": 139,
+		"name": "armsl"
+	}, {
+		"humanName": "Bear",
+		"id": 149,
+		"name": "armthovr"
+	}, {
+		"humanName": "Truck",
+		"id": 155,
+		"name": "armtruck"
+	}, {
+		"humanName": "Dragonfly",
+		"id": 200,
+		"name": "cmercdrag"
+	}, {
+		"humanName": "Talwar",
+		"id": 211,
+		"name": "coraat"
+	}, {
+		"humanName": "Brik",
+		"id": 228,
+		"name": "corbrik"
+	}, {
+		"humanName": "Skybus",
+		"id": 229,
+		"name": "corbtrans"
+	}, {
+		"humanName": "Montro Gamma",
+		"id": 271,
+		"name": "corgamma"
+	}, {
+		"humanName": "Turtle",
+		"id": 349,
+		"name": "corthovr"
+	}, {
+		"humanName": "Truck",
+		"id": 357,
+		"name": "cortruck"
+	}, {
+		"humanName": "Valkyrie",
+		"id": 360,
+		"name": "corvalk"
+	}, {
+		"humanName": "Valkyrie Mark II",
+		"id": 362,
+		"name": "corvalkii"
+	}, {
+		"humanName": "Crossbreed",
+		"id": 390,
+		"name": "pircross"
+	} ]
+}

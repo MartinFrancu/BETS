@@ -1,0 +1,316 @@
+{
+	"name": "builders",
+	"types": [ {
+		"humanName": "Adv Kbot Center",
+		"id": 2,
+		"name": "ahkbc"
+	}, {
+		"humanName": "Level 2 Constructor (Aircraft)",
+		"id": 3,
+		"name": "arm2air"
+	}, {
+		"humanName": "Level 2 Constructor (Defense)",
+		"id": 4,
+		"name": "arm2def"
+	}, {
+		"humanName": "Level 2 Constructor (Kbot)",
+		"id": 5,
+		"name": "arm2kbot"
+	}, {
+		"humanName": "Level 2 Constructor (Vehicle)",
+		"id": 6,
+		"name": "arm2veh"
+	}, {
+		"humanName": "Adv. Aircraft Plant",
+		"id": 8,
+		"name": "armaap"
+	}, {
+		"humanName": "Longreach",
+		"id": 9,
+		"name": "armacar"
+	}, {
+		"humanName": "Adv. Construction Kbot",
+		"id": 10,
+		"name": "armack"
+	}, {
+		"humanName": "Construction Sub",
+		"id": 11,
+		"name": "armacsub"
+	}, {
+		"humanName": "Adv. Kbot Lab",
+		"id": 14,
+		"name": "armalab"
+	}, {
+		"humanName": "Aircraft Plant",
+		"id": 21,
+		"name": "armap"
+	}, {
+		"humanName": "MARS",
+		"id": 22,
+		"name": "armarspd"
+	}, {
+		"humanName": "Air Support Pad",
+		"id": 25,
+		"name": "armasp"
+	}, {
+		"humanName": "Adv. Vehicle Plant",
+		"id": 28,
+		"name": "armavp"
+	}, {
+		"humanName": "Arm Command Center",
+		"id": 30,
+		"name": "armbase"
+	}, {
+		"humanName": "Construction Aircraft",
+		"id": 39,
+		"name": "armca"
+	}, {
+		"humanName": "Wasp",
+		"id": 40,
+		"name": "armcarry"
+	}, {
+		"humanName": "Construction Hovercraft",
+		"id": 41,
+		"name": "armch"
+	}, {
+		"humanName": "Moho Engineer",
+		"id": 42,
+		"name": "armck"
+	}, {
+		"humanName": "Commander",
+		"id": 43,
+		"name": "armcom"
+	}, {
+		"humanName": "Commander",
+		"id": 44,
+		"name": "armcom2"
+	}, {
+		"humanName": "Construction Seaplane",
+		"id": 48,
+		"name": "armcsa"
+	}, {
+		"humanName": "Shipyard",
+		"id": 49,
+		"name": "armcsy"
+	}, {
+		"humanName": "Construction Vehicle",
+		"id": 50,
+		"name": "armcv"
+	}, {
+		"humanName": "FARCK",
+		"id": 61,
+		"name": "armfark"
+	}, {
+		"humanName": "Anti-gravity hangar",
+		"id": 65,
+		"name": "armfff"
+	}, {
+		"humanName": "Pod Factory",
+		"id": 81,
+		"name": "armhklab"
+	}, {
+		"humanName": "Hovercraft Platform",
+		"id": 85,
+		"name": "armhp"
+	}, {
+		"humanName": "Kbot Lab",
+		"id": 89,
+		"name": "armlab"
+	}, {
+		"humanName": "Advanced Constructor",
+		"id": 94,
+		"name": "armlvl2"
+	}, {
+		"humanName": "Level 1 Base Constructor",
+		"id": 113,
+		"name": "armnanotc"
+	}, {
+		"humanName": "Warp Gate",
+		"id": 116,
+		"name": "armplab"
+	}, {
+		"humanName": "Seaplane Platform",
+		"id": 117,
+		"name": "armplat"
+	}, {
+		"humanName": "Skybus Factory",
+		"id": 137,
+		"name": "armshltx"
+	}, {
+		"humanName": "Underwater Seaplane Support Station",
+		"id": 156,
+		"name": "armuwasp"
+	}, {
+		"humanName": "Vehicle Plant",
+		"id": 159,
+		"name": "armvp"
+	}, {
+		"humanName": "Alpha Montro",
+		"id": 171,
+		"name": "bug1"
+	}, {
+		"humanName": "Level 2 Constructor (Aircraft)",
+		"id": 205,
+		"name": "cor2air"
+	}, {
+		"humanName": "Level 2 Constructor (Defense)",
+		"id": 206,
+		"name": "cor2def"
+	}, {
+		"humanName": "Level 2 Constructor (Kbot)",
+		"id": 207,
+		"name": "cor2kbot"
+	}, {
+		"humanName": "Level 2 Constructor (Vehicle)",
+		"id": 208,
+		"name": "cor2veh"
+	}, {
+		"humanName": "Adv. Aircraft Plant",
+		"id": 210,
+		"name": "coraap"
+	}, {
+		"humanName": "Moho Engineer",
+		"id": 212,
+		"name": "corack"
+	}, {
+		"humanName": "Construction Sub",
+		"id": 213,
+		"name": "coracsub"
+	}, {
+		"humanName": "Adv. Kbot Lab",
+		"id": 217,
+		"name": "coralab"
+	}, {
+		"humanName": "Aircraft Plant",
+		"id": 219,
+		"name": "corap"
+	}, {
+		"humanName": "Air Support Pad",
+		"id": 221,
+		"name": "corasp"
+	}, {
+		"humanName": "Adv. Vehicle Plant",
+		"id": 223,
+		"name": "coravp"
+	}, {
+		"humanName": "Core Central Consciousness",
+		"id": 225,
+		"name": "corbase"
+	}, {
+		"humanName": "Construction Aircraft",
+		"id": 232,
+		"name": "corca"
+	}, {
+		"humanName": "Shamshir",
+		"id": 234,
+		"name": "corcarry"
+	}, {
+		"humanName": "Construction Hovercraft",
+		"id": 235,
+		"name": "corch"
+	}, {
+		"humanName": "Construction Kbot",
+		"id": 236,
+		"name": "corck"
+	}, {
+		"humanName": "Commander",
+		"id": 237,
+		"name": "corcom"
+	}, {
+		"humanName": "Commander",
+		"id": 238,
+		"name": "corcom2"
+	}, {
+		"humanName": "Construction Seaplane",
+		"id": 242,
+		"name": "corcsa"
+	}, {
+		"humanName": "Shipyard",
+		"id": 243,
+		"name": "corcsy"
+	}, {
+		"humanName": "Construction Vehicle",
+		"id": 244,
+		"name": "corcv"
+	}, {
+		"humanName": "Krogoth Gantry",
+		"id": 273,
+		"name": "corgant"
+	}, {
+		"humanName": "Hovercraft Platform",
+		"id": 283,
+		"name": "corhp"
+	}, {
+		"humanName": "Kbot Lab",
+		"id": 290,
+		"name": "corlab"
+	}, {
+		"humanName": "Advanced Constructor",
+		"id": 293,
+		"name": "corlvl2"
+	}, {
+		"humanName": "Necro",
+		"id": 315,
+		"name": "cornecro"
+	}, {
+		"humanName": "Level 1 Base Constructor",
+		"id": 316,
+		"name": "corntow"
+	}, {
+		"humanName": "Warp Gate",
+		"id": 317,
+		"name": "corplab"
+	}, {
+		"humanName": "Seaplane Platform",
+		"id": 319,
+		"name": "corplat"
+	}, {
+		"humanName": "Covert Ops Center",
+		"id": 336,
+		"name": "corslab"
+	}, {
+		"humanName": "Truck",
+		"id": 357,
+		"name": "cortruck"
+	}, {
+		"humanName": "Underwater Seaplane Support Station",
+		"id": 358,
+		"name": "coruwasp"
+	}, {
+		"humanName": "Valkyrie Factory",
+		"id": 361,
+		"name": "corvalkfac"
+	}, {
+		"humanName": "Vehicle Plant",
+		"id": 367,
+		"name": "corvp"
+	}, {
+		"humanName": "Dark Swarm Unit",
+		"id": 373,
+		"name": "darkswarmunit"
+	}, {
+		"humanName": "Emper Unit",
+		"id": 375,
+		"name": "emperunit"
+	}, {
+		"humanName": "Warp Gate",
+		"id": 379,
+		"name": "hergate"
+	}, {
+		"humanName": "If attacked",
+		"id": 386,
+		"name": "ifaiatt"
+	}, {
+		"humanName": "Scramer Unit",
+		"id": 412,
+		"name": "scramerunit"
+	}, {
+		"humanName": "targeting",
+		"id": 421,
+		"name": "targeting"
+	}, {
+		"humanName": "Weather Snow Storm",
+		"id": 423,
+		"name": "weather_snow_storm"
+	} ]
+}

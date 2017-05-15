@@ -1,1 +1,0 @@
-VFS.Include(LUAUI_DIRNAME .. "Widgets/BtController/BtController.lua", nil, VFS.RAW_FIRST)

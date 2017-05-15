@@ -17,7 +17,11 @@ return Utils:Assign("BehaviourTree", function()
 	local BEHAVIOURS_DIRNAME = LUAUI_DIRNAME .. "Widgets/BtBehaviours/"
 	
 	local JSON = Utils.JSON
-
+	local ProjectManager = Utils.ProjectManager
+	
+	local behavioursContentType = ProjectManager.makeRegularContentType("Behaviours", "json")
+	BehaviourTree.contentType = behavioursContentType
+	
 	local function removeItem(t, item)
 		for i, v in ipairs(t) do
 			if(v == item)then
@@ -44,6 +48,8 @@ return Utils:Assign("BehaviourTree", function()
 	-- @treturn BehaviourTree
 	function BehaviourTree:New()
 		local bt = {}
+		bt.roles = {}
+		bt.inputs = {}
 		bt.additionalNodes = {}
 		bt.properties = {}
 		return setmetatable(bt, treeMetatable)
@@ -61,6 +67,8 @@ return Utils:Assign("BehaviourTree", function()
 			nodeType = params.nodeType,
 			scriptName = params.scriptName,
 			parameters = params.parameters or {},
+			referenceInputs = params.referenceInputs,
+			referenceOutputs = params.referenceOutputs,
 			children = {},
 		}, makeNodeMetatable(self, properties))
 		
@@ -94,6 +102,61 @@ return Utils:Assign("BehaviourTree", function()
 		self.root = root
 	end
 
+	--- Add all nodes from the other tree to the current one.
+	-- @tparam BehaviourTree other The other tree.
+	-- @func f Optional, function that is to be applied to each node of the other tree before it is combined, e.g. ID changes, return value is ignored.
+	-- @treturn Node The original root of the other tree.
+	function treePrototype:Combine(other, f)
+		local visitor = f and function(node) node:Relocate(self) f(node) end or function(node) node:Relocate(self) end
+		other:Visit(visitor)
+		
+		local otherRoot = other.root
+		local n = table.getn(self.additionalNodes) + 1
+		self.additionalNodes[n] = otherRoot
+		for i, v in ipairs(other.additionalNodes) do
+			n = n + 1
+			self.additionalNodes[n] = v
+		end
+		
+		other.root = nil
+		other.additionalNodes = {}
+		other.properties = {}
+		
+		return otherRoot
+	end
+
+	-- implementation of BehaviourTree:Visit
+	local function visit(f, g, node)
+		if(not node) then
+			return
+		end
+		
+		local results = { f(node) }
+		if(results[1] ~= nil)then
+			return results
+		end
+		
+		for _, child in ipairs(node.children) do
+			local results = visit(f, g, child)
+			if(results and results[1] ~= nil)then
+				return results
+			end
+		end
+		
+		if(g)then
+			g(node)
+		end
+	end
+	
+	--- Invokes the given function on all nodes of the tree depth-first.
+	-- The traversing of the tree is terminated early if the function returns something.
+	-- @func f The function that is to be invoked for every node.
+	-- @func[opt] after Function that should be invoked when traversing out from the tree.
+	-- @return Whatever the function `f` returned along the way, or `nil`
+	function treePrototype:Visit(f, after)
+		return unpack(visit(f, after, self.root) or {})
+	end
+
 	-- loading
 	local function load_setupNode(tree, node)
 		if(not node)then return end
@@ -109,22 +172,112 @@ return Utils:Assign("BehaviourTree", function()
 		end
 	end
 	
+	--- Lists all available BehaviourTrees.
+	-- @static
+	-- @treturn {string} Array of behaviour tree names
+	function BehaviourTree.list(project)
+		local list
+		if(project)then
+			list = ProjectManager.listProject(project, behavioursContentType)
+		else
+			list = ProjectManager.listAll(behavioursContentType)
+		end
+
+		local result, i = {}, 1
+		for i, data in ipairs(list) do
+			result[i] = data.qualifiedName
+			i = i + 1
+		end
+		return result
+	end
+	
+	local function validateRoles(roles)
+		if(type(roles) ~= "table")then
+			return false, "Slot 'roles' must be a table."
+		end
+	
+		if(not roles[1])then
+			return false, "At least one role must be defined."
+		end
+		for i, v in ipairs(roles) do
+			if(type(v.categories) ~= "table")then
+				return false, tostring(i) .. "-th role 'categories' slot is not a table."
+			end
+			if(type(v.name) ~= "string")then
+				return false, tostring(i) .. "-th role 'name' slot is not a string."
+			end
+		end
+		return true
+	end
+	local validCommandNames = {
+		["BETS_POSITION"] = true,
+		["BETS_UNIT"] = true,
+		["BETS_AREA"] = true,
+		["Variable"] = true,
+	}
+	local function validateInputs(inputs)
+		if(type(inputs) ~= "table")then
+			return false, "Slot 'inputs' must be a table."
+		end
+	
+		for i, v in ipairs(inputs) do
+			if(not validCommandNames[v.command])then
+				return false, tostring(i) .. "-th input 'command' slot is not a valid value."
+			end
+			if(type(v.name) ~= "string")then
+				return false, tostring(i) .. "-th input 'name' slot is not a string."
+			end
+		end
+		return true
+	end
+	local function validateOutputs(outputs)
+		if(type(outputs) ~= "table")then
+			return false, "Slot 'outputs' must be a table."
+		end
+	
+		for i, v in ipairs(outputs) do
+			if(type(v.name) ~= "string")then
+				return false, tostring(i) .. "-th output 'name' slot is not a string."
+			end
+		end
+		return true
+	end
+	
 	--- Loads a previously saved tree.
 	-- @static
 	-- @treturn BehaviourTree loaded tree if found, `nil` otherwise
 	function BehaviourTree.load(
 			name -- name under which to look for the tree
 		)
-		local file = io.open(BEHAVIOURS_DIRNAME .. name .. ".json", "r")
-		if(not file)then
-			return nil
-		end
-		local bt = JSON:decode(file:read("*all"))
-		file:close()
 		
+		local path, parameters = ProjectManager.findFile(behavioursContentType, name)
+		if(not path)then
+			return nil, parameters
+		end
+		
+		local data = VFS.LoadFile(path)
+		if(not data)then
+			return nil, "[BT:" .. name .. "] " .. "File '" .. path .. "' not found"
+		end
+		local bt = JSON:decode(data)
+		
+		bt.roles = bt.roles or {}
+		bt.inputs = bt.inputs or {}
+		bt.outputs = bt.outputs or {}
 		bt.additionalNodes = bt.additionalNodes or {}
 		bt.properties = bt.properties or {}
 		setmetatable(bt, treeMetatable)
+
+		local success, message = validateRoles(bt.roles)
+		if(success)then
+			success, message = validateInputs(bt.inputs)
+		end
+		if(success)then
+			success, message = validateOutputs(bt.outputs)
+		end
+		if(not success)then
+			return nil, "[BT:" .. name .. "] " .. tostring(message)
+		end
 		
 		if not bt.root then
 			local root = bt:NewNode({id = "rootId", nodeType = "empty_tree"})
@@ -134,6 +287,7 @@ return Utils:Assign("BehaviourTree", function()
 		for _, node in ipairs(bt.additionalNodes) do
 			load_setupNode(bt, node)
 		end
+		bt.project = parameters.project
 		
 		return bt
 	end
@@ -145,10 +299,33 @@ return Utils:Assign("BehaviourTree", function()
 			bt, -- the tree which to save
 			name -- name under which to save, must not contain path-illegal characters
 		)
-		local text = JSON:encode(bt, nil, { pretty = true, indent = "\t" })
+		local success, message = validateRoles(bt.roles)
+		if(success)then
+			success, message = validateInputs(bt.inputs)
+		end
+		if(success)then
+			success, message = validateOutputs(bt.outputs)
+		end
+		if(not success)then
+			return nil, "[BT:" .. name .. "] " .. tostring(message)
+		end
 		
-		Spring.CreateDir(BEHAVIOURS_DIRNAME)
-		local file = io.open(BEHAVIOURS_DIRNAME .. name .. ".json", "w")
+		local temp = bt.project
+		bt.project = nil
+		local text = JSON:encode(bt, nil, { pretty = true, indent = "\t" })
+		bt.project = temp
+		
+		local path, parameters = ProjectManager.findFile(behavioursContentType, name)
+		if(not path)then
+			return nil, parameters
+		end
+		
+		if(parameters.readonly)then
+			return nil, "Behaviour " .. tostring(name) .. " is read-only."
+		end
+		
+		Spring.CreateDir(path:match("^(.+)/"))
+		local file = io.open(path, "w")
 		if(not file)then
 			return nil
 		end
@@ -198,6 +375,25 @@ return Utils:Assign("BehaviourTree", function()
 			table.insert(tree.additionalNodes, fromNode)
 		end
 
+		--- Informs the node that it is relocated to a new tree.
+		-- It only affects the internal link to the tree and the `properties` table, the `additionalNodes` and `root` are not affected and have to be handled by the caller.
+		function nodePrototype:Relocate(
+				newTree -- the new BehaviourTree the node now belongs to
+			)
+			newTree.properties[self.id] = tree.properties[self.id]
+			tree.properties[self.id] = nil
+			
+			tree = newTree
+		end
+		
+		--- Changes the ID of the node.
+		-- This has to be used over simply changing the value of the `id` slot in order to properly transfer the additional properties of the node.
+		function nodePrototype:ChangeID(newId)
+			tree.properties[newId] = tree.properties[self.id]
+			tree.properties[self.id] = nil
+			self.id = newId
+		end
+		
 		local nodeMetatable = {
 			__index = function(self, key)
 				return nodePrototype[key] or properties[key]

@@ -1,0 +1,64 @@
+{
+	"name": "bomberAirUnits",
+	"types": [ {
+		"humanName": "Hellfish",
+		"id": 80,
+		"name": "armhell"
+	}, {
+		"humanName": "Lancet",
+		"id": 90,
+		"name": "armlance"
+	}, {
+		"humanName": "Phoenix",
+		"id": 118,
+		"name": "armpnix"
+	}, {
+		"humanName": "Big Gulp",
+		"id": 125,
+		"name": "armrb"
+	}, {
+		"humanName": "Albatross",
+		"id": 131,
+		"name": "armseap"
+	}, {
+		"humanName": "Thunder",
+		"id": 150,
+		"name": "armthund"
+	}, {
+		"humanName": "Flying Wing",
+		"id": 164,
+		"name": "armwing"
+	}, {
+		"humanName": "Firebat",
+		"id": 250,
+		"name": "corerb"
+	}, {
+		"humanName": "Vashp",
+		"id": 253,
+		"name": "corevashp"
+	}, {
+		"humanName": "Centurion",
+		"id": 258,
+		"name": "corff"
+	}, {
+		"humanName": "Hurricane",
+		"id": 286,
+		"name": "corhurc"
+	}, {
+		"humanName": "Black Lily",
+		"id": 328,
+		"name": "corsbomb"
+	}, {
+		"humanName": "Typhoon",
+		"id": 330,
+		"name": "corseap"
+	}, {
+		"humanName": "Shadow",
+		"id": 334,
+		"name": "corshad"
+	}, {
+		"humanName": "Titan",
+		"id": 352,
+		"name": "cortitan"
+	} ]
+}

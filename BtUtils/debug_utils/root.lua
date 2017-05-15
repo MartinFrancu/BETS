@@ -14,6 +14,9 @@ return BtUtils:Assign("Debug", function()
 		copyTable = "copyTable", -- @{copyTable}
 		clone = "clone", -- @{clone}
 		FileTable = "fileTable", -- @{FileTable}
+		rawTable = "rawTable", -- @{rawTable}
+		getWidgetCaller = "get-widget-caller", --@{getWidgetCaller}
+		_UtilsEnvironment = "utils-environment",
 	}
 
 	-- the return value is in brackets as we do not want to return our locators map

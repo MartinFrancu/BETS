@@ -109,7 +109,7 @@ If it is not an array, it is equivalent to an array with a single value.
 		end, s1, x1
 	end
 
-	function internalLog(logGroup, logType, ...)
+	local function internalLog(logGroup, logType, ...)
 		local message = ""
 		local parameters = { ... }
 		local maxIndex = 0
@@ -169,6 +169,19 @@ If it is not an array, it is equivalent to an array with a single value.
 			... -- the rest of the arguments forms the error message after their conversion to string
 		)
 		return internalLog(logGroup, Logger.LOGTYPE_ERROR, ...)
+	end
+	--- Logs the error message if allowed under the supplied log-group. Otherwise returns arguments.
+	-- Equivalent to regular assert.
+	function Logger.assert(
+			logGroup, -- specifies the log-group under which the message belongs
+			shouldLog, -- specifies whether an error message should be logged
+			... -- the rest of the arguments forms the error message after their conversion to string
+		)
+		if(shouldLog)then
+			return shouldLog, ...
+		else
+			return internalLog(logGroup, Logger.LOGTYPE_ERROR, ...)
+		end
 	end
 	--- Calls given function in proctected mode and logs possible 
 	-- Example of usage: Logger.loggedCall("errors", "BtTester", "tried problematic code", BtDummy.problematicCode, arg1, arg2 )

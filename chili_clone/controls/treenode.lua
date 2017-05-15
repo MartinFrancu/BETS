@@ -29,6 +29,8 @@ TreeNode = Control:Inherit{
 	hasConnectionOut = true,
 	connectionOut = nil,
 	nameEditBox = nil,
+	icon = nil,
+	iconPath = nil,
 
 	parameters = {},
 	parameterObjects = {},
@@ -37,10 +39,13 @@ TreeNode = Control:Inherit{
 	attachedLines = {}
 }
 
+local _G = loadstring("return _G")()
+local KEYSYMS = _G.KEYSYMS
+
 local this = TreeNode
 local inherited = this.inherited
 
-local listenerNodeResize
+local listenerNodeWindowOnResize
 local listenerStartConnection
 local listenerEndConnection
 local listenerMouseOver
@@ -48,6 +53,8 @@ local listenerMouseOut
 
 -- connection line functions
 local connectionLine = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtCreator/connection_line.lua", nil, VFS.RAW_FIRST)
+local rootnode = VFS.Include(LUAUI_DIRNAME .. "Widgets/chili_clone/controls/treenode_rootnode.lua", nil, VFS.RAW_FIRST)
+local referenceNode = VFS.Include(LUAUI_DIRNAME .. "Widgets/chili_clone/controls/treenode_reference.lua", nil, VFS.RAW_FIRST)
 
 local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
 local Debug = Utils.Debug;
@@ -55,7 +62,7 @@ local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyT
 
 local generateID
 local usedIDs = {}
-
+local autocompleteTable
 local createNextParameterObject
 
 -- ////////////////////////////////////////////////////////////////////////////
@@ -63,7 +70,19 @@ local createNextParameterObject
 -- ////////////////////////////////////////////////////////////////////////////
 
 function TreeNode:New(obj)
-  obj = inherited.New(self,obj)
+	-- To create a treenode on negative coordinates, first create it on nonnegative ones,
+	-- and then move it to negative coordinates. 
+	local negativeX = 0
+	local negativeY = 0
+	if(obj.x and obj.x < 0) then
+		negativeX, obj.x = obj.x, negativeX
+	end
+	if(obj.y and obj.y < 0) then
+		negativeY, obj.y = obj.y, negativeY
+	end
+	obj = inherited.New(self,obj)
+	autocompleteTable = WG.sensorAutocompleteTable or {}
+	
 	if(not obj.id) then
 		obj.id = generateID()
 	else
@@ -88,10 +107,11 @@ function TreeNode:New(obj)
 		borderThickness = obj.borderThickness,
 		backgroundColor = {1,1,1,0.6},
 		skinName = 'DarkGlass',
-		OnResize = { listenerNodeResize },
+		OnResize = { listenerNodeWindowOnResize },
 		treeNode = obj,
 		connectable = obj.connectable,
 		disableChildrenHitTest = true,
+		tooltip = obj.tooltip,
 	}
 	if ( obj.connectable ) then
 		nodeWindowOptions.OnMouseDown = { listenerOnMouseDownMoveNode }
@@ -103,7 +123,7 @@ function TreeNode:New(obj)
 	local connectionOptions = {
 		parent = obj.nodeWindow,
 		x = obj.nodeWindow.width-18,
-    y = '35%',
+    y = obj.nodeWindow.height * 0.35,
     width  = 15,
     height = 15,
 		minWidth = 15,
@@ -111,7 +131,6 @@ function TreeNode:New(obj)
 		padding = {0,0,0,0},
 		draggable=false,
 		resizable=false,
-		tooltip="BT Node connection",
 		OnMouseDown = {},
 		borderThickness = 0,
 		skinName = 'DarkGlass',
@@ -131,43 +150,32 @@ function TreeNode:New(obj)
 	end
 	obj.nameEditBox = EditBox:New{
 		parent = obj.nodeWindow,
-		text = obj.nodeType,
+		text = obj.title or obj.nodeType,
 		defaultWidth = '80%',
-		x = '10%',
+		x = 15,
 		y = 6,
-		align = 'center',
-		skinName = 'DarkGlass',
+		align = 'left',
+		-- skinName = 'DarkGlass',
 		borderThickness = 0,
 		backgroundColor = {0,0,0,0},
 		autosize = true,
+		minWidth = 50,
+		borderColor = {0,0,0,0},
 	}
-	if(obj.nodeType:lower() == "root") then
-		local label = Label:New{
+	if(obj.iconPath and VFS.FileExists(obj.iconPath)) then
+		obj.icon = Image:New{
 			parent = obj.nodeWindow,
-			x = 18,
-			y = 24,
-			width  = obj.nodeWindow.font:GetTextWidth("Inputs"),
-			height = '10%',
-			caption = "Inputs",
+			x = 15,
+			y = 10,
+			width = 20,
+			height = 20,
+			file = obj.iconPath,
 		}
-		obj.addButton = Button:New{
-			parent = obj.nodeWindow,
-			x = label.x + label.width + 6,
-			y = label.y,
-			caption = "Add",
-			width = 50,
-			OnClick = { listenerAddInput },
-		}
-		obj.removeButton = Button:New{
-			parent = obj.nodeWindow,
-			x = obj.addButton.x + obj.addButton.width + 6,
-			y = label.y,
-			caption = "Remove",
-			OnClick = { listenerRemoveInput },
-		}
+		obj.nameEditBox:SetPos(obj.nameEditBox.x+20)
 	end
-	-- obj.nodeWindow.minWidth = math.max(obj.nodeWindow.minWidth, obj.nameEditBox.font:GetTextWidth(obj.nameEditBox.text) + 33)
-	-- obj.nodeWindow.minHeight = obj.nodeWindow.height
+	if(obj.nodeType:lower() == "root") then
+		rootnode.addChildComponents(obj)
+	end
 
 	obj.parameterObjects = {}
 	for i=1,#obj.parameters do
@@ -179,40 +187,118 @@ function TreeNode:New(obj)
 	if(#obj.parameters ~= #obj.parameterObjects) then
 		error("#obj.parameters="..#obj.parameters.."  ~= #obj.parameterObjects="..#obj.parameterObjects)
 	end
+	-- If coordinates of treenode were negative before creation, transform it there now
+	if(negativeX < 0) then
+		obj.x = negativeX
+	end
+	if(negativeY < 0) then
+		obj.y = negativeY
+	end
+	obj.nodeWindow:SetPos(obj.x, obj.y)
+	obj.nodeWindow:Invalidate()
 	obj:UpdateDimensions()
-	obj.nodeWindow:RequestUpdate()
   return obj
 end
 
 function TreeNode:UpdateDimensions()
-	local maxWidth = self.nodeWindow.width
-	maxWidth = math.max(maxWidth, self.nodeWindow.font:GetTextWidth(self.nameEditBox.text) + 30)
-	local maxHeight = self.nodeWindow.height
-	local p = self.parameterObjects
-	for i=1,#p do
-		if(p[i].componentType == "checkBox") then
-			maxWidth = math.max(maxWidth, p[i].checkBox.width + 50)
-		elseif(p[i].componentType == "editBox") then
-			maxWidth = math.max(maxWidth, math.max(40, self.nodeWindow.font:GetTextWidth(p[i].editBox.text)) + self.nodeWindow.font:GetTextWidth(p[i].label.caption) + 50)
-		elseif(p[i].componentType == "comboBox") then
-			maxWidth = math.max(maxWidth, p[i].label.width + p[i].comboBox.width + 40)
+	local nodeWindow = self.nodeWindow
+	-- connectionOut is on the boundary of the nodeWindow and messes up the GetChildrenMinimumExtends() call,
+	-- so hide it 
+	if(self.connectionOut) then
+		self.connectionOut:Hide()
+	end
+	local max = math.max
+	local w,h = nodeWindow:GetChildrenMinimumExtents()
+	if(self.connectionOut) then
+		self.connectionOut:Show()
+	end
+	self.nameEditBox:UpdateLayout()
+	local nameWidth = self.nameEditBox.width + 35
+	if(self.icon) then
+		nameWidth = nameWidth + 20
+	end
+	local maxWidth = max(nodeWindow.width, nameWidth)
+	local maxHeight = nodeWindow.height
+	-- Spring.Echo("minimum extents w,h: "..math.ceil(w)..","..math.ceil(h))
+	-- Spring.Echo("current extents w,h: "..math.ceil(maxWidth)..","..math.ceil(maxHeight))
+	maxWidth = math.ceil(max(maxWidth, w+20))
+	maxHeight = math.ceil(max(maxHeight, h+20))
+	if(nodeWindow and nodeWindow.parent and not nodeWindow.parent.zoomedOut) then
+		local x = math.ceil(nodeWindow.x)
+		local y = math.ceil(nodeWindow.y)
+		nodeWindow:SetPos(x, y, maxWidth, maxHeight)
+		self.x = x
+		self.y = y
+		self.width = maxWidth
+		self.height = maxHeight
+	end
+	self.nodeWindow:CallListeners( self.nodeWindow.OnResize )
+end
+
+-- === Textbox autocomplete ===
+local function resolveAutocompleteCandidates(textBox)
+	local cursor = textBox.cursor
+	local beforeCursor = textBox.text:sub(1, cursor - 1)
+	local partialProperty = beforeCursor:match("[_%w%.%(%)]+$") or ""
+	
+	local container = autocompleteTable
+	for key, separator in partialProperty:gmatch("([_%w%(%)]+)([%.])") do
+		key = key:gsub("(%([_%w]*%))$", "()")
+		Logger.log("treeNode", "Key - ", key)
+		container = container[key]
+		if not container then
+			return false
 		end
 	end
-	if(self.nodeType == "Root") then
-		local inputs = self.inputs or {}
-		maxHeight = math.max(maxHeight, #inputs * 21 + 55)
-	else
-		maxHeight = math.max(maxHeight, #p * 20 + 50)
+	
+	local partialKey = string.lower(partialProperty:match("[_%w%(%)]*$") or "")
+	local partialLength = partialKey:len()
+	textBox.autocompleteCandidates = {}
+	local candidateSet, candidateCount = {}, 0
+	for k, v in pairs(container) do
+		if (type(k) == "string" and string.lower(k:sub(1, partialLength)) == partialKey and not candidateSet[k]) then
+			table.insert(textBox.autocompleteCandidates, k)
+			candidateSet[k] = true
+			candidateCount = candidateCount + 1
+		end
 	end
-	self.nodeWindow:SetPos(nil, nil, maxWidth, maxHeight)
-	self.width = maxWidth
-	self.height = maxHeight
-	--listenerNodeResize(self.nodeWindow)
-	if( self.hasConnectionOut ) then
-		self.connectionOut:SetPos(self.nodeWindow.width - 18)
-	end
-	self:UpdateConnectionLines()
 end
+
+local function fillInSensor(textBox)
+	if not textBox.autocompleteCandidates then
+		resolveAutocompleteCandidates(textBox)
+		textBox.nextAutocompleteIndex = 1
+	end
+	
+	local cursor = textBox.cursor
+	local beforeCursor = textBox.text:sub(1, cursor - 1)
+	local partialProperty = beforeCursor:match("[_%w%.%(%)]+$") or ""
+	local partialKey = string.lower(partialProperty:match("[_%w%(%)]*$") or "")
+	local partialLength = partialKey:len()
+	
+	local candidates = textBox.autocompleteCandidates or {}
+	local index = textBox.nextAutocompleteIndex or 1
+	
+	--Logger.log("treeNode", "beforeCursor - ", beforeCursor, "; candidates - ", candidates)
+	if(#candidates == 0)then
+		return false
+	else
+		local afterCursor = textBox.text:sub(cursor)
+		textBox:SetText(beforeCursor:sub(1, -partialLength - 1) .. candidates[index] .. afterCursor)
+		textBox.cursor = cursor + candidates[index]:len() - partialLength
+		textBox.nextAutocompleteIndex = index + 1
+		if textBox.nextAutocompleteIndex > #textBox.autocompleteCandidates then
+			textBox.nextAutocompleteIndex = 1
+		end
+	end
+end
+
+local function resetAutocomplete(textBox)
+	textBox.autocompleteCandidates = nil
+	textBox.nextAutocompleteIndex = nil
+end
+
+-- =======
 
 --- Transforms obj.parameters[i] into obj.parametersObjects[i]
 -- Expects param to be a table with four values: name, value, variableType, componentType.
@@ -229,21 +315,39 @@ function createNextParameterObject(obj)
 	--- EditBox componentType
 	if (param["componentType"] and param["componentType"]:lower() == "editbox") then
 		result.componentType = "editBox"
+		local showLabel = param.name ~= "expression" or param.variableType ~= "longString"
+		local width, caption = 0, ""
+		if showLabel then
+			width = obj.nodeWindow.font:GetTextWidth(param["name"])
+			caption = param["name"]
+		end
 		result.label = Label:New{
 			parent = obj.nodeWindow,
 			x = 18,
 			y = 10 + i*20,
-			width  = obj.nodeWindow.font:GetTextWidth(param["name"]),
+			width  = width,
 			height = '10%',
-			caption = param["name"],
+			caption = caption
 			--skinName='DarkGlass',
 		}
+		
+		local minWidth = 40
+		if param.variableType == "longString" then
+			minWidth = 150
+		end
+		local componentX
+		if showLabel then
+			componentX = obj.nodeWindow.font:GetTextWidth(param["name"]) + 25
+		else
+			componentX = 18
+		end
+		
 		result.editBox = EditBox:New{
 			parent = obj.nodeWindow,
 			text = tostring(param["value"]),
 			validatedValue = tostring(param["value"]),
 			-- width = math.max(obj.nodeWindow.font:GetTextWidth(param["value"])+10, 45),
-			x = obj.nodeWindow.font:GetTextWidth(param["name"]) + 25,
+			x = componentX,
 			y = 10 + i*20,
 			align = 'left',
 			--skinName = 'DarkGlass',
@@ -252,6 +356,28 @@ function createNextParameterObject(obj)
 			variableType = param["variableType"],
 			index = i, -- to be able to index editbox from treenode, to update treenode.parameters[i].value
 			autosize = true,
+			minWidth = minWidth,
+			OnKeyPress = {
+				function(element, key)
+					if(key == KEYSYMS.TAB)then
+						-- Logger.log("treeNode", "table - ", dump(autocompleteTable, 3))
+						fillInSensor(element)
+					else
+						resetAutocomplete(element)
+					end
+					
+					if(element.text ~= element.validatedValue)then
+						WG.BtCreator.Get().markTreeAsChanged()
+					end
+					
+					return true
+				end
+			},
+			OnTextInput = {
+				function()
+					WG.BtCreator.Get().markTreeAsChanged()
+				end
+			},
 		}
 	--- CheckBox componentType
 	elseif(param["componentType"] and param["componentType"]:lower() == "checkbox") then
@@ -302,8 +428,60 @@ function createNextParameterObject(obj)
 			items = items,
 		}
 		result.comboBox:Select(defaultIndex)
+	elseif(param["componentType"] and param["componentType"]:lower() == "treepicker") then
+		result.componentType = "treePicker"
+		result.label = Label:New{
+			parent = obj.nodeWindow,
+			x = 18,
+			y = 30,
+			caption =  tostring(param["value"] or ""),
+			tooltip = "Choose tree to be referenced, it will open tree selection dialog with all available trees. ",
+			autosize = true,
+		}
+		result.label:UpdateLayout()
+		local x = result.label.x + result.label.width + 5
+		if(result.label.caption == "")then
+			x = 18
+		end
+		result.button = Button:New{
+			parent = obj.nodeWindow,
+			x = x,
+			y = result.label.y,
+			caption = "...",
+			tooltip = "Choose from available behaviour trees the one which should be referenced by this node. ",
+			width = 30,
+			height = 20,
+			
+			OnClick = { referenceNode.listenerChooseTree },
+		}
+		result.label.font.color = {1,1,1,0.8}
+		if(obj.draggable and result.label.caption ~= "") then
+			referenceNode.addInputOutputComponents(obj.nodeWindow, result.label, result.label.caption)
+		end
+	end
+	if(result.editBox) then
+		result.editBox:UpdateLayout()
 	end
 	return result
+end
+
+function TreeNode:ShowChildren()
+	for child,_ in pairs(self.nodeWindow.children_hidden) do
+		self.nodeWindow:ShowChild(child)
+	end
+end
+
+function TreeNode:HideChildren()
+	for i=#self.nodeWindow.children,1,-1 do
+		self.nodeWindow.children[i]:SetVisibility(false)
+	end
+	self.nameEditBox:SetVisibility(true)
+	if(self.connectionIn) then
+		self.connectionIn:SetVisibility(true)
+	end
+	if(self.connectionOut) then
+		self.connectionOut:SetVisibility(true)
+	end
 end
 
 --- Returns a table of children in order of y-coordinate(first is the one with the smallest one)
@@ -335,34 +513,9 @@ end
 
 -- Dispose this treeNode without connection lines connected to it.
 function TreeNode:Dispose()
-	if(self.connectionIn) then
-		self.connectionIn:Dispose()
-	end
-	if(self.connectionOut) then
-		self.connectionOut:Dispose()
-	end
-	if(self.nodeWindow) then
-		self.nodeWindow:Dispose()
-	end
-	if(self.nameEditBox) then
-		self.nameEditBox:Dispose()
-	end
-	if(self.parameterObjects) then
-		for i=1,#self.parameterObjects do
-			if(self.parameterObjects[i]["label"]) then
-				self.parameterObjects[i]["label"]:Dispose()
-			end
-			if(self.parameterObjects[i]["editBox"]) then
-				self.parameterObjects[i]["editBox"]:Dispose()
-			end
-			if(self.parameterObjects[i]["comboBox"]) then
-				self.parameterObjects[i]["comboBox"]:Dispose()
-			end
-			if(self.parameterObjects[i]["checkBox"]) then
-				self.parameterObjects[i]["checkBox"]:Dispose()
-			end
-		end
-	end
+	self.nodeWindow:ClearChildren()
+	self.nodeWindow:Dispose()
+	self:ClearChildren()
 end
 
 local clickedConnection
@@ -426,53 +579,6 @@ function connectionLineCanBeCreated(obj)
 end
 
 --//=============================================================================
---// Listeners - input buttons
---//=============================================================================
-
-function listenerAddInput(obj)
-	local inputs = obj.parent.treeNode.inputs or {}
-	obj.parent.treeNode.inputs = inputs
-	local i = #inputs
-	local editBox = EditBox:New{
-		parent = obj.parent,
-		text = "input"..i,
-		defaultWidth = '40%',
-		x = '10%',
-		y = 45 + i*20,
-		align = 'left',
-		--skinName = 'DarkGlass',
-		borderThickness = 0,
-		backgroundColor = {0,0,0,0},
-		autosize = true,
-	}
-	local comboBox = ComboBox:New{
-			caption = "",
-			parent = obj.parent,
-			x = '55%',
-			y = 45 + i*20,
-			width = 80,
-			borderThickness = 0,
-			--skinName = 'DarkGlass',
-			items = {"Position", "Area", "UnitID"},
-		}
-	table.insert(inputs, { editBox, comboBox })
-	obj.parent.treeNode:UpdateDimensions()
-	return true
-end
-
-function listenerRemoveInput(obj)
-	local inputs = obj.parent.treeNode.inputs or {}
-	local i = #inputs
-	if(i <= 0) then
-		return
-	end 
-	inputs[i][1]:Dispose()
-	inputs[i][2]:Dispose()
-	table.remove(inputs, i)
-	return true
-end
-
---//=============================================================================
 --// Listeners
 --//=============================================================================
 
@@ -519,29 +625,13 @@ function listenerClickOnConnectionPanel(self)
 	return false
 end
 
--- called also after move!
-function listenerNodeResize(self)
-	-- Spring.Echo("Resizing treenode window.. ")
-	-- Spring.Echo("x="..self.treeNode.x..", y="..self.treeNode.y)
-	-- Update position of connectionOut
-	if (self.resizable) then
-		if (self.treeNode.connectionOut and self.treeNode.nodeWindow) then
-			self.treeNode.connectionOut.x = self.treeNode.nodeWindow.width-18
-			self.treeNode.width = self.treeNode.nodeWindow.width
-			self.treeNode.height = self.treeNode.nodeWindow.height
-		end
-		
-		self.treeNode:UpdateConnectionLines()
-	end
-	--return true
-end
-
 
 --//=============================================================================
 --// Listeners for node selections and their helper functions
 --//=============================================================================
 
 local previousPosition = {}
+local movingNodeID
 
 --- Key is node id, value is true
 WG.selectedNodes = {}
@@ -549,6 +639,41 @@ WG.selectedNodes = {}
 
 local ALPHA_OF_SELECTED_NODES = 1
 local ALPHA_OF_NOT_SELECTED_NODES = 0.6
+
+-- called also after move!
+function listenerNodeWindowOnResize(self)
+	-- if (self.resizable) then
+	if(self.treeNode.connectionIn) then
+		self.treeNode.connectionIn:SetPos(nil, self.height*0.35)
+		self.treeNode.connectionIn:Invalidate()
+	end
+	if(self.treeNode.connectionOut) then
+		self.treeNode.connectionOut:SetPos(self.width-18, self.height*0.35)
+		self.treeNode.connectionOut:Invalidate()
+	end
+	self.treeNode.width = self.width
+	self.treeNode.height = self.height
+	self.treeNode:UpdateConnectionLines()
+	-- move with all the selected nodes other than the dragged one
+	if(movingNodes and self.treeNode.id == movingNodeID) then
+		local diffx = self.x - previousPosition.x
+		local diffy = self.y - previousPosition.y
+		for id,_ in pairs(WG.selectedNodes) do
+			if(id ~= movingNodeID) then
+				-- Spring.Echo("movingNodes. diffx:"..diffx..", diffy:"..diffy)
+				local node = WG.nodeList[id]
+				node.x = node.x + diffx
+				node.y = node.y + diffy
+				node.nodeWindow:SetPos(node.x, node.y)
+				node.nodeWindow:Invalidate()
+				node:UpdateConnectionLines()
+			end
+		end
+		previousPosition.x = self.x
+		previousPosition.y = self.y
+	end
+	self:Invalidate()
+end
 
 local function validateEditBox(editBox)
 	local variableType = editBox.variableType
@@ -590,8 +715,10 @@ local function validateEditBox(editBox)
 	editBox.parent.treeNode.parameters[editBox.index].value = editBox.text
 end
 
-
 function TreeNode:UpdateParameterValues()
+	if(not self.nodeWindow) then
+		return
+	end
 	for i=1,#self.parameterObjects do
 		local editBox = self.parameterObjects[i]["editBox"]
 		if(editBox) then
@@ -604,6 +731,44 @@ function TreeNode:UpdateParameterValues()
 		local comboBox = self.parameterObjects[i]["comboBox"]
 		if(comboBox) then
 			comboBox.parent.treeNode.parameters[comboBox.index].value = tostring(comboBox.items[comboBox.selected])
+		end
+		if(self.parameterObjects[i].componentType == "treePicker") then
+			self.parameterObjects[i].label.parent.treeNode.parameters[i].value = self.parameterObjects[i].label.caption
+		end
+	end
+	self.title = self.nameEditBox.text
+	-- Spring.Echo(self.isReferenceNode)
+	if(self.isReferenceNode) then
+		-- only if a referenced tree was set
+		if(self.referenceOutputObjects) then
+			local k = 1
+			for i=1,#self.referenceOutputObjects do
+				local name = self.referenceOutputObjects[i].label.caption
+				local value = self.referenceOutputObjects[i].editBox.text
+				if(value ~= "") then
+					self.referenceOutputs[k] = {}
+					self.referenceOutputs[k].name = name
+					self.referenceOutputs[k].value = value
+					k = k+1
+					-- Spring.Echo("Setting referenceOutput "..name.." to value "..value)
+				end
+				 
+			end
+		end
+		if(self.referenceInputObjects) then
+			local k = 1
+			for i=1,#self.referenceInputObjects do
+				local name = self.referenceInputObjects[i].label.caption
+				local value = self.referenceInputObjects[i].editBox.text
+				if(value ~= "") then
+					self.referenceInputs[k] = {}
+					self.referenceInputs[k].name = name
+					self.referenceInputs[k].value = value
+					k = k+1
+					-- Spring.Echo("Setting referenceInput "..name.." to value "..value)
+				end
+				 
+			end
 		end
 	end
 	self:UpdateDimensions()
@@ -660,57 +825,44 @@ local function ctrlSelectNodes(nodeWindow, recursive)
 end
 
 local lastClicked = Spring.GetTimer()
+local lastClickedName
 
 function listenerOnMouseDownMoveNode(self, x ,y, button)
-	-- if(clickedConnection) then -- check if we are connecting nodes
-		-- return
-	-- end
-	local childName = self:HitTest(x, y).name
-	-- Check if the connectionIn or connectionOut was clicked
-	if((self.treeNode.connectionIn and childName == self.treeNode.connectionIn.name) or (self.treeNode.connectionOut and childName == self.treeNode.connectionOut.name)) then
+	local treeNode = self.treeNode
+	local child = self:HitTest(x, y)
+	local childName = child.name
+	-- Check for any child component which reacts on mouse down event
+	if(childName ~= self.name and 
+		(#child.OnMouseDown > 0 or #child.OnClick > 0 or child.MouseDown ~= nil) and
+		childName ~= treeNode.nameEditBox.name
+		)then
 		return
 	end
-	-- Check for input buttons
-	if(self.treeNode.addButton and self.treeNode.addButton.name == childName) then
-		return
-	end
-	if(self.treeNode.removeButton and self.treeNode.removeButton.name == childName) then
-		return
-	end
-	-- Check for input editBox and comboBox
-	if(self.treeNode.inputs) then
-		local inputs = self.treeNode.inputs
-		for i=1,#inputs do
-			if(childName == inputs[i][1].name or childName == inputs[i][2].name) then
-				return
-			end
-		end
-	end
-	-- Check if the parameter value (editbox's text) hasnt changed
-	self.treeNode:UpdateParameterValues()
-	for i=1,#self.treeNode.parameterObjects do
-		if(self.treeNode.parameterObjects[i]["editBox"] and childName == self.treeNode.parameterObjects[i]["editBox"].name) then
-			return
-		elseif(self.treeNode.parameterObjects[i]["checkBox"] and childName == self.treeNode.parameterObjects[i]["checkBox"].name) then
-			return
-		elseif(self.treeNode.parameterObjects[i]["comboBox"] and childName == self.treeNode.parameterObjects[i]["comboBox"].name) then
-			return
-		end
-	end
-	-- Check for double click
 	local now = Spring.GetTimer()
-	if(childName == self.treeNode.nameEditBox.name and Spring.DiffTimers(now, lastClicked) < 0.3) then
+	if(childName == treeNode.nameEditBox.name) then
+		if(lastClickedName and Spring.DiffTimers(now, lastClickedName) > 0.3) then
+			return
+		else
+			lastClickedName = Spring.GetTimer()
+		end
+	else
+		lastClickedName = nil
+	end
+	treeNode:UpdateParameterValues()
+	local selectSubtree = false
+	if(Spring.DiffTimers(now, lastClicked) < 0.3) then
 		lastClicked = now
-		return
+		selectSubtree = true
 	end
 	lastClicked = now
 	local _, ctrl, _, shift = Spring.GetModKeyState()
-	if(WG.selectedNodes[self.treeNode.id]==nil and (not ctrl) and (not shift) and button ~= 3) then
+	if((not selectSubtree) and (not WG.selectedNodes[treeNode.id]) and (not ctrl) and (not shift)) then
 		WG.clearSelection()
 		addNodeToSelection(self)
 	end
-	if(WG.selectedNodes[self.treeNode.id] and (not ctrl) and (not shift) and button ~= 3) then
+	if((not selectSubtree) and WG.selectedNodes[treeNode.id] and (not ctrl) and (not shift)) then
 		movingNodes = true
+		movingNodeID = treeNode.id
 		previousPosition.x = self.x
 		previousPosition.y = self.y
 		self:StartDragging(x, y)
@@ -720,11 +872,7 @@ function listenerOnMouseDownMoveNode(self, x ,y, button)
 		return self
 	end
 
-	local selectSubtree = false
-	if(button == 3) then
-		selectSubtree = true
-	end
-	if (shift) then
+	if (shift or selectSubtree) then
 		shiftSelectNodes(self, selectSubtree)
 	elseif (ctrl) then
 		ctrlSelectNodes(self, selectSubtree)
@@ -749,11 +897,9 @@ function listenerOnMouseUpMoveNode(self, x ,y)
 		for id,_ in pairs(WG.selectedNodes) do
 			if(id ~= self.treeNode.id) then
 				local node = WG.nodeList[id]
-				node.nodeWindow.x = node.nodeWindow.x + diffx
-				node.nodeWindow.y = node.nodeWindow.y + diffy
-				node.x = math.max(0, node.x + diffx)
-				node.y = math.max(0, node.y + diffy)
-				node.nodeWindow:StopDragging(x, y)
+				node.x = node.x + diffx
+				node.y = node.y + diffy
+				node.nodeWindow:SetPos(node.x, node.y)
 				node.nodeWindow:Invalidate()
 				node:UpdateConnectionLines()
 			end

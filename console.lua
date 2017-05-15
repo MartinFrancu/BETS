@@ -21,7 +21,6 @@ if (widget and not widget.GetInfo) then
 	local RELOAD_KEY = KEYSYMS.F8
 	local TOGGLE_VISIBILITY_KEY = KEYSYMS.F9;
 	
-	local Chili, ChiliRoot
 	 
 	local history = {}
 	local commandCount = 0
@@ -33,6 +32,9 @@ if (widget and not widget.GetInfo) then
 	 
 	-- using BtUtils
 	local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
+	
+	local Chili = Utils.Chili
+	local ChiliRoot = Chili.Screen0
 	
 	local Debug = Utils.Debug
 	local Logger, dump = Debug.Logger, Debug.dump
@@ -70,7 +72,7 @@ if (widget and not widget.GetInfo) then
 		settingsFile:close()
 	end
 	
-	local function addResult(command, resultType, value)
+	local function addResult(command, resultType, value, iterator)
 		if(consoleLog.justCleared)then
 			consoleLog.justCleared = false
 			return
@@ -118,9 +120,9 @@ if (widget and not widget.GetInfo) then
 				makeLine("red", value)
 			elseif(type(value) == "table" or type(value) == "userdata")then
 				local keyList = (value == consoleContext) and contextPairs or metapairs
-				local isArray, arraySize, isEmpty = true, 0, true
-				for k, _ in keyList(value) do if(type(k) ~= "number" or k < 1)then isArray = false elseif(arraySize < k)then arraySize = k end isEmpty = false end
-				if(isArray)then
+				local isArray, arraySize, itemCount = true, 0, 0
+				for k, _ in keyList(value) do if(type(k) ~= "number" or k < 1)then isArray = false elseif(arraySize < k)then arraySize = k end itemCount = itemCount + 1 end
+				if(isArray and arraySize < itemCount * 4)then
 					keyList = function(t)
 						return function(_, x)
 							if(x < arraySize)then
@@ -130,41 +132,59 @@ if (widget and not widget.GetInfo) then
 							end
 						end, nil, 0
 					end
+				else
+					isArray = false
 				end
-				if(isEmpty)then
+				if(itemCount == 0)then
 					makeLine("", (type(value) == "userdata") and "<userdata> {}" or "{}")
 				else
 					makeLine("", (type(value) == "userdata") and "<userdata> {" or (resultType == "multiresult") and "results:" or "{")
 					
-					local oldCommand = (command or ""):gsub(_G.YellowStr, "")
-					if(resultType == "multiresult")then
-						oldCommand = "{" .. oldCommand .. "}"
+				local oldCommand = (command or ""):gsub(_G.YellowStr, "")
+				if(resultType == "multiresult")then
+					oldCommand = "{" .. oldCommand .. "}"
+				end
+				
+				local lineCount = 0
+				if(not iterator)then
+					iterator = { keyList(value) }
+				end
+				local prevk = iterator[3]
+				for k, v in unpack(iterator) do
+					lineCount = lineCount + 1
+					if(lineCount > 15)then
+						makeLine("", "...", 1, function(self)
+							addResult(_G.GreyStr .. oldCommand .. " " .. _G.YellowStr .. " cont.", "info", value, { iterator[1], iterator[2], prevk })
+							ChiliRoot:FocusControl(commandInput)
+							return self
+						end)
+						break
 					end
+					prevk = k
 					
-					for k, v in keyList(value) do
-						local text, keyAccess = (type(v) == "table") and "{...}" or dump(v) .. ","
-						if(not isArray)then
-							if(type(k) == "string" and k:match("^[%a_][%w_]*$"))then
-								text = k .. " = " .. text
-								keyAccess = ".".. _G.YellowStr .. k
-							else
-								text = "[" .. dump(k) .. "] = " .. text
-								keyAccess = _G.YellowStr .. "[" .. dump(k) .. "]"
-							end
+					local text, keyAccess = (type(v) == "table") and "{...}" or dump(v) .. ","
+					if(not isArray)then
+						if(type(k) == "string" and k:match("^[%a_][%w_]*$"))then
+							text = k .. " = " .. text
+							keyAccess = ".".. _G.YellowStr .. k
 						else
+							text = "[" .. dump(k) .. "] = " .. text
 							keyAccess = _G.YellowStr .. "[" .. dump(k) .. "]"
 						end
-						
-						local valueLine = makeLine("", text, 1,
-							(type(v) == "table" or type(v) == "function" or type(v) == "userdata") and function(self)
-								addResult(_G.GreyStr .. oldCommand .. keyAccess, "info", v)
-								ChiliRoot:FocusControl(commandInput)
-								return self
-							end)
-							--[[
-							valueLine.evaluationCode = command .. "." .. k
-							valueLine.evaluatedObject = v
-							]]
+					else
+						keyAccess = _G.YellowStr .. "[" .. dump(k) .. "]"
+					end
+					
+					local valueLine = makeLine("", text, 1,
+						(type(v) == "table" or type(v) == "function" or type(v) == "userdata") and function(self)
+							addResult(_G.GreyStr .. oldCommand .. keyAccess, "info", v)
+							ChiliRoot:FocusControl(commandInput)
+							return self
+						end)
+						--[[
+						valueLine.evaluationCode = command .. "." .. k
+						valueLine.evaluatedObject = v
+						]]
 					end
 					if(resultType ~= "multiresult")then
 						makeLine("", "}")
@@ -262,6 +282,7 @@ if (widget and not widget.GetInfo) then
 		commandInput:SetText("")
 		consoleContext.history = history
 	end
+	
 	local Units = {}
 	for k, v in pairs(UnitDefs) do
 		local name = v.name
@@ -269,7 +290,6 @@ if (widget and not widget.GetInfo) then
 		Units[v.humanName] = name
 	end
 	consoleContext.Units = Units;
-
 	consoleContext.spawn = function(unit, count, playerId)
 		count = count or 1
 		playerId = playerId or Spring.GetLocalPlayerID()
@@ -278,6 +298,10 @@ if (widget and not widget.GetInfo) then
 	if(not Spring.IsCheatingEnabled())then
 		Spring.SendCommands("cheat")
 	end
+	
+	consoleContext.Chili = Chili
+	consoleContext.ChiliRoot = ChiliRoot
+	
 	setmetatable(consoleContext, { __index = function(t, key)
 			local value = WG[key]
 			if(value ~= nil)then
@@ -405,19 +429,14 @@ if (widget and not widget.GetInfo) then
 	end
 	
 	function widget:Initialize()	
-		if (not WG.ChiliClone) then
-			-- don't run if we can't find Chili
+		if (Utils.Surrogate.isSurrogate(Chili)) then
+			-- don't run if we don't have initialized Chili at this point
 			widgetHandler:RemoveWidget()
 			return
 		end
 	 
 		loadSettings()
 	 
-		-- Get ready to use Chili
-		Chili = WG.ChiliClone
-		ChiliRoot = Chili.Screen0	
-		consoleContext.Chili = Chili
-		consoleContext.ChiliRoot = ChiliRoot
 		
 		consolePanel = Chili.Panel:New{
 			parent = ChiliRoot,

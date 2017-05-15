@@ -1,29 +1,31 @@
 --- Function to list the content of a directory.
--- Opossed to the VFS.DirList function, this one returns the actual names/relative paths.
--- @module dirList
+-- Opossed to the VFS.DirList and VFS.SubDirs functions, this one returns the actual names/relative paths.
+-- @module directoryListing
 
-local dirList
+--- Normalizes the path to use regular slashes only
+local function normalizePath(path)
+	return path:gsub("\\", "/")
+end
 
---- Returns the files from the specified directory.
--- @string path The directory to list.
--- @string mask The mask of the files to be returned.
--- @treturn [string] The names of the files within the directory
-function dirList(path, mask)
-	path = path:gsub("\\", "/") -- normalization of the path to use regular slashes only
+local function directoryListing(path, mask, mode, listingFunction)
+	path = normalizePath(path)
 	local pathLen = path:len();
 	
-	local maskPattern = "^" .. mask:gsub("([-+.])", "%%%1"):gsub("*", ".-"):gsub("?", ".") .. "$"
+	local maskPattern = mask and "^" .. mask:gsub("([-+.])", "%%%1"):gsub("*", ".-"):gsub("?", ".") .. "$" or ".-"
 	
-	local result = VFS.DirList(path)
+	local result = listingFunction(path, nil, mode)
 	local count = #result;
 	local j = 1;
 	for i = 1, count do
 		local file = result[i]
-		file = file:gsub("\\", "/");
+		file = normalizePath(file);
 		if(file:sub(1, pathLen) == path)then
 			file = file:sub(pathLen + 1)
 			if(file:sub(1,1) == "/")then
 				file = file:sub(2)
+			end
+			if(file:sub(file:len()) == "/")then
+				file = file:sub(1, file:len() - 1)
 			end
 			
 			if(file:match(maskPattern))then
@@ -39,4 +41,24 @@ function dirList(path, mask)
 	return result
 end
 
-return dirList
+
+local dirList
+--- Returns the files from the specified directory.
+-- @string path The directory to list.
+-- @string mask The mask of the files to be returned.
+-- @treturn [string] The names of the files within the directory
+function dirList(path, mask, mode)
+	return directoryListing(path, mask, mode, VFS.DirList)
+end
+
+local subDirs
+--- Returns the subdirectories from the specified directory.
+-- @string path The directory to list.
+-- @string mask The mask of the subdirectories to be returned.
+-- @treturn [string] The names of the subdirectories within the directory
+function subDirs(path, mask, mode)
+	return directoryListing(path, mask, mode, VFS.SubDirs)
+
+end
+
+return dirList, subDirs

@@ -1,0 +1,78 @@
+{
+	"additionalNodes": [],
+	"additionalParameters": {
+		"root": {
+			"height": 88,
+			"width": 180
+		}
+	},
+	"inputs": [],
+	"outputs": [],
+	"properties": {
+		"BTabOMetaI45nhmLU0VtqYXZR81L2PJl": {
+			"height": 213,
+			"title": "reference Debug.dummy",
+			"width": 200,
+			"x": 499,
+			"y": -110.5
+		},
+		"YJzp57q9hKBUW1ZQ8B37SweQsD9w4rI2": {
+			"height": 58,
+			"title": "sequence",
+			"width": 136,
+			"x": 241.75,
+			"y": -12
+		},
+		"xnH96b16YDklbVSfPqSroXug19bFsHHo": {
+			"height": 72,
+			"title": "echo",
+			"width": 180,
+			"x": 506.142883,
+			"y": 118
+		}
+	},
+	"roles": [ {
+		"categories": [],
+		"name": "Role 0"
+	} ],
+	"root": {
+		"children": [ {
+			"children": [],
+			"id": "BTabOMetaI45nhmLU0VtqYXZR81L2PJl",
+			"nodeType": "reference",
+			"parameters": [ {
+				"name": "behaviourName",
+				"value": "Debug.dummyTest"
+			} ],
+			"referenceInputs": [ {
+				"name": "x",
+				"value": "Debug.flipSensor()"
+			}, {
+				"name": "otherI",
+				"value": "1"
+			} ],
+			"referenceOutputs": [ {
+				"name": "y",
+				"value": "temp"
+			}, {
+				"name": "otherO",
+				"value": "temp2"
+			} ]
+		}, {
+			"children": [],
+			"id": "xnH96b16YDklbVSfPqSroXug19bFsHHo",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "msg",
+				"value": "temp"
+			}, {
+				"name": "scriptName",
+				"value": "echo"
+			} ],
+			"scriptName": "echo"
+		} ],
+		"id": "YJzp57q9hKBUW1ZQ8B37SweQsD9w4rI2",
+		"nodeType": "sequence",
+		"parameters": []
+	}
+}

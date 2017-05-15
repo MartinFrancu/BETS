@@ -1,0 +1,68 @@
+{
+	"additionalNodes": [],
+	"additionalParameters": {
+		"root": {
+			"height": 88,
+			"width": 180
+		}
+	},
+	"inputs": [],
+	"outputs": [],
+	"properties": {
+		"N8GY1AQywasN0O4EeSlokEPJvVeJrCHB": {
+			"height": 60,
+			"title": "sequence",
+			"width": 123,
+			"x": 277,
+			"y": -45
+		},
+		"kmnZJMzFzgDGUYun2NT4RJ5yNW1jZyWd": {
+			"height": 74,
+			"title": "waitUntil",
+			"width": 395,
+			"x": 528.5,
+			"y": -35
+		},
+		"qIgkJM4Z9lPhzqbX3ewYYBboiyHmQjTq": {
+			"height": 72,
+			"title": "echo",
+			"width": 142,
+			"x": 530.5,
+			"y": 65
+		}
+	},
+	"roles": [ {
+		"categories": [],
+		"name": "Role 0"
+	} ],
+	"root": {
+		"children": [ {
+			"children": [],
+			"id": "kmnZJMzFzgDGUYun2NT4RJ5yNW1jZyWd",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "condition",
+				"value": "Common.groupExtents().maxDistance < 100"
+			}, {
+				"name": "scriptName",
+				"value": "waitUntil"
+			} ],
+			"scriptName": "waitUntil"
+		}, {
+			"children": [],
+			"id": "qIgkJM4Z9lPhzqbX3ewYYBboiyHmQjTq",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "msg",
+				"value": "\"Test\""
+			}, {
+				"name": "scriptName",
+				"value": "echo"
+			} ],
+			"scriptName": "echo"
+		} ],
+		"id": "N8GY1AQywasN0O4EeSlokEPJvVeJrCHB",
+		"nodeType": "sequence",
+		"parameters": []
+	}
+}

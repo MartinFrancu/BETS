@@ -1,0 +1,155 @@
+{
+	"additionalNodes": [],
+	"additionalParameters": {
+		"root": {
+			"height": 170,
+			"width": 216
+		}
+	},
+	"inputs": [ {
+		"command": "Variable",
+		"name": "x"
+	} ],
+	"outputs": [ {
+		"name": "y"
+	} ],
+	"properties": {
+		"4E2xqgVDS9JfVCJg2b7FdBGUMcrYCwmt": {
+			"height": 74,
+			"title": "echo",
+			"width": 245,
+			"x": 440.142822,
+			"y": -102.5
+		},
+		"8TU6gwWgFoHWqOcOKQvt1wDQ20Sgz7G1": {
+			"height": 65,
+			"title": "sequence",
+			"width": 132,
+			"x": 245.75,
+			"y": 4.5
+		},
+		"ATabOMetaI45nhmLU0VtqYXZR81L2PJl": {
+			"height": 54,
+			"title": "Debug.dummy",
+			"width": 159,
+			"x": 459,
+			"y": 53.5
+		},
+		"EQAaU0VEpEIIOF2CLt5O2C4yxVpEEEL2": {
+			"height": 92,
+			"title": "store",
+			"width": 225,
+			"x": 447.428589,
+			"y": 111
+		},
+		"M0keGjGIWilBWcjGDCz34WaybgmXASAI": {
+			"height": 74,
+			"title": "echo",
+			"width": 361,
+			"x": 448.142822,
+			"y": -28
+		},
+		"RgpD5lj3ECZ35PWrifxVFkmnH5a1ek19": {
+			"height": 92,
+			"title": "store",
+			"width": 155,
+			"x": 463,
+			"y": 303
+		},
+		"yHs9RHCawahHa6j6p6LbwOdafaABK1VV": {
+			"height": 94,
+			"title": "store",
+			"width": 222,
+			"x": 449,
+			"y": 195
+		}
+	},
+	"roles": [ {
+		"categories": [],
+		"name": "Role 0"
+	} ],
+	"root": {
+		"children": [ {
+			"children": [],
+			"id": "4E2xqgVDS9JfVCJg2b7FdBGUMcrYCwmt",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "msg",
+				"value": "\"x: \" .. tostring(x)"
+			}, {
+				"name": "scriptName",
+				"value": "echo"
+			} ],
+			"scriptName": "echo"
+		}, {
+			"children": [],
+			"id": "M0keGjGIWilBWcjGDCz34WaybgmXASAI",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "msg",
+				"value": "\"flipSensor: \" .. tostring(Sensors.flipSensor())"
+			}, {
+				"name": "scriptName",
+				"value": "echo"
+			} ],
+			"scriptName": "echo"
+		}, {
+			"children": [],
+			"id": "ATabOMetaI45nhmLU0VtqYXZR81L2PJl",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "scriptName",
+				"value": "Debug.dummy"
+			} ],
+			"scriptName": "Debug.dummy"
+		}, {
+			"children": [],
+			"id": "EQAaU0VEpEIIOF2CLt5O2C4yxVpEEEL2",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "var",
+				"value": "y"
+			}, {
+				"name": "value",
+				"value": "128"
+			}, {
+				"name": "scriptName",
+				"value": "store"
+			} ],
+			"scriptName": "store"
+		}, {
+			"children": [],
+			"id": "yHs9RHCawahHa6j6p6LbwOdafaABK1VV",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "var",
+				"value": "bb.x"
+			}, {
+				"name": "value",
+				"value": "((bb.x or 0) + 1) % 10"
+			}, {
+				"name": "scriptName",
+				"value": "store"
+			} ],
+			"scriptName": "store"
+		}, {
+			"children": [],
+			"id": "RgpD5lj3ECZ35PWrifxVFkmnH5a1ek19",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "var",
+				"value": "global.x"
+			}, {
+				"name": "value",
+				"value": "bb.x"
+			}, {
+				"name": "scriptName",
+				"value": "store"
+			} ],
+			"scriptName": "store"
+		} ],
+		"id": "8TU6gwWgFoHWqOcOKQvt1wDQ20Sgz7G1",
+		"nodeType": "sequence",
+		"parameters": []
+	}
+}

@@ -1,0 +1,40 @@
+{
+	"additionalNodes": [],
+	"additionalParameters": {
+		"root": {
+			"height": 88,
+			"width": 180
+		}
+	},
+	"inputs": [],
+	"outputs": [],
+	"properties": {
+		"nwcJs1t2K8OD0wqWmYvaY5L5sMFiClKl": {
+			"height": 92,
+			"title": "store",
+			"width": 150,
+			"x": 287,
+			"y": -8
+		}
+	},
+	"roles": [ {
+		"categories": [],
+		"name": "Role 0"
+	} ],
+	"root": {
+		"children": [],
+		"id": "nwcJs1t2K8OD0wqWmYvaY5L5sMFiClKl",
+		"nodeType": "luaCommand",
+		"parameters": [ {
+			"name": "var",
+			"value": "x"
+		}, {
+			"name": "value",
+			"value": "1 2"
+		}, {
+			"name": "scriptName",
+			"value": "store"
+		} ],
+		"scriptName": "store"
+	}
+}

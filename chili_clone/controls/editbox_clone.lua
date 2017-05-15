@@ -90,7 +90,7 @@ function EditBox:UpdateLayout()
 
   --FIXME
   if (self.autosize) then
-    local w = math.max(font:GetTextWidth(self.text), 40);
+    local w = math.max(font:GetTextWidth(self.text), self.minWidth or 40);
     local h, d, numLines = font:GetTextHeight(self.text);
 
     if (self.autoObeyLineHeight) then
@@ -333,6 +333,9 @@ function EditBox:KeyPress(key, mods, isRepeat, label, unicode, ...)
 	inherited.KeyPress(self, key, mods, isRepeat, label, unicode, ...)
 	self:UpdateLayout()
 	self:Invalidate()
+	if(self.parent and self.parent.treeNode) then
+		self.parent.treeNode:UpdateDimensions()
+	end
 	return self
 end
 

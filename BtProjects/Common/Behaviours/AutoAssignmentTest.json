@@ -1,0 +1,74 @@
+{
+	"additionalNodes": [],
+	"additionalParameters": {
+		"root": {
+			"height": 88,
+			"width": 180
+		}
+	},
+	"inputs": [],
+	"outputs": [],
+	"properties": {
+		"dCtMCf1LDu13EzTrvX1TsLHggsZj4xVV": {
+			"height": 72,
+			"title": "echo",
+			"width": 236,
+			"x": 531,
+			"y": -86
+		},
+		"kyiMIJ7BAtumKJhMiUFPyMt581KGePUy": {
+			"height": 76,
+			"title": "roleSplit",
+			"width": 239,
+			"x": 248,
+			"y": -22
+		},
+		"wp4vovvQ9HIVcemnw1D4leQnvXmwyySM": {
+			"height": 72,
+			"title": "echo",
+			"width": 236,
+			"x": 533,
+			"y": 4
+		}
+	},
+	"roles": [ {
+		"categories": [ "Common.groundUnits" ],
+		"name": "Role 0"
+	}, {
+		"categories": [ "Common.groundUnits" ],
+		"name": "Role 1"
+	} ],
+	"root": {
+		"children": [ {
+			"children": [],
+			"id": "dCtMCf1LDu13EzTrvX1TsLHggsZj4xVV",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "msg",
+				"value": "Echo message"
+			}, {
+				"name": "scriptName",
+				"value": "echo"
+			} ],
+			"scriptName": "echo"
+		}, {
+			"children": [],
+			"id": "wp4vovvQ9HIVcemnw1D4leQnvXmwyySM",
+			"nodeType": "luaCommand",
+			"parameters": [ {
+				"name": "msg",
+				"value": "Echo message"
+			}, {
+				"name": "scriptName",
+				"value": "echo"
+			} ],
+			"scriptName": "echo"
+		} ],
+		"id": "kyiMIJ7BAtumKJhMiUFPyMt581KGePUy",
+		"nodeType": "roleSplit",
+		"parameters": [ {
+			"name": "mode",
+			"value": "all-success"
+		} ]
+	}
+}
