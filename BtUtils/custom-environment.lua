@@ -19,6 +19,10 @@ return Utils:Assign("CustomEnvironment", function()
 	common.dump = Debug.dump
 	common.Logger = Debug.Logger
 	common.Vec3 = Utils.Vec3
+	
+	-- use metapairs instead of pairs so that the users can use it on non-trivial tables and still get the result he expects
+	common.pairs = Utils.metapairs
+	
 	local commonMetatable = { __index = common }
 	CustomEnvironment.Common = common
 	
