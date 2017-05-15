@@ -1075,10 +1075,10 @@ function widget:Update()
 	local assignedUnitsMap = TreeHandle.unitsToTreesMap
 	local okUnits = {}
 	local okUnitsCounter = 0
-	local allUnitsOK = true
+	local allUnitsOk = true
 	for i=1, #selectedUnits do -- !! TIME CRITICAL
 		local thisUnitID = selectedUnits[i]
-		local thisUnitOK = true
+		local thisUnitOk = true
 		if (assignedUnitsMap[thisUnitID] ~= nil) then
 			if (assignedUnitsMap[thisUnitID].TreeHandle.unitsLocked) then
 				allUnitsOk = false
@@ -1086,13 +1086,13 @@ function widget:Update()
 			end
 		end
 		
-		if (thisUnitOK) then
+		if (thisUnitOk == true) then
 			okUnitsCounter = okUnitsCounter + 1
 			okUnits[okUnitsCounter] = thisUnitID
 		end
 	end
 	
-	if (not allUnitsOK) then -- ! only if necessary do re-selection
+	if (allUnitsOk == false) then -- ! only if necessary do re-selection
 		spSelectUnits(okUnits)
 	end
 end
