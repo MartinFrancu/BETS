@@ -558,9 +558,9 @@ function listenerClickOnLoadTree(self)
 end
 
 function listenerClickOnRoleManager(self)
-	local currentTree = formBehaviourTree()
+	local tree = formBehaviourTree()
 	self.hideFunction()
-	roleManager.showRolesManagement(Screen0, currentTree, currentTree.roles , self, afterRoleManagement) --rolesOfCurrentTree
+	roleManager.showRolesManagement(Screen0, tree, currentTree.roles , self, afterRoleManagement) --rolesOfCurrentTree
 end
 
 function listenerClickOnCheat(self)
