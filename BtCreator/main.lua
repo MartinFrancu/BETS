@@ -50,6 +50,8 @@ local btCheat = require("cheat")
 
 local treeNameLabel
 local treeInstanceNameLabel
+local refPathPanel
+local treeRefList = {}
 
 local noNameString = "--NO NAME GIVEN--"
 local noInstanceString = "---"
@@ -62,6 +64,7 @@ local currentTree = {
 	saveOncePossible = false,
 	changed = false,
 }
+
 
 function currentTree.setName(newTreeName) 
 	currentTree.treeName = newTreeName
@@ -141,9 +144,42 @@ function BtCreator.show()
 	end
 end
 
-function BtCreator.showTree(tree, instanceName, instanceId)
+local refButtons = {}
+
+local formBehaviourTree, clearCanvas, loadBehaviourTree
+
+local function reloadReferenceButtons()
+	for _,but in ipairs(refButtons) do
+		but:Dispose()
+	end
+	refButtons = {}
+
+	for i = 1,#treeRefList - 1 do
+	
+		treeRefInfo = treeRefList[i]
+		refButtons[#refButtons + 1] = Chili.Button:New{
+			parent = refPathPanel,
+			x = 0,
+			y = (i-1)*30,
+			width = 200,
+			height = 30,
+			caption = treeRefInfo.name,
+			skinName = "DarkGlass",
+			focusColor = {1.0,0.5,0.0,0.5},
+			OnClick ={ sanitizer:AsHandler(function() 
+				clearCanvas()
+				loadBehaviourTree(treeRefInfo.tree)
+				currentTree.roles = treeRefInfo.tree.roles or {}
+			end) }
+		}
+	end
+end
+
+function BtCreator.showTree(treeName, instanceName, instanceId)
 	BtCreator.show()
-	loadTree(tree)
+	treeRefList[#treeRefList + 1] = {name = treeName, tree = formBehaviourTree()}
+	reloadReferenceButtons()
+	loadTree(treeName)
 	currentTree.instanceId  = instanceId --treeInstanceId
 	currentTree.setInstanceName(instanceName)
 end
@@ -151,6 +187,8 @@ end
 function BtCreator.showReferencedTree(treeName, _referenceNodeID)
 	-- loadTree() nillates the referenceNodeID so set it after loadTree() call
 	local temp = currentTree.changed --isTreeChanged
+	treeRefList[#treeRefList + 1] = {name = treeName, refNodeID = _referenceNodeID, tree = formBehaviourTree()}
+	reloadReferenceButtons()
 	loadTree(treeName)
 	currentTree.changed = temp
 	referenceNodeID = _referenceNodeID
@@ -270,7 +308,6 @@ end
 -- Listeners
 -- //////////////////////////////////////////////////////////////////////
 
-local clearCanvas, loadBehaviourTree, formBehaviourTree
 local inputTypeMap = {
 	["Position"] = "BETS_POSITION",
 	["Area"]     = "BETS_AREA",
@@ -1264,6 +1301,20 @@ function widget:Initialize()
 	treeInstanceNameLabel.font.size = 16
 	treeInstanceNameLabel:RequestUpdate()
 	
+	refPathPanel = Chili.Panel:New{
+		parent = btCreatorWindow,
+		width = '15%',
+		x = '85%',
+		y = 0,
+		align = 'left',
+		borderColor = {1,1,1,0.2},
+		borderColor2 = {1,1,1,0.2},
+		borderThickness = 0,
+		backgroundColor = {0,0,0,0},
+		minWidth = 120,
+		autosize = true
+	}
+	
 	moveCanvasImg = Chili.Image:New{
 		parent = btCreatorWindow,
 		x = 20,
@@ -1305,9 +1356,8 @@ function widget:Initialize()
 				end
 			end),
 		},
-	}	
-	
-	
+	}
+
 	listenerClickOnMinimize()
 	WG.BtCreator = sanitizer:Export(BtCreator)
 	
