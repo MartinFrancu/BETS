@@ -22,6 +22,7 @@ return Utils:Assign("CustomEnvironment", function()
 	
 	-- use metapairs instead of pairs so that the users can use it on non-trivial tables and still get the result he expects
 	common.pairs = Utils.metapairs
+	-- TODO: suppply a reasonable next as well
 	
 	local commonMetatable = { __index = common }
 	CustomEnvironment.Common = common
