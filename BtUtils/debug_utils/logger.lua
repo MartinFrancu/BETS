@@ -122,6 +122,11 @@ If it is not an array, it is equivalent to an array with a single value.
 			message = message .. (type(v) == "string" and v or dump(v))
 		end
 		
+		local writeMessage = message
+		if(logType == Logger.LOGTYPE_ERROR)then
+			writeMessage = debug.traceback(message, 3)
+		end
+		
 		if(not Logger.settings[logGroup])then
 			Logger.settings[logGroup] = Logger.FUNNEL
 		end
@@ -137,7 +142,7 @@ If it is not an array, it is equivalent to an array with a single value.
 		for name in writerNames:gmatch("[^+]+") do
 			local writer = writers[name:match "^%s*(.-)%s*$"]
 			if(writer)then
-				writer(logGroup, logType, message)
+				writer(logGroup, logType, writeMessage)
 			end
 		end
 		
