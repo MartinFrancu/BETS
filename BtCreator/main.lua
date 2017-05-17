@@ -65,6 +65,20 @@ local currentTree = {
 	changed = false,
 }
 
+local function getCurrentTreeCopy(orig)
+    local orig_type = type(currentTree)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in pairs(currentTree) do
+            copy[orig_key] = orig_value
+        end
+    else -- number, string, boolean, etc
+        copy = currentTree
+    end
+    return copy
+end
+
 
 function currentTree.setName(newTreeName) 
 	currentTree.treeName = newTreeName
@@ -146,7 +160,7 @@ end
 
 local refButtons = {}
 
-local formBehaviourTree, clearCanvas, loadBehaviourTree
+local formBehaviourTree, clearCanvas, loadBehaviourTree, createTreeToSave
 
 local function reloadReferenceButtons()
 	for _,but in ipairs(refButtons) do
@@ -154,7 +168,7 @@ local function reloadReferenceButtons()
 	end
 	refButtons = {}
 
-	for i = 1,#treeRefList - 1 do
+	for i = 1,#treeRefList do
 	
 		treeRefInfo = treeRefList[i]
 		refButtons[#refButtons + 1] = Chili.Button:New{
@@ -163,13 +177,27 @@ local function reloadReferenceButtons()
 			y = (i-1)*30,
 			width = 200,
 			height = 30,
-			caption = treeRefInfo.name,
+			treeRefInfo = treeRefInfo,
+			caption = treeRefInfo.currentTree.treeName,
 			skinName = "DarkGlass",
 			focusColor = {1.0,0.5,0.0,0.5},
-			OnClick ={ sanitizer:AsHandler(function() 
+			listIndex = i,
+			OnClick ={ sanitizer:AsHandler(function(self) 
+				local info = self.treeRefInfo
 				clearCanvas()
-				loadBehaviourTree(treeRefInfo.tree)
-				currentTree.roles = treeRefInfo.tree.roles or {}
+				loadBehaviourTree(info.tree)
+				
+				currentTree.setName(info.currentTree.treeName)
+				currentTree.setInstanceName(info.currentTree.instanceName)
+				currentTree.changed = info.currentTree.changed 
+				referenceNodeID = info.refNodeID
+				currentTree.roles = info.tree.roles or {}
+				
+				local llen = #treeRefList
+				for j = self.listIndex,llen do
+					treeRefList[j] = nil
+				end
+				reloadReferenceButtons()
 			end) }
 		}
 	end
@@ -177,7 +205,6 @@ end
 
 function BtCreator.showTree(treeName, instanceName, instanceId)
 	BtCreator.show()
-	treeRefList[#treeRefList + 1] = {name = treeName, tree = formBehaviourTree()}
 	reloadReferenceButtons()
 	loadTree(treeName)
 	currentTree.instanceId  = instanceId --treeInstanceId
@@ -186,8 +213,9 @@ end
 
 function BtCreator.showReferencedTree(treeName, _referenceNodeID)
 	-- loadTree() nillates the referenceNodeID so set it after loadTree() call
+	treeRefList[#treeRefList + 1] = {refNodeID = referenceNodeID, tree = createTreeToSave(), currentTree = getCurrentTreeCopy()}
+	Logger.log("save-and-load",dump(treeRefList[#treeRefList], 3))
 	local temp = currentTree.changed --isTreeChanged
-	treeRefList[#treeRefList + 1] = {name = treeName, refNodeID = _referenceNodeID, tree = formBehaviourTree()}
 	reloadReferenceButtons()
 	loadTree(treeName)
 	currentTree.changed = temp
@@ -366,13 +394,7 @@ local afterRoleManagement
 -- does create new project and directory if necessary 
 -- does not create file if treeName is not qualifiedName and throws error.
 local function saveTree(treeName)
-	local zoomedOut = btCreatorWindow.zoomedOut
-	local w = btCreatorWindow.width
-	local h = btCreatorWindow.height
-	if zoomedOut then
-		zoomCanvasIn(btCreatorWindow, w/2, h/2)
-	end
-	local protoTree = formBehaviourTree()
+	local protoTree = createTreeToSave()
 	
 	if(serializedTreeName and serializedTreeName ~= treeName) then
 		--regenerate all IDs from loaded Tree
@@ -383,27 +405,6 @@ local function saveTree(treeName)
 		end
 		updateSerializedIDs()
 	end
-	protoTree.roles = currentTree.roles
-	protoTree.inputs = {}
-	protoTree.outputs = {}
-	local r = WG.nodeList[rootID]
-	protoTree.additionalParameters = { root = { width = r.width, height = r.height } }
-
-	local inputs = WG.nodeList[rootID].inputs
-	if(inputs ~= nil) then
-		for i=1,#inputs do
-			if (inputTypeMap[ inputs[i].comboBox.items[ inputs[i].comboBox.selected ] ] == nil) then
-				error("Uknown tree input type detected in BtCreator tree serialization. "..debug.traceback())
-			end
-			table.insert(protoTree.inputs, {["name"] = inputs[i].editBox.text, ["command"] = inputTypeMap[ inputs[i].comboBox.items[ inputs[i].comboBox.selected ] ],})
-		end
-	end
-	local outputs = WG.nodeList[rootID].outputs
-	if(outputs ~= nil) then
-		for i=1,#outputs do
-			table.insert(protoTree.outputs, {["name"] = outputs[i].editBox.text,})
-		end
-	end
 	-- Here I should move all the project creations etc..
 	local project, tree = separateProjectAndName(treeName)
 	if(not project or not tree)then
@@ -413,6 +414,7 @@ local function saveTree(treeName)
 			 .. " treeName:" .. treeName)
 		return
 	end
+	
 	setUpDir(BehaviourTree.contentType, project)
 	
 	Logger.assert("save-and-load", protoTree:Save(treeName))
@@ -428,10 +430,7 @@ local function saveTree(treeName)
 		"registering command for new tree",
 		WG.BtRegisterCommandForTree,
 		treeName)
-		
-	if zoomedOut then
-		zoomCanvasOut(btCreatorWindow, w/2, h/2)
-	end
+
 end 
 
 function saveAsTreeDialogCallback(project, tree)
@@ -571,6 +570,14 @@ function getBehaviourTree(treeName)
 		error("BehaviourTree " .. treeName .. " instance not found. " .. debug.traceback())
 	end
 end 
+
+local function setActiveTree(tree)
+	referenceNodeID = nil
+	getBehaviourTree(treeName)
+	currentTree.setName(treeName)
+	currentTree.setInstanceName("loaded from disk")
+	currentTree.changed = false 
+end
 
 function loadTree(treeName)
 	referenceNodeID = nil
@@ -1437,6 +1444,45 @@ local fieldsToSerialize = {
 	'referenceInputs',
 	'referenceOutputs',
 }
+
+
+function createTreeToSave()
+	local zoomedOut = btCreatorWindow.zoomedOut
+	local w = btCreatorWindow.width
+	local h = btCreatorWindow.height
+	if zoomedOut then
+		zoomCanvasIn(btCreatorWindow, w/2, h/2)
+	end
+	local protoTree = formBehaviourTree()
+	
+
+	protoTree.roles = currentTree.roles
+	protoTree.inputs = {}
+	protoTree.outputs = {}
+	local r = WG.nodeList[rootID]
+	protoTree.additionalParameters = { root = { width = r.width, height = r.height } }
+
+	local inputs = WG.nodeList[rootID].inputs
+	if(inputs ~= nil) then
+		for i=1,#inputs do
+			if (inputTypeMap[ inputs[i].comboBox.items[ inputs[i].comboBox.selected ] ] == nil) then
+				error("Uknown tree input type detected in BtCreator tree serialization. "..debug.traceback())
+			end
+			table.insert(protoTree.inputs, {["name"] = inputs[i].editBox.text, ["command"] = inputTypeMap[ inputs[i].comboBox.items[ inputs[i].comboBox.selected ] ],})
+		end
+	end
+	local outputs = WG.nodeList[rootID].outputs
+	if(outputs ~= nil) then
+		for i=1,#outputs do
+			table.insert(protoTree.outputs, {["name"] = outputs[i].editBox.text,})
+		end
+	end
+		
+	if zoomedOut then
+		zoomCanvasOut(btCreatorWindow, w/2, h/2)
+	end
+	return protoTree
+end
 
 function formBehaviourTree()
 	-- Validate every treenode - when editing editBox parameter and immediately serialize,
