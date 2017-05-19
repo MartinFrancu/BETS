@@ -526,6 +526,17 @@ function connectionLineCanBeCreated(obj)
 	if (clickedConnection.treeNode.name == obj.treeNode.name) then
 		return false
 	end
+	
+	if not obj.parent then
+		Logger.log("treeNode", "Parent of obj is nil", debug.traceback())
+		return false
+	end
+	
+	if not clickedConnection.parent then
+		Logger.log("treeNode", "Parent of clickedConnection is nil", debug.traceback())
+		return false
+	end
+	
 	if(connectionLine.exists(obj, clickedConnection)) then
 		return false
 	end
