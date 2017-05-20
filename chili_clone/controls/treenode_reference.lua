@@ -12,11 +12,7 @@ local sanitizer = Utils.Sanitizer.forWidget(widget)
 
 local dialogWindow
 
--- Stores nodeWindow component corresponding to last clicked chooseTreeButton
-local nodeWindow
-local treeName
-
-local function disposePreviousInputOutputComponents()
+local function disposePreviousInputOutputComponents(nodeWindow)
 	if(not nodeWindow) then
 		return
 	end
@@ -47,8 +43,7 @@ local function disposePreviousInputOutputComponents()
 	end
 end
 
-local function addLabelEditboxPair(nodeWindow_, components, y, label, text, invalid, serializedValues)
-	nodeWindow = nodeWindow_
+local function addLabelEditboxPair(nodeWindow, components, y, label, text, invalid, serializedValues)
 	local x = 25
 	if(invalid) then
 		components.button = Button:New{
@@ -64,7 +59,7 @@ local function addLabelEditboxPair(nodeWindow_, components, y, label, text, inva
 				function(self)
 					components.editBox:Dispose()
 					components.label:Dispose()
-					for i,pair in pairs(serializedValues) do
+					for i,pair in ipairs(serializedValues) do
 						if(pair.name == label) then
 							serializedValues[i] = nil
 						end
@@ -72,8 +67,8 @@ local function addLabelEditboxPair(nodeWindow_, components, y, label, text, inva
 					Spring.Echo(dump(nodeWindow.referenceInputs,2))
 					self:Dispose()
 					
-					disposePreviousInputOutputComponents()
-					referenceNode.addInputOutputComponents(nodeWindow,nodeWindow.treeNode.parameterObjects[1].label,treeName)
+					disposePreviousInputOutputComponents(nodeWindow)
+					referenceNode.addInputOutputComponents(nodeWindow,nodeWindow.treeNode.parameterObjects[1].label,nodeWindow.treeName)
 				end
 			},
 		}
@@ -115,8 +110,8 @@ end
 
 --- Function which takes care of populationg referenceNode with selected trees inputs and outputs. 
 --- Is called both from treenode.lua - in treenode constructor - and on clicking 'Choose tree' button.
-function referenceNode.addInputOutputComponents(nodeWindow,treeNameLabel, treeName_)
-	treeName = treeName_
+function referenceNode.addInputOutputComponents(nodeWindow,treeNameLabel, treeName)
+	nodeWindow.treeName = treeName;
 	local bt = BehaviourTree.load(treeName) or {}
 	local inputs = bt.inputs or {}
 	local outputs = bt.outputs or {}
@@ -143,7 +138,7 @@ function referenceNode.addInputOutputComponents(nodeWindow,treeNameLabel, treeNa
 		sanitizer:AsHandler( 
 			function(self)
 				local referenceID = nodeWindow.treeNode.id
-				WG.BtCreator.Get().showReferencedTree(treeName_, referenceID)
+				WG.BtCreator.Get().showReferencedTree(treeName, referenceID)
 			end
 		)
 	}
@@ -221,9 +216,9 @@ end
 
 local function setTreeCallback(projectName, behaviour)
 	if(projectName and behaviour) then
-		treeName = projectName.."."..behaviour		
+		treeName = projectName.."."..behaviour
 		-- remove older components if any
-		disposePreviousInputOutputComponents()
+		disposePreviousInputOutputComponents(nodeWindow)
 		referenceNode.addInputOutputComponents(nodeWindow,nodeWindow.treeNode.parameterObjects[1].label,treeName)
 	end
 	local label = nodeWindow.treeNode.parameterObjects[1].label

@@ -206,6 +206,7 @@ end
 
 function BtCreator.showTree(treeName, instanceName, instanceId)
 	BtCreator.show()
+	treeRefList = {}
 	reloadReferenceButtons()
 	loadTree(treeName)
 	currentTree.instanceId  = instanceId --treeInstanceId
@@ -553,6 +554,8 @@ function newTreeDialogCallback(projectName,treeName)
 		clearCanvas()
 		BtCreator.markTreeAsChanged()
 		currentTree.setInstanceName("new tree")
+		treeRefList = {}
+		reloadReferenceButtons()
 	end
 end
 
@@ -596,6 +599,8 @@ function loadTreeDialogCallback(project, tree)
 	BtCreator.show()
 	if project and tree then -- tree was selected
 		local qualifiedName = project .. "." .. tree
+		treeRefList = {}
+		reloadReferenceButtons()
 		loadTree(qualifiedName)
 	end
 end
@@ -682,6 +687,9 @@ local lastUpdateStatesParams = nil
 function updateStates(params)
 	if(not params)then
 		params = lastUpdateStatesParams
+		if(not params)then
+			return detachInstance()
+		end
 	end
 
 	local states = params.states
