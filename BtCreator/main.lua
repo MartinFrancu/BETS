@@ -142,11 +142,11 @@ local moveCanvasImg
 local rootDefaultX = 5
 local rootDefaultY = 60
 
-local updateStatesMessage
-
+local detachInstance
+local updateStates
 function BtCreator.markTreeAsChanged()
 	if(not currentTree.changed)then
-		updateStatesMessage({ states = {}, blackboard = {} })
+		detachInstance()
 		currentTree.setInstanceName("edited tree")
 		currentTree.changed = true
 	end
@@ -198,6 +198,7 @@ local function reloadReferenceButtons()
 					treeRefList[j] = nil
 				end
 				reloadReferenceButtons()
+				updateStates();
 			end) }
 		}
 	end
@@ -212,6 +213,7 @@ function BtCreator.showTree(treeName, instanceName, instanceId)
 end
 
 function BtCreator.showReferencedTree(treeName, _referenceNodeID)
+	local oldReferenceNodeID = referenceNodeID
 	-- loadTree() nillates the referenceNodeID so set it after loadTree() call
 	treeRefList[#treeRefList + 1] = {refNodeID = referenceNodeID, tree = createTreeToSave(), currentTree = getCurrentTreeCopy()}
 	Logger.log("save-and-load",dump(treeRefList[#treeRefList], 3))
@@ -219,7 +221,8 @@ function BtCreator.showReferencedTree(treeName, _referenceNodeID)
 	reloadReferenceButtons()
 	loadTree(treeName)
 	currentTree.changed = temp
-	referenceNodeID = _referenceNodeID
+	referenceNodeID = (oldReferenceNodeID and (oldReferenceNodeID .. "-") or "") .. _referenceNodeID
+	updateStates();
 end
 
 function BtCreator.showNewTree()
@@ -232,6 +235,7 @@ end
 function BtCreator.focusTree( treeType, instanceName, instanceId)
 	currentTree.instanceId = instanceId
 	currentTree.setInstanceName(instanceName)
+	detachInstance();
 	BtEvaluator.reportTree(instanceId)
 end
 
@@ -452,6 +456,7 @@ function saveAsTreeDialogCallback(project, tree)
 			currentTree.setName(qualifiedName)
 			currentTree.setInstanceName("tree saved")
 			currentTree.changed = false
+			updateStates()
 		else
 			-- we need to get user to define roles first:
 			currentTree.saveOncePossible = true
@@ -673,12 +678,10 @@ local function listenerClickOnContinue()
 	end
 end
 
---- Called after every tick from BtEvaluator, it changes node background/border colors according to the
---- node states. When referenced tree is opened, it has ids in the form 
---- [referenceNodeID]-[internalNodeIDs].
-function updateStatesMessage(params)
-	if(currentTree.changed )then --isTreeChanged
-		return
+local lastUpdateStatesParams = nil
+function updateStates(params)
+	if(not params)then
+		params = lastUpdateStatesParams
 	end
 
 	local states = params.states
@@ -714,7 +717,7 @@ function updateStatesMessage(params)
 		WG.nodeList[rootID].nodeWindow.TileImage = children[1].nodeWindow.TileImage
 		WG.nodeList[rootID].nodeWindow:Invalidate()
 	end
-	blackboard.showCurrentBlackboard(params.blackboard)
+	blackboard.showCurrentBlackboard(params.blackboards[referenceNodeID])
 	if(shouldPause) then
 		if(not pausedByBtCreator)then
 			Spring.SendCommands("pause")
@@ -724,6 +727,20 @@ function updateStatesMessage(params)
 		pausedByBtCreator = false
 	end
 end
+--- Called after every tick from BtEvaluator, it changes node background/border colors according to the
+--- node states. When referenced tree is opened, it has ids in the form 
+--- [referenceNodeID]-[internalNodeIDs].
+local function updateStatesMessage(params)
+	lastUpdateStatesParams = params
+	if(not currentTree.changed)then --isTreeChanged
+		updateStates(params)
+	end
+end
+
+function detachInstance()
+	return updateStates({ states = {}, blackboards = {} });
+end
+
 
 -- Renames the field 'defaultValue' to 'value' if it present, for all the parameters,
 -- also saves parameters, hasConnectionIn, hasConnectionOut into 'nodeDefinitionInfo'.
@@ -1466,7 +1483,7 @@ function createTreeToSave()
 	if(inputs ~= nil) then
 		for i=1,#inputs do
 			if (inputTypeMap[ inputs[i].comboBox.items[ inputs[i].comboBox.selected ] ] == nil) then
-				error("Uknown tree input type detected in BtCreator tree serialization. "..debug.traceback())
+				error("Unknown tree input type detected in BtCreator tree serialization. "..debug.traceback())
 			end
 			table.insert(protoTree.inputs, {["name"] = inputs[i].editBox.text, ["command"] = inputTypeMap[ inputs[i].comboBox.items[ inputs[i].comboBox.selected ] ],})
 		end

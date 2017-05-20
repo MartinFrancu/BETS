@@ -1,8 +1,6 @@
 --- .
 -- @classmod Surrogate
 
--- TODO: finish
-
 local newproxy = newproxy or getfenv(0).newproxy
 
 local Surrogate = {}

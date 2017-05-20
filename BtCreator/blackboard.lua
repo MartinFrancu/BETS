@@ -165,7 +165,7 @@ local function showCurrentBlackboard(blackboardState)
 		return
 	end
 
-	blackboardWindowState.rows:SetTable(blackboardState)
+	blackboardWindowState.rows:SetTable(blackboardState or {})
 end
 local function listenerClickOnShowBlackboard()
 	if(blackboardWindowState)then

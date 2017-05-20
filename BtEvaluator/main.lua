@@ -764,7 +764,16 @@ local handlers = {
 		local instanceId = params.id
 		local instance = treeInstances[instanceId]
 		if(instance)then
-			params.blackboard = setmetatable({ bb = instance.instanceBlackboard, global = globalBlackboard }, { __index = instance.blackboard })
+			params.blackboards = setmetatable({}, {
+				__index = function(self, path)
+					local blackboard = path and instance.subblackboards[path] or instance.blackboard
+					if(blackboard)then
+						return setmetatable({ bb = instance.instanceBlackboard, global = globalBlackboard }, { __index = blackboard })
+					else
+						return nil;
+					end
+				end,
+			});
 		end
 		return BtEvaluator.OnUpdateStates:Invoke(params)
 	end,
