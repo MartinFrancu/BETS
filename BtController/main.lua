@@ -719,6 +719,7 @@ function instantiateTree(treeType, instanceName, requireUnits)
 		
 	-- now, auto assign units to tree
 	automaticRoleAssignment(newTreeHandle, selectedUnits)
+	newTreeHandle:UpdateTreeStatus()
 	
 	-- mark units in tree:
 	markAllUnitsInTree(newTreeHandle)

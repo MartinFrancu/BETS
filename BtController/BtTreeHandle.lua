@@ -145,12 +145,10 @@ end
 -- This function removes all GUI components and shows just error message.
 -- And releases all units.
 function TreeHandle:SwitchToErrorState(message)
-	--[[
-	-- ?? should I be still able to assign units to error tree??
-	-- release units ??
-	--TreeHandle.removeUnitsFromTree(self.instanceId)
-	--self:DisposeRolesComponents()
-	--]]
+
+	 -- release units
+	TreeHandle.removeUnitsFromTree(self.instanceId)
+	self:DisposeRolesComponents()
 	
 	-- remove input buttons:
 	self:DisposeInputComponents()
