@@ -252,7 +252,7 @@ function BtEvaluator.dereferenceTree(treeDefinition)
 			local referencedName = behaviourNameParameter.value
 			
 			local function makeError(text)
-				return true, "[node=" .. tostring(node.id) .. "] " .. text
+				return true, text --"[node=" .. tostring(node.id) .. "] " .. text
 			end
 			
 			if(not referencedName)then
@@ -332,7 +332,7 @@ function BtEvaluator.dereferenceTree(treeDefinition)
 	end)
 	
 	if(failure)then
-		Logger.error("dereference", message)
+		--Logger.error("dereference", message)
 		return false, message
 	else
 		local referencedList, count = {}, 0

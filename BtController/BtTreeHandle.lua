@@ -97,6 +97,9 @@ end
 -- this function will check if all required inputs are given. 
 function TreeHandle:CheckReady()
 	local allOkSoFar = true
+	if self.error then
+		allOkSoFar = false
+	end
 	for _,input in pairs(self.Tree.inputs) do
 		if(self.Inputs[input.name] == nil) then
 			allOkSoFar = false

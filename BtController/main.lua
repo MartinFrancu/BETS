@@ -444,20 +444,20 @@ function createTreeInBtEvaluator(treeHandle)
 	local result, message
 	result, message = BtEvaluator.dereferenceTree(treeHandle.Tree)
 	if(not result) then
-		treeHandle:SwitchToErrorState(message)
+		treeHandle:SwitchToErrorState("deferenceTree error: " .. message)
 		return
 	end
 	result,message = BtEvaluator.createTree(treeHandle.instanceId, treeHandle.Tree, treeHandle.Inputs)
 	if(not result) then
 		-- error state
-		treeHandle:SwitchToErrorState(message)
+		treeHandle:SwitchToErrorState("createTree error: " ..message)
 		return
 	end
 end
 
 -- Reports units assigned to all roles to BtEvaluator
 function reportAssignedUnits(treeHandle)
-	if(treeHandle.Created == false) then 
+	if(treeHandle.Created == false or treeHandle.error) then 
 		-- nothign to report
 		return
 	end
