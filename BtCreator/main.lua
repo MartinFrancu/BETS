@@ -192,7 +192,8 @@ end
 local function parentButtonHandler(button) 
 	if currentTree.changed then
 		Dialog.showDialog(BtCreator.setDisableChildrenHitTest, function(confirmed) showParentDialogCallback(confirmed, button) end,
-		"Save tree", "The tree you want to leave has been changed.\nDo you wish to save it first?", Dialog.YES_NO_CANCEL_TYPE)
+		"Save tree", "The tree you want to leave has been changed.\nDo you wish to save it first?", Dialog.YES_NO_CANCEL_TYPE,
+		rootPanel.x + rootPanel.width - 500, rootPanel.y)
 	else
 		showParentTree(button)
 	end

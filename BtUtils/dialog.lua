@@ -86,14 +86,14 @@ return Utils:Assign("Dialog", function()
 	end
 		
 	
-	local function setUpDialog(parentHandler, callbackFunction, title, message, dialogType)
+	local function setUpDialog(parentHandler, callbackFunction, title, message, dialogType, x, y)
 		local width = 400
 		local height = 185
 		
 		local dialogWindow = Chili.Window:New{
 			parent = Chili.Screen0,
-			x = 300,
-			y = 500,
+			x = x or 300,
+			y = y or 500,
 			width = width,
 			height = height,
 			padding = {10,10,10,10},
@@ -132,13 +132,13 @@ return Utils:Assign("Dialog", function()
 		parentHandler(true)
 	end
 	
-	function Dialog.showDialog(parentHandler, callbackFunction, title, message, dialogType)
+	function Dialog.showDialog(parentHandler, callbackFunction, title, message, dialogType, x, y)
 		local callbackFunction = Sanitizer.sanitize(callbackFunction)
-		setUpDialog(parentHandler, callbackFunction, title, message, dialogType)
+		setUpDialog(parentHandler, callbackFunction, title, message, dialogType, x, y)
 	end
 	
-	function Dialog.showErrorDialog(parentHandler, title, message)
-		setUpDialog(parentHandler, nil, title, message, ERROR_TYPE)
+	function Dialog.showErrorDialog(parentHandler, title, message, x, y)
+		setUpDialog(parentHandler, nil, title, message, ERROR_TYPE, x, y)
 	end
 	
 	return Dialog
