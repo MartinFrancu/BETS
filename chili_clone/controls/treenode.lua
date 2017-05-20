@@ -798,8 +798,10 @@ end
 local function removeNodeFromSelection(nodeWindow)
 	nodeWindow.backgroundColor[4] = ALPHA_OF_NOT_SELECTED_NODES
 	WG.selectedNodes[nodeWindow.treeNode.id] = nil
-	nodeWindow.treeNode:UpdateParameterValues()
-	nodeWindow:Invalidate()
+	if(not nodeWindow.disposed)then
+		nodeWindow.treeNode:UpdateParameterValues()
+		nodeWindow:Invalidate()
+	end
 end
 
 local function addNodeToSelection(nodeWindow)
