@@ -107,7 +107,7 @@ return Utils:Assign("ProjectManager", function()
 		
 		os.rename(project.path, TMP_DIR .. PROJECT_PATH .. projectName) -- move to the archivation directory
 		local success, msg = pcall(function()
-			capitalizationFile = io.open(TMP_DIR .. PROJECT_PATH .. projectName .. "/" .. CAPITALIZATION_FILE, "w")
+			local capitalizationFile = io.open(TMP_DIR .. PROJECT_PATH .. projectName .. "/" .. CAPITALIZATION_FILE, "w")
 			capitalizationFile:write(projectName)
 			capitalizationFile:close()
 			return VFS.CompressFolder(TMP_DIR, "zip", PROJECT_PATH .. "/" .. projectName .. ".sdz", false, VFS.RAW)

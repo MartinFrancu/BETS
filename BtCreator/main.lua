@@ -82,6 +82,20 @@ local function getCurrentTreeCopy(orig)
     return copy
 end
 
+local function isAnyTreeChanged()
+	if(currentTree.changed)then
+		return true
+	end
+	
+	for i = 1,#treeRefList do
+		if(treeRefList[i].currentTree.changed)then
+			return true
+		end
+	end
+	
+	return false
+end
+
 
 function currentTree.setName(newTreeName) 
 	currentTree.treeName = newTreeName
@@ -217,7 +231,7 @@ function reloadReferenceButtons()
 			width = 200,
 			height = 30,
 			treeRefInfo = treeRefInfo,
-			caption = treeRefInfo.currentTree.treeName,
+			caption = treeRefInfo.currentTree.treeName .. (treeRefInfo.currentTree.changed and "*" or ""),
 			skinName = "DarkGlass",
 			focusColor = {1.0,0.5,0.0,0.5},
 			listIndex = i,
@@ -258,12 +272,13 @@ local function showReferenceDialogCallback(confirmed, treeName, refNodeId)
 end
 
 function BtCreator.onTreeReferenceClick(treeName, _referenceNodeID)
+	--[[
 	if currentTree.changed then
 		Dialog.showDialog(BtCreator.setDisableChildrenHitTest, function(confirmed) showReferenceDialogCallback(confirmed, treeName, _referenceNodeID) end,
 		"Save tree", SAVE_TREE_QUESTION, Dialog.YES_NO_CANCEL_TYPE)
-	else
-		BtCreator.showReferencedTree(treeName, _referenceNodeID)
-	end
+	else]]
+	BtCreator.showReferencedTree(treeName, _referenceNodeID)
+	--[[end]]
 end
 
 function BtCreator.showNewTree()
@@ -618,9 +633,22 @@ function newTreeDialogCallback(projectName,treeName)
 end
 
 function listenerClickOnNewTree(self)
-	local screenX,screenY = self:LocalToScreen(0,0)
-	ProjectDialog.showDialogWindow(BtCreator.setDisableChildrenHitTest, BehaviourTree.contentType, 
-			ProjectDialog.NEW_DIALOG_FLAG, newTreeDialogCallback, "Name the new tree:", screenX, screenY)	
+	local function newTreeCallback()
+		local screenX,screenY = self:LocalToScreen(0,0)
+		ProjectDialog.showDialogWindow(BtCreator.setDisableChildrenHitTest, BehaviourTree.contentType, 
+				ProjectDialog.NEW_DIALOG_FLAG, newTreeDialogCallback, "Name the new tree:", screenX, screenY)
+	end
+	
+	if(isAnyTreeChanged())then
+		Dialog.showDialog(BtCreator.setDisableChildrenHitTest, function(confirmed)
+			if(confirmed)then
+				saveTree(currentTree.treeName)
+			end
+			newTreeCallback()
+		end, "Save tree", SAVE_TREE_QUESTION, Dialog.YES_NO_CANCEL_TYPE)
+	else
+		newTreeCallback()
+	end
 end
 
 local serializedTreeName
@@ -743,6 +771,10 @@ end
 
 local lastUpdateStatesParams = nil
 function updateStates(params)
+	if(isAnyTreeChanged())then --isTreeChanged
+		return
+	end
+	
 	if(not params)then
 		params = lastUpdateStatesParams
 		if(not params)then
@@ -798,9 +830,7 @@ end
 --- [referenceNodeID]-[internalNodeIDs].
 local function updateStatesMessage(params)
 	lastUpdateStatesParams = params
-	if(not currentTree.changed)then --isTreeChanged
-		updateStates(params)
-	end
+	updateStates(params)
 end
 
 function detachInstance()
