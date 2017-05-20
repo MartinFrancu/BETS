@@ -163,7 +163,7 @@ end
 
 local refButtons = {}
 
-local formBehaviourTree, clearCanvas, loadBehaviourTree, createTreeToSave, reloadReferenceButtons, saveTree
+local formBehaviourTree, clearCanvas, loadBehaviourTree, loadBehaviourNode, createTreeToSave, reloadReferenceButtons, saveTree
 
 local function showParentTree(button)
 	local info = button.treeRefInfo
@@ -953,6 +953,7 @@ function listenerOnMouseDownCanvas(self, x, y, button)
 				node:UpdateParameterValues()
 			end
 		end
+		btCreatorWindow.lastHitPoint = { x = x, y = y }
 	end
 end
 
@@ -1514,14 +1515,69 @@ function widget:CommandNotify(cmdID, cmdParams, cmdOptions)
 	return result
 end
 
-function widget:KeyPress(key)
-	if(Spring.GetKeySymbol(key) == "delete") then -- Delete was pressed
+local clipboard = nil;
+
+function widget:KeyPress(key, mods)
+	local symbol = Spring.GetKeySymbol(key)
+	if(symbol == "delete") then -- Delete was pressed
 		for id,_ in pairs(WG.selectedNodes) do
 			if(id ~= rootID) then
 				removeNodeFromCanvas(id)
 			end
 		end
 		return true;
+	elseif(mods.ctrl and symbol == "c")then
+		local selectedList = {}
+		for id in pairs(WG.selectedNodes) do
+			if(id ~= rootID)then
+				table.insert(selectedList, WG.nodeList[id])
+			end
+		end
+		clipboard = formBehaviourTree(selectedList)
+		return true
+	elseif(mods.ctrl and symbol == "v")then
+		if(clipboard)then
+			WG.clearSelection();
+			local pasteRootPoint = btCreatorWindow.lastHitPoint or { x = 0, y = 0 }
+			local zoomedOut = btCreatorWindow.zoomedOut
+			if zoomedOut then
+				zoomCanvasIn(self, pasteRootPoint.x, pasteRootPoint.y)
+			end
+			local pastedNodes = {}
+			local minNode = nil
+			for _, n in ipairs(clipboard.additionalNodes) do
+				local node = loadBehaviourNode(clipboard, n, true)
+				table.insert(pastedNodes, node)
+				if(not minNode or node.x < minNode.x or (node.x == minNode.x and node.y < minNode.y))then
+					minNode = node
+				end
+			end
+			
+			local function addChildrenRecursive(node)
+				local children = node:GetChildren()
+				for i, child in ipairs(children) do
+					table.insert(pastedNodes, child)
+					addChildrenRecursive(child)
+				end
+			end
+			for i = #pastedNodes, 1, -1 do
+				addChildrenRecursive(pastedNodes[i])
+			end
+			
+			if(minNode)then
+				local diffx, diffy = pasteRootPoint.x - minNode.x, pasteRootPoint.y - minNode.y
+				for i, node in ipairs(pastedNodes) do
+					node.x = node.x + diffx
+					node.y = node.y + diffy
+					node.nodeWindow:SetPos(node.nodeWindow.x + diffx, node.nodeWindow.y + diffy)
+					WG.addNodeToSelection(node.nodeWindow);
+				end
+			end
+			if zoomedOut then
+				zoomCanvasOut(self, pasteRootPoint.x, pasteRootPoint.y)
+			end
+			return true
+		end
 	end
 
 end
@@ -1579,10 +1635,11 @@ function createTreeToSave()
 	return protoTree
 end
 
-function formBehaviourTree()
+function formBehaviourTree(nodeList)
+	nodeList = nodeList or WG.nodeList
 	-- Validate every treenode - when editing editBox parameter and immediately serialize,
 	-- the last edited parameter doesnt have to be updated
-	for _,node in pairs(WG.nodeList) do
+	for _,node in pairs(nodeList) do
 		node:UpdateParameterValues()
 	end
 
@@ -1590,7 +1647,7 @@ function formBehaviourTree()
 	local nodeMap = {}
 	local root = WG.nodeList[rootID]
 	
-	for id,node in pairs(WG.nodeList) do
+	for id,node in pairs(nodeList) do
 		if(node.id ~= rootID)then
 			local params = {}
 			
@@ -1630,15 +1687,17 @@ function formBehaviourTree()
 		end
 	end
 
-	for id,node in pairs(WG.nodeList) do
+	for id,node in pairs(nodeList) do
 		local btNode = nodeMap[node]
 		local children = node:GetChildren()
 		for i, childNode in ipairs(children) do
 			local btChild = nodeMap[childNode]
-			if(btNode)then
-				btNode:Connect(btChild)
-			else
-				bt:SetRoot(btChild)
+			if(btChild)then -- we may be only serializing a portion of a tree
+				if(btNode)then
+					btNode:Connect(btChild)
+				else
+					bt:SetRoot(btChild)
+				end
 			end
 		end
 	end
@@ -1705,7 +1764,7 @@ function loadSensorAutocompleteTable()
 	end
 end
 
-local function loadBehaviourNode(bt, btNode)
+function loadBehaviourNode(bt, btNode, discardId)
 	if(not btNode or btNode.nodeType == "empty_tree")then return nil end
 	local params = {}
 	local info
@@ -1781,6 +1840,9 @@ local function loadBehaviourNode(bt, btNode)
 	params.parent = btCreatorWindow
 	params.connectable = true
 	params.draggable = true
+	if(discardId)then
+		params.id = nil
+	end
 	
 	if (info and btNode.scriptName ~= nil) then
 		params.nodeType = btNode.scriptName
@@ -1789,7 +1851,7 @@ local function loadBehaviourNode(bt, btNode)
 	local node = Chili.TreeNode:New(params)
 	addNodeToCanvas(node)
 	for _, btChild in ipairs(btNode.children) do
-		local child = loadBehaviourNode(bt, btChild)
+		local child = loadBehaviourNode(bt, btChild, discardId)
 		connectionLine.add(node.connectionOut, child.connectionIn)
 	end
 	return node
