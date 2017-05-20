@@ -6,44 +6,7 @@ local Debug = Utils.Debug;
 local Logger = Debug.Logger
 local dump = Debug.dump
 
-
---[[
---------------------------------------------------------------------------------
---- Marker: Visualize units in trees:
--- get madatory module operators
-VFS.Include("LuaRules/modules.lua") -- modules table
-VFS.Include(modules.attach.data.path .. modules.attach.data.head) -- attach lib module
-
--- get other madatory dependencies
-attach.Module(modules, "message") -- communication backend
-
-
-local Marker = {}
-local function sendMessageToMarker(msg)
-	message.SendUI(msg)
-end
-
-local function Marker.addMarkerArray(units, locked)
-	local newMsg = {
-		subject = "AddUnitAIMarkers",
-		units = units,
-		locked = locked
-	}
-	sendMessageToMarker(newMsg)
-end
-
-local function Marker.removeMarker(units)
-	local newMsg = {
-		subject = "RemoveUnitAIMarkers",
-		units = units,
-	}
-	sendMessageToMarker(newMsg)
-end
-
-
-
---------------------------------------------------------------------------------
---]]
+local variablCommandName = "Variable"
 
 
 TreeHandle = {}
@@ -133,9 +96,40 @@ function TreeHandle.selectUnitsInRolesListener(button, ...)
 	Spring.SelectUnitArray(unitsInThisRole)
 end
 
+
+function TreeHandle:disposeAllChiliComponents()
+	self:disposeGeneralComponents()
+	self:disposeRolesComponents()
+	self:disposeInputComponents()
+end
+
+function TreeHandle:disposeGeneralComponents()
+	for _,chiliComponent in pairs(self.ChiliComponentsGeneral) do
+		chiliComponent:Dispose()
+	end
+	self.ChiliComponentsGeneral = {}
+end
+
+function TreeHandle:disposeRolesComponents()
+	for _,chiliComponent in pairs(self.ChiliComponentsRoles) do
+		chiliComponent:Dispose()
+	end
+	self.ChiliComponentsRoles = {}
+end
+
+function TreeHandle:disposeInputComponents()
+	for _,chiliComponent in pairs(self.ChiliComponentsInputs) do
+		chiliComponent:Dispose()
+	end
+	self.ChiliComponentsInputs = {}
+end
+
+function TreeHandle:switchTorErrorState(message)
+	
+end
 -- This method will set up and load in all chili components corresponding to 
 -- roles in given tree. It returns maximal x-coordinate of components
-function createChiliComponentsRoles(obj,xOffSet,yOffSet)
+local function createChiliComponentsRoles(obj,xOffSet,yOffSet)
 	local rolesEndX
 	local roleInd = 0 
 	local roleCount = #obj.Tree.roles
@@ -215,7 +209,7 @@ end
 
 -- This method will set up and load in all chili components corresponding to 
 -- inputs of given tree. It returns maximal x-coordinate of components.
-function createChiliComponentsInput(obj, xOffSet, yOffSet)
+local function createChiliComponentsInput(obj, xOffSet, yOffSet)
 	local inputXOffset = xOffSet 
 	local inputYOffset = yOffSet
 	local inputInd = 0
@@ -223,28 +217,31 @@ function createChiliComponentsInput(obj, xOffSet, yOffSet)
 	
 	for _,input in pairs(obj.Tree.inputs) do
 		local inputName = input.name
-		local inputButton = Chili.Button:New{
-			x = inputXOffset,
-			y = inputYOffset + CONSTANTS.buttonHeight * inputInd,
-			height = inputCount == 1 and CONSTANTS.buttonHeight +  CONSTANTS.singleButtonModifier or CONSTANTS.buttonHeight,
-			width = 180,
-			minWidth = CONSTANTS.minInputButtonWidth,
-			caption =" " .. inputName .. " (" .. (WG.BtCommandsInputHumanNames[input.command]or"N/A").. ")",
-			OnClick = {obj.InputButtonListener}, 
-			skinName = "DarkGlass",
-			focusColor = {0.5,0.5,0.5,0.5},
-			TreeHandle = obj,
-			InputName = inputName,
-			CommandName = input.command,
-			instanceId = obj.instanceId,
-			backgroundColor = CONSTANTS.FAILURE_COLOR,
-			tooltip = "Give required input (red = not given yet, green = given)",
-		}
-		inputInd = inputInd + 1
-		table.insert(obj.ChiliComponentsInputs, inputButton )
-		table.insert(obj.InputButtons, inputButton) 
+		local command = input.command
+			local inputButton = Chili.Button:New{
+				x = inputXOffset,
+				y = inputYOffset + CONSTANTS.buttonHeight * inputInd,
+				height = inputCount == 1 and CONSTANTS.buttonHeight +  CONSTANTS.singleButtonModifier or CONSTANTS.buttonHeight,
+				width = 180,
+				minWidth = CONSTANTS.minInputButtonWidth,
+				caption =" " .. inputName .. " (" .. (WG.BtCommandsInputHumanNames[command]or"N/A").. ")",
+				OnClick = {obj.InputButtonListener}, 
+				skinName = "DarkGlass",
+				focusColor = {0.5,0.5,0.5,0.5},
+				TreeHandle = obj,
+				InputName = inputName,
+				CommandName = command,
+				instanceId = obj.instanceId,
+				backgroundColor = CONSTANTS.FAILURE_COLOR,
+				tooltip = "Give required input (red = not given yet, green = given)",
+			}
+			inputInd = inputInd + 1
+			table.insert(obj.ChiliComponentsInputs, inputButton )
+			table.insert(obj.InputButtons, inputButton) 
+		else
 	end
 end
+
 
 --[[ It is expected from obj that ti contains following records:
 	AssignUnitListener
@@ -448,6 +445,7 @@ function TreeHandle:ReloadTree()
 	-- reload UI:---------------------------------------------------------------
 	
 	-- remove old components 
+	-- TD: USE DISPOSE:
 	self.ChiliComponentsRoles = {}
 	self.ChiliComponentsInputs = {}
 	-- add new components: roles
