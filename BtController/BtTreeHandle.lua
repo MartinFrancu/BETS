@@ -50,6 +50,9 @@ TreeHandle = {
 
 -- The following funtion creates string which summarize state of this tree. 
 function TreeHandle:UpdateTreeStatus()
+	if self.Error then -- there is error and it should remain in this state
+		return 
+	end
 	-- check invalid inputs: 
 	for _,input in ipairs(self.Tree.inputs) do
 		if(input.command == variableCommandName) then
@@ -145,7 +148,7 @@ end
 -- This function removes all GUI components and shows just error message.
 -- And releases all units.
 function TreeHandle:SwitchToErrorState(message)
-
+	self.Error = message
 	 -- release units
 	TreeHandle.removeUnitsFromTree(self.instanceId)
 	self:DisposeRolesComponents()
@@ -154,7 +157,7 @@ function TreeHandle:SwitchToErrorState(message)
 	self:DisposeInputComponents()
 
 
-	self.treeStatus:SetCaption("Error: " .. message)
+	self.treeStatus:SetCaption("Error: " .. self.Error)
 	self.treeStatus.parent:RequestUpdate()
 end
 -- This method will set up and load in all chili components corresponding to 
@@ -281,8 +284,6 @@ function TreeHandle:New(obj)
 	setmetatable(obj, self)
 	self.__index = self
 	obj.instanceId = generateID()
-	obj.Tree = BehaviourTree.load(obj.treeType)
-	
 	obj.ChiliComponentsGeneral = {}
 	obj.ChiliComponentsRoles = {}
 	obj.ChiliComponentsInputs = {}
@@ -333,8 +334,16 @@ function TreeHandle:New(obj)
 	obj.unitsLocked = false
 	table.insert(obj.ChiliComponentsGeneral, lockImage)
 	
-	-- Order of these childs is sort of IMPORTANT as other entities needs to access children
+	local tree, treeMSG = BehaviourTree.load(obj.treeType)
+	obj.Tree = tree
 	
+	if(not obj.Tree) then
+		-- tree was not loaded
+		TreeHandle.SwitchToErrorState(obj, treeMSG)
+		return obj
+	end
+	
+	-- Order of these childs is sort of IMPORTANT as other entities needs to access children
 	
 	local roleInd = 0 
 	local roleCount = #obj.Tree.roles
@@ -449,6 +458,7 @@ end
 
 -- This function reload tree again from file, but keeps user input if possible. 
 function TreeHandle:ReloadTree()
+	self.Error = nil -- remove any previous error
 	-- remember all units assigned in this tree
 	local assignedUnits = {}
 	for _,roleData in pairs(self.Tree.roles) do		

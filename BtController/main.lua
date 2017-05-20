@@ -441,8 +441,18 @@ end
 
 -- Calls required functions to create tree in BtEvaluator
 function createTreeInBtEvaluator(treeHandle)
-	BtEvaluator.dereferenceTree(treeHandle.Tree)
-	BtEvaluator.createTree(treeHandle.instanceId, treeHandle.Tree, treeHandle.Inputs)
+	local result, message
+	result, message = BtEvaluator.dereferenceTree(treeHandle.Tree)
+	if(not result) then
+		treeHandle:SwitchToErrorState(message)
+		return
+	end
+	result,message = BtEvaluator.createTree(treeHandle.instanceId, treeHandle.Tree, treeHandle.Inputs)
+	if(not result) then
+		-- error state
+		treeHandle:SwitchToErrorState(message)
+		return
+	end
 end
 
 -- Reports units assigned to all roles to BtEvaluator

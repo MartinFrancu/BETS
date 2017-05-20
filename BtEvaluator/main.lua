@@ -347,6 +347,11 @@ function BtEvaluator.createTree(instanceId, treeDefinition, inputs)
 	local instance = makeInstance(instanceId, treeDefinition.project, treeDefinition.roles)
 	local result, message = BtEvaluator.sendMessage("CREATE_TREE", { instanceId = instanceId, roleCount = #(treeDefinition.roles or {}), root = treeDefinition.root })
 	
+	if not result then
+		-- there was a problem with creating tree
+		return false, message
+	end
+	
 	for k, v in pairs(inputs or {}) do
 		instance.inputs[k] = v
 	end
