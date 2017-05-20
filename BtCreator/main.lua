@@ -489,8 +489,25 @@ function saveAsTreeDialogCallback(project, tree)
 		for _,role in pairs(currentTree.roles ) do --rolesOfCurrentTree
 			rolesCount = rolesCount + 1
 		end
-		local qualifiedName = project .. "." .. tree
+		Logger.log("roles", dump(currentTree.roles, 3 ) )
 		
+
+		for i = 1, maxSplit do
+			if(not currentTree.roles[i]) then
+				-- if there is no record for this role, fill it in by default
+				currentTree.roles[i] = { ["categories"] = { } ,["name"] = "Role " .. tostring(i) ,}
+			end
+		end
+		
+		local qualifiedName = project .. "." .. tree
+		saveTree(qualifiedName)	
+		currentTree.setName(qualifiedName)
+		currentTree.setInstanceName("tree saved")
+		currentTree.changed = false
+		updateStates()
+
+
+		--[[
 		if((maxSplit == rolesCount) and (rolesCount > 0) ) then --roles are plausible:
 			-- if new project I should create it  
 			saveTree(qualifiedName)	
@@ -503,6 +520,7 @@ function saveAsTreeDialogCallback(project, tree)
 			currentTree.saveOncePossible = true
 			roleManager.showRolesManagement(Screen0, resultTree, currentTree.roles , self, afterRoleManagement) --rolesOfCurrentTree
 		end
+		]]
 	end
 end
 
