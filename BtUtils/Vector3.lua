@@ -14,6 +14,7 @@ local sin = math.sin
 local cos = math.cos
 local atan2 = math.atan2
 local deg = math.deg
+local rad = math.rad
 
 -- Meta table.
 local vector_prototype = {}
@@ -179,12 +180,13 @@ function vector_prototype:ToHeading()
 	return (deg(angleInRads) % 360)
 end
 
--- Rotate vector around Y axis by given angle in degrees
+-- Rotate vector around Y axis by given angle in degrees 0-360 (clockwise)
 function vector_prototype:Rotate2D(angle)
+	local angleInRads = rad(-angle) -- -1 for clockwise rotation (but input is positive number)
 	local vec = new(0,0,0)
-	vec.x = self.x * cos(angle) - self.z * sin(angle)
+	vec.x = self.x * cos(angleInRads) - self.z * sin(angleInRads)
 	vec.y = self.y
-	vec.z = self.x * sin(angle) - self.z * cos(angle)
+	vec.z = self.x * sin(angleInRads) + self.z * cos(angleInRads)
 	return vec
 end
 
