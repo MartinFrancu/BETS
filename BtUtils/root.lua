@@ -49,6 +49,7 @@ WG.BtUtils = WG.BtUtils or (function()
 			CustomEnvironment = "custom-environment", -- @{CustomEnvironment}
 			ErrorBox = "error-box", -- @{ErrorBox}
 			ProjectDialog = "project-dialog",
+			Dialog = "dialog",
 			Surrogate = "Surrogate", -- @{Surrogate}
 			program = "program", -- @{program}
 		}

@@ -34,6 +34,7 @@ local sanitizer = Utils.Sanitizer.forWidget(widget)
 local Debug = Utils.Debug;
 local ProjectManager = Utils.ProjectManager
 local ProjectDialog = Utils.ProjectDialog
+local Dialog = Utils.Dialog
 local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyTable, Debug.fileTable
 
 local nodeDefinitionInfo = {}
@@ -160,9 +161,44 @@ end
 
 local refButtons = {}
 
-local formBehaviourTree, clearCanvas, loadBehaviourTree, createTreeToSave
+local formBehaviourTree, clearCanvas, loadBehaviourTree, createTreeToSave, reloadReferenceButtons, saveTree
 
-local function reloadReferenceButtons()
+local function showParentTree(button)
+	local info = button.treeRefInfo
+	clearCanvas()
+	loadBehaviourTree(info.tree)
+	
+	currentTree.setName(info.currentTree.treeName)
+	currentTree.setInstanceName(info.currentTree.instanceName)
+	currentTree.changed = info.currentTree.changed 
+	referenceNodeID = info.refNodeID
+	currentTree.roles = info.tree.roles or {}
+	
+	local llen = #treeRefList
+	for j = button.listIndex,llen do
+		treeRefList[j] = nil
+	end
+	reloadReferenceButtons()
+	updateStates()
+end
+
+local function showParentDialogCallback(confirmed, button)
+	if confirmed then
+		saveTree(currentTree.treeName)
+	end
+	showParentTree(button)
+end
+
+local function parentButtonHandler(button) 
+	if currentTree.changed then
+		Dialog.showDialog(BtCreator.setDisableChildrenHitTest, function(confirmed) showParentDialogCallback(confirmed, button) end,
+		"Save tree", "The tree you want to leave has been changed.\nDo you wish to save it first?", Dialog.YES_NO_CANCEL_TYPE)
+	else
+		showParentTree(button)
+	end
+end
+
+function reloadReferenceButtons()
 	for _,but in ipairs(refButtons) do
 		but:Dispose()
 	end
@@ -182,24 +218,7 @@ local function reloadReferenceButtons()
 			skinName = "DarkGlass",
 			focusColor = {1.0,0.5,0.0,0.5},
 			listIndex = i,
-			OnClick ={ sanitizer:AsHandler(function(self) 
-				local info = self.treeRefInfo
-				clearCanvas()
-				loadBehaviourTree(info.tree)
-				
-				currentTree.setName(info.currentTree.treeName)
-				currentTree.setInstanceName(info.currentTree.instanceName)
-				currentTree.changed = info.currentTree.changed 
-				referenceNodeID = info.refNodeID
-				currentTree.roles = info.tree.roles or {}
-				
-				local llen = #treeRefList
-				for j = self.listIndex,llen do
-					treeRefList[j] = nil
-				end
-				reloadReferenceButtons()
-				updateStates();
-			end) }
+			OnClick ={ sanitizer:AsHandler(parentButtonHandler) }
 		}
 	end
 end
@@ -398,7 +417,7 @@ local afterRoleManagement
 -- does not check if tree makes sense
 -- does create new project and directory if necessary 
 -- does not create file if treeName is not qualifiedName and throws error.
-local function saveTree(treeName)
+function saveTree(treeName)
 	local protoTree = createTreeToSave()
 	
 	if(serializedTreeName and serializedTreeName ~= treeName) then
