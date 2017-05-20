@@ -98,9 +98,9 @@ end
 
 
 function TreeHandle:DisposeAllChiliComponents()
-	self:disposeGeneralComponents()
-	self:disposeRolesComponents()
-	self:disposeInputComponents()
+	self:DisposeGeneralComponents()
+	self:DisposeRolesComponents()
+	self:DisposeInputComponents()
 end
 
 function TreeHandle:DisposeGeneralComponents()
@@ -238,7 +238,6 @@ local function createChiliComponentsInput(obj, xOffSet, yOffSet)
 			inputInd = inputInd + 1
 			table.insert(obj.ChiliComponentsInputs, inputButton )
 			table.insert(obj.InputButtons, inputButton) 
-		else
 	end
 end
 
