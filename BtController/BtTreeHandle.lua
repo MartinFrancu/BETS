@@ -97,27 +97,27 @@ function TreeHandle.selectUnitsInRolesListener(button, ...)
 end
 
 
-function TreeHandle:disposeAllChiliComponents()
+function TreeHandle:DisposeAllChiliComponents()
 	self:disposeGeneralComponents()
 	self:disposeRolesComponents()
 	self:disposeInputComponents()
 end
 
-function TreeHandle:disposeGeneralComponents()
+function TreeHandle:DisposeGeneralComponents()
 	for _,chiliComponent in pairs(self.ChiliComponentsGeneral) do
 		chiliComponent:Dispose()
 	end
 	self.ChiliComponentsGeneral = {}
 end
 
-function TreeHandle:disposeRolesComponents()
+function TreeHandle:DisposeRolesComponents()
 	for _,chiliComponent in pairs(self.ChiliComponentsRoles) do
 		chiliComponent:Dispose()
 	end
 	self.ChiliComponentsRoles = {}
 end
 
-function TreeHandle:disposeInputComponents()
+function TreeHandle:DisposeInputComponents()
 	for _,chiliComponent in pairs(self.ChiliComponentsInputs) do
 		chiliComponent:Dispose()
 	end
@@ -446,8 +446,8 @@ function TreeHandle:ReloadTree()
 	
 	-- remove old components 
 	-- TD: USE DISPOSE:
-	self.ChiliComponentsRoles = {}
-	self.ChiliComponentsInputs = {}
+	self:DisposeRolesComponents()
+	self:DisposeInputComponents()
 	-- add new components: roles
 	local xOffSet = createChiliComponentsRoles(self, CONSTANTS.rolesXOffset,CONSTANTS.rolesYOffset)
 	-- add new components: inputs

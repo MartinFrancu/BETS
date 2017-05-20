@@ -261,6 +261,8 @@ function removeTreeBtController(tabs,treeHandle)
 		-- remove send message to BtEvaluator
 		BtEvaluator.removeTree(treeHandle.instanceId)
 	end
+	
+	treeHandle:DisposeAllChiliComponents()
 end
 
 
