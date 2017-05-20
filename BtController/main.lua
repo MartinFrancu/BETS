@@ -19,7 +19,7 @@ CONSTANTS = {
 }
 
 
-
+local tabBarChildIndex = 1
 
 local Chili, Screen0
 local BtController = widget
@@ -163,14 +163,14 @@ end
  
 function highlightTab(tabName)
 	-- first child should be the TabBar:
-	local tabBarChildIndex = 1
+	--local tabBarChildIndex = 1
 	treeTabPanel:ChangeTab(tabName)
 	treeTabPanel.children[tabBarChildIndex]:Select(tabName)
 end
 
 
 function getBarItemByName(tabs, tabName)
-	local tabBarChildIndex = 1
+	--local tabBarChildIndex = 1
 	-- get tabBar
 	local tabBar = tabs.children[tabBarChildIndex]
 	-- find corresponding tabBarItem: 
@@ -233,7 +233,7 @@ end
 
 function removeTreeBtController(tabs,treeHandle)
 	-- remove the bar item
-	local tabBarChildIndex = 1
+	--local tabBarChildIndex = 1
 	-- get tabBar
 	local tabBar = tabs.children[tabBarChildIndex]
 	
@@ -310,7 +310,7 @@ function BtController.reloadTreeType(treeTypeName)
 	-- refresh tree selection:
 	refreshTreeSelectionPanel()
 	-- I should iterate over all tab bar items:
-	local tabBarChildIndex = 1
+	--local tabBarChildIndex = 1
 	-- get tabBar
 	local tabBar = treeTabPanel.children[tabBarChildIndex]
 	-- find corresponding tabBarItems: 
@@ -320,10 +320,25 @@ function BtController.reloadTreeType(treeTypeName)
 		if( (item.TreeHandle ~= nil) 
 			and (item.TreeHandle.treeType == treeTypeName) )
 		then
-			--table.insert(toReload, item.TreeHandle)
 			reloadTree(treeTabPanel, item.TreeHandle)
 		end
 	end
+	-- get selected tab:
+	local barItem = tabBar.selected_obj
+	-- if it is not + then:
+	if(barItem.caption ~= "+") then
+		local tH = barItem.TreeHandle
+		-- I should show selected tree:
+		if(tH.Created) then 
+			BtEvaluator.reportTree(tH.instanceId)
+		end
+		if(BtCreator) then		
+			BtCreator.focusTree(tH.treeType, tH.name, tH.instanceId)
+		else
+			Logger.log("Error", "BtControler - reloadTreeType: no BtCreator.")
+		end
+	end
+
 end
 
 -- This method will reload all tree instances currently present in BtController.
@@ -333,7 +348,7 @@ function reloadAll()
 	BtUtils.ProjectManager.reload()
 	BtEvaluator.reloadCaches()
 	-- I should iterate over all tab bar items:
-	local tabBarChildIndex = 1
+	--local tabBarChildIndex = 1
 	-- get tabBar
 	local tabBar = treeTabPanel.children[tabBarChildIndex]
 	-- find corresponding tabBarItems: 
@@ -480,7 +495,7 @@ end
 
 -- Remove trees without units which require units.
 function removeTreesWithoutUnitsRequiringUnits()
-	local tabBarChildIndex = 1
+	--local tabBarChildIndex = 1
 	local tabBar = treeTabPanel.children[tabBarChildIndex]
 	local barItems = tabBar.children
 	-- get trees to remove
@@ -549,8 +564,15 @@ function listenerBarItemClick(self, x, y, button, ...)
 		local tH = self.TreeHandle
 		tH:UpdateTreeStatus()
 		
-		BtCreator.focusTree(tH.treeType, tH.name, tH.instanceId)
+		if(barItem.TreeHandle.Created) then 
+			BtEvaluator.reportTree(tH.instanceId)
+		end
 		
+		if(BtCreator) then
+			BtCreator.focusTree(tH.treeType, tH.name, tH.instanceId)
+		else
+			Logger.log("Error", "BtControler - listenerBarItemClick: no BtCreator.")
+		end
 		-- ORIGINAL LISTENER FORM BarItem:
 		if not self.parent then return end
 		self.parent:Select(self.caption)
@@ -683,7 +705,7 @@ end
 -- This function show currently selected tree in BtCreator. If add tree tab is selected
 local function listenerClickBtCreator(self, x, y, button)
 	-- get the selected tab from tabs:	
-	local tabBarChildIndex = 1
+	--local tabBarChildIndex = 1
 	tabBar = treeTabPanel.children[tabBarChildIndex]
 	local barItem = tabBar.selected_obj
 	-- if it is not + then show BtCreator (send him message)
@@ -757,7 +779,7 @@ function moveToEndAddTab(tabs)
 	
 	refreshTreeSelectionPanel()
 	
-	local tabBarChildIndex = 1
+	--local tabBarChildIndex = 1
 	-- get tabBar
 	local tabBar = tabs.children[tabBarChildIndex]
 	if (#(tabBar.children) >= 2) then

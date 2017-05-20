@@ -277,7 +277,7 @@ function BtCreator.focusTree( treeType, instanceName, instanceId)
 	currentTree.instanceId = instanceId
 	currentTree.setInstanceName(instanceName)
 	detachInstance();
-	BtEvaluator.reportTree(instanceId)
+	--BtEvaluator.reportTree(instanceId)
 end
 
 function BtCreator.setDisableChildrenHitTest(bool)
