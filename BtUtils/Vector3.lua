@@ -10,6 +10,10 @@
 --   - disabled querying of the metatable from the outside
 
 local type = type
+local sin = math.sin
+local cos = math.cos
+local atan2 = math.atan2
+local deg = math.deg
 
 -- Meta table.
 local vector_prototype = {}
@@ -169,34 +173,20 @@ function vector_prototype:Distance( vector )
 	return vec:Length()
 end
 
---[[
--- Returns a garry vector for his functions.
-function vector_mt:Garry()
-	return Vector( self.x, self.y, self.z )
+-- Convert vector in 2D heading in degrees between 0-360
+function vector_prototype:ToHeading()
+	local angleInRads = atan2(self.x, self.z)
+	return (deg(angleInRads) % 360)
 end
-]]
 
--- If by any chance my vector library doesn't have a specific function
--- you can simply uncomment this and use garrys!
---local garry = FindMetaTable( "Vector" )
---function vector_mt:__index( key ) 
---	if vector_prototype[key] ~= nil then 
---		return vector_prototype[key] 
---	else
---		return garry[key] 
---	end
---end
-
-
---[[
-	To be added if I want this as a direct replacement.
-	However I feel 2D vectors should be made as there own type.
-
-	Vector:Length2D -- Will be Vector2:Length2D()
-	Vector:Length2DSqr -- Not Added.
-	Vector:LengthSqr -- Not Added.
-	Vector:Rotate -- Should exist when angle and quaternions are done.
-]]
+-- Rotate vector around Y axis by given angle in degrees
+function vector_prototype:Rotate2D(angle)
+	local vec = new(0,0,0)
+	vec.x = self.x * cos(angle) - self.z * sin(angle)
+	vec.y = self.y
+	vec.z = self.x * sin(angle) - self.z * cos(angle)
+	return vec
+end
 
 
 function vector_prototype:AsSpringVector()
