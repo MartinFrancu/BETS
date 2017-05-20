@@ -1533,7 +1533,14 @@ function widget:KeyPress(key, mods)
 				table.insert(selectedList, WG.nodeList[id])
 			end
 		end
+		local zoomedOut = btCreatorWindow.zoomedOut
+		if zoomedOut then
+			zoomCanvasIn(self, 0, 0)
+		end
 		clipboard = formBehaviourTree(selectedList)
+		if zoomedOut then
+			zoomCanvasOut(self, 0, 0)
+		end
 		return true
 	elseif(mods.ctrl and symbol == "v")then
 		if(clipboard)then
