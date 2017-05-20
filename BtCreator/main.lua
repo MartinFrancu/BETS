@@ -1089,6 +1089,10 @@ function widget:Initialize()
 	BtEvaluator.OnInstanceCreated = function(instanceId)
 		if(currentTree.instanceId == instanceId)then
 			BtEvaluator.reportTree(instanceId)
+
+			for id in pairs(breakpoints) do
+				BtEvaluator.setBreakpoint(currentTree.instanceId, id) --treeInstanceId
+			end
 		end
 	end
 	BtEvaluator.OnInstanceRemoved = function(instanceId)
