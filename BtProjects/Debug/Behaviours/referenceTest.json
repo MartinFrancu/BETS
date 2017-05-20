@@ -14,20 +14,20 @@
 			"title": "reference Debug.dummy",
 			"width": 200,
 			"x": 499,
-			"y": -110.5
+			"y": -110
 		},
 		"YJzp57q9hKBUW1ZQ8B37SweQsD9w4rI2": {
 			"height": 58,
 			"title": "sequence",
 			"width": 136,
-			"x": 241.75,
+			"x": 242,
 			"y": -12
 		},
 		"xnH96b16YDklbVSfPqSroXug19bFsHHo": {
 			"height": 72,
 			"title": "echo",
 			"width": 180,
-			"x": 506.142883,
+			"x": 507,
 			"y": 118
 		}
 	},

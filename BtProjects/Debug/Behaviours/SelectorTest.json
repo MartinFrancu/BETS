@@ -13,28 +13,28 @@
 			"height": 54,
 			"title": "failure",
 			"width": 111,
-			"x": 458.5,
+			"x": 459,
 			"y": -97
 		},
 		"MFYDWju5yc81CpA3cYXWizzT2EZam7Mr": {
 			"height": 72,
 			"title": "echo",
 			"width": 193,
-			"x": 460.5,
+			"x": 461,
 			"y": 100
 		},
 		"uhAlyqOoJh9KKMTpaUo1zXgNUYfi8t8N": {
 			"height": 72,
 			"title": "echo",
 			"width": 201,
-			"x": 702.5,
+			"x": 703,
 			"y": -60
 		},
 		"vH7VDDZat6PjX21VGEFiCKtcdeA5S7Gx": {
 			"height": 54,
 			"title": "failure",
 			"width": 111,
-			"x": 702.5,
+			"x": 703,
 			"y": 28
 		},
 		"voRV8p23bbSzWpLp5EcbMI6ynYDLshXv": {
@@ -48,7 +48,7 @@
 			"height": 90,
 			"title": "luaCondition",
 			"width": 194,
-			"x": 449.5,
+			"x": 450,
 			"y": -17
 		}
 	},
@@ -69,7 +69,7 @@
 				"nodeType": "luaCommand",
 				"parameters": [ {
 					"name": "msg",
-					"value": "\"success - child 2\""
+					"value": "\"success - 2\""
 				}, {
 					"name": "scriptName",
 					"value": "echo"
