@@ -56,6 +56,8 @@ local treeRefList = {}
 
 local noNameString = "--NO NAME GIVEN--"
 local noInstanceString = "---"
+local SAVE_TREE_QUESTION = "The tree you want to leave has been changed.\nDo you wish to save it first?"
+
 
 local currentTree = {
 	treeName = noNameString,
@@ -192,7 +194,7 @@ end
 local function parentButtonHandler(button) 
 	if currentTree.changed then
 		Dialog.showDialog(BtCreator.setDisableChildrenHitTest, function(confirmed) showParentDialogCallback(confirmed, button) end,
-		"Save tree", "The tree you want to leave has been changed.\nDo you wish to save it first?", Dialog.YES_NO_CANCEL_TYPE,
+		"Save tree", SAVE_TREE_QUESTION, Dialog.YES_NO_CANCEL_TYPE,
 		rootPanel.x + rootPanel.width - 500, rootPanel.y)
 	else
 		showParentTree(button)
@@ -241,9 +243,27 @@ function BtCreator.showReferencedTree(treeName, _referenceNodeID)
 	local temp = currentTree.changed --isTreeChanged
 	reloadReferenceButtons()
 	loadTree(treeName)
-	currentTree.changed = temp
+	--currentTree.changed = temp
 	referenceNodeID = (oldReferenceNodeID and (oldReferenceNodeID .. "-") or "") .. _referenceNodeID
-	updateStates();
+	updateStates()
+end
+
+local function showReferenceDialogCallback(confirmed, treeName, refNodeId)
+	if confirmed then
+		saveTree(currentTree.treeName)
+		currentTree.changed = false
+		currentTree.setInstanceName("tree saved")
+	end
+	BtCreator.showReferencedTree(treeName, refNodeId)
+end
+
+function BtCreator.onTreeReferenceClick(treeName, _referenceNodeID)
+	if currentTree.changed then
+		Dialog.showDialog(BtCreator.setDisableChildrenHitTest, function(confirmed) showReferenceDialogCallback(confirmed, treeName, _referenceNodeID) end,
+		"Save tree", SAVE_TREE_QUESTION, Dialog.YES_NO_CANCEL_TYPE)
+	else
+		BtCreator.showReferencedTree(treeName, _referenceNodeID)
+	end
 end
 
 function BtCreator.showNewTree()

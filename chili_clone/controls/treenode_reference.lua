@@ -138,7 +138,7 @@ function referenceNode.addInputOutputComponents(nodeWindow,treeNameLabel, treeNa
 		sanitizer:AsHandler( 
 			function(self)
 				local referenceID = nodeWindow.treeNode.id
-				WG.BtCreator.Get().showReferencedTree(treeName, referenceID)
+				WG.BtCreator.Get().onTreeReferenceClick(treeName, referenceID)
 			end
 		)
 	}
