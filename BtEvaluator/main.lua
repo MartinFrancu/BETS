@@ -469,8 +469,8 @@ local function createExpression(expression)
 			return blackboard[key]
 		end,
 		__newindex = function(self, key, value)
-			if(customEnvironment[key])then
-				Logger.error("expression", "Attempt to overwrite an environment variable.")
+			if(customEnvironment[key] or customEnvironment.Sensors[key])then
+				Logger.error("expression", "Attempt to overwrite an environment variable ", key, ".")
 			end
 			blackboard[key] = value
 		end
