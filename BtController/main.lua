@@ -345,7 +345,9 @@ function reloadAll()
 	end
 	
 	resetMarkers()
-	BtCreator.reloadNodePool()
+	if(BtCreator)then
+		BtCreator.reloadNodePool()
+	end
 end
 --[[ This method pop up simple error window. Currently used if user tries 
 to create tree with already used name.
