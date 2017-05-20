@@ -332,7 +332,7 @@ function BtController.reloadTreeType(treeTypeName)
 		if(tH.Created) then 
 			BtEvaluator.reportTree(tH.instanceId)
 		end
-		if(BtCreator) then		
+		if(BtCreator) then
 			BtCreator.focusTree(tH.treeType, tH.name, tH.instanceId)
 		else
 			Logger.log("Error", "BtControler - reloadTreeType: no BtCreator.")
@@ -462,12 +462,14 @@ function createTreeInBtEvaluator(treeHandle)
 	result, message = BtEvaluator.dereferenceTree(treeHandle.Tree)
 	if(not result) then
 		treeHandle:SwitchToErrorState("deferenceTree error: " .. message)
+		treeHandle.Created = false
 		return
 	end
 	result,message = BtEvaluator.createTree(treeHandle.instanceId, treeHandle.Tree, treeHandle.Inputs)
 	if(not result) then
 		-- error state
 		treeHandle:SwitchToErrorState("createTree error: " ..message)
+		treeHandle.Created = false
 		return
 	end
 end
@@ -564,7 +566,8 @@ function listenerBarItemClick(self, x, y, button, ...)
 		local tH = self.TreeHandle
 		tH:UpdateTreeStatus()
 		
-		if(barItem.TreeHandle.Created) then 
+		
+		if(self.TreeHandle.Created) then 
 			BtEvaluator.reportTree(tH.instanceId)
 		end
 		
@@ -760,10 +763,11 @@ function instantiateTree(treeType, instanceName, requireUnits)
 	
 	
 	if(newTreeHandle:CheckReady()) then
-		createTreeInBtEvaluator(newTreeHandle)
 		newTreeHandle.Created = true
+		createTreeInBtEvaluator(newTreeHandle)
 		reportAssignedUnits(newTreeHandle)
 	end
+
 	return newTreeHandle
 end
 

@@ -274,10 +274,10 @@ function BtCreator.showNewTree()
 end
 -- called when new tree tabItem in BtController is selected
 function BtCreator.focusTree( treeType, instanceName, instanceId)
-	currentTree.instanceId = instanceId
-	currentTree.setInstanceName(instanceName)
 	detachInstance();
-	--BtEvaluator.reportTree(instanceId)
+	if(not currentTree.changed) then
+		BtCreator.showTree(treeType, instanceName,instanceId)
+	end
 end
 
 function BtCreator.setDisableChildrenHitTest(bool)
@@ -463,7 +463,8 @@ function saveTree(treeName)
 	setUpDir(BehaviourTree.contentType, project)
 	
 	Logger.assert("save-and-load", protoTree:Save(treeName))
-	--currentTree.changed = false --isTreeChanged = false
+	
+	
 	WG.clearSelection()
 	
 	Logger.loggedCall("Errors", "BtCreator", 
@@ -475,7 +476,6 @@ function saveTree(treeName)
 		"registering command for new tree",
 		WG.BtRegisterCommandForTree,
 		treeName)
-
 end 
 
 function saveAsTreeDialogCallback(project, tree)
@@ -500,12 +500,11 @@ function saveAsTreeDialogCallback(project, tree)
 		end
 		
 		local qualifiedName = project .. "." .. tree
-		saveTree(qualifiedName)	
 		currentTree.setName(qualifiedName)
 		currentTree.setInstanceName("tree saved")
 		currentTree.changed = false
+		saveTree(qualifiedName)	
 		updateStates()
-
 
 		--[[
 		if((maxSplit == rolesCount) and (rolesCount > 0) ) then --roles are plausible:
@@ -1360,7 +1359,7 @@ function widget:Initialize()
 		y = loadTreeButton.y,
 		width = 35,
 		height = 30,
-		caption = "_",
+		caption = "X",
 		skinName = "DarkGlass",
 		focusColor = {1.0,0.5,0.0,0.5},
 		OnClick = { sanitizer:AsHandler(listenerClickOnMinimize) },
@@ -1471,6 +1470,8 @@ function widget:Initialize()
 	local environment = setmetatable(newEntries ,{__index = widget})
 	
 	btCheat.init()
+	
+	currentTree.changed = false
 	
 	Dependency.fill(Dependency.BtCreator)
 	Logger.log("reloading", "BtCreator widget:Initialize end. ")
@@ -1866,7 +1867,7 @@ end
 
 function loadBehaviourTree(bt)
 	serializedTreeName = currentTree.treeName 
-	--treeNameLabel.caption -- to be able to regenerate ids of deserialized nodes, when saved with different name
+  -- to be able to regenerate ids of deserialized nodes, when saved with different name
 	local root = loadBehaviourNode(bt, bt.root)
 	if(root)then
 		connectionLine.add(WG.nodeList[rootID].connectionOut, root.connectionIn)
