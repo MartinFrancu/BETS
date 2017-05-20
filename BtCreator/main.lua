@@ -332,7 +332,7 @@ function placeTreeNodeOnCanvas(nodeType, x, y)
 		end
 	end
 	if(not newNode) then
-		Logger.error("A kurva..")
+		Logger.error("Failed to find the correct node type in node pool.")
 	end
 	local halfwidth = 0.5*(nodePoolPanel.font:GetTextWidth(nodeType)+20+20)
 	local params = {
