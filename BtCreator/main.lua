@@ -1091,6 +1091,11 @@ function widget:Initialize()
 			BtEvaluator.reportTree(instanceId)
 		end
 	end
+	BtEvaluator.OnInstanceRemoved = function(instanceId)
+		if(currentTree.instanceId == instanceId)then
+			detachInstance();
+		end
+	end
 
 	loadSensorAutocompleteTable()
 	
