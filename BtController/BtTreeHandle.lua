@@ -6,7 +6,7 @@ local Debug = Utils.Debug;
 local Logger = Debug.Logger
 local dump = Debug.dump
 
-local variablCommandName = "Variable"
+local variableCommandName = "Variable"
 
 
 TreeHandle = {}
@@ -47,17 +47,35 @@ TreeHandle = {
 --				Inputs =
 -----------------------------------------------------------------------------------]]--
 
+
 -- The following funtion creates string which summarize state of this tree. 
 function TreeHandle:UpdateTreeStatus()
+	-- check invalid inputs: 
+	for _,input in ipairs(self.Tree.inputs) do
+		if(input.command == variableCommandName) then
+			-- this input is not supported
+			self:SwitchToErrorState("Input " .. input.name .. " is of type Variable, use this tree only as subtree.")
+			return
+		end
+	end
+
+
 	local result
 	if(self.Created) then
 		result = "running"
 	else
 		result = "not running"
 	end
+	
+
+	
 	local soFarOk = true
 	local missingInputs = ""
 	for _,input in ipairs(self.Tree.inputs) do
+		if(input.command == variableCommandName) then
+			-- this input is not supported
+			
+		end
 		if(self.Inputs[input.name] == nil)then
 			if(soFarOk) then
 				soFarOk = false
@@ -68,7 +86,7 @@ function TreeHandle:UpdateTreeStatus()
 		end
 	end
 	if(soFarOk == false) then
-	result = result .. ", missing input: " .. missingInputs
+		result = result .. ", missing input: " .. missingInputs
 	end
 	self.treeStatus:SetCaption(result) 
 end
@@ -124,8 +142,22 @@ function TreeHandle:DisposeInputComponents()
 	self.ChiliComponentsInputs = {}
 end
 
-function TreeHandle:switchTorErrorState(message)
+-- This function removes all GUI components and shows just error message.
+-- And releases all units.
+function TreeHandle:SwitchToErrorState(message)
+	--[[
+	-- ?? should I be still able to assign units to error tree??
+	-- release units ??
+	--TreeHandle.removeUnitsFromTree(self.instanceId)
+	--self:DisposeRolesComponents()
+	--]]
 	
+	-- remove input buttons:
+	self:DisposeInputComponents()
+
+
+	self.treeStatus:SetCaption("Error: " .. message)
+	self.treeStatus.parent:RequestUpdate()
 end
 -- This method will set up and load in all chili components corresponding to 
 -- roles in given tree. It returns maximal x-coordinate of components
@@ -272,6 +304,8 @@ function TreeHandle:New(obj)
 		skinName = "DarkGlass",
 		tooltip = "Name of tree type, (state)",
 	}
+	
+	
 	table.insert(obj.ChiliComponentsGeneral, treeTypeLabel)
 	
 	local treeStatusLabel = Chili.Label:New{
