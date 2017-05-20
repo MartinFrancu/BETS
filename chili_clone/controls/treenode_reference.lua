@@ -214,6 +214,10 @@ function referenceNode.addInputOutputComponents(nodeWindow,treeNameLabel, treeNa
 	WG.BtCreator.Get().markTreeAsChanged()
 end
 
+-- Stores nodeWindow component corresponding to last clicked chooseTreeButton
+local nodeWindow
+local treeName
+
 local function setTreeCallback(projectName, behaviour)
 	if(projectName and behaviour) then
 		treeName = projectName.."."..behaviour

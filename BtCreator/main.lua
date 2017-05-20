@@ -511,11 +511,12 @@ function listenerClickOnShowSensors()
 		sensorsWindow = nil
 		return
 	end
+	local buttonX, buttonY = showSensorsButton:LocalToScreen(0, 0)
 	sensorsWindow = Chili.Window:New{
 		parent = Screen0,
 		name = "SensorsWindow",
-		x = buttonPanel.x + showSensorsButton.x - 10,
-		y = rootPanel.y + buttonPanel.y + showSensorsButton.y - (#sensors*20 + 60) + 5,
+		x = buttonX + 10,
+		y = math.max(0, buttonY - (#sensors*20 + 60) + 5),
 		width = minWidth,
 		height = #sensors*20 + 60,
 		skinName='DarkGlass',
@@ -1247,11 +1248,13 @@ function widget:Initialize()
 		skinName = "DarkGlass",
 		focusColor = {1.0,0.5,0.0,0.5},
 		OnClick = { sanitizer:AsHandler(
-			function()
+			function(self)
 				blackboard.setWindowPosition(
 					buttonPanel.x + showSensorsButton.x + showSensorsButton.width - 5 - 130,
 					rootPanel.y - (60+10*20) + 5
 				)
+				self.backgroundColor , bgrColor = bgrColor, self.backgroundColor
+				self.focusColor, focusColor = focusColor, self.focusColor
 				blackboard.listenerClickOnShowBlackboard()
 			end )
 			},
