@@ -221,6 +221,7 @@ function BtEvaluator.assignUnits(units, instanceId, roleId)
 		end
 	end
 	role.lastModified = currentFrame
+	allRole.lastModified = currentFrame
 	for i = 1, role.length do
 		removeUnitFromRole(allRole, role[i])
 		unitToRoleMap[role[i]] = nil

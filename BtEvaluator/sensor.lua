@@ -69,7 +69,7 @@ function SensorManager.loadSensor(...)
 		local lastPeriod = 0
 		return function(...)
 			local currentFrame = getGameFrame()
-			if(lastExecutionFrame == nil or currentFrame - lastExecutionFrame > lastPeriod)then
+			if(lastExecutionFrame == nil or currentFrame - lastExecutionFrame > lastPeriod or group.lastModified > lastExecutionFrame)then
 				local success, result, period = pcall(evaluator, ...)
 				if(not success)then
 					Logger.error("sensors", "Evaluation of sensor '", name ,"' failed: ", result)
