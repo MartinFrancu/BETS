@@ -15,7 +15,13 @@ return Utils:Assign("Dialog", function()
 	local Chili = Utils.Chili
 	local Sanitizer = Utils.Sanitizer
 	
-
+	local BUTTON_NAMES = {
+		YES = "Yes",
+		NO = "No",
+		CANCEL = "Cancel",
+		OK = "OK",
+	}
+	
 	Dialog.YES_NO_CANCEL_TYPE = "YES_NO"
 	Dialog.OK_CANCEL_TYPE = "OK_CANCEL"
 	
@@ -28,10 +34,12 @@ return Utils:Assign("Dialog", function()
 		window:Dispose()
 	end
 	
-	local function createButtons(dialogWindow, visibilityHandler, callbackFunction, dialogType)
+	local function createButtons(dialogWindow, visibilityHandler, callbackFunction, dialogType, buttonNames)
+		buttonNames = buttonNames or BUTTON_NAMES
+		
 		local sanitizer = Sanitizer.forCurrentWidget()
 		
-		local buttonWidth = 80
+		local buttonWidth = 100
 		local buttonHeight = 30
 		local spaceWidth = 5
 		
@@ -62,31 +70,31 @@ return Utils:Assign("Dialog", function()
 		end
 	
 		if dialogType == ERROR_TYPE then
-			buttons[1].caption = "OK"
+			buttons[1].caption = buttonNames.OK or BUTTON_NAMES.OK
 			return
 		end
 		
 		if dialogType == Dialog.OK_CANCEL_TYPE then
-			buttons[1].caption = "OK"
+			buttons[1].caption = buttonNames.OK or BUTTON_NAMES.OK
 			buttons[1].OnClick[2] = sanitizer:AsHandler(callbackFunction)
 			
-			buttons[2].caption = "Cancel"
+			buttons[2].caption = buttonNames.CANCEL or BUTTON_NAMES.CANCEL
 			return
 		end
 	
 		if dialogType == Dialog.YES_NO_CANCEL_TYPE then
-			buttons[1].caption = "Yes"
+			buttons[1].caption = buttonNames.YES or BUTTON_NAMES.YES
 			buttons[1].OnClick[2] = sanitizer:AsHandler(function() callbackFunction(true) end)
 			
-			buttons[2].caption = "No"
+			buttons[2].caption = buttonNames.NO or BUTTON_NAMES.NO
 			buttons[2].OnClick[2] = sanitizer:AsHandler(function() callbackFunction(false) end)
 			
-			buttons[3].caption = "Cancel"
+			buttons[3].caption = buttonNames.CANCEL or BUTTON_NAMES.CANCEL
 		end
 	end
 		
 	
-	local function setUpDialog(visibilityHandler, callbackFunction, title, message, dialogType, x, y)
+	local function setUpDialog(visibilityHandler, callbackFunction, title, message, dialogType, buttonNames, x, y)
 		visibilityHandler = visibilityHandler and Sanitizer.sanitize(visibilityHandler) or function() end
 		callbackFunction = callbackFunction and Sanitizer.sanitize(callbackFunction) or function() end 
 	
@@ -131,16 +139,16 @@ return Utils:Assign("Dialog", function()
 			dialogWindow.backgroundColor = {1,1,1,1}
 		end
 		
-		createButtons(dialogWindow, visibilityHandler, callbackFunction, dialogType)
+		createButtons(dialogWindow, visibilityHandler, callbackFunction, dialogType, buttonNames)
 		visibilityHandler(true)
 	end
 	
 	function Dialog.showDialog(params, callbackFunction)
-		setUpDialog(params.visibilityHandler, callbackFunction, params.title, params.message, params.dialogType, params.x, params.y)
+		setUpDialog(params.visibilityHandler, callbackFunction, params.title, params.message, params.dialogType, params.buttonNames, params.x, params.y)
 	end
 	
 	function Dialog.showErrorDialog(params, callbackFunction)
-		setUpDialog(params.visibilityHandler, callbackFunction, params.title, params.message, ERROR_TYPE, params.x, params.y)
+		setUpDialog(params.visibilityHandler, callbackFunction, params.title, params.message, ERROR_TYPE, params.buttonNames, params.x, params.y)
 	end
 	
 	return Dialog

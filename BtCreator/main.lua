@@ -180,6 +180,10 @@ local promptUserToSaveIfChanged = async(function(entireTree)
 			title = "Save tree", 
 			message = "You have unsaved changes in the current tree.\nDo you wish to save it first?",
 			dialogType = Dialog.YES_NO_CANCEL_TYPE,
+			buttonNames = {
+				YES = "Save",
+				NO = "Discard",
+			},
 			x = rootPanel.x + rootPanel.width - 500,
 			y = rootPanel.y,
 		}
@@ -536,6 +540,10 @@ saveAsTreeDialogCallback = async(function(project, tree)
 			title = "Save more trees", 
 			message = message,
 			dialogType = Dialog.YES_NO_CANCEL_TYPE,
+			buttonNames = {
+				YES = "Save",
+				NO = "Discard",
+			},
 			x = rootPanel.x + 500,
 			y = rootPanel.y,
 		})
