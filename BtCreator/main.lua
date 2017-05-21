@@ -542,7 +542,7 @@ saveAsTreeDialogCallback = async(function(project, tree)
 			dialogType = Dialog.YES_NO_CANCEL_TYPE,
 			buttonNames = {
 				YES = "Save",
-				NO = "Discard",
+				NO = "Don't save",
 			},
 			x = rootPanel.x + 500,
 			y = rootPanel.y,
