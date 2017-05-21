@@ -336,7 +336,6 @@ function BtController.reloadTreeType(treeTypeName)
 		end
 		if needsReload then
 			reloadTree(treeTabPanel, item.TreeHandle)
-			Spring.Echo("Reloading tree - " .. item.TreeHandle.treeType)
 		end
 	end
 	-- get selected tab:
