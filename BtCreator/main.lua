@@ -341,6 +341,13 @@ function BtCreator.hide()
 	end
 end
 
+function BtCreator.reloadSensorPool()
+	WG.sensorAutocompleteTable = nil
+	loadSensorAutocompleteTable()
+	listenerClickOnShowSensors(showSensorsButton)
+	listenerClickOnShowSensors(showSensorsButton)
+end
+
 function BtCreator.reloadNodePool()
 	-- for _,nodeItem in pairs(nodePoolList)
 	for _,node in pairs(nodePoolList) do

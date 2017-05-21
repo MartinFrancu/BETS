@@ -379,6 +379,7 @@ function reloadAll()
 	
 	resetMarkers()
 	if(BtCreator)then
+		BtCreator.reloadSensorPool()
 		BtCreator.reloadNodePool()
 	end
 end
