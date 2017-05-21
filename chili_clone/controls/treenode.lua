@@ -817,6 +817,7 @@ local function clearSelection()
 			removeNodeFromSelection(WG.nodeList[id].nodeWindow)
 		end
 	end
+	WG.selectedNodes = {}
 end
 
 WG.addNodeToSelection = addNodeToSelection
