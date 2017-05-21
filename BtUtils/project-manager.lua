@@ -131,6 +131,9 @@ return Utils:Assign("ProjectManager", function()
 	function ProjectManager.asQualifiedName(projectName, name)
 		return projectName .. "." .. name
 	end
+	function ProjectManager.fromQualifiedName(qualifiedName)
+		return qualifiedName:match("^(.-)%.(.+)$")
+	end
 	
 	function ProjectManager.createProject(projectName)
 		if(projects[projectName])then

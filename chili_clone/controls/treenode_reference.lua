@@ -241,11 +241,16 @@ end
 
 
 function referenceNode.listenerChooseTree(button)
-	local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
+	local treeContentType = BehaviourTree.contentType
 	nodeWindow = button.parent
 
 	local screenX,screenY = button:LocalToScreen(0,0)
 	nodeWindow = button.parent
+	
+	local project, name = Utils.ProjectManager.fromQualifiedName(nodeWindow.treeName or "")
+	if(not project)then
+		project = Utils.ProjectManager.fromQualifiedName(WG.BtCreator.Get().getCurrentTreeName())
+	end
 	ProjectDialog.showDialog({
 		visibilityHandler = WG.BtCreator.Get().setDisableChildrenHitTest,
 		contentType = BehaviourTree.contentType,
@@ -253,6 +258,8 @@ function referenceNode.listenerChooseTree(button)
 		title = "Select tree to be loaded:",
 		x = screenX,
 		y = screenY,
+		project = project,
+		name = name,
 	}, setTreeCallback)
 	return true
 end

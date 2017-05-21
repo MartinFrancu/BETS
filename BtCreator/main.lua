@@ -403,6 +403,10 @@ function BtCreator.reloadNodePool()
 	nodePoolPanel:UpdateClientArea()
 end
 
+function BtCreator.getCurrentTreeName()
+	return currentTree.treeName
+end
+
 --- Adds Treenode to canvas, and also selects it.
 local function addNodeToCanvas(node)
 	if next(WG.nodeList) == nil then
@@ -660,6 +664,9 @@ end)
 listenerClickOnSaveAsTree = async(function(self)
 	local screenX,screenY = self:LocalToScreen(0,0)
 
+	local qualifiedName = currentTree.treeName 
+	local currentProject, currentTreeName = separateProjectAndName(qualifiedName)
+	
 	local project, treeName = awaitFunction(ProjectDialog.showDialog, {
 		visibilityHandler = BtCreator.setDisableChildrenHitTest,
 		contentType = BehaviourTree.contentType, 
@@ -667,6 +674,8 @@ listenerClickOnSaveAsTree = async(function(self)
 		title = "Save tree as:",
 		x = screenX,
 		y = screenY,
+		project = currentProject,
+		name = currentTreeName,
 	})
 	
 	await(saveAsTreeDialogCallback(project, treeName))
@@ -745,7 +754,8 @@ listenerClickOnNewTree = async(function(self)
 		dialogType = ProjectDialog.NEW_DIALOG,
 		title = "Name the new tree:",
 		x = screenX,
-		y = screenY
+		y = screenY,
+		project = separateProjectAndName(currentTree.treeName),
 	})
 	
 	if(projectName and treeName) then -- user selected
@@ -806,6 +816,9 @@ listenerClickOnLoadTree = async(function(self)
 		return false
 	end
 	
+	local qualifiedName = currentTree.treeName 
+	local currentProject, currentTreeName = separateProjectAndName(qualifiedName)
+	
 	local project, tree = awaitFunction(ProjectDialog.showDialog, {
 		visibilityHandler = BtCreator.setDisableChildrenHitTest,
 		contentType = BehaviourTree.contentType,
@@ -813,6 +826,8 @@ listenerClickOnLoadTree = async(function(self)
 		title = "Select tree to be loaded:",
 		x = screenX,
 		y = screenY,
+		project = currentProject,
+		name = currentTreeName,
 	})
 
 	if project and tree then -- tree was selected
