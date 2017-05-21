@@ -61,7 +61,6 @@ local treeRefList = {}
 
 local noNameString = "--NO NAME GIVEN--"
 local noInstanceString = "---"
-local SAVE_TREE_QUESTION = "You have unsaved changes in the current tree\nthat would be lost.\nDo you wish to save it first?"
 
 
 local currentTree = {
@@ -90,22 +89,6 @@ local function isAnyTreeChanged()
 	return false
 end
 
-local promptUserToSaveIfChanged = async(function(entireTree)
-	if entireTree and isAnyTreeChanged() or currentTree.changed then
-		local confirmed = awaitFunction(Dialog.showDialog, {
-			visibilityHandler = BtCreator.setDisableChildrenHitTest,
-			title = "Save tree", 
-			message = SAVE_TREE_QUESTION,
-			dialogType = Dialog.YES_NO_CANCEL_TYPE,
-			x = rootPanel.x + rootPanel.width - 500,
-			y = rootPanel.y,
-		})
-		
-		if confirmed then
-			await(listenerClickOnSaveTree(saveTreeButton))
-		end
-	end	
-end)
 
 
 function currentTree.setName(newTreeName) 
@@ -147,7 +130,6 @@ local function separateProjectAndName(qualifiedName)
 	end
 end
 
-
 -- connection lines functions
 local connectionLine = require("connection_line")
 -- blackboard window
@@ -188,7 +170,43 @@ end
 
 local refButtons = {}
 
-local formBehaviourTree, clearCanvas, loadBehaviourTree, loadBehaviourNode, createTreeToSave, reloadReferenceButtons, saveTree
+local formBehaviourTree, clearCanvas, loadBehaviourTree, loadBehaviourNode, createTreeToSave, reloadReferenceButtons, saveTree, saveTreeRefs
+
+local promptUserToSaveIfChanged = async(function(entireTree)
+	if entireTree and isAnyTreeChanged() or currentTree.changed then
+		local params = {
+			visibilityHandler = BtCreator.setDisableChildrenHitTest,
+			title = "Save tree", 
+			message = "You have unsaved changes in the current tree.\nDo you wish to save it first?",
+			dialogType = Dialog.YES_NO_CANCEL_TYPE,
+			x = rootPanel.x + rootPanel.width - 500,
+			y = rootPanel.y,
+		}
+		if(currentTree.changed)then
+			local confirmed = awaitFunction(Dialog.showDialog, params)
+			if confirmed then
+				await(listenerClickOnSaveTree(saveTreeButton))
+			end
+		else
+			local message = "You have unsaved changes in the following trees:\n"
+			local changedTreeRefs = {}
+			for i = #treeRefList,1,-1 do
+				if(treeRefList[i].currentTree.changed)then
+					message = message .. "\t" .. treeRefList[i].currentTree.treeName .. "\n"
+					table.insert(changedTreeRefs, treeRefList[i])
+				end
+			end
+			message = message .. "\nDo you wish to save them first?"
+			params.message = message
+			
+			local confirmed = awaitFunction(Dialog.showDialog, params)
+			if confirmed then
+				return saveTreeRefs(changedTreeRefs)
+			end
+		end
+	end
+	return true
+end)
 
 function BtCreator.getReferencePath()
 	local list = copyTable(treeRefList)
@@ -217,7 +235,9 @@ local function showParentTree(button)
 end
 
 local parentButtonHandler = async(function(button) 
-	await(promptUserToSaveIfChanged(false))
+	if(not await(promptUserToSaveIfChanged(false)))then
+		return false
+	end
 	showParentTree(button)
 end)
 
@@ -248,7 +268,9 @@ end
 
 BtCreator.showTree = async(function(treeName, instanceName, instanceId)
 	BtCreator.show()
-	await(promptUserToSaveIfChanged(true))
+	if(not await(promptUserToSaveIfChanged(true)))then
+		return false
+	end
 	
 	treeRefList = {}
 	reloadReferenceButtons()
@@ -270,23 +292,8 @@ function BtCreator.showReferencedTree(treeName, _referenceNodeID)
 	updateStates()
 end
 
-local function showReferenceDialogCallback(confirmed, treeName, refNodeId)
-	if confirmed then
-		saveTree(currentTree.treeName)
-		currentTree.changed = false
-		currentTree.setInstanceName("tree saved")
-	end
-	BtCreator.showReferencedTree(treeName, refNodeId)
-end
-
 function BtCreator.onTreeReferenceClick(treeName, _referenceNodeID)
-	--[[
-	if currentTree.changed then
-		Dialog.showDialog(BtCreator.setDisableChildrenHitTest, function(confirmed) showReferenceDialogCallback(confirmed, treeName, _referenceNodeID) end,
-		"Save tree", SAVE_TREE_QUESTION, Dialog.YES_NO_CANCEL_TYPE)
-	else]]
 	BtCreator.showReferencedTree(treeName, _referenceNodeID)
-	--[[end]]
 end
 
 function BtCreator.showNewTree()
@@ -461,18 +468,7 @@ local afterRoleManagement
 -- does not check if tree makes sense
 -- does create new project and directory if necessary 
 -- does not create file if treeName is not qualifiedName and throws error.
-function saveTree(treeName)
-	local protoTree = createTreeToSave()
-	
-	if(serializedTreeName and serializedTreeName ~= treeName) then
-		--regenerate all IDs from loaded Tree
-		for id,_ in pairs(serializedIDs) do
-			if(WG.nodeList[id]) then
-				reGenerateTreenodeID(id)
-			end
-		end
-		updateSerializedIDs()
-	end
+function saveTree(protoTree, treeName)
 	-- Here I should move all the project creations etc..
 	local project, tree = separateProjectAndName(treeName)
 	if(not project or not tree)then
@@ -490,44 +486,88 @@ function saveTree(treeName)
 	
 	WG.clearSelection()
 	
-	Logger.loggedCall("Errors", "BtCreator", 
-		"asking BtController to reload instances of saved tree type",
-		WG.BtControllerReloadTreeType,
-		treeName)
-	
-	
 	local success, msg = BtCommands.tryRegisterCommandForTree(treeName)
 	if not success then
 		Logger.log("commands", "Tree command not registered: ", msg)
 	end
 end 
 
-function saveAsTreeDialogCallback(project, tree)
-	if project and tree then 
-		-- we have treetree name
-		-- now we need to check if roles are plausible:
-		local resultTree = formBehaviourTree()
-		-- are there enough roles?
-		local maxSplit = maxRoleSplit(resultTree)
-		local rolesCount = 0
-		for _,role in pairs(currentTree.roles ) do --rolesOfCurrentTree
-			rolesCount = rolesCount + 1
+function saveTreeRefs(treeRefs)
+	for i, treeRef in ipairs(treeRefs) do
+		local project, treeName = separateProjectAndName(treeRef.currentTree.treeName)
+		if(not project or not treeName)then
+			Dialog.showErrorDialog({
+				visibilityHandler = BtCreator.setDisableChildrenHitTest,
+				title = "Invalid name", 
+				message = "You must first specify a valid name for:\n\t" .. tostring(treeRef.currentTree.treeName),
+				x = rootPanel.x + 500,
+				y = rootPanel.y,
+			})
+			return false
 		end
-		Logger.log("roles", dump(currentTree.roles, 3 ) )
-		
+	end
+	for i, treeRef in ipairs(treeRefs) do
+		treeRef.currentTree.changed = false
+		saveTree(treeRef.tree, treeRef.currentTree.treeName)
+	end
+	for i, treeRef in ipairs(treeRefs) do
+		Logger.loggedCall("Errors", "BtCreator", 
+			"asking BtController to reload instances of saved tree type",
+			WG.BtControllerReloadTreeType,
+			treeRef.currentTree.treeName)
+	end
+	reloadReferenceButtons()
+	return true
+end
 
-		for i = 1, maxSplit do
-			if(not currentTree.roles[i]) then
-				-- if there is no record for this role, fill it in by default
-				currentTree.roles[i] = { ["categories"] = { } ,["name"] = "Role " .. tostring(i) ,}
-			end
-		end
-		
+saveAsTreeDialogCallback = async(function(project, tree)
+	if project and tree then 
 		local qualifiedName = project .. "." .. tree
 		currentTree.setName(qualifiedName)
-		currentTree.setInstanceName("tree saved")
-		currentTree.changed = false
-		saveTree(qualifiedName)	
+		--currentTree.setInstanceName("tree saved")
+		local protoTree = createTreeToSave()
+
+		local message = "You also have unsaved changes in the following trees:\n"
+		local changedTreeRefs = {}
+		for i = #treeRefList,1,-1 do
+			if(treeRefList[i].currentTree.changed)then
+				message = message .. "\t" .. treeRefList[i].currentTree.treeName .. "\n"
+				table.insert(changedTreeRefs, treeRefList[i])
+			end
+		end
+		message = message .. "\nDo you wish to save them as well?"
+		
+		-- only show dialog if there actually are any
+		local confirmed = changedTreeRefs[1] and awaitFunction(Dialog.showDialog, {
+			visibilityHandler = BtCreator.setDisableChildrenHitTest,
+			title = "Save more trees", 
+			message = message,
+			dialogType = Dialog.YES_NO_CANCEL_TYPE,
+			x = rootPanel.x + 500,
+			y = rootPanel.y,
+		})
+		if(confirmed)then
+			table.insert(changedTreeRefs, { tree = protoTree, currentTree = currentTree })
+			saveTreeRefs(changedTreeRefs)
+		else
+			currentTree.changed = false
+			saveTree(protoTree, qualifiedName)
+			Logger.loggedCall("Errors", "BtCreator", 
+				"asking BtController to reload instances of saved tree type",
+				WG.BtControllerReloadTreeType,
+				qualifiedName)
+		end
+		
+		if(serializedTreeName and serializedTreeName ~= qualifiedName) then
+			--regenerate all IDs from loaded Tree
+			for id,_ in pairs(serializedIDs) do
+				if(WG.nodeList[id]) then
+					reGenerateTreenodeID(id)
+				end
+			end
+			updateSerializedIDs()
+		end
+		
 		updateStates()
 
 		--[[
@@ -545,13 +585,13 @@ function saveAsTreeDialogCallback(project, tree)
 		end
 		]]
 	end
-end
+end)
 
 listenerClickOnSaveTree = async(function(self)
 	local qualifiedName = currentTree.treeName 
 	local project, treeName = separateProjectAndName(qualifiedName)
 	if(project and treeName )then 
-		saveAsTreeDialogCallback(project, treeName)
+		await(saveAsTreeDialogCallback(project, treeName))
 	else
 		await(listenerClickOnSaveAsTree(saveTreeButton))
 	end
@@ -569,7 +609,7 @@ listenerClickOnSaveAsTree = async(function(self)
 		y = screenY,
 	})
 	
-	saveAsTreeDialogCallback(project, treeName)
+	await(saveAsTreeDialogCallback(project, treeName))
 end)
 
 listenerClickOnRoleManager = async(function(self)
@@ -635,7 +675,9 @@ end
 listenerClickOnNewTree = async(function(self)
 	local screenX,screenY = self:LocalToScreen(0,0)
 	
-	await(promptUserToSaveIfChanged(true))
+	if(not await(promptUserToSaveIfChanged(true)))then
+		return false
+	end
 	
 	local projectName, treeName = awaitFunction(ProjectDialog.showDialog, {
 		visibilityHandler = BtCreator.setDisableChildrenHitTest,
@@ -687,7 +729,9 @@ end
 listenerClickOnLoadTree = async(function(self)
 	local screenX,screenY = self:LocalToScreen(0,0)
 	
-	await(promptUserToSaveIfChanged(true))
+	if(not await(promptUserToSaveIfChanged(true)))then
+		return false
+	end
 	
 	local project, tree = awaitFunction(ProjectDialog.showDialog, {
 		visibilityHandler = BtCreator.setDisableChildrenHitTest,
@@ -1674,7 +1718,21 @@ function createTreeToSave()
 	end
 	local protoTree = formBehaviourTree()
 	
-
+	-- are there enough roles?
+	local maxSplit = maxRoleSplit(protoTree)
+	local rolesCount = 0
+	for _,role in pairs(currentTree.roles ) do --rolesOfCurrentTree
+		rolesCount = rolesCount + 1
+	end
+	Logger.log("roles", dump(currentTree.roles, 3 ) )
+	
+	for i = 1, maxSplit do
+		if(not currentTree.roles[i]) then
+			-- if there is no record for this role, fill it in by default
+			currentTree.roles[i] = { ["categories"] = { } ,["name"] = "Role " .. tostring(i - 1) ,}
+		end
+	end
+	
 	protoTree.roles = currentTree.roles
 	protoTree.inputs = {}
 	protoTree.outputs = {}

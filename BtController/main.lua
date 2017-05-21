@@ -351,11 +351,6 @@ function BtController.reloadTreeType(treeTypeName)
 		end
 		if(BtCreator) then
 			BtCreator.focusTree(tH.treeType, tH.name, tH.instanceId)
-			for _,ref in ipairs(creatorRefPath) do
-				if ref.refNodeID then
-					BtCreator.showReferencedTree(ref.currentTree.treeName, ref.refNodeID)
-				end
-			end
 		else
 			Logger.log("Error", "BtControler - reloadTreeType: no BtCreator.")
 		end
