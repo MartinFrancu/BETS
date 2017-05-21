@@ -305,10 +305,14 @@ function reloadTree(tabs, treeHandle)
 end
 
 
+local referencesForTrees = {}
+
 -- reloads all instances of give tree type in given tabs
 function BtController.reloadTreeType(treeTypeName)
 	-- refresh tree selection:
 	refreshTreeSelectionPanel()
+	
+	local creatorRefPath = BtCreator.getReferencePath()
 	-- I should iterate over all tab bar items:
 	--local tabBarChildIndex = 1
 	-- get tabBar
@@ -317,10 +321,23 @@ function BtController.reloadTreeType(treeTypeName)
 	local barItems = tabBar.children
 	for index,item in ipairs(barItems) do
 		-- if there is TreeHandle in this item and the tree type is right one:
-		if( (item.TreeHandle ~= nil) 
-			and (item.TreeHandle.treeType == treeTypeName) )
-		then
+		local hasHandle = item.TreeHandle ~= nil
+		local needsReload = hasHandle and (item.TreeHandle.treeType == treeTypeName)
+		
+		if hasHandle and not needsReload then
+			local refs = referencesForTrees[item.TreeHandle.treeType]
+			if refs then
+				for _, refTypeName in ipairs(refs) do
+					if refTypeName == treeTypeName then
+						needsReload = true
+						break
+					end
+				end
+			end
+		end
+		if needsReload then
 			reloadTree(treeTabPanel, item.TreeHandle)
+			Spring.Echo("Reloading tree - " .. item.TreeHandle.treeType)
 		end
 	end
 	-- get selected tab:
@@ -334,6 +351,11 @@ function BtController.reloadTreeType(treeTypeName)
 		end
 		if(BtCreator) then
 			BtCreator.focusTree(tH.treeType, tH.name, tH.instanceId)
+			for _,ref in ipairs(creatorRefPath) do
+				if ref.refNodeID then
+					BtCreator.showReferencedTree(ref.currentTree.treeName, ref.refNodeID)
+				end
+			end
 		else
 			Logger.log("Error", "BtControler - reloadTreeType: no BtCreator.")
 		end
@@ -460,6 +482,8 @@ end
 function createTreeInBtEvaluator(treeHandle)
 	local result, message
 	result, message = BtEvaluator.dereferenceTree(treeHandle.Tree)
+	referencesForTrees[treeHandle.treeType] = result or {}
+	
 	if(not result) then
 		treeHandle:SwitchToErrorState("deferenceTree error: " .. message)
 		treeHandle.Created = false

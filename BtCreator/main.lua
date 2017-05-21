@@ -68,18 +68,8 @@ local currentTree = {
 	changed = false,
 }
 
-local function getCurrentTreeCopy(orig)
-    local orig_type = type(currentTree)
-    local copy
-    if orig_type == 'table' then
-        copy = {}
-        for orig_key, orig_value in pairs(currentTree) do
-            copy[orig_key] = orig_value
-        end
-    else -- number, string, boolean, etc
-        copy = currentTree
-    end
-    return copy
+local function getCurrentTreeCopy()
+    return copyTable(currentTree)
 end
 
 local function isAnyTreeChanged()
@@ -196,6 +186,13 @@ local refButtons = {}
 
 local formBehaviourTree, clearCanvas, loadBehaviourTree, loadBehaviourNode, createTreeToSave, reloadReferenceButtons, saveTree
 
+function BtCreator.getReferencePath()
+	local list = copyTable(treeRefList)
+	list[#list + 1] = {refNodeID = referenceNodeID, tree = createTreeToSave(), currentTree = getCurrentTreeCopy()}
+	Logger.log("save-and-load", "REFERENCES - ", dump(list, 3))
+	return list
+end
+
 local function showParentTree(button)
 	local info = button.treeRefInfo
 	clearCanvas()
@@ -261,7 +258,7 @@ function BtCreator.showReferencedTree(treeName, _referenceNodeID)
 	-- loadTree() nillates the referenceNodeID so set it after loadTree() call
 	treeRefList[#treeRefList + 1] = {refNodeID = referenceNodeID, tree = createTreeToSave(), currentTree = getCurrentTreeCopy()}
 	Logger.log("save-and-load",dump(treeRefList[#treeRefList], 3))
-	local temp = currentTree.changed --isTreeChanged
+	--local temp = currentTree.changed --isTreeChanged
 	reloadReferenceButtons()
 	loadTree(treeName)
 	--currentTree.changed = temp
