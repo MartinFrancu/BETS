@@ -1,6 +1,9 @@
 local sanitizer = Utils.Sanitizer.forCurrentWidget()
 local Chili = Utils.Chili
 
+local Logger = Utils.Debug.Logger
+local dump = Utils.Debug.dump
+
 local roleManager = {}
 
 
@@ -8,6 +11,11 @@ local showRoleManagementWindow
 local categoryCheckBoxes
 local unitCheckBoxes
 local returnFunction
+
+local xOffBasic = 10
+local yOffBasic = 10
+local xCheckBoxOffSet = 180
+local xLocOffsetMod = 250 
 
 function roleManager.showCategoryDefinitionWindow()
 	roleManager.rolesWindow:Hide()
@@ -27,6 +35,8 @@ function roleManager.showCategoryDefinitionWindow()
 		caption = "SAVE AS",
 		OnClick = {sanitizer:AsHandler(roleManager.doneCategoryDefinition)},
 	}
+
+	
 	--categoryDoneButton.categoryNameEditBox = nameEditBox
 	categoryDoneButton.window = roleManager.categoryDefinitionWindow
 	returnFunction = showRoleManagementWindow
@@ -197,6 +207,82 @@ end
 
 local parent, tree, rolesOfCurrentTree, returnFunction, callbackObject
 
+-- set up checkboxes and name edit box for role, index and roles is used to prefill if applicable..
+local function setUpRoleChiliComponents(parent, xOff, yOff, index, roles)
+	local xOffSet = xOff
+	local yOffSet = yOff
+	local nameEditBox = Chili.EditBox:New{
+			parent = parent,
+			x = xOffSet,
+			y = yOffSet,
+			text = "Role ".. index,
+			width = 150
+	}
+	local checkedCategories = {}
+	if(roles[index]) then
+		nameEditBox:SetText(roles[index].name)
+		for _,catName in pairs(roles[index].categories) do
+			checkedCategories[catName] = true
+		end
+	end
+
+	local categoryNames = Utils.UnitCategories.getAllCategoryNames()
+	categoryCheckBoxes = {}
+	local xLocalOffSet = 0
+	for _,categoryName in pairs(categoryNames) do
+		local categoryCheckBox = Chili.Checkbox:New{
+			parent = parent,
+			x = xOffSet + xCheckBoxOffSet + (xLocalOffSet * xLocOffsetMod),
+			y = yOffSet,
+			caption = categoryName,
+			checked = false,
+			width = 200,
+		}
+		if(checkedCategories[categoryName] ~= nil) then
+			categoryCheckBox:Toggle()
+		end
+		xLocalOffSet = xLocalOffSet + 1
+		if(xLocalOffSet == 4) then
+			xLocalOffSet = 0
+			yOffSet = yOffSet + 20
+		end
+
+		table.insert(categoryCheckBoxes, categoryCheckBox)
+	end
+
+
+	yOffSet = yOffSet + 50
+	local roleCategories = {}
+	roleCategories["nameEditBox"] = nameEditBox
+	roleCategories["CheckBoxes"] = categoryCheckBoxes
+	roleCategories["yEnd"] = yOffSet
+	return roleCategories
+end
+
+-- this should try to add new role record
+local function  listenerPlusButton(self)
+	local rolesData = self.doneButton.rolesData
+	local newUI = setUpRoleChiliComponents(rolesScrollPanel, xOffBasic , rolesData[#rolesData].yEnd, #rolesData+1, rolesOfCurrentTree)
+	rolesData[#rolesData+1] = newUI
+end
+
+local function listenerMinusButton(self)
+	local rolesData = self.doneButton.rolesData
+	if #rolesData < 2 then 
+		return -- at least one role should be there 
+	else
+		local data = rolesData[#rolesData]
+		--Logger.log("roles", dump(data) )
+		local parent = data["nameEditBox"].parent
+		data["nameEditBox"]:Dispose()
+		for _,checkBox in ipairs(data["CheckBoxes"]) do
+			checkBox:Dispose()
+		end
+		parent:Invalidate()
+		rolesData[#rolesData]= nil
+	end
+end
+
 showRoleManagementWindow = function()
 -- remove old children:
 	if( roleManager.rolesWindow) then
@@ -226,9 +312,38 @@ showRoleManagementWindow = function()
 	}
 	roleManagementDoneButton.window = roleManager.rolesWindow
 
+	local plusButton = Chili.Button:New{
+		parent = window,
+		x = roleManagementDoneButton.x + roleManagementDoneButton.width,
+		y = roleManagementDoneButton.y,
+		caption = "+",
+		width = 40,
+		OnClick = {sanitizer:AsHandler(listenerPlusButton)}, --sanitizer:AsHandler(roleManager.doneCategoryDefinition)},
+		doneButton = roleManagementDoneButton,
+	}
+	
+	local minusButton = Chili.Button:New{
+		parent =  window,
+		x = plusButton.x + plusButton.width,
+		y = plusButton.y,
+		caption = "-",
+		width = 40,
+		OnClick = {sanitizer:AsHandler(listenerMinusButton)},--sanitizer:AsHandler(roleManager.doneCategoryDefinition)},
+		doneButton = roleManagementDoneButton,
+	}
+	
+	
+	local categoryDoneButton = Chili.Button:New{
+		parent =  roleManager.categoryDefinitionWindow,
+		x = 0,
+		y = 0,
+		caption = "SAVE AS",
+		OnClick = {sanitizer:AsHandler(roleManager.doneCategoryDefinition)},
+	} 
+	
 	newCategoryButton = Chili.Button:New{
 		parent = window,
-		x = 150,
+		x = minusButton.x + minusButton.width,
 		y = 0,
 		width = 150,
 		caption = "Define new Category",
@@ -245,63 +360,24 @@ showRoleManagementWindow = function()
 		skinName='DarkGlass'
 	}
 	local rolesCategoriesCB = {}
-	local xOffSet = 10
-	local yOffSet = 10
-	local xCheckBoxOffSet = 180
+	local xOffSet = xOffBasic
+	local yOffSet = yOffBasic
+	
+
 	-- set up checkboxes for all roles and categories
 	
 	local roleCount = maxRoleSplit(tree)
+	if(roleCount < #rolesOfCurrentTree) then
+		roleCount = #rolesOfCurrentTree
+	end
 
-	for roleIndex=0, roleCount -1 do
-		local nameEditBox = Chili.EditBox:New{
-			parent = rolesScrollPanel,
-			x = xOffSet,
-			y = yOffSet,
-			text = "Role ".. roleIndex,
-			width = 150
-		}
-		local checkedCategories = {}
-		if(rolesOfCurrentTree[roleIndex+1]) then
-			nameEditBox:SetText(rolesOfCurrentTree[roleIndex+1].name)
-			for _,catName in pairs(rolesOfCurrentTree[roleIndex+1].categories) do
-				checkedCategories[catName] = 1
-			end
-		end
-
-		local categoryNames = Utils.UnitCategories.getAllCategoryNames()
-		categoryCheckBoxes = {}
-		local xLocalOffSet = 0
-		for _,categoryName in pairs(categoryNames) do
-			local categoryCheckBox = Chili.Checkbox:New{
-				parent = rolesScrollPanel,
-				x = xOffSet + xCheckBoxOffSet + (xLocalOffSet * 250),
-				y = yOffSet,
-				caption = categoryName,
-				checked = false,
-				width = 200,
-			}
-			if(checkedCategories[categoryName] ~= nil) then
-				categoryCheckBox:Toggle()
-			end
-			xLocalOffSet = xLocalOffSet + 1
-			if(xLocalOffSet == 4) then
-				xLocalOffSet = 0
-				yOffSet = yOffSet + 20
-			end
-
-			table.insert(categoryCheckBoxes, categoryCheckBox)
-		end
-
-
-		yOffSet = yOffSet + 50
-		local roleCategories = {}
-		roleCategories["nameEditBox"] = nameEditBox
-		roleCategories["CheckBoxes"] = categoryCheckBoxes
-		table.insert(rolesCategoriesCB,roleCategories)
+	for roleIndex=1, roleCount do
+		local newRoleUI
+		newRoleUI =  setUpRoleChiliComponents( rolesScrollPanel, xOffSet, yOffSet, roleIndex, rolesOfCurrentTree)
+		yOffSet = newRoleUI.yEnd
+		table.insert(rolesCategoriesCB, newRoleUI)
 	end
 	roleManagementDoneButton.rolesData = rolesCategoriesCB
-
-	roleManager.rolesWindow:Show()
 end
 
 
