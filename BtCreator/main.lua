@@ -1480,12 +1480,18 @@ function widget:Initialize()
 	treeNameLabel.font.size = 16
 	treeNameLabel:RequestUpdate()
 	
-	local instanceListeningLabel = Chili.Label:New{
+	local instancePanel = Chili.Control:New{
 		parent = btCreatorWindow,
+		y = 0,
+		x = '50%',
+		width  = 300,
+		height = 30,
+	}
+	
+	local instanceListeningLabel = Chili.Label:New{
+		parent = instancePanel,
 		caption = "states according to instance:",
 		width = 200,
-		x = '50%',
-		y = 5,
 		align = 'left',
 		-- skinName = 'DarkGlass',
 		borderColor = {1,1,1,0.2},
@@ -1497,10 +1503,10 @@ function widget:Initialize()
 	}
 	
 	treeInstanceNameLabel = Chili.Label:New{
-		parent = btCreatorWindow,
+		parent = instancePanel,
 		caption = currentTree.instanceName,
 		width = 70,
-		x = instanceListeningLabel.x + instanceListeningLabel.width,
+		x = instanceListeningLabel.width,
 		y = instanceListeningLabel.y,
 		align = 'left',
 		-- skinName = 'DarkGlass',
