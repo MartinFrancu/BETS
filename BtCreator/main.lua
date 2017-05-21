@@ -175,7 +175,7 @@ local updateStates
 function BtCreator.markTreeAsChanged()
 	if(not currentTree.changed)then
 		detachInstance()
-		currentTree.setInstanceName("edited tree")
+		currentTree.setInstanceName(noInstanceString)
 		currentTree.changed = true
 	end
 end
@@ -1417,12 +1417,12 @@ function widget:Initialize()
 	treeNameLabel.font.size = 16
 	treeNameLabel:RequestUpdate()
 	
-	treeInstanceNameLabel = Chili.Label:New{
+	local instanceListeningLabel = Chili.Label:New{
 		parent = btCreatorWindow,
-		caption = currentTree.instanceName,
-		width = 70,
-		x = treeNameLabel.x + (treeNameLabel.width/2),
-		y = treeNameLabel.y + treeNameLabel.height  ,
+		caption = "states according to instance:",
+		width = 200,
+		x = treeNameLabel.x + treeNameLabel.width + 50,
+		y = treeNameLabel.y,
 		align = 'left',
 		-- skinName = 'DarkGlass',
 		borderColor = {1,1,1,0.2},
@@ -1431,7 +1431,23 @@ function widget:Initialize()
 		backgroundColor = {0,0,0,0},
 		minWidth = 120,
 		autosize = true,
-		tooltip = "Instance name of currently shown tree (debugging).",
+	}
+	
+	treeInstanceNameLabel = Chili.Label:New{
+		parent = btCreatorWindow,
+		caption = currentTree.instanceName,
+		width = 70,
+		x = instanceListeningLabel.x + instanceListeningLabel.width,
+		y = instanceListeningLabel.y,
+		align = 'left',
+		-- skinName = 'DarkGlass',
+		borderColor = {1,1,1,0.2},
+		borderColor2 = {1,1,1,0.2},
+		borderThickness = 0,
+		backgroundColor = {0,0,0,0},
+		minWidth = 120,
+		autosize = true,
+		tooltip = "Name of instace which node states are currently coloured (debugging).",
 	}
 	treeInstanceNameLabel.font.size = 16
 	treeInstanceNameLabel:RequestUpdate()

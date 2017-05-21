@@ -17,10 +17,10 @@ CONSTANTS = {
 	labelHeight = 30,
 	windowFrameGap = 20,
 	betsCheatCommandName = "BETS_CHEAT_POSITION",
+	addTreeTabName = "+",
+	tabBarChildIndex = 1,
 }
 
-
-local tabBarChildIndex = 1
 
 local Chili, Screen0
 local BtController = widget
@@ -167,16 +167,14 @@ end
  
 function highlightTab(tabName)
 	-- first child should be the TabBar:
-	--local tabBarChildIndex = 1
 	treeTabPanel:ChangeTab(tabName)
-	treeTabPanel.children[tabBarChildIndex]:Select(tabName)
+	treeTabPanel.children[CONSTANTS.tabBarChildIndex]:Select(tabName)
 end
 
 
 function getBarItemByName(tabs, tabName)
-	--local tabBarChildIndex = 1
 	-- get tabBar
-	local tabBar = tabs.children[tabBarChildIndex]
+	local tabBar = tabs.children[CONSTANTS.tabBarChildIndex]
 	-- find corresponding tabBarItem: 
 	local barItems = tabBar.children
 	for index,item in ipairs(barItems) do
@@ -237,9 +235,8 @@ end
 
 function removeTreeBtController(tabs,treeHandle)
 	-- remove the bar item
-	--local tabBarChildIndex = 1
 	-- get tabBar
-	local tabBar = tabs.children[tabBarChildIndex]
+	local tabBar = tabs.children[CONSTANTS.tabBarChildIndex]
 	
 	-- is it currently shown?
 	if treeHandle.name == tabBar.selected_obj.caption and BtCreator then
@@ -318,9 +315,8 @@ function BtController.reloadTreeType(treeTypeName)
 	
 	local creatorRefPath = BtCreator.getReferencePath()
 	-- I should iterate over all tab bar items:
-	--local tabBarChildIndex = 1
 	-- get tabBar
-	local tabBar = treeTabPanel.children[tabBarChildIndex]
+	local tabBar = treeTabPanel.children[CONSTANTS.tabBarChildIndex]
 	-- find corresponding tabBarItems: 
 	local barItems = tabBar.children
 	for index,item in ipairs(barItems) do
@@ -347,7 +343,7 @@ function BtController.reloadTreeType(treeTypeName)
 	-- get selected tab:
 	local barItem = tabBar.selected_obj
 	-- if it is not + then:
-	if(barItem.caption ~= "+") then
+	if(barItem.caption ~= CONSTANTS.addTreeTabName) then
 		local tH = barItem.TreeHandle
 		-- I should show selected tree:
 		if(tH.Created) then 
@@ -378,13 +374,12 @@ function reloadAll()
 	BtUtils.ProjectManager.reload()
 	BtEvaluator.reloadCaches()
 	-- I should iterate over all tab bar items:
-	--local tabBarChildIndex = 1
 	-- get tabBar
-	local tabBar = treeTabPanel.children[tabBarChildIndex]
+	local tabBar = treeTabPanel.children[CONSTANTS.tabBarChildIndex]
 	-- find corresponding tabBarItems: 
 	local barItems = tabBar.children
 	for index,item in ipairs(barItems) do
-		if(item.caption ~= "+")then -- exclude addtab item from reloading...
+		if(item.caption ~= CONSTANTS.addTreeTabName)then -- exclude addtab item from reloading...
 			reloadTree(treeTabPanel, item.TreeHandle)
 		end
 	end
@@ -529,13 +524,12 @@ end
 
 -- Remove trees without units which require units.
 function removeTreesWithoutUnitsRequiringUnits()
-	--local tabBarChildIndex = 1
-	local tabBar = treeTabPanel.children[tabBarChildIndex]
+	local tabBar = treeTabPanel.children[CONSTANTS.tabBarChildIndex]
 	local barItems = tabBar.children
 	-- get trees to remove
 	local treesToRemove = {}
 	for index,item in ipairs(barItems) do
-		if  (item.caption ~= "+") then-- exclude add tree tab
+		if  (item.caption ~= CONSTANTS.addTreeTabName) then-- exclude add tree tab
 			
 			if (item.TreeHandle.RequireUnits) and  (item.TreeHandle.AssignedUnitsCount < 1) then
 				-- if there are no units, remove this tree:
@@ -617,6 +611,15 @@ function listenerBarItemClick(self, x, y, button, ...)
 	if button == 2 then
 		--middle click
 		removeTreeBtController(treeTabPanel, self.TreeHandle)
+		
+		-- now new tree tab might be selected, in such case, btcreator should know about it:
+		-- I need to find selected tabBarItem: 
+		local tabBar = treeTabPanel.children[CONSTANTS.tabBarChildIndex]
+		local selectedItem = tabBar.selected_obj
+		-- call onclick item
+		for _,listener in ipairs(selectedItem.OnClick) do
+			listener(selectedItem, x,y, 1)
+		end
 	end
 end 
 
@@ -743,11 +746,10 @@ end
 -- This function show currently selected tree in BtCreator. If add tree tab is selected
 local function listenerClickBtCreator(self, x, y, button)
 	-- get the selected tab from tabs:	
-	--local tabBarChildIndex = 1
-	tabBar = treeTabPanel.children[tabBarChildIndex]
+	tabBar = treeTabPanel.children[CONSTANTS.tabBarChildIndex]
 	local barItem = tabBar.selected_obj
 	-- if it is not + then show BtCreator (send him message)
-	if(barItem.caption ~= "+") then
+	if(barItem.caption ~= CONSTANTS.addTreeTabName) then
 		local tH = barItem.TreeHandle
 		-- tree tab is selected (not add tree tab)
 		if(barItem.TreeHandle.Created) then 
@@ -808,24 +810,21 @@ end
 
 function moveToEndAddTab(tabs)
 	-- do we have such tab
-	----[[
-	if tabs.tabIndexMapping["+"] == nil then
+	if tabs.tabIndexMapping[CONSTANTS.addTreeTabName] == nil then
 		-- Or should I report it:
 		Logger.log("Error", "Trying to move + tab and it is not there.")
 		return
 	end
-	--]]
 	
 	refreshTreeSelectionPanel()
 	
-	--local tabBarChildIndex = 1
 	-- get tabBar
-	local tabBar = tabs.children[tabBarChildIndex]
+	local tabBar = tabs.children[CONSTANTS.tabBarChildIndex]
 	if (#(tabBar.children) >= 2) then
-		-- if tabBar.children < 2 then Remove wont do anything.. and we hope that "+" is the only and last tab
-		tabBar:Remove("+")
+		-- if tabBar.children < 2 then Remove wont do anything.. and we hope that CONSTANTS.addTreeTabName is the only and last tab
+		tabBar:Remove(CONSTANTS.addTreeTabName)
 		local newTabBarItem = Chili.TabBarItem:New{
-			caption = "+", 
+			caption = CONSTANTS.addTreeTabName, 
 			defaultWidth = tabBar.minItemWidth, 
 			defaultHeight = tabBar.minItemHeight,
 		}
@@ -839,7 +838,7 @@ end
 
   
 function finalizeAddTreeBarItem(tabs)
-	local item = getBarItemByName(tabs, "+")
+	local item = getBarItemByName(tabs, CONSTANTS.addTreeTabName)
 	item.focusColor = {0.2, 1.0, 0.2, 0.6}
 	item.tooltip = "Add a new instance of the behaviour tree. "
 	local listeners = item.OnMouseDown
@@ -988,7 +987,7 @@ function setUpTreeControlWindow()
 
 	setUpTreeSelectionTab()
 	
-	local newTab = {name = "+", children = {treeSelectionPanel} }
+	local newTab = {name = CONSTANTS.addTreeTabName, children = {treeSelectionPanel} }
 	
 	treeTabPanel = Chili.TabPanel:New{
 		parent = treeControlWindow,
