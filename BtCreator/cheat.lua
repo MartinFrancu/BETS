@@ -7,6 +7,7 @@ local Timer = Utils.Timer;
 local Debug = Utils.Debug;
 local Logger = Debug.Logger
 local dump = Debug.dump
+local Dependency = Utils.Dependency
 
 local cheatWindow
 local nameLabel
@@ -22,7 +23,6 @@ local giveButton
 
 local expectedCommand
 
-local inputCommandsTable
 
 local CONSTANTS = {
 	pauseCMD = "Pause",
@@ -83,10 +83,8 @@ local function getDummyAllyUnit()
 end
 
 function giveListener(self)
-	if(not inputCommandsTable or not treeCommandsTable) then		
-		inputCommandsTable = WG.InputCommands
-	end
-	
+
+	local inputCommandsTable = BtCommands.inputCommands
 	local f = function()
 		local ret = spSetActiveCommand(  spGetCmdDescIndex(inputCommandsTable[ CONSTANTS.cheatInputCMDName ]) ) 
 		if(ret == false ) then 
@@ -146,10 +144,8 @@ function BtCheat.hide()
 end
 
 function BtCheat.commandNotify(cmdID,cmdParams)
-	if(not inputCommandsTable or not treeCommandsTable) then		
-		inputCommandsTable = WG.InputCommands
-	end
-	Logger.log("commands", "getting there, cmdID: ", cmdID, " name: ", inputCommandsTable[cmdID] )
+	local inputCommandsTable = BtCommands.inputCommands 
+	Logger.log("commands", "cheat", dump(inputCommandsTable[cmdID],2 ) ) 
 	if(inputCommandsTable[cmdID] and inputCommandsTable[cmdID] == CONSTANTS.cheatInputCMDName) then
 		--- spawn units
 		local positionStr = "@"..cmdParams[1]..","..cmdParams[2]..","..cmdParams[3]
@@ -269,6 +265,15 @@ function BtCheat.init()
 		OnClick = { sanitizer:AsHandler(giveListener)},
 	}
 	--]]
+	
+	Dependency.defer(
+		function() 
+			BtCommands = sanitizer:Import(WG.BtCommands) 
+		end, 
+		function() 
+			BtCommands = nil 
+		end,
+		Dependency.BtCommands)
 	
 end
 

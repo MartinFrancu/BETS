@@ -16,6 +16,7 @@ CONSTANTS = {
 	unlockedIconPath = PATH .. "unlocked32.png",
 	labelHeight = 30,
 	windowFrameGap = 20,
+	betsCheatCommandName = "BETS_CHEAT_POSITION",
 }
 
 
@@ -25,7 +26,7 @@ local Chili, Screen0
 local BtController = widget
 
 
-local BtEvaluator, BtCreator
+--local BtEvaluator, BtCreator
 
 local JSON = Utils.JSON
 local BehaviourTree = Utils.BehaviourTree
@@ -36,6 +37,11 @@ local Timer = Utils.Timer;
 local Debug = Utils.Debug;
 local Logger = Debug.Logger
 local dump = Debug.dump
+
+--local BtCommands
+--local inputCommandsTable -- = WG.BtCommands.inputCommands
+--local treeCommandsTable --= WG.BtCommands.behavour
+
 
 local TreeHandle = require("BtTreeHandle")
 
@@ -65,8 +71,6 @@ local spSetActiveCommand = Spring.SetActiveCommand
 local spGetSelectedUnits = Spring.GetSelectedUnits
 local spSelectUnits = Spring.SelectUnitArray
 
-local inputCommandsTable = WG.InputCommands
-local treeCommandsTable = WG.BtCommands
 
 --------------------------------------------------------------------------------
 --- Marker: Visualize units in trees:
@@ -667,11 +671,13 @@ end
 
 
 function listenerInputButton(self,x,y,button, ...)
+	--[[
 	if(not inputCommandsTable or not treeCommandsTable) then		
 		--WG.fillCustomCommandIDs()
-		inputCommandsTable = WG.InputCommands
-		treeCommandsTable = WG.BtCommands
+		inputCommandsTable = BtCommands.inputCommands
+		treeCommandsTable = BtCommands.behaviourCommands
 	end
+	]]
 	-- should I do something more when reseting the input que?
 	-- I need to store record what we are expecting
 	expectedInput = {
@@ -682,7 +688,8 @@ function listenerInputButton(self,x,y,button, ...)
 	}
 	
 	local f = function()
-		local ret = spSetActiveCommand(  spGetCmdDescIndex(inputCommandsTable[ expectedInput.CommandName ]) ) 
+		cmdId = BtCommands.inputCommands[ expectedInput.CommandName ]
+		local ret = spSetActiveCommand(  spGetCmdDescIndex(cmdId) ) 
 		if(ret == false ) then 
 			Logger.log("commands", "Unable to set command active: " , expectedInput.CommandName) 
 		end
@@ -1055,6 +1062,16 @@ function widget:Initialize()
 	Chili = WG.ChiliClone
 	Screen0 = Chili.Screen0	
 	
+	Dependency.defer(
+		function() 
+			BtCommands = sanitizer:Import(WG.BtCommands) 
+		end, 
+		function() 
+			BtCommands = nil 
+		end, Dependency.BtCommands)
+	Logger.log("commands", "BtCommands.commandNameToHumanName: " .. dump(BtCommands.commandNameToHumanName))
+	Logger.log("commands", "init: ", dump(BtCommands,3) )
+	
 	BtEvaluator = sanitizer:Import(WG.BtEvaluator)
 	-- extract BtCreator into a local variable once available
 	Dependency.defer(
@@ -1074,6 +1091,7 @@ function widget:Initialize()
 		end,
 		Dependency.BtCreator
 	)
+	
 	
 	WG.BtControllerReloadTreeType = BtController.reloadTreeType
 	-- Create the window
@@ -1097,6 +1115,8 @@ function widget:Initialize()
 		end
 	end
 	resetMarkers()
+	
+	
 	
 	Dependency.fill(Dependency.BtController)
 end
@@ -1164,15 +1184,9 @@ end
 
 function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 	-- Check for custom commands, first input commands
-	if(not inputCommandsTable or not treeCommandsTable) then
-		inputCommandsTable = WG.InputCommands
-		treeCommandsTable = WG.BtCommands
-		if(not inputCommandsTable)then
-			return false -- if the problem persists, end
-		end
-	end
-	Logger.log("commands", "cmd name: ", inputCommandsTable[cmdID])
-	if(inputCommandsTable[cmdID] and (inputCommandsTable[cmdID] ~= "BETS_CHEAT_POSITION")) then
+
+	local inputCommandsTable = BtCommands.inputCommands
+	if(inputCommandsTable[cmdID] and (inputCommandsTable[cmdID] ~= CONSTANTS.betsCheatCommandName)) then
 		if(expectedInput ~= nil) then
 			-- I should insert given input to tree:
 			local tH = expectedInput.TreeHandle 
@@ -1186,11 +1200,14 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 				return false
 			end
 			
+			BtCommands.transformCommandData(cmdParams, commandType)
+			--[[
 			local transformedData = Logger.loggedCall("Error", "BtController", 
 					"fill in input value, tranforming data",
-					WG.BtCommandsTransformData, 
+					BtCommands.transformCommandData, 
 					cmdParams,
 					commandType)
+					]]
 			
 			tH:FillInInput(inpName, transformedData)
 			expectedInput = nil
@@ -1213,6 +1230,7 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 		return true -- true is for deleting command and not sending it further according to documentation		
 	end
 	-- check for custom commands - Bt behaviour assignments
+	local treeCommandsTable = BtCommands.behaviourCommands
 	if(treeCommandsTable[cmdID]) then
 		-- setting up a behaviour tree :
 		local treeHandle = instantiateTree(treeCommandsTable[cmdID].treeName, "Instance"..instanceIdCount , true)

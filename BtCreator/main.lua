@@ -41,6 +41,10 @@ local async, Promise = Utils.async, Utils.Promise
 local nodeDefinitionInfo = {}
 local isScript = {}
 
+local UnitCategories = Utils.UnitCategories
+
+local BtCommands
+
 -- BtCreator interface definitions
 BtCreator = {} -- if we need events, change to Sentry:New()
 local BtCreator = BtCreator
@@ -490,11 +494,38 @@ function saveTree(treeName)
 		"asking BtController to reload instances of saved tree type",
 		WG.BtControllerReloadTreeType,
 		treeName)
-		
+	
+	-------------------------------------------------------------------
+	-- compute all units for which it will be visible:
+	local mentionedUnits = {}
+	for _,roleData in ipairs(currentTree.roles) do
+		for _,catName in ipairs(roleData) do 
+			-- get units in this category:
+			local unitList, msg = UnitCategories.getCategoryTypes(catName)
+			if (not unitList) then
+				-- I should probably through error
+				Logger.log("error", "Category file: " .. msg)
+				unitList = {}
+			end
+			for _, unitData in ipairs(unitList) do
+				mentionedUnits[unitData.name] = true
+			end
+		end
+	end
+	local whitelist = {}
+	local i = 1
+	for unitName, _ in pairs(mentionedUnits) do
+		whitelist[i] = unitName
+		i = i+1
+	end
+	--------------------------------------------------------------------
+	BtCommands.tryRegisterCommandForTree(treeName,icon,whitelist)
+	--[[
 	Logger.loggedCall("Errors", "BtCreator",
 		"registering command for new tree",
-		WG.BtRegisterCommandForTree,
-		treeName)
+		BtCommands.tryRegisterCommandForTree,
+		treeName, icon, whitelist)
+		]]
 end 
 
 function saveAsTreeDialogCallback(project, tree)
@@ -1501,6 +1532,16 @@ function widget:Initialize()
 	
 	currentTree.changed = false
 	
+	
+	Dependency.defer(
+		function() 
+			BtCommands = sanitizer:Import(WG.BtCommands) 
+		end,
+		function() 
+			BtCommands = nil 
+		end, 
+		Dependency.BtCommands)
+	
 	Dependency.fill(Dependency.BtCreator)
 	Logger.log("reloading", "BtCreator widget:Initialize end. ")
 end
@@ -1540,6 +1581,7 @@ function widget:GamePaused()
 end
 
 function widget:CommandNotify(cmdID, cmdParams, cmdOptions)
+	Logger.log("commands", "btcreatro commandNotify")
 	local result = btCheat.commandNotify(cmdID,cmdParams)
 	return result
 end

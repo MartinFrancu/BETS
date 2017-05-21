@@ -7,6 +7,10 @@ local Dependency = Utils.Dependency
 local sanitizer = Utils.Sanitizer.forWidget(widget)
 local Vec3 = Utils.Vec3
 
+
+BtCommands = {}
+BtCommands.inputCommands = {}
+BtCommands.behaviourCommands = {}
 --------------------------------------------------------------------------------
 -- get madatory module operators
 VFS.Include("LuaRules/modules.lua") -- modules table
@@ -93,20 +97,23 @@ local function registerCommand(cmdDesc)
 end
 
 local function fillInCommandID(cmdName, cmdID)
-	if (WG.InputCommands == nil) then 
-		WG.InputCommands = {}
+	--[[
+	if (BtCommands.inputCommands == nil) then 
+		BtCommands.inputCommands = {}
 	end
-	if (WG.BtCommands == nil) then 
-		WG.BtCommands = {}
+	
+	if (BtCommands.behaviourCommands == nil) then 
+		BtCommands.behaviourCommands = {}
 	end
+	]]
 	-- if it is our command, we should remember its cmdID
 	
 	-- is it input command?
 	for inputCmdName,_ in pairs(inputCommandDesc) do 
 		if (inputCmdName == cmdName) then
 			-- make the WG.InputCommands bidirectional
-			WG.InputCommands[ cmdID ] = cmdName
-			WG.InputCommands[ cmdName ] = cmdID
+			BtCommands.inputCommands[ cmdID ] = cmdName
+			BtCommands.inputCommands[ cmdName ] = cmdID
 		end
 	end
 	
@@ -114,8 +121,8 @@ local function fillInCommandID(cmdName, cmdID)
 	for inputCmdName,_ in pairs(inputCommandDesc) do 
 		if (inputCmdName == cmdName) then
 			-- make the WG.InputCommands bidirectional
-			WG.InputCommands[ cmdID ] = cmdName
-			WG.InputCommands[ cmdName ] = cmdID
+			BtCommands.inputCommands[ cmdID ] = cmdName
+			BtCommands.inputCommands[ cmdName ] = cmdID
 		end
 	end
 	
@@ -129,7 +136,7 @@ local function fillInCommandID(cmdName, cmdID)
 			if(not bt)then
 				Logger.error("save-and-load", msg)
 			else
-				WG.BtCommands[ cmdID ] = {
+				BtCommands.behaviourCommands[ cmdID ] = {
 					treeName = treeName,
 					inputs = bt.inputs,
 				}
@@ -147,9 +154,9 @@ end
 
 
 local function createCommandHumanNameTable()
-	commandNameToHumanName = {}
+	BtCommands.commandNameToHumanName = {}
 	for name,data in pairs(inputCommandDesc) do
-		commandNameToHumanName[name] = data.humanName
+		BtCommands.commandNameToHumanName[name] = data.humanName
 	end
 end
 
@@ -158,7 +165,7 @@ The following function is used to tranform spring-based representation of
 command parameters into our representation based on name of "input command" 
 associated to given data type.
 --]]
-local function transformCommandData(data, commandName)
+function BtCommands.transformCommandData(data, commandName)
 	if(commandName == inputCommandDesc["BETS_UNIT"].name) then
 		return data
 	end
@@ -172,28 +179,23 @@ local function transformCommandData(data, commandName)
 	if(commandName == inputCommandDesc["BETS_POSITION"].name) then
 		return Vec3(unpack(data))
 	end
-	Logger.log("commands", "Encountered unknown command name.")
+	Logger.log("Error", "Encountered unknown command name.")
+	return data 
 end
 
-WG.BtCommandsTransformData = transformCommandData
+--WG.BtCommandsTransformData = BtCommands.transformCommandData
 
 local BehaviourImageContentType = ProjectManager.makeRegularContentType(BehaviourTree.contentType.directoryName, "png")
-------------CHANGE LATER:
-local BehaviourDefaultImageContentType = ProjectManager.makeRegularContentType("Behaviours", "png")
-------------CHANGE LATER END
 
 --- This method register command for tree if it has an icon
-local function tryRegisterCommandForTree(treeName)
-	-- should I check if there is such file??
-	
+function BtCommands.tryRegisterCommandForTree(treeName, unitsWhitelist)
 	-- is there icon:
 	local iconFileName = ProjectManager.findFile(BehaviourImageContentType, treeName)
 	local gotIcon = VFS.FileExists(iconFileName)
 	
-	local UIover
 	if gotIcon then
-		UIover = {texture = iconFileName }
-			local commandName =  "BT_" ..  treeName
+		local allUnits = {}
+		local commandName =  "BT_" ..  treeName
 		local description = {
 			type = CMDTYPE.ICON,
 			name = commandName,
@@ -201,7 +203,8 @@ local function tryRegisterCommandForTree(treeName)
 			action = 'Attack',
 			tooltip = "Behaviour " .. treeName,
 			hidden = false,
-			UIoverride = UIover
+			UIoverride = {texture = iconFileName },
+			whitelist = unitsWhitelist,
 		}
 		registerCommand(description) 
 	end
@@ -209,30 +212,31 @@ local function tryRegisterCommandForTree(treeName)
 
 end
 
-WG.BtRegisterCommandForTree = tryRegisterCommandForTree
+--WG.BtTryRegisterCommandForTree = BtCommands.tryRegisterCommandForTree
 
 local function registerCommandsForBehaviours()
 	local qualifiedNames = BehaviourTree.list()
 	for _,treeName in pairs(qualifiedNames) do
-		tryRegisterCommandForTree(treeName)
+		BtCommands.tryRegisterCommandForTree(treeName)
 	end
 end
 
 --Event handler
 function CustomCommandRegistered(cmdName, cmdID)
-	Logger.log("commands", "Command [" .. cmdName .. "] was registered under ID [" .. cmdID .. "]")
 	fillInCommandID(cmdName, cmdID)
 end
 
 function widget:Initialize()
 	registerInputCommands()
+	BtCommands.inputCommands = {}
+	BtCommands.behaviourCommands = {}
 	createCommandHumanNameTable()
-	WG.BtCommandsInputHumanNames = commandNameToHumanName
-	-- register release commands !note: maybe move them into another refreshTreeSelectionPanel?
+	-- register command for ready available trees:
 	registerCommandsForBehaviours()
 	-- register event handler..
 	widgetHandler:RegisterGlobal('CustomCommandRegistered', CustomCommandRegistered)
 	
+	WG.BtCommands = sanitizer:Export(BtCommands)
 	Dependency.fill(Dependency.BtCommands)
 end
 
@@ -241,19 +245,23 @@ function widget:Shutdown()
 	for _, cmdDesc in pairs(inputCommandDesc) do
 		sendCustomMessage.DeregisterCustomCommand(cmdDesc.name)
 	end
-	-- I guess there is missing deregistration of trees we have registered..
+	-- I guess there is missing deregistration of trees we have registered:
 	
-	if(WG.BtCommands)then
-		for cmdName, cmdData in pairs(WG.BtCommands) do
+	if(BtCommands.behaviourCommands)then
+		for cmdName, cmdData in pairs(BtCommands.behaviourCommands) do
 			sendCustomMessage.DeregisterCustomCommand(cmdName)
 		end
 	end
 	
+	--[[
 	WG.fillCustomCommandIDs = nil
 	WG.BtCommandsInputHumanNames = nil
 	WG.BtCommandsTransformData = nil
 	WG.InputCommands = nil
 	WG.BtCommands = nil
+	--]]
+	WG.BtCommands.inputCommands = nil
+	WG.BtCommands.behaviourCommands = nil
 	Dependency.clear(Dependency.BtCommands)
 end
 

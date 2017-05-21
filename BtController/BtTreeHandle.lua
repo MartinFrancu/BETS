@@ -254,13 +254,14 @@ local function createChiliComponentsInput(obj, xOffSet, yOffSet)
 	for _,input in pairs(obj.Tree.inputs) do
 		local inputName = input.name
 		local command = input.command
-			local inputButton = Chili.Button:New{
+		Logger.log("commands", "tree handle: " .. dump(BtCommands.commandNameToHumanName))
+		local inputButton = Chili.Button:New{
 				x = inputXOffset,
 				y = inputYOffset + CONSTANTS.buttonHeight * inputInd,
 				height = inputCount == 1 and CONSTANTS.buttonHeight +  CONSTANTS.singleButtonModifier or CONSTANTS.buttonHeight,
 				width = 180,
 				minWidth = CONSTANTS.minInputButtonWidth,
-				caption =" " .. inputName .. " (" .. (WG.BtCommandsInputHumanNames[command]or"N/A").. ")",
+				caption =" " .. inputName .. " (" .. (BtCommands.commandNameToHumanName[command]or"N/A").. ")",
 				OnClick = {obj.InputButtonListener}, 
 				skinName = "DarkGlass",
 				focusColor = {0.5,0.5,0.5,0.5},
