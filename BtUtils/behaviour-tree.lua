@@ -257,9 +257,12 @@ return Utils:Assign("BehaviourTree", function()
 		
 		local data = VFS.LoadFile(path)
 		if(not data)then
-			return nil, "[BT:" .. name .. "] " .. "File '" .. path .. "' not found"
+			return nil, "File '" .. path .. "' not found"
 		end
-		local bt = JSON:decode(data)
+		local bt, message = JSON:decode(data)
+		if(not bt)then
+			return nil, "Failed to parse file " .. path .. ": " .. tostring(message)
+		end
 		
 		bt.roles = bt.roles or {}
 		bt.inputs = bt.inputs or {}
@@ -276,7 +279,7 @@ return Utils:Assign("BehaviourTree", function()
 			success, message = validateOutputs(bt.outputs)
 		end
 		if(not success)then
-			return nil, "[BT:" .. name .. "] " .. tostring(message)
+			return nil, tostring(message)
 		end
 		
 		if not bt.root then
@@ -307,7 +310,7 @@ return Utils:Assign("BehaviourTree", function()
 			success, message = validateOutputs(bt.outputs)
 		end
 		if(not success)then
-			return nil, "[BT:" .. name .. "] " .. tostring(message)
+			return nil, tostring(message)
 		end
 		
 		local temp = bt.project

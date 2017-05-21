@@ -112,36 +112,43 @@ end
 --- Is called both from treenode.lua - in treenode constructor - and on clicking 'Choose tree' button.
 function referenceNode.addInputOutputComponents(nodeWindow,treeNameLabel, treeName)
 	nodeWindow.treeName = treeName;
-	local bt = BehaviourTree.load(treeName) or {}
-	local inputs = bt.inputs or {}
-	local outputs = bt.outputs or {}
+	local bt, message = BehaviourTree.load(treeName)
+	local inputs = (bt or {}).inputs or {}
+	local outputs = (bt or {}).outputs or {}
 	local positiony = 50
 	local yoffset = 21
 	-- First update label with treeName, make it clickthrough
 	treeNameLabel:SetCaption(treeName)
-	treeNameLabel.OnMouseOver = {
-		sanitizer:AsHandler( 
-			function(self)
-				self.font.color = {1,0.5,0,1}
-			end
-		)
-	}
-	treeNameLabel.OnMouseOut = {
-		sanitizer:AsHandler( 
-			function(self)
-				self.font.color = {1,1,1,1}
-			end
-		)
-	}
-	treeNameLabel.OnMouseDown = { function(self) return self end }
-	treeNameLabel.OnMouseUp = {
-		sanitizer:AsHandler( 
-			function(self)
-				local referenceID = nodeWindow.treeNode.id
-				WG.BtCreator.Get().onTreeReferenceClick(treeName, referenceID)
-			end
-		)
-	}
+	if(bt)then
+		treeNameLabel.OnMouseOver = {
+			sanitizer:AsHandler( 
+				function(self)
+					self.font.color = {1,0.5,0,1}
+				end
+			)
+		}
+		treeNameLabel.OnMouseOut = {
+			sanitizer:AsHandler( 
+				function(self)
+					self.font.color = {1,1,1,1}
+				end
+			)
+		}
+		treeNameLabel.OnMouseDown = { function(self) return self end }
+		treeNameLabel.OnMouseUp = {
+			sanitizer:AsHandler( 
+				function(self)
+					local referenceID = nodeWindow.treeNode.id
+					WG.BtCreator.Get().onTreeReferenceClick(treeName, referenceID)
+				end
+			)
+		}
+	else
+		treeNameLabel.font.color = {1,0,0,1}
+		treeNameLabel.OnMouseOver, treeNameLabel.OnMouseOut, treeNameLabel.OnMouseDown, treeNameLabel.OnMouseUp = {}, {}, {}, {}
+		treeNameLabel.tooltip = message
+	end
+	
 	local treeNode = nodeWindow.treeNode
 	treeNode.referenceInputsLabel = Label:New{
 		parent = nodeWindow,
