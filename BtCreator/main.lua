@@ -90,12 +90,24 @@ local function isAnyTreeChanged()
 	return false
 end
 
+local function setNameCaption(caption)
+	if treeNameLabel then
+		treeNameLabel:SetCaption(caption)
+		local x = btCreatorWindow.width - treeNameLabel.width - 30
+		treeNameLabel:SetPos(x, treeNameLabel.y)
+	end
+end
+
+function currentTree.setChanged(changed)
+	currentTree.changed = changed
+	setNameCaption(currentTree.treeName .. (changed and "*" or ""))
+end
 
 
 function currentTree.setName(newTreeName) 
 	currentTree.treeName = newTreeName
 	if(treeNameLabel) then
-		treeNameLabel:SetCaption(newTreeName)
+		setNameCaption(newTreeName)
 	end
 end
 
@@ -159,7 +171,7 @@ function BtCreator.markTreeAsChanged()
 	if(not currentTree.changed)then
 		detachInstance()
 		currentTree.setInstanceName(noInstanceString)
-		currentTree.changed = true
+		currentTree.setChanged(true)
 	end
 end
 
@@ -220,7 +232,7 @@ local function showParentTree(button)
 	
 	currentTree.setName(info.currentTree.treeName)
 	currentTree.setInstanceName(info.currentTree.instanceName)
-	currentTree.changed = info.currentTree.changed 
+	currentTree.setChanged(info.currentTree.changed)
 	currentTree.canvasPosition = info.currentTree.canvasPosition
 	referenceNodeID = info.refNodeID
 	currentTree.roles = info.tree.roles or {}
@@ -249,14 +261,15 @@ function reloadReferenceButtons()
 	end
 	refButtons = {}
 
-	for i = 1,#treeRefList do
+	local refsCount = #treeRefList
+	for i = 1,refsCount do
 	
 		treeRefInfo = treeRefList[i]
 		refButtons[#refButtons + 1] = Chili.Button:New{
 			parent = refPathPanel,
 			x = 0,
-			y = (i-1)*30,
-			width = 200,
+			y = (refsCount - i) * 30,
+			width = '100%',
 			height = 30,
 			treeRefInfo = treeRefInfo,
 			caption = treeRefInfo.currentTree.treeName .. (treeRefInfo.currentTree.changed and "*" or ""),
@@ -551,7 +564,7 @@ saveAsTreeDialogCallback = async(function(project, tree)
 			table.insert(changedTreeRefs, { tree = protoTree, currentTree = currentTree })
 			saveTreeRefs(changedTreeRefs)
 		else
-			currentTree.changed = false
+			currentTree.setChanged(false)
 			saveTree(protoTree, qualifiedName)
 			Logger.loggedCall("Errors", "BtCreator", 
 				"asking BtController to reload instances of saved tree type",
@@ -721,7 +734,7 @@ function loadTree(treeName)
 	getBehaviourTree(treeName)
 	currentTree.setName(treeName)
 	currentTree.setInstanceName("loaded from disk")
-	currentTree.changed = false 
+	currentTree.setChanged(false)
 end
 
 function loadTreeDialogCallback()
@@ -1075,6 +1088,10 @@ function listenerOnResizeBtCreator(self)
 	end
 	if btCreatorWindow then
 		rootPanel:Resize(btCreatorWindow.x + btCreatorWindow.width, btCreatorWindow.y + btCreatorWindow.height)
+	end
+	
+	if treeNameLabel then
+		setNameCaption(treeNameLabel.caption) -- updates label position
 	end
 end
 
@@ -1449,7 +1466,7 @@ function widget:Initialize()
 		parent = btCreatorWindow,
 		caption = currentTree.treeName,
 		width = 160,
-		x = '40%',
+		x = '85%',
 		y = 5,
 		align = 'left',
 		-- skinName = 'DarkGlass',
@@ -1457,7 +1474,6 @@ function widget:Initialize()
 		borderColor2 = {1,1,1,0.2},
 		borderThickness = 0,
 		backgroundColor = {0,0,0,0},
-		minWidth = 120,
 		autosize = true,
 		tooltip = "The name of current behavior tree. ",
 	}
@@ -1468,8 +1484,8 @@ function widget:Initialize()
 		parent = btCreatorWindow,
 		caption = "states according to instance:",
 		width = 200,
-		x = treeNameLabel.x + treeNameLabel.width + 50,
-		y = treeNameLabel.y,
+		x = '50%',
+		y = 5,
 		align = 'left',
 		-- skinName = 'DarkGlass',
 		borderColor = {1,1,1,0.2},
@@ -1503,7 +1519,7 @@ function widget:Initialize()
 		parent = btCreatorWindow,
 		width = '15%',
 		x = '85%',
-		y = 0,
+		y = 30,
 		align = 'left',
 		borderColor = {1,1,1,0.2},
 		borderColor2 = {1,1,1,0.2},
@@ -1567,7 +1583,7 @@ function widget:Initialize()
 	
 	btCheat.init()
 	
-	currentTree.changed = false
+	currentTree.setChanged(false)
 	
 	
 	Dependency.defer(
