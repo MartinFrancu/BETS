@@ -33,6 +33,7 @@ local BehaviourTree = Utils.BehaviourTree
 local Dependency = Utils.Dependency
 local sanitizer = Utils.Sanitizer.forWidget(widget)
 local Timer = Utils.Timer;
+local Dialog = Utils.Dialog
 
 local Debug = Utils.Debug;
 local Logger = Debug.Logger
@@ -733,7 +734,9 @@ local function listenerClickOnSelectedTreeDoneButton(self, x, y, button)
 			local selectedTreeType = treeSelectionComboBox.items[treeSelectionComboBox.selected]
 			local instanceName = treeNameEditBox.text
 			local newTreeHandle = instantiateTree(selectedTreeType, instanceName, false)
-			listenerBarItemClick({TreeHandle = newTreeHandle},x ,y ,button)	
+			if newTreeHandle then
+				listenerBarItemClick({TreeHandle = newTreeHandle},x ,y ,button)
+			end
 		else
 			-- if such instance name exits show error window
 			showErrorWindow("Duplicate instance name.")
@@ -780,6 +783,19 @@ function instantiateTree(treeType, instanceName, requireUnits)
 		lockImageListener = sanitizer:AsHandler(listenerLockImage),
 		RequireUnits = requireUnits,
 	}
+	if not newTreeHandle then
+		local x,y = treeControlWindow:LocalToScreen(100,100)
+		Dialog.showErrorDialog({
+			title = "Tree load error",
+			message = "The tree '" .. treeType .. "' couldn't be loaded.\nThe file may be corrupted.",
+			x = x,
+			y = y,
+			visibilityHandler = function(visible) 
+				treeControlWindow.disableChildrenHitTest = visible
+			end
+		})
+		return nil
+	end
 	
 	local selectedUnits = spGetSelectedUnits()
 	if ((table.getn(selectedUnits) < 1 ) and newTreeHandle.RequireUnits) then

@@ -775,7 +775,7 @@ function getBehaviourTree(treeName)
 		Dialog.showErrorDialog({
 			visibilityHandler = BtCreator.setDisableChildrenHitTest,
 			title = "Tree load error",
-			message = "The tree '" .. treeName .. "' couldn't be loaded.\nThe file may be corrupted",
+			message = "The tree '" .. treeName .. "' couldn't be loaded.\nThe file may be corrupted.",
 			x = x,
 			y = y
 		})

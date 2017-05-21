@@ -368,8 +368,9 @@ function TreeHandle:New(obj)
 	
 	if(not obj.Tree) then
 		-- tree was not loaded
-		TreeHandle.SwitchToErrorState(obj, treeMSG)
-		return obj
+		-- treeHandle not ready yet - instead create an error dialog in BtController
+		--TreeHandle.SwitchToErrorState(obj, treeMSG) 
+		return nil
 	end
 	
 	-- Order of these childs is sort of IMPORTANT as other entities needs to access children
