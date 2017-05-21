@@ -771,7 +771,14 @@ function getBehaviourTree(treeName)
 		currentTree.roles = bt.roles or {}
 		--rolesOfCurrentTree = bt.roles or {}
 	else
-		error("BehaviourTree " .. treeName .. " instance not found. " .. debug.traceback())
+		local x,y = loadTreeButton:LocalToScreen(0,0)
+		Dialog.showErrorDialog({
+			visibilityHandler = BtCreator.setDisableChildrenHitTest,
+			title = "Tree load error",
+			message = "The tree '" .. treeName .. "' couldn't be loaded.\nThe file may be corrupted",
+			x = x,
+			y = y
+		})
 	end
 end 
 
