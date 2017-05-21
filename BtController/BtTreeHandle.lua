@@ -5,6 +5,7 @@ local BehaviourTree = Utils.BehaviourTree
 local Debug = Utils.Debug;
 local Logger = Debug.Logger
 local dump = Debug.dump
+local sanitizer = Utils.Sanitizer.forCurrentWidget()
 
 local variableCommandName = "Variable"
 
@@ -306,8 +307,28 @@ function TreeHandle:New(obj)
 		caption =  obj.treeType,
 		skinName = "DarkGlass",
 		tooltip = "Name of tree type, (state)",
+		OnMouseOver = { sanitizer:AsHandler( 
+			function(self)
+				if(BtCreator)then
+					self.font.color = {1,0.5,0,1}
+				end
+			end
+		) },
+		OnMouseOut = { sanitizer:AsHandler( 
+			function(self)
+				self.font.color = {1,1,1,1}
+			end
+		) },
+		OnMouseDown = { function(self) return self end },
+		OnMouseUp = { sanitizer:AsHandler( 
+			function(self)
+				if(BtCreator)then
+					BtCreator.showTree(obj.treeType)
+				end
+			end
+		) },
 	}
-	
+
 	
 	table.insert(obj.ChiliComponentsGeneral, treeTypeLabel)
 	
