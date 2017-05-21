@@ -1178,7 +1178,6 @@ end
 
 function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 	-- Check for custom commands, first input commands
-
 	local inputCommandsTable = BtCommands.inputCommands
 	if(inputCommandsTable[cmdID] and (inputCommandsTable[cmdID] ~= CONSTANTS.betsCheatCommandName)) then
 		if(expectedInput ~= nil) then
@@ -1194,7 +1193,7 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 				return false
 			end
 			
-			BtCommands.transformCommandData(cmdParams, commandType)
+			transformedData = BtCommands.transformCommandData(cmdParams, commandType)
 			--[[
 			local transformedData = Logger.loggedCall("Error", "BtController", 
 					"fill in input value, tranforming data",
