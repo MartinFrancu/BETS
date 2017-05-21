@@ -495,37 +495,11 @@ function saveTree(treeName)
 		WG.BtControllerReloadTreeType,
 		treeName)
 	
-	-------------------------------------------------------------------
-	-- compute all units for which it will be visible:
-	local mentionedUnits = {}
-	for _,roleData in ipairs(currentTree.roles) do
-		for _,catName in ipairs(roleData) do 
-			-- get units in this category:
-			local unitList, msg = UnitCategories.getCategoryTypes(catName)
-			if (not unitList) then
-				-- I should probably through error
-				Logger.log("error", "Category file: " .. msg)
-				unitList = {}
-			end
-			for _, unitData in ipairs(unitList) do
-				mentionedUnits[unitData.name] = true
-			end
-		end
+	
+	local success, msg = BtCommands.tryRegisterCommandForTree(treeName)
+	if not success then
+		Logger.log("commands", "Tree command not registered: ", msg)
 	end
-	local whitelist = {}
-	local i = 1
-	for unitName, _ in pairs(mentionedUnits) do
-		whitelist[i] = unitName
-		i = i+1
-	end
-	--------------------------------------------------------------------
-	BtCommands.tryRegisterCommandForTree(treeName,icon,whitelist)
-	--[[
-	Logger.loggedCall("Errors", "BtCreator",
-		"registering command for new tree",
-		BtCommands.tryRegisterCommandForTree,
-		treeName, icon, whitelist)
-		]]
 end 
 
 function saveAsTreeDialogCallback(project, tree)

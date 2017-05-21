@@ -6,7 +6,7 @@ local dump = Debug.dump
 local Dependency = Utils.Dependency
 local sanitizer = Utils.Sanitizer.forWidget(widget)
 local Vec3 = Utils.Vec3
-
+local UnitCategories = Utils.UnitCategories
 
 BtCommands = {}
 BtCommands.inputCommands = {}
@@ -183,17 +183,61 @@ function BtCommands.transformCommandData(data, commandName)
 	return data 
 end
 
---WG.BtCommandsTransformData = BtCommands.transformCommandData
+-- returns all unit types referenced in categories of given tree:
+local function allUnitTypesReferenced(qTreeName)
+	local tree,msg = BehaviourTree.load(qTreeName)
+	if(not tree) then
+		return false, msg
+	end
+	local roles = tree.roles
+	Logger.log("commands", "name: ", qTreeName)
+	Logger.log("commands", "roles: ", dump(roles, 3)  )
+	-------------------------------------------------------------------
+	-- compute all units for which it will be visible:
+	local mentionedUnits = {}
+	for _,roleData in ipairs(roles) do
+		-- for each role:
+		if(not roleData.categories ) then
+			return false, "Invalid format of tree: missing record 'categories' in role data."
+		end
+		for _,catName in ipairs(roleData.categories) do
+			-- for each mentioned category:
+			-- get units in this category
+			local unitList, msg = UnitCategories.getCategoryTypes(catName)
+			Logger.log("commands", "category: ", catName, " units ",  dump(unitList, 3) , " msg ", msg )
+			if (not unitList) then
+				-- I should probably through error
+				Logger.log("error", "Category file: " .. msg)
+				return false, msg
+			end
+			for _, unitData in ipairs(unitList) do
+				mentionedUnits[unitData.name] = true
+			end
+		end
+	end
+	local whitelist = {}
+	local i = 1
+	for unitName, _ in pairs(mentionedUnits) do
+		whitelist[i] = unitName
+		i = i+1
+	end
+	return whitelist
+end
 
 local BehaviourImageContentType = ProjectManager.makeRegularContentType(BehaviourTree.contentType.directoryName, "png")
 
 --- This method register command for tree if it has an icon
-function BtCommands.tryRegisterCommandForTree(treeName, unitsWhitelist)
+function BtCommands.tryRegisterCommandForTree(treeName)
 	-- is there icon:
 	local iconFileName = ProjectManager.findFile(BehaviourImageContentType, treeName)
 	local gotIcon = VFS.FileExists(iconFileName)
 	
 	if gotIcon then
+		-- now I should find out for which units this command should be registered.
+		local whitelist, msg = allUnitTypesReferenced(treeName)
+		if(not whitelist) then
+			return false, msg
+		end 
 		local allUnits = {}
 		local commandName =  "BT_" ..  treeName
 		local description = {
@@ -204,15 +248,17 @@ function BtCommands.tryRegisterCommandForTree(treeName, unitsWhitelist)
 			tooltip = "Behaviour " .. treeName,
 			hidden = false,
 			UIoverride = {texture = iconFileName },
-			whitelist = unitsWhitelist,
+			whitelist = whitelist,
 		}
 		registerCommand(description) 
+		
+		Logger.log("commands", "whitelist: ", whitelist)
+		
+		return true, "All went ok."
 	end
 	
-
+	return nil, "Tree does not have icon"
 end
-
---WG.BtTryRegisterCommandForTree = BtCommands.tryRegisterCommandForTree
 
 local function registerCommandsForBehaviours()
 	local qualifiedNames = BehaviourTree.list()

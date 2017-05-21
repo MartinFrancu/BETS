@@ -1069,8 +1069,6 @@ function widget:Initialize()
 		function() 
 			BtCommands = nil 
 		end, Dependency.BtCommands)
-	Logger.log("commands", "BtCommands.commandNameToHumanName: " .. dump(BtCommands.commandNameToHumanName))
-	Logger.log("commands", "init: ", dump(BtCommands,3) )
 	
 	BtEvaluator = sanitizer:Import(WG.BtEvaluator)
 	-- extract BtCreator into a local variable once available
