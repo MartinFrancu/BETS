@@ -57,7 +57,7 @@ local treeRefList = {}
 
 local noNameString = "--NO NAME GIVEN--"
 local noInstanceString = "---"
-local SAVE_TREE_QUESTION = "The tree you want to leave has been changed.\nDo you wish to save it first?"
+local SAVE_TREE_QUESTION = "You have unsaved changes in the current tree\nthat would be lost.\nDo you wish to save it first?"
 
 
 local currentTree = {
@@ -95,6 +95,23 @@ local function isAnyTreeChanged()
 	
 	return false
 end
+
+local promptUserToSaveIfChanged = async(function(entireTree)
+	if entireTree and isAnyTreeChanged() or currentTree.changed then
+		local confirmed = awaitFunction(Dialog.showDialog, {
+			visibilityHandler = BtCreator.setDisableChildrenHitTest,
+			title = "Save tree", 
+			message = SAVE_TREE_QUESTION,
+			dialogType = Dialog.YES_NO_CANCEL_TYPE,
+			x = rootPanel.x + rootPanel.width - 500,
+			y = rootPanel.y,
+		})
+		
+		if confirmed then
+			await(listenerClickOnSaveTree(saveTreeButton))
+		end
+	end	
+end)
 
 
 function currentTree.setName(newTreeName) 
@@ -199,19 +216,7 @@ local function showParentTree(button)
 end
 
 local parentButtonHandler = async(function(button) 
-	if currentTree.changed then
-		local confirmed = await(Dialog.showDialog, {
-			visibilityHandler = BtCreator.setDisableChildrenHitTest,
-			title = "Save tree", 
-			message = SAVE_TREE_QUESTION,
-			dialogType = Dialog.YES_NO_CANCEL_TYPE,
-			x = rootPanel.x + rootPanel.width - 500,
-			y = rootPanel.y,
-		})
-		if confirmed then
-			await(listenerClickOnSaveTree(saveTreeButton))
-		end
-	end
+	await(promptUserToSaveIfChanged(false))
 	showParentTree(button)
 end)
 
@@ -240,14 +245,16 @@ function reloadReferenceButtons()
 	end
 end
 
-function BtCreator.showTree(treeName, instanceName, instanceId)
+BtCreator.showTree = async(function(treeName, instanceName, instanceId)
 	BtCreator.show()
+	await(promptUserToSaveIfChanged(true))
+	
 	treeRefList = {}
 	reloadReferenceButtons()
 	loadTree(treeName)
 	currentTree.instanceId  = instanceId --treeInstanceId
 	currentTree.setInstanceName(instanceName)
-end
+end)
 
 function BtCreator.showReferencedTree(treeName, _referenceNodeID)
 	local oldReferenceNodeID = referenceNodeID
@@ -551,7 +558,7 @@ end)
 listenerClickOnSaveAsTree = async(function(self)
 	local screenX,screenY = self:LocalToScreen(0,0)
 
-	local project, treeName = await(ProjectDialog.showDialog, {
+	local project, treeName = awaitFunction(ProjectDialog.showDialog, {
 		visibilityHandler = BtCreator.setDisableChildrenHitTest,
 		contentType = BehaviourTree.contentType, 
 		dialogType = ProjectDialog.SAVE_DIALOG,
@@ -566,7 +573,7 @@ end)
 listenerClickOnRoleManager = async(function(self)
 	local tree = formBehaviourTree()
 	self.hideFunction()
-	local _, rolesData = await(roleManager.showRolesManagement, Screen0, tree, currentTree.roles , self)
+	local _, rolesData = awaitFunction(roleManager.showRolesManagement, Screen0, tree, currentTree.roles , self)
 	BtCreator.show()
 	currentTree.roles = rolesData
 end)
@@ -626,19 +633,9 @@ end
 listenerClickOnNewTree = async(function(self)
 	local screenX,screenY = self:LocalToScreen(0,0)
 	
-	if(isAnyTreeChanged())then
-		local confirmed = await(Dialog.showDialog, {
-			visibilityHandler = BtCreator.setDisableChildrenHitTest,
-			title = "Save tree",
-			message = SAVE_TREE_QUESTION,
-			dialogType = Dialog.YES_NO_CANCEL_TYPE,
-		})
-		if(confirmed)then
-			await(listenerClickOnSaveTree(saveTreeButton))
-		end
-	end
+	await(promptUserToSaveIfChanged(true))
 	
-	local projectName, treeName = await(ProjectDialog.showDialog, {
+	local projectName, treeName = awaitFunction(ProjectDialog.showDialog, {
 		visibilityHandler = BtCreator.setDisableChildrenHitTest,
 		contentType = BehaviourTree.contentType, 
 		dialogType = ProjectDialog.NEW_DIALOG,
@@ -682,27 +679,30 @@ function loadTree(treeName)
 	currentTree.changed = false 
 end
 
-function loadTreeDialogCallback(project, tree)
-	BtCreator.show()
-	if project and tree then -- tree was selected
-		local qualifiedName = project .. "." .. tree
-		treeRefList = {}
-		reloadReferenceButtons()
-		loadTree(qualifiedName)
-	end
+function loadTreeDialogCallback()
 end
 
-function listenerClickOnLoadTree(self)
+listenerClickOnLoadTree = async(function(self)
 	local screenX,screenY = self:LocalToScreen(0,0)
-	ProjectDialog.showDialog({
+	
+	await(promptUserToSaveIfChanged(true))
+	
+	local project, tree = awaitFunction(ProjectDialog.showDialog, {
 		visibilityHandler = BtCreator.setDisableChildrenHitTest,
 		contentType = BehaviourTree.contentType,
 		dialogType = ProjectDialog.LOAD_DIALOG, 
 		title = "Select tree to be loaded:",
 		x = screenX,
 		y = screenY,
-	}, loadTreeDialogCallback)
-end
+	})
+
+	if project and tree then -- tree was selected
+		local qualifiedName = project .. "." .. tree
+		treeRefList = {}
+		reloadReferenceButtons()
+		loadTree(qualifiedName)
+	end
+end)
 
 function listenerClickOnCheat(self)
 	if(self.showing)then

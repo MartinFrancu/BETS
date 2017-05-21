@@ -18,31 +18,34 @@ return Utils:Assign("async", function()
 				return resultPromise
 			end)
 			
+			local function await(p)
+				local state = 0
+				local results
+				p:Then(function(...)
+					if(state == 1)then
+						c(...)
+					else
+						results = { ... }
+					end
+					state = 2
+				end)
+				if(state == 2)then
+					return unpack(results)
+				else
+					state = 1
+					return coroutine.yield(resultPromise)
+				end
+			end
+			local function awaitFunction(f, ...)
+				return await(Promise.fromCallback(f, ...))
+			end
+			
 			-- the environment change can safely happen even after the wrap
 			local oldEnvironment = getfenv(f)
 			setfenv(f, setmetatable({
 				Promise = Promise,
-				await = function(p, ...)
-					if(type(p) == "function")then
-						p = Promise.fromCallback(p, ...)
-					end
-					local state = 0
-					local results
-					p:Then(function(...)
-						if(state == 1)then
-							c(...)
-						else
-							results = { ... }
-						end
-						state = 2
-					end)
-					if(state == 2)then
-						return unpack(results)
-					else
-						state = 1
-						return coroutine.yield(resultPromise)
-					end
-				end,
+				await = await,
+				awaitFunction = awaitFunction,
 			}, { __index = oldEnvironment, __newindex = oldEnvironment }))
 			
 			return c(...)
