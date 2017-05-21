@@ -364,7 +364,11 @@ function BtController.reloadTreeType(treeTypeName)
 			Logger.log("Error", "BtControler - reloadTreeType: no BtCreator.")
 		end
 	end
-
+	
+	local success, msg = BtCommands.tryRegisterCommandForTree(treeTypeName)
+	if not success then
+		Logger.log("commands", "Tree command not registered: ", msg)
+	end
 end
 
 -- This method will reload all tree instances currently present in BtController.
