@@ -295,10 +295,10 @@ function BtCreator.showNewTree()
 end
 -- called when new tree tabItem in BtController is selected
 function BtCreator.focusTree( treeType, instanceName, instanceId)
-	detachInstance();
-	if(not currentTree.changed) then
-		BtCreator.showTree(treeType, instanceName,instanceId)
-	end
+    currentTree.instanceId = instanceId
+    currentTree.setInstanceName(instanceName)
+    detachInstance();
+    BtEvaluator.reportTree(instanceId)
 end
 
 function BtCreator.setDisableChildrenHitTest(bool)
