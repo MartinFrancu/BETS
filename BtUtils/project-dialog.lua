@@ -24,9 +24,9 @@ return Utils:Assign("ProjectDialog", function()
 	local NEW_PROJECT_STRING = "--NEW PROJECT--"
 	
 	
-	ProjectDialog.LOAD_DIALOG_FLAG = "LOAD"
-	ProjectDialog.SAVE_DIALOG_FLAG = "SAVE"
-	ProjectDialog.NEW_DIALOG_FLAG = "NEW"
+	ProjectDialog.LOAD_DIALOG = "LOAD"
+	ProjectDialog.SAVE_DIALOG = "SAVE"
+	ProjectDialog.NEW_DIALOG = "NEW"
 	
 	
 	local PATH = LUAUI_DIRNAME.."Widgets/BtUtils/"
@@ -328,9 +328,9 @@ return Utils:Assign("ProjectDialog", function()
 		cancelButton.showDialogHandler = showDialogHandler
 	end
 	
-	function ProjectDialog.showDialogWindow(parentHandler, contentType, dialogFlag , callbackFunction, title, xIn, yIn)
-		parentHandler = Sanitizer.sanitize(parentHandler)
-		callbackFunction = Sanitizer.sanitize(callbackFunction)
+	local function showDialogWindow(visibilityHandler, contentType, dialogFlag, callbackFunction, title, xIn, yIn)
+		visibilityHandler = visibilityHandler and Sanitizer.sanitize(visibilityHandler) or function() end
+		callbackFunction = callbackFunction and Sanitizer.sanitize(callbackFunction) or function() end 
 		local sanitizer = Utils.Sanitizer.forCurrentWidget()
 		
 		local winWidth = 400
@@ -374,17 +374,21 @@ return Utils:Assign("ProjectDialog", function()
 		
 		local sanitizedHideWindowAndCall = sanitizer:Sanitize(hideWindowAndCall)
 		
-		if(dialogFlag == ProjectDialog.LOAD_DIALOG_FLAG) then
-			ProjectDialog.setUpDialog(panel, contentType, false, dialogWindow, sanitizedHideWindowAndCall, parentHandler)
+		if(dialogFlag == ProjectDialog.LOAD_DIALOG) then
+			ProjectDialog.setUpDialog(panel, contentType, false, dialogWindow, sanitizedHideWindowAndCall, visibilityHandler)
 		end
-		if(dialogFlag == ProjectDialog.SAVE_DIALOG_FLAG) then
-			ProjectDialog.setUpDialog(panel, contentType, true, dialogWindow, sanitizedHideWindowAndCall, parentHandler)
+		if(dialogFlag == ProjectDialog.SAVE_DIALOG) then
+			ProjectDialog.setUpDialog(panel, contentType, true, dialogWindow, sanitizedHideWindowAndCall, visibilityHandler)
 		end
-		if(dialogFlag == ProjectDialog.NEW_DIALOG_FLAG) then
-			ProjectDialog.setUpDialogNewItem(panel, contentType, dialogWindow, sanitizedHideWindowAndCall, parentHandler)
+		if(dialogFlag == ProjectDialog.NEW_DIALOG) then
+			ProjectDialog.setUpDialogNewItem(panel, contentType, dialogWindow, sanitizedHideWindowAndCall, visibilityHandler)
 		end
 		
-		parentHandler(true)
+		visibilityHandler(true)
+	end
+	
+	function ProjectDialog.showDialog(params, callbackFunction)
+		showDialogWindow(params.visibilityHandler, params.contentType, params.dialogType, callbackFunction, params.title, params.x, params.y)
 	end
 	
 	return ProjectDialog

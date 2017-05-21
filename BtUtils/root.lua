@@ -52,6 +52,8 @@ WG.BtUtils = WG.BtUtils or (function()
 			Dialog = "dialog",
 			Surrogate = "Surrogate", -- @{Surrogate}
 			program = "program", -- @{program}
+			Promise = "promise", -- @{Promise}
+			async = "async", -- @{async}
 		}
 		
 		local LOCAL_PATH = LUAUI_DIRNAME .. "Widgets/BtUtils/"

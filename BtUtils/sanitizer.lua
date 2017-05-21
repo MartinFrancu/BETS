@@ -168,7 +168,7 @@ return Utils:Assign("Sanitizer", function()
 		
 		-- check that the environemnt is truly a widget
 		if(not widget.widget or not widget.widgetHandler)then
-			error("The environment of the function is not a widget and cannot be automatically sanitized. You can sanitize it yourself using sanitizer:Sanitize().")
+			error("The environment of the function is not a widget and cannot be automatically sanitized. You can sanitize it yourself using sanitizer:Sanitize() or mark it as sanitized using Sanitizer.ignore(f).")
 		end
 
 		-- acquire the true widget, as the environment may only be "inheriting" from it
@@ -176,6 +176,19 @@ return Utils:Assign("Sanitizer", function()
 		
 		return sanitize(widget, f);
 	end
-	
+
+	--- Marks the specified function as stanizied.
+	-- @func f The function to ignore.
+	-- @treturn function The function @{f} marked as sanitized.
+	function Sanitizer.ignore(f)
+		local environment = getfenv(f)
+		
+		-- check whether the function is not already sanitized (or ignored)
+		if(environment == sanitizationEnvironment)then
+			return f
+		end
+		
+		return setfenv(function(...) return f(...) end, sanitizationEnvironment)
+	end	
 	return Sanitizer
 end)

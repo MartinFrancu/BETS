@@ -239,8 +239,14 @@ function referenceNode.listenerChooseTree(button)
 
 	local screenX,screenY = button:LocalToScreen(0,0)
 	nodeWindow = button.parent
-	ProjectDialog.showDialogWindow(WG.BtCreator.Get().setDisableChildrenHitTest, BehaviourTree.contentType, ProjectDialog.LOAD_DIALOG_FLAG, 
-		setTreeCallback , "Select tree to be loaded:",screenX, screenY)
+	ProjectDialog.showDialog({
+		visibilityHandler = WG.BtCreator.Get().setDisableChildrenHitTest,
+		contentType = BehaviourTree.contentType,
+		dialogType = ProjectDialog.LOAD_DIALOG, 
+		title = "Select tree to be loaded:",
+		x = screenX,
+		y = screenY,
+	}, setTreeCallback)
 	return true
 end
 

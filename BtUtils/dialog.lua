@@ -28,7 +28,7 @@ return Utils:Assign("Dialog", function()
 		window:Dispose()
 	end
 	
-	local function createButtons(dialogWindow, parentHandler, callbackFunction, dialogType)
+	local function createButtons(dialogWindow, visibilityHandler, callbackFunction, dialogType)
 		local sanitizer = Sanitizer.forCurrentWidget()
 		
 		local buttonWidth = 80
@@ -57,7 +57,7 @@ return Utils:Assign("Dialog", function()
 				height = buttonHeight,
 				skinName = 'DarkGlass',
 				focusColor = {1,0.5,0,0.5},
-				OnClick = {sanitizer:AsHandler(function() parentHandler(false); hideWindow(dialogWindow) end)}
+				OnClick = {sanitizer:AsHandler(function() visibilityHandler(false); hideWindow(dialogWindow) end)}
 			}
 		end
 	
@@ -86,7 +86,10 @@ return Utils:Assign("Dialog", function()
 	end
 		
 	
-	local function setUpDialog(parentHandler, callbackFunction, title, message, dialogType, x, y)
+	local function setUpDialog(visibilityHandler, callbackFunction, title, message, dialogType, x, y)
+		visibilityHandler = visibilityHandler and Sanitizer.sanitize(visibilityHandler) or function() end
+		callbackFunction = callbackFunction and Sanitizer.sanitize(callbackFunction) or function() end 
+	
 		local width = 400
 		local height = 185
 		
@@ -128,17 +131,16 @@ return Utils:Assign("Dialog", function()
 			dialogWindow.backgroundColor = {1,1,1,1}
 		end
 		
-		createButtons(dialogWindow, parentHandler, callbackFunction, dialogType)
-		parentHandler(true)
+		createButtons(dialogWindow, visibilityHandler, callbackFunction, dialogType)
+		visibilityHandler(true)
 	end
 	
-	function Dialog.showDialog(parentHandler, callbackFunction, title, message, dialogType, x, y)
-		local callbackFunction = Sanitizer.sanitize(callbackFunction)
-		setUpDialog(parentHandler, callbackFunction, title, message, dialogType, x, y)
+	function Dialog.showDialog(params, callbackFunction)
+		setUpDialog(params.visibilityHandler, callbackFunction, params.title, params.message, params.dialogType, params.x, params.y)
 	end
 	
-	function Dialog.showErrorDialog(parentHandler, title, message, x, y)
-		setUpDialog(parentHandler, nil, title, message, ERROR_TYPE, x, y)
+	function Dialog.showErrorDialog(params, callbackFunction)
+		setUpDialog(params.visibilityHandler, callbackFunction, params.title, params.message, ERROR_TYPE, params.x, params.y)
 	end
 	
 	return Dialog

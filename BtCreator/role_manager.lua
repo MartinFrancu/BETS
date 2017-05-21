@@ -145,8 +145,12 @@ function roleManager.doneCategoryDefinition(self)
 	roleManager.categoryDefinitionWindow:Hide()	
 	
 	local contentType =  ProjectManager.makeRegularContentType("UnitCategories", "json")
-	ProjectDialog.showDialogWindow(BtCreator.setDisableChildrenHitTest, contentType, ProjectDialog.NEW_DIALOG_FLAG, 
-		roleManager.createNewCategoryCallback, "Save category as:")	
+	ProjectDialog.showDialog({
+		visibilityHandler = BtCreator.setDisableChildrenHitTest,
+		contentType = contentType,
+		dialogType = ProjectDialog.NEW_DIALOG,
+		title = "Save category as:",
+	}, roleManager.createNewCategoryCallback)
 end
 
 function roleManager.cancelCategoryDefinition(self)

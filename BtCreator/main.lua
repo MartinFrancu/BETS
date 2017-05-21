@@ -36,6 +36,7 @@ local ProjectManager = Utils.ProjectManager
 local ProjectDialog = Utils.ProjectDialog
 local Dialog = Utils.Dialog
 local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyTable, Debug.fileTable
+local async = Utils.async
 
 local nodeDefinitionInfo = {}
 local isScript = {}
@@ -207,9 +208,14 @@ end
 
 local function parentButtonHandler(button) 
 	if currentTree.changed then
-		Dialog.showDialog(BtCreator.setDisableChildrenHitTest, function(confirmed) showParentDialogCallback(confirmed, button) end,
-		"Save tree", SAVE_TREE_QUESTION, Dialog.YES_NO_CANCEL_TYPE,
-		rootPanel.x + rootPanel.width - 500, rootPanel.y)
+		Dialog.showDialog({
+			visibilityHandler = BtCreator.setDisableChildrenHitTest,
+			title = "Save tree", 
+			message = SAVE_TREE_QUESTION,
+			dialogType = Dialog.YES_NO_CANCEL_TYPE,
+			x = rootPanel.x + rootPanel.width - 500,
+			y = rootPanel.y,
+		}, function(confirmed) showParentDialogCallback(confirmed, button) end)
 	else
 		showParentTree(button)
 	end
@@ -552,8 +558,14 @@ end
 function listenerClickOnSaveAsTree(self)
 	local screenX,screenY = self:LocalToScreen(0,0)
 
-	ProjectDialog.showDialogWindow(BtCreator.setDisableChildrenHitTest, BehaviourTree.contentType, 
-		ProjectDialog.SAVE_DIALOG_FLAG, saveAsTreeDialogCallback, "Save tree as:", screenX,screenY)
+	ProjectDialog.showDialog({
+		visibilityHandler = BtCreator.setDisableChildrenHitTest,
+		contentType = BehaviourTree.contentType, 
+		dialogType = ProjectDialog.SAVE_DIALOG,
+		title = "Save tree as:",
+		x = screenX,
+		y = screenY,
+	}, saveAsTreeDialogCallback)
 end
 
 afterRoleManagement = function (self, rolesData)
@@ -635,17 +647,28 @@ end
 function listenerClickOnNewTree(self)
 	local function newTreeCallback()
 		local screenX,screenY = self:LocalToScreen(0,0)
-		ProjectDialog.showDialogWindow(BtCreator.setDisableChildrenHitTest, BehaviourTree.contentType, 
-				ProjectDialog.NEW_DIALOG_FLAG, newTreeDialogCallback, "Name the new tree:", screenX, screenY)
+		ProjectDialog.showDialog({
+			visibilityHandler = BtCreator.setDisableChildrenHitTest,
+			contentType = BehaviourTree.contentType, 
+			dialogType = ProjectDialog.NEW_DIALOG,
+			title = "Name the new tree:",
+			x = screenX,
+			y = screenY
+		}, newTreeDialogCallback)
 	end
 	
 	if(isAnyTreeChanged())then
-		Dialog.showDialog(BtCreator.setDisableChildrenHitTest, function(confirmed)
+		Dialog.showDialog({
+			visibilityHandler = BtCreator.setDisableChildrenHitTest,
+			title = "Save tree",
+			message = SAVE_TREE_QUESTION,
+			dialogType = Dialog.YES_NO_CANCEL_TYPE,
+		}, function(confirmed)
 			if(confirmed)then
 				saveTree(currentTree.treeName)
 			end
 			newTreeCallback()
-		end, "Save tree", SAVE_TREE_QUESTION, Dialog.YES_NO_CANCEL_TYPE)
+		end)
 	else
 		newTreeCallback()
 	end
@@ -693,8 +716,14 @@ end
 
 function listenerClickOnLoadTree(self)
 	local screenX,screenY = self:LocalToScreen(0,0)
-	ProjectDialog.showDialogWindow(BtCreator.setDisableChildrenHitTest, BehaviourTree.contentType, ProjectDialog.LOAD_DIALOG_FLAG, 
-		loadTreeDialogCallback, "Select tree to be loaded:",screenX, screenY)
+	ProjectDialog.showDialog({
+		visibilityHandler = BtCreator.setDisableChildrenHitTest,
+		contentType = BehaviourTree.contentType,
+		dialogType = ProjectDialog.LOAD_DIALOG, 
+		title = "Select tree to be loaded:",
+		x = screenX,
+		y = screenY,
+	}, loadTreeDialogCallback)
 end
 
 function listenerClickOnRoleManager(self)
