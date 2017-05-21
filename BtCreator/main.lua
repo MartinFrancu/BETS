@@ -750,7 +750,7 @@ local function listenerClickOnBreakpoint()
 			img = BREAKPOINT_IMAGE
 		else
 			breakpoints[id] = nil
-			BtEvaluator.removeBreakpoint(currentTree.instanceId, nodeId) --treeInstanceId
+			BtEvaluator.removeBreakpoint(currentTree.instanceId, id) --treeInstanceId
 			img = DEFAULT_IMAGE
 		end
 		if(nodeId ~= rootID) then
