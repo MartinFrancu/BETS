@@ -69,6 +69,7 @@ local currentTree = {
 	instanceName = noInstanceString,
 	roles = {},
 	changed = false,
+	canvasPosition = {0, 0}
 }
 
 local function getCurrentTreeCopy()
@@ -216,6 +217,7 @@ local function showParentTree(button)
 	currentTree.setName(info.currentTree.treeName)
 	currentTree.setInstanceName(info.currentTree.instanceName)
 	currentTree.changed = info.currentTree.changed 
+	currentTree.canvasPosition = info.currentTree.canvasPosition
 	referenceNodeID = info.refNodeID
 	currentTree.roles = info.tree.roles or {}
 	
@@ -225,6 +227,9 @@ local function showParentTree(button)
 	end
 	reloadReferenceButtons()
 	updateStates()
+	local pos = currentTree.canvasPosition
+	moveCanvas(pos[1], pos[2])
+	
 end
 
 local parentButtonHandler = async(function(button) 
@@ -1043,6 +1048,8 @@ function listenerOnMouseMoveCanvas(self, x, y)
 		local diffy = y - moveFrom[2]
 		moveCanvas(diffx, diffy)
 		moveFrom = {x, y}
+		local pos = currentTree.canvasPosition
+		currentTree.canvasPosition = {pos[1] + diffx, pos[2] + diffy}
 	end
 	return self
 end
