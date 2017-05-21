@@ -1222,47 +1222,7 @@ fillInExpectedInput = function(data)
 end
 
 function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
-	-- Check for custom commands, first input commands
-	--[[
-	local inputCommandsTable = BtCommands.inputCommands
-	if(inputCommandsTable[cmdID] and (inputCommandsTable[cmdID] ~= CONSTANTS.betsCheatCommandName)) then
-		if(expectedInput ~= nil) then
-			-- I should insert given input to tree:
-			local tH = expectedInput.TreeHandle 
-			local inpName = expectedInput.InputName
-			local commandType = expectedInput.CommandName
-			-- I should check if the the command type is same, with expected?
-			if(inputCommandsTable[cmdID] ~= commandType)then
-				Logger.log("Error", "BtController.CommandNotify : Unexpected input command type.", 
-							" Expected: ", commandType, 
-							", got: ",inputCommandsTable[cmdID] )
-				return false
-			end
-			
-			transformedData = BtCommands.transformCommandData(cmdParams, commandType)
-			
-			tH:FillInInput(inpName, transformedData)
-			expectedInput = nil
-			-- if tree is ready we should report it to BtEvaluator
-			if(tH:CheckReady()) then 
-				if(tH.Created == false) then
-					tH.Created = true
-					createTreeInBtEvaluator(tH)
-					reportAssignedUnits(tH)
-					BtEvaluator.reportTree(tH.instanceId)
-					tH:UpdateTreeStatus()
-				else
-					-- tree is ready, we can report just input
-					reportInputToBtEval(tH, inpName)
-				end	
-			end
-		else
-			Logger.log("commands", "BtController: Received input command while not expecting one!!!")
-		end
-		return true -- true is for deleting command and not sending it further according to documentation		
-	end
-	]]
-	
+
 	-- check for custom commands - Bt behaviour assignments
 	local treeCommandsTable = BtCommands.behaviourCommands
 	if(treeCommandsTable[cmdID]) then

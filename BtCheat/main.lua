@@ -46,6 +46,7 @@ local spSetActiveCommand = Spring.SetActiveCommand
 local spGetSelectedUnits = Spring.GetSelectedUnits
 local spSelectUnits = Spring.SelectUnitArray
 
+
 function pauseGameListener()
 	spSendCommand(CONSTANTS.pauseCMD)
 end
@@ -75,42 +76,26 @@ function fastForwardButtonListener(self)
 	end
 end
 
+local function spawnUnits(unitName, howMany, team, position)
+	local positionStr = "@"..position[1]..","..position[2]..",".. position[3]
+	
+	local commandAll = CONSTANTS.giveCMD .. " "
+			.. tostring(howMany) ..  " " 
+			.. unitName .." "
+			.. tostring(team) .." "
+			..  positionStr
+	spSendCommand(commandAll)
+end 
+local function positionSpecifiedCallback(data) 
+	spawnUnits( "armpw", 10, 0, data)
+end  
 
--- this returns one ally unit. 
-local function getDummyAllyUnit()
-	local allUnits = Spring.GetTeamUnits(Spring.GetMyTeamID())
-	return allUnits[1]
-end
 
 function giveListener(self)
-
-	local inputCommandsTable = BtCommands.inputCommands
-	local f = function()
-		local ret = spSetActiveCommand(  spGetCmdDescIndex(inputCommandsTable[ CONSTANTS.cheatInputCMDName ]) ) 
-		if(ret == false ) then 
-			Logger.log("commands", "BtCheats: Unable to set command active: " , CONSTANTS.cheatInputCMDNamee) 
-		end
-	end
-	
-	-- if there are no units selected, ...
-	if(not spGetSelectedUnits()[1])then
-		-- select one
-		spSelectUnits({ getDummyAllyUnit() })
-		-- wait until return to Spring to execute f
-		Timer.delay(f)
-	else
-		f() -- execute synchronously
-	end
---[[	
-	expectedCommand = {
-		unitName = "armpw",
-		countStr = "10",
-		teamStr = "0",
-	}
-	--]]
+	BtCommands.getInput(CONSTANTS.cheatInputCMDName,  positionSpecifiedCallback)
 end
 
-function BtCheat.onFrame()	
+function widget:GameFrame()
 	local userSpFac,spFac, paused = Spring.GetGameSpeed()
 	
 	if ffState ~= nil then -- something is happening
@@ -131,40 +116,14 @@ function BtCheat.onFrame()
 	end
 end
 
-function BtCheat.gamePaused()
+function widget:GamePaused()
 	local userSpFac,spFac, paused = Spring.GetGameSpeed()
 	Spring.Echo("paused: " .. tostring(userSpFac) .. ", " .. tostring(spFac) .. ", ".. tostring(paused) )
 end
 
-function BtCheat.show()
-	cheatWindow:Show()
-end
-function BtCheat.hide()
-	cheatWindow:Hide()
-end
 
-function BtCheat.commandNotify(cmdID,cmdParams)
-	local inputCommandsTable = BtCommands.inputCommands 
-	Logger.log("commands", "cheat", dump(inputCommandsTable[cmdID],2 ) ) 
-	if(inputCommandsTable[cmdID] and inputCommandsTable[cmdID] == CONSTANTS.cheatInputCMDName) then
-		--- spawn units
-		local positionStr = "@"..cmdParams[1]..","..cmdParams[2]..","..cmdParams[3]
-		local unitNameStr =  "armpw"
-		local countStr = "10"
-		local teamStr = "0"
-		local commandAll = CONSTANTS.giveCMD .. " "
-			.. countStr ..  " " 
-			.. unitNameStr .." "
-			..teamStr.." "
-			..  positionStr
-		Logger.log("commands", "cheat: " , commandAll)
-		spSendCommand(commandAll)
-		return true
-	end
-	return false
-end
 
-function BtCheat.init()
+function widget:Initialize()
 	local Screen0 = Chili.Screen0	
 	speed = CONSTANTS.defaultFFSpeed
 	
@@ -179,7 +138,6 @@ function BtCheat.init()
 			resizable=false,
 			skinName='DarkGlass',
 	}
-	cheatWindow:Hide()
 	
 	pauseButton =  Chili.Button:New{
 		parent = cheatWindow ,
@@ -264,7 +222,7 @@ function BtCheat.init()
 		tooltip = "Give enemy unit (ARMPW) on specified position.",
 		OnClick = { sanitizer:AsHandler(giveListener)},
 	}
-	--]]
+--]]
 	
 	Dependency.defer(
 		function() 

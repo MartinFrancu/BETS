@@ -50,7 +50,7 @@ BtCreator = {} -- if we need events, change to Sentry:New()
 local BtCreator = BtCreator
 
 local roleManager = require("role_manager")
-local btCheat = require("cheat")
+--local btCheat = require("cheat")
 
 
 
@@ -838,13 +838,10 @@ listenerClickOnLoadTree = async(function(self)
 	end
 end)
 
-function listenerClickOnCheat(self)
-	if(self.showing)then
-		btCheat.hide()
-	else
-		btCheat.show()
-	end
-	self.showing = not self.showing
+local function listenerClickOnCheat(self)
+	
+	-- widgetHandler:DisableWidget("BtCheat")
+	--widgetHandler:EnableWidget("BtCheat")
 end
 
 function listenerClickOnMinimize()
@@ -1293,13 +1290,12 @@ end
 function widget:GetTooltip(x, y)
 	local component = Screen0:HitTest(x, Screen0.height - y)
 	if (component and component.classname ~= 'TreeNode') then
-		--Spring.Echo("component: "..dump(component.name))
 		return component.tooltip
 	end
 end
 
 function widget:Initialize()
-	Logger.log("reloading", "BtCreator widget:Initialize start. ")
+	Logger.log("reloading", "BtCreator widget:Initialize start.")
 
 	if (not WG.ChiliClone) then
 		-- don't run if we can't find Chili
@@ -1659,8 +1655,6 @@ function widget:Initialize()
 	newEntries["Utils"] = Utils
 	local environment = setmetatable(newEntries ,{__index = widget})
 	
-	btCheat.init()
-	
 	currentTree.setChanged(false)
 	
 	
@@ -1703,19 +1697,21 @@ function widget:Shutdown()
 	Logger.log("reloading", "BtCreator widget:shutdown end. ")
 end
 
-function widget:GameFrame()
-	btCheat.onFrame()
-end
-
+--[[
 function widget:GamePaused()
-	btCheat.gamePaused()
+	local userSpFac,spFac, paused = Spring.GetGameSpeed()
+	if(paused) then
+		if(not continueButton.visible) then
+			continueButton:Show()
+		end
+	else
+		if(continueButton.visible) then
+			continueButton:Hide()
+		end
+	end
 end
+--]]
 
-function widget:CommandNotify(cmdID, cmdParams, cmdOptions)
-	Logger.log("commands", "btcreatro commandNotify")
-	local result = btCheat.commandNotify(cmdID,cmdParams)
-	return result
-end
 
 local clipboard = nil;
 
