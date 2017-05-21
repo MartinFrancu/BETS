@@ -956,7 +956,7 @@ function setUpTreeControlWindow()
 	}
 	showBtCreatorButton = Chili.Button:New{
 		parent = treeControlWindow,
-		caption = "BtCreator",
+		caption = "Editor",
 		checked = false,
 		visible = false,
 		x = treeControlWindow.width - 80 - CONSTANTS.windowFrameGap ,

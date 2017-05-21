@@ -55,7 +55,7 @@ local btCheat = require("cheat")
 
 
 local treeNameLabel
-local treeInstanceNameLabel
+local treeInstanceNameLabel, treeInstancePanel
 local refPathPanel
 local treeRefList = {}
 
@@ -67,6 +67,7 @@ local currentTree = {
 	treeName = noNameString,
 	instanceId = nil,
 	instanceName = noInstanceString,
+	instanceTreeType = nil,
 	roles = {},
 	changed = false,
 	canvasPosition = {0, 0}
@@ -90,6 +91,21 @@ local function isAnyTreeChanged()
 	return false
 end
 
+local function updateTreeInstancePanelVisibility()
+	if(treeInstancePanel)then
+		local shouldBeVisible = (((treeRefList[1] or {}).currentTree or currentTree).treeName == currentTree.instanceTreeType) and not isAnyTreeChanged()
+		if(treeInstancePanel.visible)then
+			if(not shouldBeVisible)then
+				treeInstancePanel:Hide()
+			end
+		else
+			if(shouldBeVisible)then
+				treeInstancePanel:Show()
+			end
+		end
+	end
+end
+
 local function setNameCaption(caption)
 	if treeNameLabel then
 		treeNameLabel:SetCaption(caption)
@@ -101,6 +117,7 @@ end
 function currentTree.setChanged(changed)
 	currentTree.changed = changed
 	setNameCaption(currentTree.treeName .. (changed and "*" or ""))
+	updateTreeInstancePanelVisibility()
 end
 
 
@@ -116,6 +133,13 @@ function currentTree.setInstanceName(instName)
 	if(treeInstanceNameLabel) then
 		treeInstanceNameLabel:SetCaption(instName)
 	end
+	
+	updateTreeInstancePanelVisibility()
+end
+
+function currentTree.setInstanceTreeType(treeType)
+	currentTree.instanceTreeType = treeType
+	updateTreeInstancePanelVisibility()
 end
 
 
@@ -170,7 +194,7 @@ local updateStates
 function BtCreator.markTreeAsChanged()
 	if(not currentTree.changed)then
 		detachInstance()
-		currentTree.setInstanceName(noInstanceString)
+		--currentTree.setInstanceName(noInstanceString)
 		currentTree.setChanged(true)
 	end
 end
@@ -290,8 +314,10 @@ BtCreator.showTree = async(function(treeName, instanceName, instanceId)
 	treeRefList = {}
 	reloadReferenceButtons()
 	loadTree(treeName)
-	currentTree.instanceId  = instanceId --treeInstanceId
-	currentTree.setInstanceName(instanceName)
+	
+	if(instanceName and instanceId)then
+		BtCreator.focusTree(treeName, instanceName, instanceId)
+	end
 end)
 
 function BtCreator.showReferencedTree(treeName, _referenceNodeID)
@@ -320,6 +346,7 @@ end
 -- called when new tree tabItem in BtController is selected
 function BtCreator.focusTree( treeType, instanceName, instanceId)
     currentTree.instanceId = instanceId
+	currentTree.setInstanceTreeType(treeType)
     currentTree.setInstanceName(instanceName)
     detachInstance();
     BtEvaluator.reportTree(instanceId)
@@ -578,6 +605,7 @@ saveAsTreeDialogCallback = async(function(project, tree)
 				WG.BtControllerReloadTreeType,
 				qualifiedName)
 		end
+		currentTree.setChanged(false)
 		
 		if(serializedTreeName and serializedTreeName ~= qualifiedName) then
 			--regenerate all IDs from loaded Tree
@@ -716,7 +744,7 @@ listenerClickOnNewTree = async(function(self)
 		currentTree.roles = {}
 		clearCanvas()
 		BtCreator.markTreeAsChanged()
-		currentTree.setInstanceName("new tree")
+		--currentTree.setInstanceName("new tree")
 		treeRefList = {}
 		reloadReferenceButtons()
 	end
@@ -740,7 +768,7 @@ function loadTree(treeName)
 	referenceNodeID = nil
 	getBehaviourTree(treeName)
 	currentTree.setName(treeName)
-	currentTree.setInstanceName("loaded from disk")
+	--currentTree.setInstanceName("loaded from disk")
 	currentTree.setChanged(false)
 end
 
@@ -1487,30 +1515,30 @@ function widget:Initialize()
 	treeNameLabel.font.size = 16
 	treeNameLabel:RequestUpdate()
 	
-	local instancePanel = Chili.Control:New{
+	treeInstancePanel = Chili.Control:New{
 		parent = btCreatorWindow,
 		y = 0,
-		x = '50%',
+		x = 70,
 		width  = 300,
 		height = 30,
 	}
 	
 	local instanceListeningLabel = Chili.Label:New{
-		parent = instancePanel,
-		caption = "states according to instance:",
-		width = 200,
+		parent = treeInstancePanel,
+		caption = "debugging:",
+		width = 85,
 		align = 'left',
 		-- skinName = 'DarkGlass',
 		borderColor = {1,1,1,0.2},
 		borderColor2 = {1,1,1,0.2},
 		borderThickness = 0,
 		backgroundColor = {0,0,0,0},
-		minWidth = 120,
+		minWidth = 50,
 		autosize = true,
 	}
 	
 	treeInstanceNameLabel = Chili.Label:New{
-		parent = instancePanel,
+		parent = treeInstancePanel,
 		caption = currentTree.instanceName,
 		width = 70,
 		x = instanceListeningLabel.width,
