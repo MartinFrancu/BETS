@@ -310,7 +310,7 @@ function TreeHandle:New(obj)
 		minWidth = 50,
 		caption =  obj.treeType,
 		skinName = "DarkGlass",
-		tooltip = "Name of tree type, (state)",
+		tooltip = "Name of tree type",
 		OnMouseOver = { sanitizer:AsHandler( 
 			function(self)
 				if(BtCreator)then
@@ -336,15 +336,33 @@ function TreeHandle:New(obj)
 	
 	table.insert(obj.ChiliComponentsGeneral, treeTypeLabel)
 	
-	local treeStatusLabel = Chili.Label:New{
+	local deletionButton = Chili.Button:New{
+		parent = nodeWindow,
 		x = 7,
+		y = 28,
+		caption = 'x',
+		width = 20,
+		tooltip = "Closes this instance.",
+		backgroundColor = {1,0.1,0,1},
+		OnClick = { sanitizer:AsHandler(
+			function(self)
+				if(obj.OnDeleteClick)then
+					obj.OnDeleteClick()
+				end
+			end
+		) },
+	}
+	table.insert(obj.ChiliComponentsGeneral, deletionButton)
+	
+	local treeStatusLabel = Chili.Label:New{
+		x = 32,
 		y = 30,
 		height = 30,
 		width =  400,
 		minWidth = 50,
 		caption =  "initialized",
 		skinName = "DarkGlass",
-		tooltip = "Name of tree type, (state)",
+		tooltip = "Current state of the tree",
 	}
 	table.insert(obj.ChiliComponentsGeneral, treeStatusLabel)
 	obj.treeStatus = treeStatusLabel

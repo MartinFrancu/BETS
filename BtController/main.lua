@@ -226,6 +226,7 @@ function addTreeToTreeTabPanel(treeHandle)
 	addFieldToBarItemList(treeTabPanel, newTab.name, "OnClick", sanitizer:AsHandler(listenerBarItemClick) )
 	addFieldToBarItem(treeTabPanel, newTab.name, "TreeHandle", treeHandle)
 	addFieldToBarItem(treeTabPanel, newTab.name, "tooltip", treeHandle.name .. " is an instance of the behaviour tree ".. treeHandle.treeType .. ". Can be closed on middle mouse button click. ")
+	treeHandle.OnDeleteClick = function() listenerBarItemClick({ TreeHandle = treeHandle }, 0, 0, 2) end
 	
 	moveToEndAddTab(treeTabPanel)
 end
