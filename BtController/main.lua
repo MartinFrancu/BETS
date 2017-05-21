@@ -271,6 +271,7 @@ local instantiateTree
 -- reloads given treehandle from given tabs
 function reloadTree(tabs, treeHandle)
 	-- remove tree instance in BtEvaluator if it is created:
+	treeHandle:UpdateTreeStatus()
 	if(treeHandle.Created) then
 		-- remove send message to BtEvaluator
 		BtEvaluator.removeTree(treeHandle.instanceId)
@@ -297,12 +298,17 @@ function reloadTree(tabs, treeHandle)
 	--]]
 	-- if tree is ready, initialize it in BtEvaluator
 	if(treeHandle:CheckReady()) then
-		createTreeInBtEvaluator(treeHandle)
 		treeHandle.Created = true
+		createTreeInBtEvaluator(treeHandle)
+		
+	end
+	if(treeHandle.Created) then
 		reportAssignedUnits(treeHandle)
 	end
-	
 	treeHandle:UpdateTreeStatus()
+	
+	Logger.log("reloading", dump(treeHandle, 2 ) )
+	
 end
 
 
@@ -498,7 +504,7 @@ end
 -- Reports units assigned to all roles to BtEvaluator
 function reportAssignedUnits(treeHandle)
 	if(treeHandle.Created == false or treeHandle.error) then 
-		-- nothign to report
+		-- nothing to report
 		return
 	end
 	local originallySelectedUnits = spGetSelectedUnits()
@@ -650,8 +656,8 @@ function listenerAssignUnitsButton(self,x,y, ...)
 	-- check if tree is empty and if it require units
 	if(self.TreeHandle:CheckReady() ) then
 		if(self.TreeHandle.Created == false) then
-			createTreeInBtEvaluator(self.TreeHandle)
 			self.TreeHandle.Created = true
+			createTreeInBtEvaluator(self.TreeHandle)
 			reportAssignedUnits(self.TreeHandle)
 		end
 		BtEvaluator.assignUnits(selectedUnits, self.TreeHandle.instanceId, self.roleIndex)

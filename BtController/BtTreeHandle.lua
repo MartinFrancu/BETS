@@ -52,6 +52,7 @@ TreeHandle = {
 -- The following funtion creates string which summarize state of this tree. 
 function TreeHandle:UpdateTreeStatus()
 	if self.error then -- there is error and it should remain in this state
+		self.treeStatus:SetCaption("Error: " .. self.error)
 		return 
 	end
 	-- check invalid inputs: 
@@ -160,8 +161,11 @@ function TreeHandle:SwitchToErrorState(message)
 	-- remove input buttons:
 	self:DisposeInputComponents()
 
+	--[[if self.Created then
+		
+	end]]
 
-	self.treeStatus:SetCaption("Error: " .. self.error)
+	self:UpdateTreeStatus()
 	self.treeStatus.parent:RequestUpdate()
 end
 -- This method will set up and load in all chili components corresponding to 
