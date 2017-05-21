@@ -36,7 +36,7 @@ local ProjectManager = Utils.ProjectManager
 local ProjectDialog = Utils.ProjectDialog
 local Dialog = Utils.Dialog
 local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyTable, Debug.fileTable
-local async = Utils.async
+local async, Promise = Utils.async, Utils.Promise
 
 local nodeDefinitionInfo = {}
 local isScript = {}
@@ -65,7 +65,6 @@ local currentTree = {
 	instanceId = nil,
 	instanceName = noInstanceString,
 	roles = {},
-	saveOncePossible = false,
 	changed = false,
 }
 
@@ -199,27 +198,22 @@ local function showParentTree(button)
 	updateStates()
 end
 
-local function showParentDialogCallback(confirmed, button)
-	if confirmed then
-		saveTree(currentTree.treeName)
-	end
-	showParentTree(button)
-end
-
-local function parentButtonHandler(button) 
+local parentButtonHandler = async(function(button) 
 	if currentTree.changed then
-		Dialog.showDialog({
+		local confirmed = await(Dialog.showDialog, {
 			visibilityHandler = BtCreator.setDisableChildrenHitTest,
 			title = "Save tree", 
 			message = SAVE_TREE_QUESTION,
 			dialogType = Dialog.YES_NO_CANCEL_TYPE,
 			x = rootPanel.x + rootPanel.width - 500,
 			y = rootPanel.y,
-		}, function(confirmed) showParentDialogCallback(confirmed, button) end)
-	else
-		showParentTree(button)
+		})
+		if confirmed then
+			await(listenerClickOnSaveTree(saveTreeButton))
+		end
 	end
-end
+	showParentTree(button)
+end)
 
 function reloadReferenceButtons()
 	for _,but in ipairs(refButtons) do
@@ -537,45 +531,45 @@ function saveAsTreeDialogCallback(project, tree)
 			updateStates()
 		else
 			-- we need to get user to define roles first:
-			currentTree.saveOncePossible = true
+			currentTree.saveOncePossible = true -- this has been removed
 			roleManager.showRolesManagement(Screen0, resultTree, currentTree.roles , self, afterRoleManagement) --rolesOfCurrentTree
 		end
 		]]
 	end
 end
 
-function listenerClickOnSaveTree(self)
+listenerClickOnSaveTree = async(function(self)
 	local qualifiedName = currentTree.treeName 
 	local project, treeName = separateProjectAndName(qualifiedName)
 	if(project and treeName )then 
 		saveAsTreeDialogCallback(project, treeName)
 	else
-		listenerClickOnSaveAsTree(saveTreeButton)
+		await(listenerClickOnSaveAsTree(saveTreeButton))
 	end
-end
+end)
 
-
-function listenerClickOnSaveAsTree(self)
+listenerClickOnSaveAsTree = async(function(self)
 	local screenX,screenY = self:LocalToScreen(0,0)
 
-	ProjectDialog.showDialog({
+	local project, treeName = await(ProjectDialog.showDialog, {
 		visibilityHandler = BtCreator.setDisableChildrenHitTest,
 		contentType = BehaviourTree.contentType, 
 		dialogType = ProjectDialog.SAVE_DIALOG,
 		title = "Save tree as:",
 		x = screenX,
 		y = screenY,
-	}, saveAsTreeDialogCallback)
-end
+	})
+	
+	saveAsTreeDialogCallback(project, treeName)
+end)
 
-afterRoleManagement = function (self, rolesData)
+listenerClickOnRoleManager = async(function(self)
+	local tree = formBehaviourTree()
+	self.hideFunction()
+	local _, rolesData = await(roleManager.showRolesManagement, Screen0, tree, currentTree.roles , self)
 	BtCreator.show()
 	currentTree.roles = rolesData
-	if(currentTree.saveOncePossible) then
-		listenerClickOnSaveTree(saveTreeButton) 
-		currentTree.saveOncePossible = false 
-	end
-end
+end)
 
 
 local sensorsWindow
@@ -629,8 +623,30 @@ function listenerClickOnShowSensors()
 	end
 end
 
-function newTreeDialogCallback(projectName,treeName)
-	BtCreator.show()
+listenerClickOnNewTree = async(function(self)
+	local screenX,screenY = self:LocalToScreen(0,0)
+	
+	if(isAnyTreeChanged())then
+		local confirmed = await(Dialog.showDialog, {
+			visibilityHandler = BtCreator.setDisableChildrenHitTest,
+			title = "Save tree",
+			message = SAVE_TREE_QUESTION,
+			dialogType = Dialog.YES_NO_CANCEL_TYPE,
+		})
+		if(confirmed)then
+			await(listenerClickOnSaveTree(saveTreeButton))
+		end
+	end
+	
+	local projectName, treeName = await(ProjectDialog.showDialog, {
+		visibilityHandler = BtCreator.setDisableChildrenHitTest,
+		contentType = BehaviourTree.contentType, 
+		dialogType = ProjectDialog.NEW_DIALOG,
+		title = "Name the new tree:",
+		x = screenX,
+		y = screenY
+	})
+	
 	if(projectName and treeName) then -- user selected
 		-- if new project I should create it 
 		qualifiedName = projectName .. "." .. treeName
@@ -642,37 +658,7 @@ function newTreeDialogCallback(projectName,treeName)
 		treeRefList = {}
 		reloadReferenceButtons()
 	end
-end
-
-function listenerClickOnNewTree(self)
-	local function newTreeCallback()
-		local screenX,screenY = self:LocalToScreen(0,0)
-		ProjectDialog.showDialog({
-			visibilityHandler = BtCreator.setDisableChildrenHitTest,
-			contentType = BehaviourTree.contentType, 
-			dialogType = ProjectDialog.NEW_DIALOG,
-			title = "Name the new tree:",
-			x = screenX,
-			y = screenY
-		}, newTreeDialogCallback)
-	end
-	
-	if(isAnyTreeChanged())then
-		Dialog.showDialog({
-			visibilityHandler = BtCreator.setDisableChildrenHitTest,
-			title = "Save tree",
-			message = SAVE_TREE_QUESTION,
-			dialogType = Dialog.YES_NO_CANCEL_TYPE,
-		}, function(confirmed)
-			if(confirmed)then
-				saveTree(currentTree.treeName)
-			end
-			newTreeCallback()
-		end)
-	else
-		newTreeCallback()
-	end
-end
+end)
 
 local serializedTreeName
 
@@ -687,14 +673,6 @@ function getBehaviourTree(treeName)
 		error("BehaviourTree " .. treeName .. " instance not found. " .. debug.traceback())
 	end
 end 
-
-local function setActiveTree(tree)
-	referenceNodeID = nil
-	getBehaviourTree(treeName)
-	currentTree.setName(treeName)
-	currentTree.setInstanceName("loaded from disk")
-	currentTree.changed = false 
-end
 
 function loadTree(treeName)
 	referenceNodeID = nil
@@ -724,12 +702,6 @@ function listenerClickOnLoadTree(self)
 		x = screenX,
 		y = screenY,
 	}, loadTreeDialogCallback)
-end
-
-function listenerClickOnRoleManager(self)
-	local tree = formBehaviourTree()
-	self.hideFunction()
-	roleManager.showRolesManagement(Screen0, tree, currentTree.roles , self, afterRoleManagement) --rolesOfCurrentTree
 end
 
 function listenerClickOnCheat(self)
