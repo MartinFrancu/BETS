@@ -313,7 +313,6 @@ function BtController.reloadTreeType(treeTypeName)
 	-- refresh tree selection:
 	refreshTreeSelectionPanel()
 	
-	local creatorRefPath = BtCreator.getReferencePath()
 	-- I should iterate over all tab bar items:
 	-- get tabBar
 	local tabBar = treeTabPanel.children[CONSTANTS.tabBarChildIndex]

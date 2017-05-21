@@ -208,13 +208,6 @@ local promptUserToSaveIfChanged = async(function(entireTree)
 	return true
 end)
 
-function BtCreator.getReferencePath()
-	local list = copyTable(treeRefList)
-	list[#list + 1] = {refNodeID = referenceNodeID, tree = createTreeToSave(), currentTree = getCurrentTreeCopy()}
-	Logger.log("save-and-load", "REFERENCES - ", dump(list, 3))
-	return list
-end
-
 local function showParentTree(button)
 	local info = button.treeRefInfo
 	clearCanvas()
@@ -485,11 +478,6 @@ function saveTree(protoTree, treeName)
 	
 	
 	WG.clearSelection()
-	
-	local success, msg = BtCommands.tryRegisterCommandForTree(treeName)
-	if not success then
-		Logger.log("commands", "Tree command not registered: ", msg)
-	end
 end 
 
 function saveTreeRefs(treeRefs)
