@@ -72,6 +72,7 @@ local currentTree = {
 	changed = false,
 	canvasPosition = {0, 0}
 }
+local breakpoints = {}
 
 local function getCurrentTreeCopy()
     return copyTable(currentTree)
@@ -345,11 +346,21 @@ function BtCreator.showNewTree()
 end
 -- called when new tree tabItem in BtController is selected
 function BtCreator.focusTree( treeType, instanceName, instanceId)
+	-- remove all breakpoints set on the previous instance
+	for id in pairs(breakpoints) do
+		BtEvaluator.removeBreakpoint(currentTree.instanceId, id)
+	end
+
     currentTree.instanceId = instanceId
 	currentTree.setInstanceTreeType(treeType)
     currentTree.setInstanceName(instanceName)
     detachInstance();
     BtEvaluator.reportTree(instanceId)
+	
+	-- reintstate the breakpoint on the new instance
+	for id in pairs(breakpoints) do
+		BtEvaluator.setBreakpoint(currentTree.instanceId, id)
+	end
 end
 
 function BtCreator.setDisableChildrenHitTest(bool)
@@ -765,6 +776,12 @@ function getBehaviourTree(treeName)
 end 
 
 function loadTree(treeName)
+	-- clear all breakpoints
+	for id in pairs(breakpoints) do
+		BtEvaluator.removeBreakpoint(currentTree.instanceId, id)
+	end
+	breakpoints = {}
+	
 	referenceNodeID = nil
 	getBehaviourTree(treeName)
 	currentTree.setName(treeName)
@@ -823,8 +840,6 @@ local SUCCESS_IMAGE    = LUAUI_DIRNAME.."Widgets/BtCreator/treenode_success_.png
 local FAILURE_IMAGE    = LUAUI_DIRNAME.."Widgets/BtCreator/treenode_failure_.png"
 local STOPPED_IMAGE    = LUAUI_DIRNAME.."Widgets/BtCreator/treenode_stopped_.png"
 local BREAKPOINT_IMAGE = LUAUI_DIRNAME.."Widgets/BtCreator/treenode_breakpt_.png"
-
-local breakpoints = {}
 
 local function setBackgroundColor(nodeWindow, color)
 	local alpha = nodeWindow.backgroundColor[4]
