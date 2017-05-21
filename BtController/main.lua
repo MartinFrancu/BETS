@@ -302,14 +302,11 @@ function reloadTree(tabs, treeHandle)
 	if(treeHandle:CheckReady()) then
 		treeHandle.Created = true
 		createTreeInBtEvaluator(treeHandle)
-		
 	end
 	if(treeHandle.Created) then
 		reportAssignedUnits(treeHandle)
 	end
 	treeHandle:UpdateTreeStatus()
-	
-	Logger.log("reloading", dump(treeHandle, 2 ) )
 	
 end
 
@@ -678,15 +675,9 @@ local function getDummyAllyUnit()
 	return allUnits[1]
 end
 
+local fillInExpectedInput
 
 function listenerInputButton(self,x,y,button, ...)
-	--[[
-	if(not inputCommandsTable or not treeCommandsTable) then		
-		--WG.fillCustomCommandIDs()
-		inputCommandsTable = BtCommands.inputCommands
-		treeCommandsTable = BtCommands.behaviourCommands
-	end
-	]]
 	-- should I do something more when reseting the input que?
 	-- I need to store record what we are expecting
 	expectedInput = {
@@ -695,7 +686,8 @@ function listenerInputButton(self,x,y,button, ...)
 		CommandName = self.CommandName,
 		instanceId = self.instanceId,
 	}
-	
+	BtCommands.getInput(self.CommandName,  fillInExpectedInput)
+	--[[
 	local f = function()
 		cmdId = BtCommands.inputCommands[ expectedInput.CommandName ]
 		local ret = spSetActiveCommand(  spGetCmdDescIndex(cmdId) ) 
@@ -713,7 +705,7 @@ function listenerInputButton(self,x,y,button, ...)
 	else
 		f() -- execute synchronously
 	end
-	
+	]]
 end
 
 -- Listener for reload all button 
@@ -1200,8 +1192,38 @@ function widget:Update()
 	end
 end
 
+
+fillInExpectedInput = function(data) 
+	if expectedInput then
+		local tH = expectedInput.TreeHandle 
+		local inpName = expectedInput.InputName
+		 
+		tH:FillInInput(inpName, data)
+		expectedInput = nil
+		-- if tree is ready we should report it to BtEvaluator
+		if(tH:CheckReady()) then 
+			if(tH.Created == false) then
+				tH.Created = true
+				createTreeInBtEvaluator(tH)
+				if(tH.Created) then
+					-- tree might not be created because of error
+					reportAssignedUnits(tH)
+					tH:UpdateTreeStatus()
+					BtEvaluator.reportTree(tH.instanceId)
+				end
+			else
+				-- tree is ready, we can report just input
+				reportInputToBtEval(tH, inpName)
+			end	
+		end
+	else
+			Logger.log("commands", "BtController: Received input command while not expecting one!!!")
+	end
+end
+
 function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 	-- Check for custom commands, first input commands
+	--[[
 	local inputCommandsTable = BtCommands.inputCommands
 	if(inputCommandsTable[cmdID] and (inputCommandsTable[cmdID] ~= CONSTANTS.betsCheatCommandName)) then
 		if(expectedInput ~= nil) then
@@ -1218,13 +1240,6 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 			end
 			
 			transformedData = BtCommands.transformCommandData(cmdParams, commandType)
-			--[[
-			local transformedData = Logger.loggedCall("Error", "BtController", 
-					"fill in input value, tranforming data",
-					BtCommands.transformCommandData, 
-					cmdParams,
-					commandType)
-					]]
 			
 			tH:FillInInput(inpName, transformedData)
 			expectedInput = nil
@@ -1246,6 +1261,8 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 		end
 		return true -- true is for deleting command and not sending it further according to documentation		
 	end
+	]]
+	
 	-- check for custom commands - Bt behaviour assignments
 	local treeCommandsTable = BtCommands.behaviourCommands
 	if(treeCommandsTable[cmdID]) then
@@ -1260,7 +1277,7 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 		end
 		return true
 	end
-	Logger.log("commands", "received unknown command (probably normal case): " , cmdID)
+	--Logger.log("commands", "received unknown command (probably normal case): " , cmdID)
 	return false
 end 
   

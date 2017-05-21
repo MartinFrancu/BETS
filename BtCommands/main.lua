@@ -5,8 +5,17 @@ local Logger = Debug.Logger
 local dump = Debug.dump
 local Dependency = Utils.Dependency
 local sanitizer = Utils.Sanitizer.forWidget(widget)
+local Timer = Utils.Timer;
 local Vec3 = Utils.Vec3
 local UnitCategories = Utils.UnitCategories
+
+-- If we are in state of expecting input we will make store this information here
+local expectedInput 
+--------------------------------------------------------------------------------
+local spGetCmdDescIndex = Spring.GetCmdDescIndex
+local spSetActiveCommand = Spring.SetActiveCommand
+local spGetSelectedUnits = Spring.GetSelectedUnits
+local spSelectUnits = Spring.SelectUnitArray
 
 BtCommands = {}
 BtCommands.inputCommands = {}
@@ -97,17 +106,8 @@ local function registerCommand(cmdDesc)
 end
 
 local function fillInCommandID(cmdName, cmdID)
-	--[[
-	if (BtCommands.inputCommands == nil) then 
-		BtCommands.inputCommands = {}
-	end
-	
-	if (BtCommands.behaviourCommands == nil) then 
-		BtCommands.behaviourCommands = {}
-	end
-	]]
+
 	-- if it is our command, we should remember its cmdID
-	
 	-- is it input command?
 	for inputCmdName,_ in pairs(inputCommandDesc) do 
 		if (inputCmdName == cmdName) then
@@ -190,8 +190,6 @@ local function allUnitTypesReferenced(qTreeName)
 		return false, msg
 	end
 	local roles = tree.roles
-	Logger.log("commands", "name: ", qTreeName)
-	Logger.log("commands", "roles: ", dump(roles, 3)  )
 	-------------------------------------------------------------------
 	-- compute all units for which it will be visible:
 	local mentionedUnits = {}
@@ -311,6 +309,89 @@ function widget:Shutdown()
 	Dependency.clear(Dependency.BtCommands)
 end
 
+-- this returns one ally unit. 
+local function getDummyAllyUnit()
+	local allUnits = Spring.GetTeamUnits(Spring.GetMyTeamID())
+	return allUnits[1]
+end
 
+--- This function will be used by BtCreator and BtCheat to get input from player through invocation of command which is then catched in widget:CommandNotify
+function BtCommands.getInput(commandName, callback)
+
+	-- I need to store record what we are expecting
+	expectedInput = {
+		commandName = commandName,
+		callback = sanitizer:Sanitize(callback),
+	}
+	Logger.log("commands", dump(callback) )
+	Logger.log("commands", dump(expectedInput.callback) )
+	
+	local f = function()
+		cmdId = BtCommands.inputCommands[ expectedInput.commandName ]
+		local ret = spSetActiveCommand(  spGetCmdDescIndex(cmdId) ) 
+		if(ret == false ) then 
+			Logger.log("commands", "Unable to set command active: " , expectedInput.commandName) 
+		end
+	end
+	
+	-- if there are no units selected, ...
+	if(not spGetSelectedUnits()[1])then
+		-- select one
+		spSelectUnits({ getDummyAllyUnit() })
+		-- wait until return to Spring to execute f
+		Timer.delay(f)
+	else
+		f() -- execute synchronously
+	end
+	
+end
+
+function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
+	-- Check for custom commands, first input commands
+	local inputCommandsTable = BtCommands.inputCommands
+	if(inputCommandsTable[cmdID]) then
+		if(expectedInput ~= nil) then
+			-- I should insert given input to tree:
+			local commandType = expectedInput.commandName
+			-- I should check if the the command type is same, with expected?
+			if(inputCommandsTable[cmdID] ~= commandType)then
+				Logger.log("Error", "BtCommands.CommandNotify : Unexpected input command type.", 
+							" Expected: ", commandType, 
+							", got: ",inputCommandsTable[cmdID] )
+				return false
+			end
+			
+			transformedData = BtCommands.transformCommandData(cmdParams, commandType)
+			
+			expectedInput.callback(transformedData)
+			
+			expectedInput = nil
+		else
+			Logger.log("commands", "BtCommands: Received input command while not expecting one!!!")
+		end
+		return true -- true is for deleting command and not sending it further according to documentation		
+	end
+	--[[
+	-- check for custom commands - Bt behaviour assignments
+	local treeCommandsTable = BtCommands.behaviourCommands
+	if(treeCommandsTable[cmdID]) then
+		-- setting up a behaviour tree :
+		local treeHandle = instantiateTree(treeCommandsTable[cmdID].treeName, "Instance"..instanceIdCount , true)
+		
+		listenerBarItemClick({TreeHandle = treeHandle}, x, y, 1)
+		
+		-- click on first input:
+		if(table.getn(treeHandle.InputButtons) >= 1) then -- there are inputs
+			listenerInputButton(treeHandle.InputButtons[1])
+		end
+		return true
+	end
+	]]
+	Logger.log("commands", "received unknown command (probably normal case): " , cmdID)
+	return false
+end 
+
+
+Timer.injectWidget(widget)
 sanitizer:SanitizeWidget()
 --Dependency.deferWidget(widget)
