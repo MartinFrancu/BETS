@@ -99,7 +99,7 @@ return Utils:Assign("Dialog", function()
 		callbackFunction = callbackFunction and Sanitizer.sanitize(callbackFunction) or function() end 
 	
 		local width = 400
-		local height = 185
+		local height = 100
 		
 		local dialogWindow = Chili.Window:New{
 			parent = Chili.Screen0,
@@ -117,27 +117,36 @@ return Utils:Assign("Dialog", function()
 			parent = dialogWindow,
 			x = 20,
 			y = 5,
-			height = 30,
-			width = '90%',
+			maxWidth = 0.9 * dialogWindow.width,
+			valign = "top",
 			caption = title,
 			skinName = 'DarkGlass',
+			autosize = true,
 		}
 		
 		local messageLabel = Chili.Label:New{
 			parent = dialogWindow,
 			x = 20,
-			y = 40,
-			height = 30,
-			width = '90%',
+			y = titleLabel.y + titleLabel.height + 15,
+			valign = "top",
+			maxWidth = 0.9 * dialogWindow.width,
 			caption = message,
 			skinName = 'DarkGlass',
+			autosize = true,
 		}
+		
+		local newheight = messageLabel.y + messageLabel.height + 75
+		if(height < newheight)then
+			dialogWindow:SetPos(nil, nil, nil, newheight)
+		end
+		Spring.Echo(newheight)
 		
 		if dialogType == ERROR_TYPE then
 			dialogWindow.backgroundColor = {1,0,0,1}
 		else
 			dialogWindow.backgroundColor = {1,1,1,1}
 		end
+		WG.dialogWindow = dialogWindow
 		
 		createButtons(dialogWindow, visibilityHandler, callbackFunction, dialogType, buttonNames)
 		visibilityHandler(true)

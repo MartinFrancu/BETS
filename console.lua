@@ -104,6 +104,8 @@ if (widget and not widget.GetInfo) then
 					autosize = true,
 					x = 0,
 					y = y,
+					maxWidth = consoleLog.width - consoleLog.padding[1] - consoleLog.padding[3],
+					valign = "top",
 					font = { size = 16, color = {1,1,1,1} },
 					caption = indentation .. color .. text,
 					OnMouseOver = onClick and { function(self) self.font.color = {1,1,0,1} self:Invalidate() return self end } or nil,
