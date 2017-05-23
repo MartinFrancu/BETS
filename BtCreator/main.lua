@@ -221,8 +221,8 @@ local promptUserToSaveIfChanged = async(function(entireTree)
 				YES = "Save",
 				NO = "Discard",
 			},
-			x = rootPanel.x + rootPanel.width - 500,
-			y = rootPanel.y,
+			x = rootPanel.x + math.round((rootPanel.width - 400) / 2),
+			y = rootPanel.y + 50,
 		}
 		if(currentTree.changed)then
 			local confirmed = awaitFunction(Dialog.showDialog, params)
