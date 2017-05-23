@@ -164,7 +164,6 @@ function injectErrorReporter()
 		parent = errorPanel,
 		x = padding,
 		y = padding,
-		valign = "top",
 		maxWidth = errorPanel.width - 2 * padding,
 		autosize = true,
 	}

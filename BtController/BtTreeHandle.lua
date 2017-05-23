@@ -357,8 +357,8 @@ function TreeHandle:New(obj)
 	local treeStatusLabel = Chili.Label:New{
 		x = 32,
 		y = 30,
-		height = 30,
-		width =  400,
+		maxWidth = 370,
+		autosize = true,
 		minWidth = 50,
 		caption =  "initialized",
 		skinName = "DarkGlass",

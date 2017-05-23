@@ -32,6 +32,9 @@ local inherited = this.inherited
 
 function Label:New(obj)
   obj = inherited.New(self,obj)
+	if(obj.valign == "linecenter" and obj.autosize and obj.maxWidth ~= 1e9)then
+		obj.valign = "top"
+	end
 	local caption = obj.caption
 	obj.caption = nil
   obj:SetCaption(caption)
