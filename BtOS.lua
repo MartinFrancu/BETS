@@ -165,8 +165,8 @@ function injectErrorReporter()
 		x = padding,
 		y = padding,
 		valign = "top",
-		width = errorPanel.width - 2 * padding,
-		autosize = false,
+		maxWidth = errorPanel.width - 2 * padding,
+		autosize = true,
 	}
 	local additionalErrorsLabel = Chili.Label:New{
 		parent = errorPanel,
@@ -232,13 +232,9 @@ function injectErrorReporter()
 			local screenWidth, screenHeight = gl.GetViewSizes()
 			local color = logType == Logger.LOGTYPE_WARNING and {0.75, 0.5, 0, 1} or { 0.75, 0, 0, 1 }
 			errorPanel.backgroundColor = color
-			messageLabel:SetPos(messageLabel.x, messageLabel.y, messageLabel.width, 1000000)
 			messageLabel:SetCaption(debug.traceback("[" .. logGroup .. "] " .. message .. "\n", 3))
-			local h, d = messageLabel.font:GetTextHeight(messageLabel._caption)
-			local height = h - d
 			local y = padding
-			messageLabel:SetPos(messageLabel.x, messageLabel.y, messageLabel.width, height + padding)
-			y = y + padding + height
+			y = y + padding + messageLabel.height
 			confirmButton:SetPos(padding * 3, y)
 			disableButton:SetPos(errorPanel.width - 3 * padding - disableButton.width, y)
 			y = y + padding + confirmButton.height + padding

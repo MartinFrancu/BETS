@@ -52,9 +52,13 @@ function Label:UpdateLayout()
   local font = self.font
 
   if (self.autosize) then
-    self._caption  = self.caption
-    local w = font:GetTextWidth(self.caption);
-    local h, d, numLines = font:GetTextHeight(self.caption);
+		if(self.maxWidth)then
+			self._caption = font:WrapText(self.caption, self.maxWidth, 100000000)
+		else
+			self._caption = self.caption
+		end
+    local w = font:GetTextWidth(self._caption);
+    local h, d, numLines = font:GetTextHeight(self._caption);
 
     h = h + 1
     if (self.autoObeyLineHeight) then
