@@ -231,12 +231,17 @@ function BtCommands.tryRegisterCommandForTree(treeName)
 	local gotIcon = VFS.FileExists(iconFileName)
 	
 	if gotIcon then
+
 		-- now I should find out for which units this command should be registered.
 		local whitelist, msg = allUnitTypesReferenced(treeName)
 		if(not whitelist) then
 			return false, msg
 		end 
-		local allUnits = {}
+		-- when there is no unit in whitelist it should be nil = to be added to all units
+		if #whitelist <1 then
+			whitelist = nil
+		end
+		
 		local commandName =  "BT_" ..  treeName
 		local description = {
 			type = CMDTYPE.ICON,
@@ -249,9 +254,7 @@ function BtCommands.tryRegisterCommandForTree(treeName)
 			whitelist = whitelist,
 		}
 		registerCommand(description) 
-		
-		Logger.log("commands", "whitelist: ", whitelist)
-		
+
 		return true, "All went ok."
 	end
 	
