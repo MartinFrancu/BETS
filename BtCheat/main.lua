@@ -3,6 +3,8 @@ local BtCheat = {}
 local sanitizer = Utils.Sanitizer.forCurrentWidget()
 local Chili = Utils.Chili
 
+
+local JSON = Utils.JSON
 local Timer = Utils.Timer;
 local Debug = Utils.Debug;
 local Logger = Debug.Logger
@@ -20,8 +22,12 @@ local ffState -- nill - nothing, not fastforwargin, acc = accelerrating, ff when
 local speed
 
 local giveButton
+local unitCombobox
+local teamCombobox
+local godModeCheckbox
 
 local expectedCommand
+
 
 
 local CONSTANTS = {
@@ -29,6 +35,7 @@ local CONSTANTS = {
 	speedUpCMD = "SpeedUp",
 	slowDownCMD = "SlowDown",
 	giveCMD = "give",
+	godmodeCMD = "godmode",
 	ffButton = {
 		whenSlow = ">>>>>",
 		whenFast = "Stop",
@@ -36,6 +43,9 @@ local CONSTANTS = {
 	defaultFFSpeed = 5,
 	normalSpeed = 1,
 	cheatInputCMDName = "BETS_CHEAT_POSITION",
+	cheatDirName = LUAUI_DIRNAME .. "Widgets/BtCheat/",
+	unitNamesFileName = "units.JSON",
+	giveHowMany = 5,
 }
 
 local spSendCommand = Spring.SendCommands
@@ -87,7 +97,11 @@ local function spawnUnits(unitName, howMany, team, position)
 	spSendCommand(commandAll)
 end 
 local function positionSpecifiedCallback(data) 
-	spawnUnits( "armpw", 10, 0, data)
+	spawnUnits( 
+		unitCombobox.items[unitCombobox.selected], 
+		CONSTANTS.giveHowMany, 
+		teamCombobox.items[teamCombobox.selected], 
+		data)
 end  
 
 
@@ -121,7 +135,23 @@ function widget:GamePaused()
 	Spring.Echo("paused: " .. tostring(userSpFac) .. ", " .. tostring(spFac) .. ", ".. tostring(paused) )
 end
 
+local function loadUnitNames()
+	local fileName = CONSTANTS.cheatDirName .. CONSTANTS.unitNamesFileName
+	local file = io.open(fileName, "r")
+	if(not file)then
+		Logger.log("cheat", "Unable to read file: " .. fileName .. ". Continue with default value.")
+		return {"armpw"}
+	end
+	local text = file:read("*all")
+	file:close()
+	local data = JSON:decode(text)
+	return data.units
+end
 
+local function godMode()	
+	Logger.log("cheat", "here we are")
+	spSendCommand(CONSTANTS.godmodeCMD)
+end
 
 function widget:Initialize()
 	local Screen0 = Chili.Screen0	
@@ -132,7 +162,7 @@ function widget:Initialize()
 		x = Screen0.width - 150,
 		y = '30%',
 		width  = 150 ,
-		height = 150,	
+		height = 180,	
 			padding = {10,10,10,10},
 			draggable=true,
 			resizable=false,
@@ -199,30 +229,82 @@ function widget:Initialize()
 		speedLabel = speedLabel,
 	}
 	
+	local units = loadUnitNames()
+	
 	giveButton  = Chili.Button:New{
 		parent = cheatWindow ,
 		caption = "Give",
 		x = 5,
 		y = 75,
 		width = 120,
+		height = 35,
 		skinName='DarkGlass',
 		focusColor = {1.0,0.5,0.0,0.5},
 		tooltip = "Give units (ARMPW) on specified position.",
 		OnClick = { sanitizer:AsHandler(giveListener)},
 	}
---[[	
-	giveEnemyButton  = Chili.Button:New{
-		parent = cheatWindow ,
-		caption = "Give enemy",
-		x = 5,
-		y = 75,
-		width = 120,
+	
+	local unitLabel = Chili.Label:New{
+		parent = cheatWindow,
+		x = giveButton.x + 5 ,
+		y = giveButton.y + giveButton.height,
+		width = 60,
 		skinName='DarkGlass',
 		focusColor = {1.0,0.5,0.0,0.5},
-		tooltip = "Give enemy unit (ARMPW) on specified position.",
-		OnClick = { sanitizer:AsHandler(giveListener)},
+		caption = "Unit:",
 	}
---]]
+	
+	
+	unitCombobox = Chili.ComboBox:New{	
+		parent = cheatWindow,
+		x = unitLabel.x + unitLabel.width,
+		y = unitLabel.y - 2,
+		width = 80,
+		skinName='DarkGlass',
+		focusColor = {1.0,0.5,0.0,0.5},
+		tooltip = "Select unit type to be given",
+		items = units
+	}
+	local teamLabel = Chili.Label:New{
+		parent = cheatWindow,
+		x = unitLabel.x,
+		y = unitLabel.y + unitLabel.height+2,
+		width = 60,
+		skinName='DarkGlass',
+		focusColor = {1.0,0.5,0.0,0.5},
+		caption = "Team:",
+	}
+	
+	local teams = Spring.GetTeamList()
+	local teamItems = {}
+	for _,teamId in ipairs(teams) do
+		table.insert(teamItems, tostring(teamId) )
+	end	
+	
+	teamCombobox = Chili.ComboBox:New{	
+		parent = cheatWindow,
+		x = teamLabel.x + teamLabel.width,
+		y = teamLabel.y,
+		width = 60,
+		skinName='DarkGlass',
+		focusColor = {1.0,0.5,0.0,0.5},
+		tooltip = "Select unit type to be given",
+		items = teamItems
+	}
+	
+	godModeCheckbox = Chili.Checkbox:New{
+		parent = cheatWindow,
+		x = teamLabel.x,
+		y = teamLabel.y + teamLabel.height + 5,
+		width = 100,
+		skinName='DarkGlass',
+		focusColor = {1.0,0.5,0.0,0.5},
+		tooltip = "Godmode allows you to command enemy units.",
+		checked = false,
+		caption = "Godmode",
+		OnChange = {sanitizer:AsHandler(godMode)}
+	}
+
 	
 	Dependency.defer(
 		function() 
