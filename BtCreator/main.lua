@@ -1515,19 +1515,6 @@ function widget:Initialize()
 		focusColor = {1.0,0.5,0.0,0.5},
 		OnClick = { sanitizer:AsHandler(listenerClickOnContinue) },
 	}
-
-	showBtCheatButton = Chili.Button:New{
-		parent = buttonPanel,
-		x = continueButton.x + continueButton.width,
-		y = 0,
-		width = 110,
-		height = 30,
-		caption = "Cheat",
-		skinName = "DarkGlass",
-		focusColor = {1.0,0.5,0.0,0.5},
-		OnClick = { sanitizer:AsHandler(listenerClickOnCheat) },
-	}
-	showBtCheatButton.showing = false
 	
 	minimizeButton = Chili.Button:New{
 		parent = buttonPanel,
