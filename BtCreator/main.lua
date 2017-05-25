@@ -844,10 +844,21 @@ local function listenerClickOnCheat(self)
 	--widgetHandler:EnableWidget("BtCheat")
 end
 
-function listenerClickOnMinimize()
-	Logger.log("tree-editing", "Minimize BtCreator. ")
+listenerClickOnMinimize = async(function()
+	Logger.log("tree-editing", "Closing BtCreator. ")
+	if(not await(promptUserToSaveIfChanged(true)))then
+		return false
+	end
+	
+	currentTree.setName(noNameString)
+	currentTree.roles = {}
+	clearCanvas()
+	currentTree.setChanged(false)
+	treeRefList = {}
+	reloadReferenceButtons()
+
 	BtCreator.hide()
-end
+end)
 
 -- //////////////////////////////////////////////////////////////////////
 -- Messages from/to BtEvaluator
@@ -1646,7 +1657,7 @@ function widget:Initialize()
 		},
 	}
 
-	listenerClickOnMinimize()
+	BtCreator.hide()
 	WG.BtCreator = sanitizer:Export(BtCreator)
 	
 	local newEntries = {}
