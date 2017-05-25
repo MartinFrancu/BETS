@@ -305,7 +305,7 @@ if (widget and not widget.GetInfo) then
 	local whiteWindow
 	function consoleContext.showWhiteWindow()
 		if(whiteWindow)then
-			whiteWindow:BringToFront()
+			whiteWindow:SetLayer(10000)
 		else
 			whiteWindow = Chili.Window:New({
 				parent = ChiliRoot,
