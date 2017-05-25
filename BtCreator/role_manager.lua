@@ -67,32 +67,29 @@ function roleManager.showCategoryDefinitionWindow()
 		skinName='DarkGlass'
 	}
 	xOffSet = 5
-	yOffSet = 30
+	yOffSet = 0
 
-	local xLocalOffSet = 0
 	local unitsD = {}
 	for _,unitDef in pairs(UnitDefs) do
 		if(unitDef.isFeature == false) then -- exclude walls and roads...
 			table.insert(unitsD, unitDef)
 		end
 	end 
-	--[[
-	local humanNameOrder  = function (a,b)
-		return a.humanName < b.humanName
-	end
-	--]]
 	local nameOrder  = function (a,b)
 		return a.name < b.name
 	end
 	
 	table.sort(unitsD, nameOrder)
 	
+	local xLocalOffSet = 0
+	local columnHeight = #unitsD / 5
+	local currentHeight = 0
 	unitCheckBoxes = {}
 	for i,unitDef in ipairs(unitsD) do
 		local typeCheckBox = Chili.Checkbox:New{
 			parent = categoryScrollPanel,
 			x = xOffSet + (xLocalOffSet * 250),
-			y = yOffSet,
+			y = yOffSet + currentHeight * 20,
 			caption = unitDef.name .. "(" .. unitDef.humanName .. ")",
 			checked = false,
 			width = 200,
@@ -100,10 +97,12 @@ function roleManager.showCategoryDefinitionWindow()
 		typeCheckBox.unitId = unitDef.id
 		typeCheckBox.unitName = unitDef.name
 		typeCheckBox.unitHumanName = unitDef.humanName
-		xLocalOffSet = xLocalOffSet + 1
-		if(xLocalOffSet == 5) then
-			xLocalOffSet = 0
-			yOffSet = yOffSet + 20
+		
+		currentHeight = currentHeight +1
+		
+		if(currentHeight > columnHeight) then
+			xLocalOffSet = xLocalOffSet + 1
+			currentHeight = 0
 		end
 		unitCheckBoxes[i] = typeCheckBox
 	end
@@ -111,7 +110,7 @@ function roleManager.showCategoryDefinitionWindow()
 	local placeholder = Chili.Label:New{
 		parent = categoryScrollPanel,
 		x = xOffSet,
-		y = yOffSet + 50,
+		y = yOffSet + (columnHeight+1) * 20,
 		caption = "=== end ===",
 		skinName='DarkGlass',
 	}
@@ -307,6 +306,7 @@ showRoleManagementWindow = function()
 	roleManager.rolesWindow.backgroundColor = {1,1,1,1}
 	roleManager.rolesWindow.TileImage = IMAGE_PATH .. BACKGROUND_IMAGE_NAME
 	roleManager.rolesWindow:Invalidate()
+	
 	local window = roleManager.rolesWindow
 	
 	-- now I just need to save it
