@@ -35,6 +35,10 @@ return Utils:Assign("ProjectDialog", function()
 	
 	local dialogWindow
 	
+	local function sortItems(items)
+		table.sort(items, function(x,y) return x.name:lower() < y.name:lower() end)
+	end
+	
 	local function onSelectItem(self)
 		if(self.items[self.selected] == self.newItemString) then
 			if(not self.newItemEditBox.visible ) then
@@ -63,6 +67,7 @@ return Utils:Assign("ProjectDialog", function()
 			-- i should update item combo box:
 			-- new items:
 			local listProject = self.projectManager.listProject(selected, self.contentType)
+			sortItems(listProject)
 			local newItems = {}
 			for i,data in ipairs(listProject)do
 				newItems[i] = data.name
@@ -109,12 +114,11 @@ return Utils:Assign("ProjectDialog", function()
 	function ProjectDialog.setUpDialog(parent, contentType, creatingEnabled, callbackObject, callbackFunction, showDialogHandler, defaultProject, defaultName)
 		callbackFunction = Sanitizer.sanitize(callbackFunction)
 		
-		-- get project manager
-		local pM =  Utils.ProjectManager
 		local sanitizer = Utils.Sanitizer.forCurrentWidget()
 
 		local selectedProject = nil
-		local projects = pM.getProjects()
+		local projects = ProjectManager.getProjects()
+		sortItems(projects)
 		local projectNames = {}
 		for i,data in ipairs(projects) do
 			projectNames[i] = data.name
@@ -176,7 +180,7 @@ return Utils:Assign("ProjectDialog", function()
 			newProjectString = NEW_PROJECT_STRING,
 			newItemString = NEW_ITEM_STRING,
 			itemComboBox = itemSelection,
-			projectManager = pM,
+			projectManager = ProjectManager,
 			contentType = contentType,
 			creatingEnabled = creatingEnabled
 		}
@@ -266,6 +270,7 @@ return Utils:Assign("ProjectDialog", function()
 		
 		local selectedProject = nil
 		local projects = ProjectManager.getProjects()
+		sortItems(projects)
 		local projectNames = {}
 		for i,data in ipairs(projects) do
 			projectNames[i] = data.name

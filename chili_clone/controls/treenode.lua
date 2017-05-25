@@ -173,6 +173,14 @@ function TreeNode:New(obj)
 		}
 		obj.nameEditBox:SetPos(obj.nameEditBox.x+20)
 	end
+	obj.logImage = Image:New{
+		parent = obj.nodeWindow,
+		x = obj.nodeWindow.width - 15 - 20,
+		y = 10,
+		width = 20,
+		height = 20,
+		--file = LUAUI_DIRNAME .. "Widgets/BtTreenodeIcons/error.png",
+	}
 	if(obj.nodeType:lower() == "root") then
 		rootnode.addChildComponents(obj)
 	end
@@ -213,7 +221,7 @@ function TreeNode:UpdateDimensions()
 		self.connectionOut:Show()
 	end
 	self.nameEditBox:UpdateLayout()
-	local nameWidth = self.nameEditBox.width + 35
+	local nameWidth = self.nameEditBox.width + 35 + 20
 	if(self.icon) then
 		nameWidth = nameWidth + 20
 	end
@@ -693,6 +701,11 @@ function listenerNodeWindowOnResize(self)
 		previousPosition.x = self.x
 		previousPosition.y = self.y
 	end
+	
+	if(self.treeNode.logImage)then
+		self.treeNode.logImage:SetPos(self.treeNode.width - 15 - self.treeNode.logImage.width)
+	end
+	
 	self:Invalidate()
 end
 
