@@ -6,6 +6,8 @@ local dump = Utils.Debug.dump
 
 local roleManager = {}
 
+local IMAGE_PATH = LUAUI_DIRNAME.."Widgets/BtUtils/"
+local BACKGROUND_IMAGE_NAME = "black.png"
 
 local showRoleManagementWindow
 local categoryCheckBoxes
@@ -27,6 +29,9 @@ function roleManager.showCategoryDefinitionWindow()
 		height = 600,
 		skinName = 'DarkGlass'
 	}
+	roleManager.categoryDefinitionWindow.backgroundColor = {1,1,1,1}
+	roleManager.categoryDefinitionWindow.TileImage = IMAGE_PATH .. BACKGROUND_IMAGE_NAME
+	roleManager.categoryDefinitionWindow:Invalidate()
 	
 	local categoryDoneButton = Chili.Button:New{
 		parent =  roleManager.categoryDefinitionWindow,
@@ -35,6 +40,7 @@ function roleManager.showCategoryDefinitionWindow()
 		caption = "SAVE AS",
 		OnClick = {sanitizer:AsHandler(roleManager.doneCategoryDefinition)},
 	}
+	
 
 	
 	--categoryDoneButton.categoryNameEditBox = nameEditBox
@@ -298,6 +304,9 @@ showRoleManagementWindow = function()
 		height = 600,
 		skinName = 'DarkGlass'
 	}
+	roleManager.rolesWindow.backgroundColor = {1,1,1,1}
+	roleManager.rolesWindow.TileImage = IMAGE_PATH .. BACKGROUND_IMAGE_NAME
+	roleManager.rolesWindow:Invalidate()
 	local window = roleManager.rolesWindow
 	
 	-- now I just need to save it
