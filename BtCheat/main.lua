@@ -22,7 +22,7 @@ local ffState -- nill - nothing, not fastforwargin, acc = accelerrating, ff when
 local speed
 
 local giveButton
-local unitCombobox
+local unitEditBox --unitCombobox
 local teamCombobox
 local godModeCheckbox
 
@@ -43,8 +43,6 @@ local CONSTANTS = {
 	defaultFFSpeed = 5,
 	normalSpeed = 1,
 	cheatInputCMDName = "BETS_CHEAT_POSITION",
-	cheatDirName = LUAUI_DIRNAME .. "Widgets/BtCheat/",
-	unitNamesFileName = "units.JSON",
 	giveHowMany = 5,
 }
 
@@ -98,7 +96,7 @@ local function spawnUnits(unitName, howMany, team, position)
 end 
 local function positionSpecifiedCallback(data) 
 	spawnUnits( 
-		unitCombobox.items[unitCombobox.selected], 
+		unitEditBox.text,
 		CONSTANTS.giveHowMany, 
 		teamCombobox.items[teamCombobox.selected], 
 		data)
@@ -135,19 +133,6 @@ function widget:GamePaused()
 	Spring.Echo("paused: " .. tostring(userSpFac) .. ", " .. tostring(spFac) .. ", ".. tostring(paused) )
 end
 
-local function loadUnitNames()
-	local fileName = CONSTANTS.cheatDirName .. CONSTANTS.unitNamesFileName
-	local file = io.open(fileName, "r")
-	if(not file)then
-		Logger.log("cheat", "Unable to read file: " .. fileName .. ". Continue with default value.")
-		return {"armpw"}
-	end
-	local text = file:read("*all")
-	file:close()
-	local data = JSON:decode(text)
-	return data.units
-end
-
 local function godMode()	
 	Logger.log("cheat", "here we are")
 	spSendCommand(CONSTANTS.godmodeCMD)
@@ -162,7 +147,7 @@ function widget:Initialize()
 		x = Screen0.width - 150,
 		y = '30%',
 		width  = 150 ,
-		height = 180,	
+		height = 200,	
 			padding = {10,10,10,10},
 			draggable=true,
 			resizable=false,
@@ -229,8 +214,6 @@ function widget:Initialize()
 		speedLabel = speedLabel,
 	}
 	
-	local units = loadUnitNames()
-	
 	giveButton  = Chili.Button:New{
 		parent = cheatWindow ,
 		caption = "Give",
@@ -247,7 +230,7 @@ function widget:Initialize()
 	local unitLabel = Chili.Label:New{
 		parent = cheatWindow,
 		x = giveButton.x + 5 ,
-		y = giveButton.y + giveButton.height,
+		y = giveButton.y + giveButton.height + 3,
 		width = 60,
 		skinName='DarkGlass',
 		focusColor = {1.0,0.5,0.0,0.5},
@@ -255,7 +238,7 @@ function widget:Initialize()
 	}
 	
 	
-	unitCombobox = Chili.ComboBox:New{	
+	unitEditBox = Chili.EditBox:New{	
 		parent = cheatWindow,
 		x = unitLabel.x + unitLabel.width,
 		y = unitLabel.y - 2,
@@ -263,12 +246,12 @@ function widget:Initialize()
 		skinName='DarkGlass',
 		focusColor = {1.0,0.5,0.0,0.5},
 		tooltip = "Select unit type to be given",
-		items = units
+		text = "armpw"
 	}
 	local teamLabel = Chili.Label:New{
 		parent = cheatWindow,
 		x = unitLabel.x,
-		y = unitLabel.y + unitLabel.height+2,
+		y = unitLabel.y + unitLabel.height+ 15,
 		width = 60,
 		skinName='DarkGlass',
 		focusColor = {1.0,0.5,0.0,0.5},
@@ -284,7 +267,7 @@ function widget:Initialize()
 	teamCombobox = Chili.ComboBox:New{	
 		parent = cheatWindow,
 		x = teamLabel.x + teamLabel.width,
-		y = teamLabel.y,
+		y = teamLabel.y-3,
 		width = 60,
 		skinName='DarkGlass',
 		focusColor = {1.0,0.5,0.0,0.5},
