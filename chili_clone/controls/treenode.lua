@@ -210,15 +210,23 @@ end
 
 function TreeNode:UpdateDimensions()
 	local nodeWindow = self.nodeWindow
-	-- connectionOut is on the boundary of the nodeWindow and messes up the GetChildrenMinimumExtends() call,
+	-- connectionOut and logImage are on the boundary of the nodeWindow and messes up the GetChildrenMinimumExtends() call,
 	-- so hide it 
 	if(self.connectionOut) then
 		self.connectionOut:Hide()
+	end
+	local restoreLogImage = nil
+	if(self.logImage and self.logImage.visible)then
+		self.logImage:Hide()
+		restoreLogImage = true
 	end
 	local max = math.max
 	local w,h = nodeWindow:GetChildrenMinimumExtents()
 	if(self.connectionOut) then
 		self.connectionOut:Show()
+	end
+	if(restoreLogImage)then
+		self.logImage:Show()
 	end
 	self.nameEditBox:UpdateLayout()
 	local nameWidth = self.nameEditBox.width + 35 + 20
