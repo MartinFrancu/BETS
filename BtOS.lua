@@ -13,6 +13,7 @@ end
 
 local _G = loadstring("return _G")()
 local KEYSYMS = _G.KEYSYMS
+local RELOAD_KEY = KEYSYMS.F8
 local SHOW_KEY = KEYSYMS.F10
 
 local Chili, ChiliRoot
@@ -351,6 +352,8 @@ function widget:KeyPress(key, modifiers, isRepeat)
 				widgetHandler:DisableWidget(widgetName)
 			end
 			]]
+		elseif (key == RELOAD_KEY) then
+			Spring.SendCommands("luaui reload")
 		end
 	end
 end

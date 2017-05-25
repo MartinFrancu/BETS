@@ -18,7 +18,6 @@ if (widget and not widget.GetInfo) then
 	 
 	local KEYSYMS = _G.KEYSYMS
 	 
-	local RELOAD_KEY = KEYSYMS.F8
 	local TOGGLE_VISIBILITY_KEY = KEYSYMS.F9;
 	
 	 
@@ -303,6 +302,29 @@ if (widget and not widget.GetInfo) then
 	consoleContext.Chili = Chili
 	consoleContext.ChiliRoot = ChiliRoot
 	
+	local whiteWindow
+	function consoleContext.showWhiteWindow()
+		if(whiteWindow)then
+			whiteWindow:BringToFront()
+		else
+			whiteWindow = Chili.Window:New({
+				parent = ChiliRoot,
+				TileImage = LUAUI_DIRNAME .. "Widgets/whiteness.png",
+				x = 0,
+				y = 0,
+				width = 500,
+				height = 500,
+				backgroundColor = {1,1,1,1}
+			})
+		end
+	end
+	function consoleContext.hideWhiteWindow()
+		if(whiteWindow)then
+			whiteWindow:Dispose()
+			whiteWindow = nil
+		end
+	end
+	
 	setmetatable(consoleContext, { __index = function(t, key)
 			local value = WG[key]
 			if(value ~= nil)then
@@ -416,8 +438,6 @@ if (widget and not widget.GetInfo) then
 					ChiliRoot:FocusControl(nil)
 				end
 				return true;
-			elseif (key == RELOAD_KEY) then
-				Spring.SendCommands("luaui reload")
 			end
 		end
 	end
