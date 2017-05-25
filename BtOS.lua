@@ -128,6 +128,14 @@ local function updateVisualiser()
 		visualiser.window:Dispose()
 		visualiser = nil
 	end
+	
+	if(visualiser and visualiser.window)then
+		local draggable = not state.BtController
+		if(draggable ~= visualiser.window.draggable)then
+			visualiser.window.draggable = draggable
+			visualiser.window:Invalidate()
+		end
+	end
 end
 
 function initializeDependencyHooks()
