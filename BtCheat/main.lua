@@ -130,11 +130,9 @@ end
 
 function widget:GamePaused()
 	local userSpFac,spFac, paused = Spring.GetGameSpeed()
-	Spring.Echo("paused: " .. tostring(userSpFac) .. ", " .. tostring(spFac) .. ", ".. tostring(paused) )
 end
 
 local function godMode()	
-	Logger.log("cheat", "here we are")
 	spSendCommand(CONSTANTS.godmodeCMD)
 end
 
