@@ -186,13 +186,17 @@ function BtEvaluator.assignUnits(units, instanceId, roleId)
 	roleId = roleId + 1
 	local instance = treeInstances[instanceId]
 	if(not instance)then
-		Logger.error("BtEvaluator", "Attempt to assign units to nonexistant tree")
+		Logger.error("assignUnits", "Attempt to assign units to nonexistant tree")
 		return
 	end
 	
 	local currentFrame = getGameFrame()
 	
 	local role = instance.roles[roleId]
+	if(not role)then
+		Logger.error("assignUnits", "Attempt to assign units to nonexistant role #", roleId)
+		return
+	end
 	local allRole = instance.roles[ALL_UNITS]
 	local treesToReset = { [instance] = true }
 	for i, id in ipairs(units) do
