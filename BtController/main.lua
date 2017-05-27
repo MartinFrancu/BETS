@@ -277,6 +277,7 @@ function reloadTree(tabs, treeHandle)
 	if(treeHandle.Created) then
 		-- remove send message to BtEvaluator
 		BtEvaluator.removeTree(treeHandle.instanceId)
+		treeHandle.Created = false
 	end
 	-- get the new tree specification and GUI components:
 	treeHandle:ReloadTree()
@@ -284,10 +285,8 @@ function reloadTree(tabs, treeHandle)
 	local tabFrame = tabs.tabIndexMapping[treeHandle.name]
 	-- remove old GUI components:
 	tabFrame:ClearChildren()
-	tabFrame:RequestUpdate()
-	-- now attach new ones:
-	----[[
 	
+	-- now attach new ones:	
 	for _,component in pairs(treeHandle.ChiliComponentsGeneral)do
 		tabFrame:AddChild(component)
 	end
@@ -297,7 +296,8 @@ function reloadTree(tabs, treeHandle)
 	for _,component in pairs(treeHandle.ChiliComponentsInputs)do
 		tabFrame:AddChild(component)
 	end
-	--]]
+	tabFrame:RequestUpdate()
+
 	-- if tree is ready, initialize it in BtEvaluator
 	if(treeHandle:CheckReady()) then
 		treeHandle.Created = true
