@@ -65,6 +65,20 @@ local function listenerAddInput(button)
 		borderThickness = 0,
 		backgroundColor = {0,0,0,0},
 		autosize = true,
+		OnKeyPress = {
+			function(element, key)
+				if(element.text ~= element.validatedValue)then
+					WG.BtCreator.Get().markTreeAsChanged()
+				end
+				
+				return true
+			end
+		},
+		OnTextInput = {
+			function()
+				WG.BtCreator.Get().markTreeAsChanged()
+			end
+		},
 	}
 	table.insert(inputs, { ["button"]=button, ["comboBox"]=comboBox, ["editBox"]=editBox })
 	updateOutputsLayout(button.parent.treeNode)
@@ -102,6 +116,20 @@ local function listenerAddOutput(button)
 		borderThickness = 0,
 		backgroundColor = {0,0,0,0},
 		autosize = true,
+		OnKeyPress = {
+			function(element, key)
+				if(element.text ~= element.validatedValue)then
+					WG.BtCreator.Get().markTreeAsChanged()
+				end
+				
+				return true
+			end
+		},
+		OnTextInput = {
+			function()
+				WG.BtCreator.Get().markTreeAsChanged()
+			end
+		},
 	}
 	table.insert(outputs, { ["editBox"]=editBox,["button"]=button })
 	button.parent.treeNode:UpdateDimensions()

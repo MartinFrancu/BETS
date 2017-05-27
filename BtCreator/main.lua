@@ -779,7 +779,6 @@ function getBehaviourTree(treeName)
 		clearCanvas()
 		loadBehaviourTree(bt)
 		currentTree.roles = bt.roles or {}
-		--rolesOfCurrentTree = bt.roles or {}
 	else
 		local x,y = loadTreeButton:LocalToScreen(0,0)
 		Dialog.showErrorDialog({
@@ -2092,6 +2091,7 @@ function loadBehaviourTree(bt)
 		-- Add inputs and sets them to saved values
 		addInputButton:CallListeners( addInputButton.OnClick )
 		WG.nodeList[rootID].inputs[i].editBox:SetText(bt.inputs[i].name)
+		WG.nodeList[rootID].inputs[i].editBox.validatedValue = bt.inputs[i].name
 		local inputType = inputTypeMap[ bt.inputs[i]["command"] ]
 		local inputComboBox = WG.nodeList[rootID].inputs[i].comboBox
 		for k=1,#inputComboBox.items do
