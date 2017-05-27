@@ -175,9 +175,19 @@ function vector_prototype:Distance( vector )
 end
 
 -- Convert vector in 2D heading in degrees between 0-360
-function vector_prototype:ToHeading()
+function vector_prototype:ToHeading() -- azimuth
 	local angleInRads = atan2(self.x, self.z)
-	return (deg(angleInRads) % 360)
+	-- angleInRads
+	-- N (north) = PI
+	-- E (east)  = 0.5PI
+	-- S (south) = 0
+	-- W (west)  = 1.5PI
+	return ((deg(-angleInRads) + 180) % 360) -- correction to azimuth values = so 0 degrees is on north and positive increment is clockwise
+	-- returned angle
+	-- N (north) = 0
+	-- E (east)  = 90
+	-- S (south) = 180
+	-- W (west)  = 270
 end
 
 -- Rotate vector around Y axis by given angle in degrees
