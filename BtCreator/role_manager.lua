@@ -8,6 +8,8 @@ local roleManager = {}
 
 local IMAGE_PATH = LUAUI_DIRNAME.."Widgets/BtUtils/"
 local BACKGROUND_IMAGE_NAME = "black.png"
+local CHECKED_COLOR = {0.3,1,0.3,1}
+local NORMAL_COLOR = {1,1,1,1}
 
 local showRoleManagementWindow
 local categoryCheckBoxes
@@ -30,10 +32,19 @@ local function trimStringToScreenSpace(str, font, limit)
 	repeat
 	-- make it littlebit shorter
 		trimmed = string.sub(trimmed, 1, -2)
-		Logger.log("categories", trimmed)
 		length = font:GetTextWidth(trimmed .. dots)
 	until length < limit
 	return trimmed .. dots
+end
+
+local function changeColor(checkBox)
+	if(checkBox.checked)then -- it is called before the changed (checked -> unchecked)
+		checkBox.font.color =  NORMAL_COLOR
+	else
+		checkBox.font.color =  CHECKED_COLOR
+	end
+	Logger.log("categories", "checked: ", checkBox.checked, " color: ", checkBox.font.color )
+	checkBox:Invalidate()
 end
 
 function roleManager.showCategoryDefinitionWindow()
@@ -109,10 +120,10 @@ function roleManager.showCategoryDefinitionWindow()
 			caption = "PLACEHOLDER",
 			checked = false,
 			width = 200,
+			OnChange = {changeColor},
 		}
+		typeCheckBox.font.color = NORMAL_COLOR
 		local font = typeCheckBox.font
-		Logger.log("categories", dump(font,2 ) )
-		Logger.log("categories", font:GetTextWidth(unitEntry) )
 		local trimmedName = trimStringToScreenSpace(unitEntry, font , typeCheckBox.width - 20)
 		typeCheckBox.caption = trimmedName
 		typeCheckBox:Invalidate()
@@ -131,7 +142,7 @@ function roleManager.showCategoryDefinitionWindow()
 	local placeholder = Chili.Label:New{
 		parent = categoryScrollPanel,
 		x = xOffSet,
-		y = yOffSet + (columnHeight+1) * 20,
+		y = yOffSet + (columnHeight * 20)+80,
 		caption = "=== end ===",
 		skinName='DarkGlass',
 	}
@@ -165,7 +176,8 @@ function roleManager.createNewCategoryCallback(projectName, categoryName)
 			name = 	categoryName,
 			types = unitTypes,
 		}
-		Utils.UnitCategories.saveCategory(newCategory)		
+		Utils.UnitCategories.saveCategory(newCategory)	
+		roleManager.categoryDefinitionWindow:Dispose()
 		-- return after
 		returnFunction()
 	else
@@ -179,7 +191,6 @@ function roleManager.doneCategoryDefinition(self)
 	local ProjectManager = Utils.ProjectManager
 	-- show save dialog:
 	roleManager.categoryDefinitionWindow:Hide()	
-	roleManager.categoryDefinitionWindow:Dispose()
 	
 	local contentType =  ProjectManager.makeRegularContentType("UnitCategories", "json")
 	ProjectDialog.showDialog({
