@@ -261,6 +261,7 @@ if (widget and not widget.GetInfo) then
 	-- sets up the context that is used as the environment in the console
 	consoleContext = { }
 	consoleContext._G = consoleContext
+	consoleContext.WG = WG
 	consoleContext.history = history
 	consoleContext.Logger = Logger
 	consoleContext.widget = widget
