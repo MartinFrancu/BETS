@@ -173,14 +173,17 @@ function TreeNode:New(obj)
 		}
 		obj.nameEditBox:SetPos(obj.nameEditBox.x+20)
 	end
+	--[[
+	-- in order to enable this, an error with autogrowing nodes after zooming in and out has be resolved (most likely in the portion of BtCreator that zooms in again)
 	obj.logImage = Image:New{
 		parent = obj.nodeWindow,
 		x = obj.nodeWindow.width - 15 - 20,
 		y = 10,
 		width = 20,
 		height = 20,
-		--file = LUAUI_DIRNAME .. "Widgets/BtTreenodeIcons/error.png",
+		file = LUAUI_DIRNAME .. "Widgets/BtTreenodeIcons/error.png",
 	}
+	]]--
 	if(obj.nodeType:lower() == "root") then
 		rootnode.addChildComponents(obj)
 	end
@@ -688,6 +691,10 @@ function listenerNodeWindowOnResize(self)
 		self.treeNode.connectionOut:SetPos(self.width-18, self.height*0.35)
 		self.treeNode.connectionOut:Invalidate()
 	end
+	if(self.treeNode.logImage)then
+		self.treeNode.logImage:SetPos(self.treeNode.width - 15 - self.treeNode.logImage.width)
+	end
+	
 	self.treeNode.width = self.width
 	self.treeNode.height = self.height
 	self.treeNode:UpdateConnectionLines()
@@ -708,10 +715,6 @@ function listenerNodeWindowOnResize(self)
 		end
 		previousPosition.x = self.x
 		previousPosition.y = self.y
-	end
-	
-	if(self.treeNode.logImage)then
-		self.treeNode.logImage:SetPos(self.treeNode.width - 15 - self.treeNode.logImage.width)
 	end
 	
 	self:Invalidate()
