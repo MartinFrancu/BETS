@@ -134,7 +134,7 @@ function roleManager.createNewCategoryCallback(projectName, categoryName)
 		local unitTypes = {}
 		for _,unitTypeCheckBox in pairs(unitCheckBoxes) do
 			if(unitTypeCheckBox.checked == true) then
-				local typeRecord = {id = unitTypeCheckBox.unitId, name = unitTypeCheckBox.unitName, humanName = unitTypeCheckBox.unitHumanName}
+				local typeRecord = {name = unitTypeCheckBox.unitName, humanName = unitTypeCheckBox.unitHumanName}
 				table.insert(unitTypes, typeRecord)
 			end
 		end
