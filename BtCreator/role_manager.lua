@@ -8,7 +8,7 @@ local roleManager = {}
 
 local IMAGE_PATH = LUAUI_DIRNAME.."Widgets/BtUtils/"
 local BACKGROUND_IMAGE_NAME = "black.png"
-local CHECKED_COLOR = {0.3,1,0.3,1}
+local CHECKED_COLOR = { 1,0.69999999,0.1,0.80000001} 
 local NORMAL_COLOR = {1,1,1,1}
 
 local showRoleManagementWindow
@@ -43,7 +43,6 @@ local function changeColor(checkBox)
 	else
 		checkBox.font.color =  CHECKED_COLOR
 	end
-	Logger.log("categories", "checked: ", checkBox.checked, " color: ", checkBox.font.color )
 	checkBox:Invalidate()
 end
 
