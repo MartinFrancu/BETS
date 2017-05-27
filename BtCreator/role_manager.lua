@@ -19,6 +19,23 @@ local yOffBasic = 10
 local xCheckBoxOffSet = 180
 local xLocOffsetMod = 250 
 
+local function trimStringToScreenSpace(str, font, limit)
+	if(font:GetTextWidth(str) < limit) then
+		-- it is ok as it is
+		return str
+	end
+	local dots = "..."
+	local trimmed = str
+	local length
+	repeat
+	-- make it littlebit shorter
+		trimmed = string.sub(trimmed, 1, -2)
+		Logger.log("categories", trimmed)
+		length = font:GetTextWidth(trimmed .. dots)
+	until length < limit
+	return trimmed .. dots
+end
+
 function roleManager.showCategoryDefinitionWindow()
 	roleManager.rolesWindow:Hide()
 	roleManager.categoryDefinitionWindow = Chili.Window:New{
@@ -86,15 +103,21 @@ function roleManager.showCategoryDefinitionWindow()
 	local currentHeight = 0
 	unitCheckBoxes = {}
 	for i,unitDef in ipairs(unitsD) do
+		local unitEntry = unitDef.name .. "(" .. unitDef.humanName .. ")"
 		local typeCheckBox = Chili.Checkbox:New{
 			parent = categoryScrollPanel,
 			x = xOffSet + (xLocalOffSet * 250),
 			y = yOffSet + currentHeight * 20,
-			caption = unitDef.name .. "(" .. unitDef.humanName .. ")",
+			caption = "PLACEHOLDER",
 			checked = false,
 			width = 200,
 		}
-		typeCheckBox.unitId = unitDef.id
+		local font = typeCheckBox.font
+		Logger.log("categories", dump(font,2 ) )
+		Logger.log("categories", font:GetTextWidth(unitEntry) )
+		local trimmedName = trimStringToScreenSpace(unitEntry, font , typeCheckBox.width - 20)
+		typeCheckBox.caption = trimmedName
+		typeCheckBox:Invalidate()
 		typeCheckBox.unitName = unitDef.name
 		typeCheckBox.unitHumanName = unitDef.humanName
 		
@@ -158,6 +181,7 @@ function roleManager.doneCategoryDefinition(self)
 	local ProjectManager = Utils.ProjectManager
 	-- show save dialog:
 	roleManager.categoryDefinitionWindow:Hide()	
+	roleManager.categoryDefinitionWindow:Dispose()
 	
 	local contentType =  ProjectManager.makeRegularContentType("UnitCategories", "json")
 	ProjectDialog.showDialog({
@@ -170,6 +194,7 @@ end
 
 function roleManager.cancelCategoryDefinition(self)
 	self.window:Hide()
+	self.window:Dispose()
 	self.returnFunction()
 end
 
