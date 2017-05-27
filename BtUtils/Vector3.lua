@@ -180,9 +180,10 @@ function vector_prototype:ToHeading()
 	return (deg(angleInRads) % 360)
 end
 
--- Rotate vector around Y axis by given angle in degrees 0-360 (clockwise)
+-- Rotate vector around Y axis by given angle in degrees
+-- mathematically correct variant = negative angle values implies clockwise rotation
 function vector_prototype:Rotate2D(angle)
-	local angleInRads = rad(-angle) -- -1 for clockwise rotation (but input is positive number)
+	local angleInRads = rad(angle)
 	local vec = new(0,0,0)
 	vec.x = self.x * cos(angleInRads) - self.z * sin(angleInRads)
 	vec.y = self.y
