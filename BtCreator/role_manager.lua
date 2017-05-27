@@ -88,9 +88,7 @@ function roleManager.showCategoryDefinitionWindow()
 
 	local unitsD = {}
 	for _,unitDef in pairs(UnitDefs) do
-		if(unitDef.isFeature == false) then -- exclude walls and roads...
-			table.insert(unitsD, unitDef)
-		end
+			unitsD[#unitsD+1] = unitDef
 	end 
 	local nameOrder  = function (a,b)
 		return a.name < b.name
