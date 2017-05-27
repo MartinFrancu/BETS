@@ -106,6 +106,7 @@ do
 							row.panel:SetPos(nil, nil, nil, height)
 							row.height = TEXT_HEIGHT + height
 							row.control:SetPos(nil, nil, nil, row.height)
+							self:Realign()
 						end)
 						row.subrows:SetTable(row.currentValue)
 					end,
