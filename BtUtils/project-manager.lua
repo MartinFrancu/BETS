@@ -129,6 +129,13 @@ return Utils:Assign("ProjectManager", function()
 		return not not projects[projectName]
 	end
 	function ProjectManager.asQualifiedName(projectName, name)
+		if(not name)then
+			return nil
+		end
+		if(not projectName)then
+			return name
+		end
+		
 		return projectName .. "." .. name
 	end
 	function ProjectManager.fromQualifiedName(qualifiedName)
