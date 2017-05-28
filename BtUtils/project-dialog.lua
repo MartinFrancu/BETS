@@ -81,20 +81,29 @@ return Utils:Assign("ProjectDialog", function()
 		end	
 	end
 	
-	
 	local function doneButtonListener(self)
 		local selectedProject = self.projectSelection.items[self.projectSelection.selected]
 		if(selectedProject == self.newProjectString) then
 			selectedProject = self.newProjectEditBox.text
 		end
 		
-		local selectedItem  = self.itemSelection.items[self.itemSelection.selected]
-		if(selectedItem == self.newItemString) then
+		local selectedItem
+		if(self.newItemEditBox == nil) then
+			-- the new button
+			selectedItem = self.itemSelection.items[self.itemSelection.selected]
+			if(selectedItem == self.newItemString) then
+				selectedItem = self.newItemEditBox.text
+			end
+		else
 			selectedItem = self.newItemEditBox.text
 		end
 		
-		self.callback(self.callbackObject, selectedProject, selectedItem)
-		self.showDialogHandler(false)
+		if(string.len(selectedProject ) > 0 and string.len(selectedItem)> 0 ) then
+			-- selected project and item are not empty strings
+			self.callback(self.callbackObject, selectedProject, selectedItem)
+			self.showDialogHandler(false)
+		end
+		-- else do nothing
 	end
 	
 	local function cancelButtonListener(self)
@@ -244,19 +253,6 @@ return Utils:Assign("ProjectDialog", function()
 			end
 		end	
 	end
-	
-	
-	local function doneButtonListenerNew(self)
-		local selectedProject = self.projectSelection.items[self.projectSelection.selected]
-		if(selectedProject == self.newProjectString) then
-			selectedProject = self.newProjectEditBox.text
-		end
-		
-		local selectedItem = self.newItemEditBox.text
-		
-		self.callback(self.callbackObject, selectedProject, selectedItem)
-		self.showDialogHandler(false)
-	end
 		
 	
 	--- This will attach corresponding chili components of new item dialog to given parent.
@@ -327,7 +323,7 @@ return Utils:Assign("ProjectDialog", function()
 			width = 100,
 			height = 30,
 			caption = "DONE",
-			OnClick = {sanitizer:AsHandler(doneButtonListenerNew)},
+			OnClick = {sanitizer:AsHandler(doneButtonListener)},
 			skinName = 'DarkGlass',
 		}
 		doneButton.callback = callbackFunction
