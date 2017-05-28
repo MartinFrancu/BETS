@@ -171,7 +171,6 @@ function roleManager.createNewCategoryCallback(projectName, categoryName)
 		end
 		-- add check for category name?
 		local newCategory = {
-			project = projectName,
 			name = 	categoryName,
 			types = unitTypes,
 		}
