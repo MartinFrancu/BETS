@@ -70,7 +70,12 @@ function ComboBox:_CloseWindow()
 end
 
 function ComboBox:FocusUpdate()
-  if not self.state.focused then
+	if(not self._dropDownWindow)then
+		return
+	end
+
+	local focusedControl = UnlinkSafe(self._dropDownWindow.parent.focusedControl)
+  if not self.state.focused and (not focusedControl or focusedControl.comboBox ~= self) then
     self:_CloseWindow()
   end
 end
@@ -96,7 +101,8 @@ function ComboBox:MouseDown(...)
             OnMouseUp = { function()
               self:Select(i)
               self:_CloseWindow()
-            end }
+            end },
+						comboBox = self,
           }
           labels[#labels+1] = newBtn
           height = height + labelHeight
@@ -128,14 +134,17 @@ function ComboBox:MouseDown(...)
       height = height,
       x = sx - (width - self.width),
       y = y,
+			comboBox = self,
       children = {
         ComboBoxScrollPanel:New{
           width  = "100%",
           height = "100%",
+					comboBox = self,
           children = {
             ComboBoxStackPanel:New{
               width = '100%',
               children = labels,
+							comboBox = self,
             },
           },
         }
