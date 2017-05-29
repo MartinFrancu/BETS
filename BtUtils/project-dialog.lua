@@ -88,7 +88,7 @@ return Utils:Assign("ProjectDialog", function()
 		end
 		
 		local selectedItem
-		if(self.newItemEditBox == nil) then
+		if(self.itemSelection) then
 			-- the new button
 			selectedItem = self.itemSelection.items[self.itemSelection.selected]
 			if(selectedItem == self.newItemString) then
