@@ -12,7 +12,7 @@ return Debug:Assign("Logger", function()
 	local Logger = {}
 	
 	local LOGGER_SETTINGS = LUAUI_DIRNAME .. "Config/debug_utils_logger.lua"
-	local LOG_PATH = LUAUI_DIRNAME .. "Logs/"
+	local LOG_PATH = LUAUI_DIRNAME .. "BETS/Logs/"
 	
 	Spring.CreateDir(LOG_PATH)
 	
