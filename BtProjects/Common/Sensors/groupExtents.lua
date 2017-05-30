@@ -1,6 +1,5 @@
 function getInfo()
 	return {
-		period = 60,
 		fields = { "center", "maxDistance" }
 	}
 end

@@ -1,0 +1,37 @@
+{
+	"additionalNodes": [],
+	"additionalParameters": {
+		"root": {
+			"height": 88,
+			"width": 180
+		}
+	},
+	"inputs": [],
+	"outputs": [],
+	"properties": {
+		"NPVNGiXROHbAjoGLfvEKlS3tKOdX0nmF": {
+			"height": 74,
+			"title": "echo",
+			"width": 206,
+			"x": 198,
+			"y": 1
+		}
+	},
+	"roles": [ {
+		"categories": [],
+		"name": "Role 0"
+	} ],
+	"root": {
+		"children": [],
+		"id": "NPVNGiXROHbAjoGLfvEKlS3tKOdX0nmF",
+		"nodeType": "luaCommand",
+		"parameters": [ {
+			"name": "msg",
+			"value": "Common.teamInfo()"
+		}, {
+			"name": "scriptName",
+			"value": "echo"
+		} ],
+		"scriptName": "echo"
+	}
+}
