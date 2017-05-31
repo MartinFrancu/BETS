@@ -92,9 +92,13 @@ local function isAnyTreeChanged()
 	return false
 end
 
+local function isDebuggerAttached()
+	return (((treeRefList[1] or {}).currentTree or currentTree).treeName == currentTree.instanceTreeType) and not isAnyTreeChanged()
+end
+
 local function updateTreeInstancePanelVisibility()
 	if(treeInstancePanel)then
-		local shouldBeVisible = (((treeRefList[1] or {}).currentTree or currentTree).treeName == currentTree.instanceTreeType) and not isAnyTreeChanged()
+		local shouldBeVisible = isDebuggerAttached()
 		if(treeInstancePanel.visible)then
 			if(not shouldBeVisible)then
 				treeInstancePanel:Hide()
@@ -582,9 +586,9 @@ end
 saveAsTreeDialogCallback = async(function(project, tree)
 	if project and tree then 
 		local qualifiedName = project .. "." .. tree
+		local doesFileChange = currentTree.treeName and currentTree.treeName ~= qualifiedName
 		currentTree.setName(qualifiedName)
 		--currentTree.setInstanceName("tree saved")
-		local protoTree = createTreeToSave()
 
 		local message = "You also have unsaved changes in the following trees:\n"
 		local changedTreeRefs = {}
@@ -609,6 +613,19 @@ saveAsTreeDialogCallback = async(function(project, tree)
 			x = rootPanel.x + 500,
 			y = rootPanel.y,
 		})
+
+		-- we have the ID regeneration id here, where we know, that saving will take place, because pressing Cancel on the previous line will completely cancel this function
+		if(doesFileChange) then
+			--regenerate all IDs from loaded Tree
+			for id,_ in pairs(serializedIDs) do
+				if(WG.nodeList[id]) then
+					reGenerateTreenodeID(id)
+				end
+			end
+		end
+		updateSerializedIDs()
+		local protoTree = createTreeToSave()
+
 		if(confirmed)then
 			table.insert(changedTreeRefs, { tree = protoTree, currentTree = currentTree })
 			saveTreeRefs(changedTreeRefs)
@@ -621,16 +638,6 @@ saveAsTreeDialogCallback = async(function(project, tree)
 				qualifiedName)
 		end
 		currentTree.setChanged(false)
-		
-		if(serializedTreeName and serializedTreeName ~= qualifiedName) then
-			--regenerate all IDs from loaded Tree
-			for id,_ in pairs(serializedIDs) do
-				if(WG.nodeList[id]) then
-					reGenerateTreenodeID(id)
-				end
-			end
-			updateSerializedIDs()
-		end
 		
 		updateStates()
 
@@ -771,8 +778,6 @@ listenerClickOnNewTree = async(function(self)
 	end
 end)
 
-local serializedTreeName
-
 function getBehaviourTree(treeName)
 	local bt = BehaviourTree.load(treeName)
 	if(bt)then
@@ -911,7 +916,7 @@ end
 
 local lastUpdateStatesParams = nil
 function updateStates(params)
-	if(isAnyTreeChanged())then --isTreeChanged
+	if(not isDebuggerAttached())then
 		return
 	end
 	
@@ -2074,7 +2079,6 @@ function loadBehaviourNode(bt, btNode, discardId)
 end
 
 function loadBehaviourTree(bt)
-	serializedTreeName = currentTree.treeName 
   -- to be able to regenerate ids of deserialized nodes, when saved with different name
 	local root = loadBehaviourNode(bt, bt.root)
 	if(root)then
