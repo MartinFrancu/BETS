@@ -1,0 +1,1 @@
+These are icons for the built-in nodes of BETS. If you wish to create an image for your own custom command, place a PNG file with the same name next to it in its project directory.
