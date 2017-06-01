@@ -1,5 +1,4 @@
 --- Module in charge of loading/saving GUI dialogs. 
-
 -- @module ProjectDialog
 
 if(not BtUtils)then VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST) end

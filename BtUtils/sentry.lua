@@ -7,18 +7,23 @@
 -- local MyObject = Sentry:New()
 --
 -- -- append a two custom event handlers to the OnAction name
--- MyObject.OnAction = function(f)
+-- MyObject.OnAction = function(v)
 --   print("acted 1")
---   return f
+--   return v
 -- end
--- MyObject.OnAction = function(f)
+-- MyObject.OnAction = function(v)
 --   print("acted 2")
 -- end
 --
 -- -- invoke the event handlers
--- MyObject.OnAction:Invoke(false) -- invokes both
--- MyObject.OnAction:Invoke(true)  -- invokes only the first one
+-- MyObject.OnAction:Invoke() -- invokes both
+-- MyObject.OnAction() -- invokes both, equivalent to using Invoke
+--
+-- MyObject.OnAction(true)  -- invokes only the first one
 -- -- the execution of the second one is cancelled because the first one returned true
+--
+-- MyObject.OnAction(false) -- invokes both and removes the first one from the list
+-- MyObject.OnAction() -- invokes only the second one as the first one was removed
 
 --- Accessible fields.
 -- @table Sentry.
@@ -34,6 +39,7 @@ end
 -- @type EventHandler
 local eventHandlerPrototype = {}
 --- Invokes the execution of all registered functions, until one returns a non-false result.
+-- @remark The event handler can be called directly, instead of `h:Invoke(...)` you can use `h(...)`
 function eventHandlerPrototype:Invoke(
 		... -- any parameters that may be expected by the handlers themselves
 	)

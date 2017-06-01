@@ -84,7 +84,7 @@ return Utils:Assign("CustomEnvironment", function()
 	-- @string slotName The name of the slot to populate
 	-- @tparam {[string]=Any}|{string} requirements A map (or array) with parameter keys that are required; or `nil` if the slot should be available everywhere
 	-- @tparam func|Any valueCreator The function that construct the value for given parameters or the value itself
-	-- @remarks If the slots have any requirements, they do not get added to already created environments, only to future ones.
+	-- @remark If the slots have any requirements, they do not get added to already created environments, only to future ones.
 	-- @usage
 	--   CustomEnvironment.add("MathEx", nil, MathEx)
 	--   CustomEnvironment.add("error", { name = true }, function(p) return createCustomErrorHandler(p.name) end)

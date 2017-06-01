@@ -30,18 +30,18 @@ WG.BtUtils = WG.BtUtils or (function()
 		--- Locatable modules and classes.
 		-- @table BtUtils.
 		local locators = {
-			Chili = "chili-proxy", -- @{Chili}
+			Chili = "chili-proxy", -- finds the appropriate version of @{Chili} if it is available in `WG`, otherwise returns a @{Surrogate}
 			Sentry = "sentry", -- @{Sentry}
 			JSON = "json", -- @{JSON}
 			Dependency = "dependency", -- @{Dependency}
 			BehaviourTree = "behaviour-tree", -- @{BehaviourTree}
 			removeExtension = "remove-extension", -- @{removeExtension}
-			dirList = { "dir-list", 1 }, -- @{dirList}
-			subDirs = { "dir-list", 2 }, -- @{subDirs}
+			dirList = "dir-list@1", -- @{directoryListing.dirList}
+			subDirs = "dir-list@2", -- @{directoryListing.subDirs}
 			Debug = "debug_utils/", -- @{BtUtils.Debug}
 			UnitCategories = "categories",
-			metanext = { "meta-iteration", 1 }, -- @{metanext}
-			metapairs = { "meta-iteration", 2 }, -- @{metapairs}
+			metanext = "meta-iteration@1", -- @{metaIteration.metanext}
+			metapairs = "meta-iteration@2", -- @{metaIteration.metapairs}
 			Vec3 = "Vector3",
 			Sanitizer = "sanitizer", -- @{Sanitizer}
 			Timer = "timer", -- @{Timer}
@@ -123,12 +123,20 @@ WG.BtUtils = WG.BtUtils or (function()
 				
 					local locator = locators[key]
 					if(locator)then
-						local result
+						local result, index
 						rawset(self, key, false)
-						if(type(locator) == "string")then
-							result = include(prefix .. locator)
+						
+						locator, index = locator:match("([^@]*)@?(.*)")
+						if(index and index ~= "")then
+							index = tonumber(index)
 						else
-							result = select(locator[2], include(prefix .. locator[1]))
+							index = nil
+						end
+						
+						if(index)then
+							result = select(index, include(prefix .. locator))
+						else
+							result = include(prefix .. locator)
 						end
 						rawset(self, key, result)
 						return result

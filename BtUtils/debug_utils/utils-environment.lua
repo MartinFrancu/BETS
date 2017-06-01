@@ -1,3 +1,6 @@
+--- .
+-- @module _UtilsEnvironment
+
 if(not BtUtils)then VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST) end
 
 local Debug = BtUtils.Debug

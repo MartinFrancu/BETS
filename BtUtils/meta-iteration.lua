@@ -9,7 +9,11 @@ local Utils = BtUtils
 local metanext = Utils:Assign("metanext", function()
 	local metanext
 	
-	function metanext(state, key)
+	--- Function associated with @{metapairs}. Does one iteration step.
+	function metanext(
+			state, -- state of the iteration as returned by @{metapairs}
+			key -- the current key
+		)
 		local result
 		if(state.next)then
 			result = { state.next(state.current, key) }
@@ -51,8 +55,10 @@ end)
 local metapairs = Utils:Assign("metapairs", function()
 	local metapairs
 	
-	--- Iterates not only through the regular pairs, but also over the pairs of a metatable
-	function metapairs(t)
+	--- Iterates not only through the regular pairs, but also over the pairs of a metatable.`__index`, recursively
+	function metapairs(
+			t -- a table to iterate over.
+		)
 		if(type(t) == "userdata")then
 			local mt = getmetatable(t)
 			if(not mt or type(mt.__index) ~= "table")then
