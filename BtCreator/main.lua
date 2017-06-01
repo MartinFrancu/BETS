@@ -2022,11 +2022,16 @@ function loadBehaviourNode(bt, btNode, discardId)
 				for i=1,#v do
 					if (v[i].name ~= "scriptName") then
 						if(not params.parameters[i])then
-							Logger.error("save-and-load", "Parameter names do not match: N/A != ", v[i].name, " of node "..btNode.nodeType or btNode.scriptName)
+							Logger.warn("save-and-load", "Parameter names do not match: N/A != ", v[i].name, " of node "..(btNode.scriptName or btNode.nodeType))
+							params.parameters[i] = {
+								name = v[i].name,
+								variableType = "expression",
+								componentType = "editBox",
+							}
 						end
 					
 						if(params.parameters[i].name ~= v[i].name)then
-							Logger.error("save-and-load", "Parameter names do not match: ", params.parameters[i].name, " != ", v[i].name, " of node "..btNode.nodeType or btNode.scriptName)
+							Logger.warn("save-and-load", "Parameter names do not match: ", params.parameters[i].name, " != ", v[i].name, " of node "..(btNode.scriptName or btNode.nodeType))
 						end
 
 						Logger.log("save-and-load", "params.parameters[i]: ", params.parameters[i], ", v[i]: ", v[i])
