@@ -310,7 +310,7 @@ if (widget and not widget.GetInfo) then
 		else
 			whiteWindow = Chili.Window:New({
 				parent = ChiliRoot,
-				TileImage = LUAUI_DIRNAME .. "Widgets/whiteness.png",
+				TileImage = LUAUI_DIRNAME .. "Widgets/BtUtils/whiteness.png",
 				x = 0,
 				y = 0,
 				width = 500,

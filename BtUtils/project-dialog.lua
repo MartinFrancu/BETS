@@ -1,4 +1,4 @@
---- Module in charge of loading/saving GUI dialogs. 
+--- Module in charge of new/load/save GUI dialogs.
 -- @module ProjectDialog
 
 if(not BtUtils)then VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST) end
@@ -118,7 +118,7 @@ return Utils:Assign("ProjectDialog", function()
 		window:Dispose()
 	end
 	
-	--- This will attach corresponding chili components of save/load dialog to given parent.
+	-- This will attach corresponding chili components of save/load dialog to a given parent.
 	function ProjectDialog.setUpDialog(parent, contentType, creatingEnabled, callbackObject, callbackFunction, showDialogHandler, defaultProject, defaultName)
 		callbackFunction = Sanitizer.sanitize(callbackFunction)
 		
@@ -254,7 +254,7 @@ return Utils:Assign("ProjectDialog", function()
 	end
 		
 	
-	--- This will attach corresponding chili components of new item dialog to given parent.
+	-- This will attach corresponding chili components of new item dialog to a given parent.
 	function ProjectDialog.setUpDialogNewItem(parent, contentType, callbackObject, callbackFunction, showDialogHandler, defaultProject, defaultName)
 		callbackFunction = Sanitizer.sanitize(callbackFunction)
 		
@@ -407,6 +407,19 @@ return Utils:Assign("ProjectDialog", function()
 		visibilityHandler(true)
 	end
 	
+	--- Shows a dialog that allows the user to select a project and a name of a content.
+	-- @tab params Table of parameters tha can contain the following slots.
+	--
+	-- - `visibilityHandler` - function that is called with `true` when dialog is shown and with `false` when it is hidden, can be used to disable other components while the dialog is shown
+	-- - `contentType` - @{ProjectManager.ContentType} that the dialog handles
+	-- - `dialogType` - one of the following
+	--     - `ProjectDialog.LOAD_DIALOG`
+	--     - `ProjectDialog.SAVE_DIALOG`
+	--     - `ProjectDialog.NEW_DIALOG`
+	-- - `title` - title of the dialog
+	-- - `x`, `y` - position where to show the dialog
+	-- - `project`, `name` - initial selected items in the dialog
+	-- @func callbackFunction Function that gets called after the dialog concludes.
 	function ProjectDialog.showDialog(params, callbackFunction)
 		showDialogWindow(params.visibilityHandler, params.contentType, params.dialogType, callbackFunction, params.title, params.x, params.y, params.project, params.name)
 	end

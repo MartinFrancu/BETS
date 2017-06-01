@@ -1,5 +1,5 @@
 --- Allows scheduling of functions to be executed after an amount of time passes.
--- The timing is based on the Update call-in of widgets.
+-- The timing is based on the `Update` call-in of widgets.
 -- @module Timer
 -- @pragma nostrip
 
@@ -32,7 +32,9 @@ return Utils:Assign("Timer", function()
 	end
 	
 	local delayed = {}
-	
+
+	--- Delays the invocation of the function by one rendering frame.
+	-- @func f Function to delay.
 	function Timer.delay(f)
 		addItem(delayed, Sanitizer.sanitize(f));
 	end
@@ -50,6 +52,10 @@ return Utils:Assign("Timer", function()
 	end
 
 	local injectionIdCounter = 0;
+	--- Injects a widget, allowing Timer to utilize its call-in for its functionality.
+	-- At least one widget has to be injected in order for the rest of @{Timer} to work.
+	-- @tparam widget widget The widget to inject.
+	-- @remark If the user intends to utilize @{Timer} in any way, it should inject itself.
 	function Timer.injectWidget(widget)
 		local oldUpdate = widget.Update;
 		local injectionId = injectionIdCounter

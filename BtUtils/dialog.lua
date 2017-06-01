@@ -149,10 +149,32 @@ return Utils:Assign("Dialog", function()
 		visibilityHandler(true)
 	end
 	
+	--- Shows a dialog.
+	-- @tab params Table of parameters tha can contain the following slots.
+	--
+	-- - `visibilityHandler` - function that is called with `true` when dialog is shown and with `false` when it is hidden, can be used to disable other components while the dialog is shown
+	-- - `dialogType` - one of the following
+	--     - `Dialog.YES_NO_CANCEL_TYPE`
+	--     - `Dialog.OK_CANCEL_TYPE`
+	-- - `title` - title of the dialog
+	-- - `message` - title of the dialog
+	-- - `x`, `y` - position where to show the dialog
+	-- - `buttonNames` - mapping of any of `YES`, `NO`, `OK` and `CANCEL` to alternate names that should be used instead
+	-- @func callbackFunction Function that gets called after the dialog concludes.
+	-- @remark The callback function is not called if user pressed the Cancel button.
 	function Dialog.showDialog(params, callbackFunction)
 		setUpDialog(params.visibilityHandler, callbackFunction, params.title, params.message, params.dialogType, params.buttonNames, params.x, params.y)
 	end
 	
+	--- Shows an error dialog.
+	-- @tab params Table of parameters tha can contain the following slots.
+	--
+	-- - `visibilityHandler` - function that is called with `true` when dialog is shown and with `false` when it is hidden, can be used to disable other components while the dialog is shown
+	-- - `title` - title of the dialog
+	-- - `message` - title of the dialog
+	-- - `x`, `y` - position where to show the dialog
+	-- - `buttonNames` - mapping of any of `OK` to alternate name that should be used instead
+	-- @func callbackFunction Function that gets called after the dialog concludes.
 	function Dialog.showErrorDialog(params, callbackFunction)
 		setUpDialog(params.visibilityHandler, callbackFunction, params.title, params.message, ERROR_TYPE, params.buttonNames, params.x, params.y)
 	end
