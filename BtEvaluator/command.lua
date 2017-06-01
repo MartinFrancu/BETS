@@ -205,6 +205,7 @@ function Command:BaseRun(unitIDs, parameters)
 		return res, retVal
 	else
 		Logger.error("command", "Error in script ", self.scriptName, ", method ", methodSignatures.Run, ": ", res)
+		return Results.FAILURE
 	end
 end
 
