@@ -1231,7 +1231,7 @@ function widget:Initialize()
 	)
 	
 	
-	WG.BtControllerReloadTreeType = BtController.reloadTreeType
+	WG.BtControllerReloadTreeType = sanitizer:Sanitize(BtController.reloadTreeType)
 	-- Create the window
    
 	setUpTreeControlWindow()
@@ -1262,6 +1262,9 @@ end
 --- When whidget is shutting down all Marks are removed.
 function widget:Shutdown()
 	removeAllMarks()
+	
+	WG.BtControllerReloadTreeType = nil
+	
 	Dependency.clear(Dependency.BtController)
 end
 

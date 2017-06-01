@@ -48,6 +48,9 @@ end)
 custom_see_handler('Chili', function()
   return 'Chili', 'https://gajop.github.io/chiliui/index.html'
 end)
+custom_see_handler('Vector3', function()
+  return 'Vector3', 'https://github.com/RevoluPowered/GMathLibrary'
+end)
 custom_see_handler('VFS', function()
   return 'VFS', 'https://springrts.com/wiki/Lua_VFS'
 end)
@@ -59,6 +62,9 @@ custom_see_handler('VFS.SubDirs', function()
 end)
 custom_see_handler('widget', function()
   return 'widget', 'https://en.wikibooks.org/wiki/Lua_in_SpringRTS/Widgets'
+end)
+custom_see_handler('C# async', function()
+  return 'C# async', 'https://msdn.microsoft.com/library/hh191443(vs.110).aspx'
 end)
 
 -- adds the Remarks section to methods, functions etc.

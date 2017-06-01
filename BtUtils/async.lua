@@ -1,5 +1,5 @@
---- .
--- .
+--- Provides the capability to write sequential code that works asynchronously.
+-- For the specifics how the type of usage this emulates, see @{C# async}
 -- @module async
 
 if(not BtUtils)then VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST) end;
@@ -9,7 +9,25 @@ return Utils:Assign("async", function()
 	local async
 	
 	local Promise = Utils.Promise
-	
+
+	---	Alters the given function to work asynchronously.
+	-- @func f Function that should be altered.
+	-- @treturn func The altered function that can be called. The function itself then doesn't return its return values normally, but in a form of a @{Promise}.
+	-- @remark When `f` is called altered using this function, it can call functions `await`, resp. `awaitFunction` to postpone itself until a promise is fulfilled, resp. a callback is called.
+	-- @usage myFunction = async(function(a)
+	--   local result = awaitFunction(Dialog.showDialog, { message = a, ... })
+	--   return result and true or false
+	-- end)
+	-- 
+	-- myOtherFunction = async(function())
+	--   Spring.Echo("Before")
+	--   if(await(myFunction("Hello")))then
+	--     Spring.Echo("Hello.")
+	--   end
+	--   if(await(myFunction("Goodbye")))then
+	--     Spring.Echo("After Goodbye.")
+	--   end
+	-- end)
 	function async(f)
 		return function(...)
 			local resultPromise = Promise:New()

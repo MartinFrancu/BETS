@@ -1,5 +1,4 @@
---- Finds the appropriate version if it is available in WG, otherwise returns a surrogate
--- @module Chili
+-- Finds the appropriate version if it is available in WG, otherwise returns a surrogate
 
 if(not BtUtils)then VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST) end
 

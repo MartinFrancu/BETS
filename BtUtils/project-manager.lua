@@ -1,4 +1,10 @@
---- Loads and allows to work with BETS projects.
+--- Provides methods that allow to create and otherwise work with BETS projects.
+-- There are two location in which projects can exist:
+-- 
+--   - `LuaUI/BETS/Projects`
+--   - `LuaUI/Widgets/BtProjects` - for internal purposes
+--
+-- Project can also exist in two forms, a directory or an archive containing the SpringData directory structure.
 -- @module ProjectManager
 -- @pragma nostrip
 
@@ -64,14 +70,18 @@ return Utils:Assign("ProjectManager", function()
 		end
 	end
 	
+	--- Unloads all projects.
+	-- @remark Useful when working with archives, that you would like to manipule on the drive, but they are locked. Calling this should load to their unlocking (except it doesn't, because unmapping archives doesn't actually work in SpringRTS).
 	function ProjectManager.unload()
 		projects = {}
 		unloadArchives()
 	end
+	--- Reloads the list of projects.
 	function ProjectManager.reload()
 		ProjectManager.unload()
 		ProjectManager.load()
 	end
+	--- Loads all project information from disk.
 	function ProjectManager.load()
 		loadArchives()
 		loadProjects()
@@ -91,6 +101,10 @@ return Utils:Assign("ProjectManager", function()
 		return true
 	end
 	
+	--- Produces an archive out of a project with the given name.
+	-- The archive can then be e.g. send to other users of BETS.
+	-- @tparam string projectName Name of the project to produce the archive from.
+	-- @return `true` if successful, `false` otherwise
 	function ProjectManager.archivate(projectName)
 		local project = projects[projectName]
 		if(not project)then
@@ -117,6 +131,8 @@ return Utils:Assign("ProjectManager", function()
 		
 		return success, msg
 	end
+	--- Returns a list of all projects.
+	-- @treturn {tab} List of project paramters, such as their `name`, their `path` and whether the specific project `isArchive`
 	function ProjectManager.getProjects()
 		local result, i = {}, 1
 		for projectName, project in pairs(projects) do
@@ -125,9 +141,15 @@ return Utils:Assign("ProjectManager", function()
 		end
 		return result
 	end
+	--- Checks whether the given value is a name of a loaded project.
+	-- @string projectName The name of the project to be checked.
 	function ProjectManager.isProject(projectName)
 		return not not projects[projectName]
 	end
+	--- Forms a qualified name out of the project name and content name.
+	-- @string projectName Project name.
+	-- @string name Content name.
+	-- @treturn string Qualified name, as in `<project>.<name>`.
 	function ProjectManager.asQualifiedName(projectName, name)
 		if(not name)then
 			return nil
@@ -138,10 +160,19 @@ return Utils:Assign("ProjectManager", function()
 		
 		return projectName .. "." .. name
 	end
+	--- Parse the given qualified name and outputs project and content names.
+	-- @string qualifiedName Qualified name.
+	-- @treturn[1] string Project name.
+	-- @treturn[1] string Content name.
+	-- @return[2] `nil`, if the given name is not a valid qualifiedName
 	function ProjectManager.fromQualifiedName(qualifiedName)
 		return qualifiedName:match("^(.-)%.(.+)$")
 	end
 	
+	--- Creates a new project.
+	-- Fails if a project with the same name already exists.
+	-- @string projectName The name of the new project.
+	-- @return `true`
 	function ProjectManager.createProject(projectName)
 		if(projects[projectName])then
 			return nil, "Project " .. projectName .. " already exists"
@@ -158,6 +189,13 @@ return Utils:Assign("ProjectManager", function()
 		return true
 	end
 	
+	--- Locates the position of a file based on its type and name.
+	-- The file doesn't necesarily need to exist, thus allowing to use this method even when finding where to store a file.
+	-- @tparam ContentType contentType 
+	-- @string qualifiedName Full qualified name or only a name of a project, with name specified by parameter `name`.
+	-- @string[opt] name The name of the content.
+	-- @treturn string Path to the file.
+	-- @treturn tab Parameters of the file, such as `project` name, content `name`, whether the file `exists` and whether the project is `readonly`.
 	function ProjectManager.findFile(contentType, qualifiedName, name)
 		local projectName
 		if(name)then
@@ -173,11 +211,6 @@ return Utils:Assign("ProjectManager", function()
 		end
 		
 		local path = project.path .. (contentType.directoryName and (contentType.directoryName .. "/") or "") .. contentType.nameToFile(name)
-		--[[
-		if(not VFS.FileExists(path))then
-			return nil, "File " .. path .. " does not exist."
-		end
-		]]
 
 		return path, {
 			project = projectName,
@@ -203,6 +236,10 @@ return Utils:Assign("ProjectManager", function()
 		return result, i
 	end
 	
+	--- Lists all files in a project of the specific @{ContentType}.
+	-- @string projectName Name of a project.
+	-- @tparam ContentType contentType
+	-- @treturn {tab} List of table describing the parameters of the files, such as their `name` and `path`.
 	function ProjectManager.listProject(projectName, contentType)
 		local project = projects[projectName]
 		if(not project)then
@@ -212,6 +249,9 @@ return Utils:Assign("ProjectManager", function()
 		local result, i = {}, 1
 		return (listProjectInternal({}, 1, project, contentType))
 	end
+	--- Lists all files in all loaded projects of the specific @{ContentType}.
+	-- @tparam ContentType contentType
+	-- @treturn {tab} List of table describing the parameters of the files, such as their `name` and `path`.
 	function ProjectManager.listAll(contentType)
 		local result, i = {}, 1
 		for projectName, project in pairs(projects) do
@@ -220,6 +260,10 @@ return Utils:Assign("ProjectManager", function()
 		return result
 	end
 
+	--- Creates a content type using the specified directory name and extension.
+	-- @string subdirectory The directory name in which the content exists within a project.
+	-- @string extension Extension that is used for the file of that content.
+	-- @treturn ContentType
 	function ProjectManager.makeRegularContentType(subdirectory, extension)
 		return {
 			directoryName = subdirectory,
@@ -228,6 +272,16 @@ return Utils:Assign("ProjectManager", function()
 			fileToName = Utils.removeExtension,
 		}
 	end
+	
+	--- 
+	-- @type ContentType
+	
+	--- Specifies where content can be found inside the project directory.
+	-- @table ContentType.
+	-- @tfield string directoryName In what directory is the content.
+	-- @tfield string fileMask What filter should be used to find the list of files of that content.
+	-- @tfield func nameToFile Transformation from name of the content to filename.
+	-- @tfield func fileToName Transofmration from filename to the name of the content.
 	
 	ProjectManager.load()
 	return ProjectManager

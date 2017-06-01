@@ -1,11 +1,13 @@
----
+--- Function capable of inspecting the call chain and find the closest widget.
 -- @module getWidgetCaller
 
 local getWidgetCaller
 
 local MAX_FAILURE_COUNT = 5
 
----
+--- Inspect the call chain and locating the closest widget.
+-- The inspection start from the point of the caller and goes down.
+-- @treturn widget The widget or `nil`
 function getWidgetCaller()
 	local level = 3 -- start with the environment of the caller
 	local failureCount = 0

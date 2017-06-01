@@ -1,4 +1,5 @@
--- This part of BtUtils is supposed to take care of unit categories definitions. 
+--- This part of BtUtils is supposed to take care of unit categories definitions. 
+-- @module UnitCategories
 
 
 if(not BtUtils)then VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST) end;
@@ -24,8 +25,9 @@ return Utils:Assign("UnitCategories", function()
 	local contentType =  ProjectManager.makeRegularContentType("UnitCategories", "json")
 	UnitCategories.contentType = contentType
 		
-	-- Returns entry corresponding to given category:
-	-- If category is not found 
+	--- Returns entry corresponding to a given category.
+	-- @string qualifiedName Qualified name of the category.
+	-- @treturn tab Table containing a list of tables in `types` that describe the `name` of units in the category.
 	function UnitCategories.loadCategory(qualifiedName)
 		local path = ProjectManager.findFile(contentType, qualifiedName)
 		if(not path)then
@@ -42,7 +44,9 @@ return Utils:Assign("UnitCategories", function()
 		local data = JSON:decode(text)
 		return data
 	end
-	-- Get types in given category:
+	--- Get types in given category.
+	-- @string qualifiedName Qualified name of the category.
+	-- @treturn {tab} List of tables with `name` of units in the category.
 	function UnitCategories.getCategoryTypes(qualifiedName)
 		local data, message = UnitCategories.loadCategory(qualifiedName)
 		if(not data) then
@@ -51,7 +55,8 @@ return Utils:Assign("UnitCategories", function()
 		end
 		return data.types
 	end
-	-- returns array of names of availible categories.
+	--- Returns array of names of available categories.
+	-- @treturn {string}
 	function UnitCategories.getAllCategoryNames() 
 		local result = {}
 		local categories = ProjectManager.listAll(contentType)
@@ -62,6 +67,8 @@ return Utils:Assign("UnitCategories", function()
 		return result
 	end
 	
+	--- Saves a category.
+	-- @tab catDefinition Category definition containing `project` name, category `name` and `types` containing list of `name`s of the units.
 	function UnitCategories.saveCategory(catDefinition)
 		if(not ProjectManager.isProject(catDefinition.project))then
 			-- if new project I should create it 

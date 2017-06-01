@@ -573,11 +573,10 @@ function saveTreeRefs(treeRefs)
 		treeRef.currentTree.changed = false
 		saveTree(treeRef.tree, treeRef.currentTree.treeName)
 	end
-	for i, treeRef in ipairs(treeRefs) do
-		Logger.loggedCall("Errors", "BtCreator", 
-			"asking BtController to reload instances of saved tree type",
-			WG.BtControllerReloadTreeType,
-			treeRef.currentTree.treeName)
+	if(WG.BtControllerReloadTreeType)then
+		for i, treeRef in ipairs(treeRefs) do
+			WG.BtControllerReloadTreeType(treeRef.currentTree.treeName)
+		end
 	end
 	reloadReferenceButtons()
 	return true
@@ -632,10 +631,9 @@ saveAsTreeDialogCallback = async(function(project, tree)
 		else
 			currentTree.setChanged(false)
 			saveTree(protoTree, qualifiedName)
-			Logger.loggedCall("Errors", "BtCreator", 
-				"asking BtController to reload instances of saved tree type",
-				WG.BtControllerReloadTreeType,
-				qualifiedName)
+			if(WG.BtControllerReloadTreeType)then
+				WG.BtControllerReloadTreeType(qualifiedName)
+			end
 		end
 		currentTree.setChanged(false)
 		

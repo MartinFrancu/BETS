@@ -39,22 +39,22 @@ WG.BtUtils = WG.BtUtils or (function()
 			dirList = "dir-list@1", -- @{directoryListing.dirList}
 			subDirs = "dir-list@2", -- @{directoryListing.subDirs}
 			Debug = "debug_utils/", -- @{BtUtils.Debug}
-			UnitCategories = "categories",
+			UnitCategories = "categories", -- @{UnitCategories}
 			metanext = "meta-iteration@1", -- @{metaIteration.metanext}
 			metapairs = "meta-iteration@2", -- @{metaIteration.metapairs}
-			Vec3 = "Vector3",
+			Vec3 = "Vector3", -- @{Vec3}
 			Sanitizer = "sanitizer", -- @{Sanitizer}
 			Timer = "timer", -- @{Timer}
 			ProjectManager = "project-manager", -- @{ProjectManager}
 			CustomEnvironment = "custom-environment", -- @{CustomEnvironment}
-			ErrorBox = "error-box", -- @{ErrorBox}
-			ProjectDialog = "project-dialog",
-			Dialog = "dialog",
+			ProjectDialog = "project-dialog", -- @{ProjectDialog}
+			Dialog = "dialog", -- @{Dialog}
 			Surrogate = "Surrogate", -- @{Surrogate}
 			program = "program", -- @{program}
 			Promise = "promise", -- @{Promise}
 			async = "async", -- @{async}
 		}
+		-- ErrorBox = "error-box", -- @{ErrorBox}
 		
 		local LOCAL_PATH = LUAUI_DIRNAME .. "Widgets/BtUtils/"
 		local function include(name)

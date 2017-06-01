@@ -152,7 +152,7 @@ end
 function BtEvaluator.executeOS(command)
 	BtEvaluator.sendMessage("EXECUTE", command)
 end
-Utils.ErrorBox.setExecuteFunction(BtEvaluator.executeOS)
+--Utils.ErrorBox.setExecuteFunction(BtEvaluator.executeOS)
 
 function BtEvaluator.requestNodeDefinitions()
 	return BtEvaluator.sendMessage("REQUEST_NODE_DEFINITIONS")

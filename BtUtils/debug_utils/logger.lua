@@ -188,7 +188,9 @@ If it is not an array, it is equivalent to an array with a single value.
 			return internalLog(logGroup, Logger.LOGTYPE_ERROR, ...)
 		end
 	end
-	--- Calls given function in proctected mode and logs possible 
+	
+	-- @deprecated
+	-- Calls given function in proctected mode and logs possible 
 	-- Example of usage: Logger.loggedCall("errors", "BtTester", "tried problematic code", BtDummy.problematicCode, arg1, arg2 )
 	function Logger.loggedCall(logGroup,  source, comment,functionToCall, ...)
 		local status, result = pcall(functionToCall,... )

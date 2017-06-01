@@ -1,3 +1,9 @@
+--- Rudimentary 3D vector implementation with some 2D functionality.
+-- Altered (as in functional) version of a library @{Vector3}.
+-- @author Gordon MacPherson
+-- @classmod Vec3
+-- @alias vector_prototype
+
 -- A 3D Vector Library.
 -- By Gordon MacPherson with the assistance of google and sir divran! :L
 
@@ -112,6 +118,8 @@ function vector_prototype:Sub( vector )
 	return self
 end
 
+--- Multiplies the vector by the given number in-place.
+-- @return `self`
 function vector_prototype:Mul( n )
 	self.x = self.x * n
 	self.y = self.y * n
@@ -119,6 +127,8 @@ function vector_prototype:Mul( n )
 	return self
 end
 
+--- Sets the current instance to zeros.
+-- @return `self`
 function vector_prototype:Zero()
 	self.x = 0
 	self.y = 0
@@ -126,40 +136,53 @@ function vector_prototype:Zero()
 	return self
 end
 
+--- Computes the square length of the vector.
 function vector_prototype:LengthSqr()
 	return ( ( self.x * self.x ) + ( self.y * self.y ) + ( self.z * self.z ) )
 end
 
+--- Computes the length of the vector.
 function vector_prototype:Length()
 	return self:LengthSqr() ^ 0.5
 end
 
 -- This should really be named get normalised copy.
+--- Returns normalized copy of the vector.
+-- @treturn Vec3
 function vector_prototype:GetNormal()
 	local length = self:Length()
 	return new( self.x / length, self.y / length, self.z / length )
 end
 
 -- Redirect for people doing it wrong.
+--- Alias to @{Vector:GetNormal}
 function vector_prototype:GetNormalized()
 	return self:GetNormal()
 end
 
+--- Normalizes the vector in-place.
+-- @return `self`
 function vector_prototype:Normalize()
 	local length = self:Length()
 	return self:Mul(1 / length)
 end
 
+--- Computes a dot product with another vector.
+-- @tparam Vec3 vector The other vector.
 function vector_prototype:DotProduct( vector )
 	return (self.x  * vector.x) + (self.y * vector.y) + (self.z * vector.z)
 end
 
 -- Redirect for people doing it wrong.
+--- Alias to @{Vector:DotProduct}
+-- @param See @{Vector:DotProduct}
 function vector_prototype:Dot( vector )
 	return self:DotProduct( vector )
 end
 
--- Cross Product.
+--- Computes the cross product with another vector.
+-- @tparam Vec3 vector The other vector.
+-- @treturn Vec3 The cross product.
 function vector_prototype:Cross( vector )
 	local vec = new(0,0,0)
 	vec.x = ( self.y * vector.z ) - ( vector.y * self.z )
@@ -168,13 +191,15 @@ function vector_prototype:Cross( vector )
 	return vec
 end
 
--- Returns the distance between two vectors.
+--- Computes the distance between two vectors.
+-- @tparam Vec3 vector The other vector.
 function vector_prototype:Distance( vector )
 	local vec = self - vector
 	return vec:Length()
 end
 
--- Convert vector in 2D heading in degrees between 0-360
+--- Convert vector in 2D heading in degrees between 0-360
+-- @treturn number Angle in X-Z plane.
 function vector_prototype:ToHeading() -- azimuth
 	local angleInRads = atan2(self.x, self.z)
 	-- angleInRads
@@ -190,8 +215,10 @@ function vector_prototype:ToHeading() -- azimuth
 	-- W (west)  = 270
 end
 
--- Rotate vector around Y axis by given angle in degrees
--- mathematically correct variant = negative angle values implies clockwise rotation
+--- Rotates vector around Y axis by given angle in degrees in-place.
+-- A mathematically correct variant = negative angle values implies clockwise rotation.
+-- @tparam number angle Angle in X-Z plane.
+-- @return `self`
 function vector_prototype:Rotate2D(angle)
 	local angleInRads = rad(angle)
 	local vec = new(0,0,0)
@@ -202,6 +229,8 @@ function vector_prototype:Rotate2D(angle)
 end
 
 
+--- Returns vector in the form that Spring expects.
+-- @treturn {number} List of X, Y, Z coordinates
 function vector_prototype:AsSpringVector()
 	return { self.x, self.y, self.z }
 end
