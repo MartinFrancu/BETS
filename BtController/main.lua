@@ -561,6 +561,7 @@ function createTreeInBtEvaluator(treeHandle)
 	referencesForTrees[treeHandle.treeType] = result or {}
 	
 	if(not result) then
+		unmarkAllUnitsInTree(treeHandle)
 		treeHandle:SwitchToErrorState("deferenceTree error: " .. message)
 		treeHandle.Created = false
 		return
@@ -568,6 +569,7 @@ function createTreeInBtEvaluator(treeHandle)
 	result,message = BtEvaluator.createTree(treeHandle.instanceId, treeHandle.Tree, treeHandle.Inputs)
 	if(not result) then
 		-- error state
+		unmarkAllUnitsInTree(treeHandle)
 		treeHandle:SwitchToErrorState("createTree error: " ..message)
 		treeHandle.Created = false
 		return
@@ -1196,7 +1198,7 @@ function resetMarkers()
 	addMarks(unitsUnlocked, false)
 end
 --- Main initialization function. It is mostly used for creating GUI (Chili components).
--- BtController is dependent on BtCommandsm and BtCreator. BtConfig is loaded here as well.
+-- BtController is dependent on BtCommands and BtCreator. BtConfig is loaded here as well.
 function widget:Initialize()	
 	-- Get ready to use Chili
 	Chili = WG.ChiliClone
