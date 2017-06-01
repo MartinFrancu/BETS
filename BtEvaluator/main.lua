@@ -422,6 +422,7 @@ end
 
 -- ==== luaCommand handling ====
 
+local Results = require("results")
 
 BtEvaluator.scripts = {}
 
@@ -627,12 +628,26 @@ local function handleCommand(params)
 		local result, output = command:BaseRun(units, parameters)
 		
 		if(output)then
+			for k in pairs(command.outputParameters) do
+				local expr = parameterExpressions[k]
+				if(expr)then
+					pcall(expr.set, output[k])
+					output[k] = nil
+				end
+			end
 			for k, v in pairs(output) do
 				local expr = parameterExpressions[k]
 				if(expr)then
 					pcall(expr.set, v)
 				else
 					Logger.warn("expression", "No parameter available for output '", k, "'");
+				end
+			end
+		else
+			for k in pairs(command.outputParameters) do
+				local expr = parameterExpressions[k]
+				if(expr)then
+					pcall(expr.set, nil)
 				end
 			end
 		end

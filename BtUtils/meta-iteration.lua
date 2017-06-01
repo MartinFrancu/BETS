@@ -18,6 +18,9 @@ local metanext = Utils:Assign("metanext", function()
 		if(state.next)then
 			result = { state.next(state.current, key) }
 		else
+			if(type(state.current) ~= "table")then
+				error("bad argument #1 to 'next' (table expected, got " .. type(state.current) .. ")", 2)
+			end
 			result = { next(state.current, key) }
 		end
 		

@@ -73,7 +73,7 @@ function SensorManager.loadSensor(...)
 				local success, result, period = pcall(evaluator, ...)
 				if(not success)then
 					Logger.error("sensors", "Evaluation of sensor '", name ,"' failed: ", result)
-					return
+					error(result)
 				end
 				lastResult = result
 				lastPeriod = period or info.period
