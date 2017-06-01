@@ -198,6 +198,9 @@ function Command:BaseRun(unitIDs, parameters)
 	if success then
 		if (res == Results.SUCCESS or res == Results.FAILURE) then
 			self:BaseReset()
+		elseif(res ~= Results.RUNNING)then
+			Logger.error("command", "Invalid result of a command. Expected SUCCESS, FAILURE or RUNNING, got: ", dump(res))
+			return Results.FAILURE
 		end
 		return res, retVal
 	else
