@@ -9,9 +9,27 @@ local sanitizer = Utils.Sanitizer.forCurrentWidget()
 
 local variableCommandName = "Variable"
 
-
+--- Instances of TreeHandle keeps record of units assinged to roles and given 
+-- input parameters of given tree instance. Record of all units assingment is kept
+-- in TreeHandle table itself (singleton). TreeHandle instance contains the following records:
+--			name = instance name. 
+--			treeType = tree type name. 
+--			instanceId = instance identifier. 
+--			Tree = tree loaded by BehaviourTree. 
+--			ChiliComponentsGeneral = General Chili components (list): Tree type lable, instance name, status and remove button, unit lock.
+--			ChiliComponentsRoles = Chili components regarding roles: Role name label, assign button and unit count button.  
+--			ChiliComponentsInputs = Chili components regarding input parameters: Buttons for selecting input.
+--			Roles = Unist assigned to given roles are kept here. 
+--			RequireUnits = True if tree should be removed if he is not controlling any unit. 
+--			AssignedUnitsCount = How many units are assigned under control of this tree.
+--			InputButtons = List of input buttons.
+--			Ready = Is this tree ready for being evaluated in BtEvaluator. 
+--			Created = Was instance corresponding to this tree handle created in BtEvaluator.
+--			Inputs = Data provided by user for input parameters.
+--			unitsLocked = Are units currently locked?
 TreeHandle = {}
--- This table is indexed by unitId and contains structures:
+--- This table is used to keep record of units assignments. It is indexed by unitId
+-- and contains structures:
 -- {instanceId = "", Role = "", TreeHandle = treehandle} 
 TreeHandle.unitsToTreesMap = {}
 --[[
@@ -49,7 +67,7 @@ TreeHandle = {
 -----------------------------------------------------------------------------------]]--
 
 
--- The following funtion creates string which summarize state of this tree. 
+--- The following funtion creates string which summarize state of this tree. 
 function TreeHandle:UpdateTreeStatus()
 	if self.error then -- there is error and it should remain in this state
 		self.treeStatus:SetCaption("Error: " .. self.error)
@@ -96,7 +114,7 @@ function TreeHandle:UpdateTreeStatus()
 	self.treeStatus:SetCaption(result) 
 end
 
--- this function will check if all required inputs are given. 
+--- this function will check if all required inputs are given. 
 function TreeHandle:CheckReady()
 	local allOkSoFar = true
 	if self.error then
@@ -116,33 +134,33 @@ function TreeHandle:CheckReady()
 	end
 end
 
--- Function responsible for selecting units in given role.
+--- Listener for select units in given role.
 function TreeHandle.selectUnitsInRolesListener(button, ...) 
 	local unitsInThisRole = TreeHandle.unitsInTreeRole(button.TreeHandle.instanceId, button.Role)
 	Spring.SelectUnitArray(unitsInThisRole)
 end
 
-
+--- Disposes all Chili components corresponding to given TreeHandle. 
 function TreeHandle:DisposeAllChiliComponents()
 	self:DisposeGeneralComponents()
 	self:DisposeRolesComponents()
 	self:DisposeInputComponents()
 end
-
+--- Disposes Chili components corresponding to tree name and state of given TreeHandle. 
 function TreeHandle:DisposeGeneralComponents()
 	for _,chiliComponent in pairs(self.ChiliComponentsGeneral) do
 		chiliComponent:Dispose()
 	end
 	self.ChiliComponentsGeneral = {}
 end
-
+--- Disposes Chili components corresponding to roles of given TreeHandle. 
 function TreeHandle:DisposeRolesComponents()
 	for _,chiliComponent in pairs(self.ChiliComponentsRoles) do
 		chiliComponent:Dispose()
 	end
 	self.ChiliComponentsRoles = {}
 end
-
+--- Disposes Chili components corresponding to input parameteres of given TreeHandle. 
 function TreeHandle:DisposeInputComponents()
 	for _,chiliComponent in pairs(self.ChiliComponentsInputs) do
 		chiliComponent:Dispose()
@@ -150,8 +168,10 @@ function TreeHandle:DisposeInputComponents()
 	self.ChiliComponentsInputs = {}
 end
 
--- This function removes all GUI components and shows just error message.
--- And releases all units.
+--- This function removes all GUI components and shows just error message.
+-- And releases all units. It is called when an error was encountered 
+-- (wrong tree file format, unreachable or variable input.)
+-- @tparam String message Message descripting occurred error. 
 function TreeHandle:SwitchToErrorState(message)
 	self.error = message
 	 -- release units
@@ -168,8 +188,15 @@ function TreeHandle:SwitchToErrorState(message)
 	self:UpdateTreeStatus()
 	self.treeStatus.parent:RequestUpdate()
 end
--- This method will set up and load in all chili components corresponding to 
--- roles in given tree. It returns maximal x-coordinate of components
+
+--- This method will set up and load in all chili components corresponding to 
+-- roles in given tree. Created Chili components will be added to childs of given
+-- parent object. 
+-- Function returns maximal x-coordinate these components are using.
+-- @param obj Chili parent component. 
+-- @param xOffSet Starting offset.
+-- @param xOffSet Starting offset.
+-- @return Maximal x-coordinate used. 
 local function createChiliComponentsRoles(obj,xOffSet,yOffSet)
 	local rolesEndX
 	local roleInd = 0 
@@ -248,8 +275,13 @@ local function createChiliComponentsRoles(obj,xOffSet,yOffSet)
 	return rolesEndX
 end
 
--- This method will set up and load in all chili components corresponding to 
--- inputs of given tree. It returns maximal x-coordinate of components.
+--- This method will set up and load in all chili components corresponding to 
+-- inputs of given tree. They are added as childs in provided parent object.
+-- It returns maximal x-coordinate used up by components.
+-- @param obj Chili parent component. 
+-- @param xOffSet Starting offset.
+-- @param xOffSet Starting offset.
+-- @return Maximal x-coordinate used. 
 local function createChiliComponentsInput(obj, xOffSet, yOffSet)
 	local inputXOffset = xOffSet 
 	local inputYOffset = yOffSet
@@ -289,6 +321,16 @@ end
 	InputButtonListener
 	lockImageListener
 --]]
+--- Constructor of Treehandle instances. Provided object is expected to contain
+-- name (String, instance name), treeType (String), RequireUnits (Boolean) and  
+-- following listeners: AssignUnitListener, InputButtonListener, lockImageListener 
+-- which will be attached on corresponding buttons. 
+-- Required Chili components are created and stored in ChiliComponentsGeneral, 
+-- ChiliComponentsRoles and ChiliComponentsInputs lists. Actual connection of these
+-- components ancestors needs to be done outside of this constructor. 
+-- If tree could not be created, nil value is returned. 
+-- Tree is not check if it is able to run or reported to BtEvaluator. 
+-- @param obj Proto tree handle containing treeType, name, RequireUnits, AssignUnitListener, InputButtonListener and  lockImageListener.
 function TreeHandle:New(obj)
 	setmetatable(obj, self)
 	self.__index = self
@@ -404,7 +446,9 @@ function TreeHandle:New(obj)
 	return obj
 end
 
--- Following three methods are shortcut for increasing and decreassing role counts.
+---Method for decreasing unit count in given role by one. 
+-- This function does not change the actual unit assignment records.
+-- @tparam String whichRole Name of role.
 function TreeHandle:DecreaseUnitCount(whichRole)
 	local roleData = self.Roles[whichRole]
 	-- this is the current role and tree
@@ -414,6 +458,9 @@ function TreeHandle:DecreaseUnitCount(whichRole)
 	roleData.unitCountButton:SetCaption(currentCount)
 	self.AssignedUnitsCount = self.AssignedUnitsCount -1
 end
+---Method for increasing unit count in given role by one.
+-- This function does not change the actual unit assignment records.
+-- @tparam String whichRole Name of role. 
 function TreeHandle:IncreaseUnitCount(whichRole)	
 	local roleData = self.Roles[whichRole]
 	-- this is the current role and tree
@@ -423,6 +470,10 @@ function TreeHandle:IncreaseUnitCount(whichRole)
 	roleData.unitCountButton:SetCaption(currentCount)
 	self.AssignedUnitsCount = self.AssignedUnitsCount +1
 end
+---Method for setting unit count of given role to given number.
+-- This function does not change the actual unit assignment records.
+-- @tparam String whichRole Name of role.
+-- @param number New unit count.  
 function TreeHandle:SetUnitCount(whichRole, number)
 	local roleData = self.Roles[whichRole]
 	local previouslyAssigned = tonumber(roleData.unitCountButton.caption) 
@@ -430,8 +481,11 @@ function TreeHandle:SetUnitCount(whichRole, number)
 	roleData.unitCountButton:SetCaption(number)
 	self.AssignedUnitsCount = self.AssignedUnitsCount + number
 end
--- this function sets input to be given and records data to tree. It expects data transformed 
--- in our format. 
+
+--- Sets input parameter to be given and records data to field TreeHandle:Inputs.
+-- Changes appearance of the button and cheks if tree is ready and updates tree status.  
+-- @tparam String inputName Name of inpu tto b given.
+-- @param data Specified input.
 function TreeHandle:FillInInput(inputName, data)
 	-- I should change color of input
 	for _,inputButton in pairs(self.InputButtons) do
@@ -446,7 +500,9 @@ function TreeHandle:FillInInput(inputName, data)
 	self:UpdateTreeStatus()	
 end
 
--- this will remove all units from given tree and adjust gui componnets
+--- this will unassign (in TreeHandle table record) all units from given tree 
+-- and adjust gui componnets
+-- @param instanceId Instance ID. 
 function TreeHandle.removeUnitsFromTree(instanceId)
 	for unitId, unitData in pairs(TreeHandle.unitsToTreesMap) do
 		if(unitData.instanceId == instanceId) then
@@ -456,7 +512,9 @@ function TreeHandle.removeUnitsFromTree(instanceId)
 	end
 end
 
--- this will remove given unit from its current tree and adjust the gui componnets
+--- Removes given unit (assignment) from its current tree and adjust
+-- gui components of that tree.
+-- @param unitId In-game ID the unit.  
 function TreeHandle.removeUnitFromCurrentTree(unitId)	
 	if(TreeHandle.unitsToTreesMap[unitId] == nil) then return end
 	-- unit is assigned to some tree:
@@ -469,6 +527,11 @@ function TreeHandle.removeUnitFromCurrentTree(unitId)
 	return treeHandle
 end
 
+--- Returns all units that are assigned to given role in given tree according to 
+-- record in TreeHandle table.
+-- @param instanceId Instace identification.
+-- @tparam String roleName Name of corresponding role. 
+-- @return Array of unit IDs. 
 function TreeHandle.unitsInTreeRole(instanceId,roleName)
 	local unitsInThisTree = {}
 	for unitId, unitEntry in pairs(TreeHandle.unitsToTreesMap) do
@@ -479,7 +542,10 @@ function TreeHandle.unitsInTreeRole(instanceId,roleName)
 	return unitsInThisTree
 end
 
--- this will take note of assignment of a unit to given tree and adjust gui componnets
+---  Takes note of assignment of a unit to given tree and adjust gui componnets.
+-- @param unitId ID of unit. 
+-- @tparam TreeHandle treeHandle Tree handle to which units need to be assigned.
+-- @tparam String roleName Name of role into which unit is assigned. 
 function TreeHandle.assignUnitToTree(unitId, treeHandle, roleName)
 	if(TreeHandle.unitsToTreesMap[unitId] ~= nil) then
 		-- unit is currently assigned elsewhere, need to remove it first
@@ -493,7 +559,8 @@ function TreeHandle.assignUnitToTree(unitId, treeHandle, roleName)
 	treeHandle:IncreaseUnitCount(roleName)
 end
 
--- This will return name id of all units in given tree
+--- This will return name ID of all units in given tree.
+-- @param instanceId Instance identifier. 
 function TreeHandle.unitsInTree(instanceId)
 	local unitsInThisTree = {}
 	for unitId, unitEntry in pairs(TreeHandle.unitsToTreesMap) do
@@ -504,7 +571,9 @@ function TreeHandle.unitsInTree(instanceId)
 	return unitsInThisTree
 end
 
--- This function reload tree again from file, but keeps user input if possible. 
+--- This function reload tree again from file, but keeps user input if possible.
+-- Assigned units are kept if role has the same name. Input values are kept if
+-- input name and type is preserved.  
 function TreeHandle:ReloadTree()
 	self.error = nil -- remove any previous error
 	-- remember all units assigned in this tree

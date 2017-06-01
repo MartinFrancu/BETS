@@ -77,7 +77,7 @@ return Utils:Assign("UnitCategories", function()
 		end
 		
 		Spring.CreateDir(path:match("^(.+)/"))
-		local text = JSON:encode(catDefinition, nil, { pretty = true, indent = "\t"})
+		local text = JSON:encode( {types = catDefinition.types}, nil, { pretty = true, indent = "\t"})
 		local file = io.open(path, "w")
 		if(not file)then
 			Logger.log("categories", "saveCategories: unable to write in file: ", path)

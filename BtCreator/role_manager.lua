@@ -165,12 +165,13 @@ function roleManager.createNewCategoryCallback(projectName, categoryName)
 		local unitTypes = {}
 		for _,unitTypeCheckBox in pairs(unitCheckBoxes) do
 			if(unitTypeCheckBox.checked == true) then
-				local typeRecord = {name = unitTypeCheckBox.unitName, humanName = unitTypeCheckBox.unitHumanName}
+				local typeRecord = {name = unitTypeCheckBox.unitName}
 				table.insert(unitTypes, typeRecord)
 			end
 		end
 		-- add check for category name?
 		local newCategory = {
+			project = projectName,
 			name = 	categoryName,
 			types = unitTypes,
 		}
@@ -274,6 +275,7 @@ local function setUpRoleChiliComponents(parent, xOff, yOff, index, roles)
 			caption = categoryName,
 			checked = false,
 			width = 200,
+			OnChange = {changeColor},
 		}
 		if(checkedCategories[categoryName] ~= nil) then
 			categoryCheckBox:Toggle()
