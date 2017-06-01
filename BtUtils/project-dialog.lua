@@ -52,6 +52,7 @@ return Utils:Assign("ProjectDialog", function()
 	
 	local function onSelectProject(self)
 		local selected = self.items[self.selected]
+		self.itemComboBox:Show()
 		if( selected == self.newProjectString) then
 			if(not self.newProjectEditBox.visible ) then
 				self.newProjectEditBox:Show()
@@ -77,6 +78,9 @@ return Utils:Assign("ProjectDialog", function()
 			end
 			self.itemComboBox.items = newItems
 			self.itemComboBox:Select(1)
+			if(#newItems == 0)then
+				self.itemComboBox:Hide()
+			end
 		end	
 	end
 	
@@ -97,7 +101,7 @@ return Utils:Assign("ProjectDialog", function()
 			selectedItem = self.newItemEditBox.text
 		end
 		
-		if(string.len(selectedProject ) > 0 and string.len(selectedItem)> 0 ) then
+		if(selectedProject and string.len(selectedProject ) > 0 and selectedItem and string.len(selectedItem)> 0 ) then
 			-- selected project and item are not empty strings
 			self.callback(self.callbackObject, selectedProject, selectedItem)
 			self.showDialogHandler(false)
