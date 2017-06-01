@@ -7,10 +7,10 @@ if (widget and not widget.GetInfo) then
 	function widget:GetInfo()
 		return {
 			name    = "Lua Console",
-			desc    = "Widget for executing arbitrary Lua commands and for customizable logging and reporting of events and errors of other widgets.",
+			desc    = "Widget for executing arbitrary Lua commands.",
 			author  = "Michal Mojzík",
 			date    = "2016-11-02",
-			license = "GNU GPL v2",
+			license = "MIT",
 			layer   = 0,
 			enabled = true
 		}

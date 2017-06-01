@@ -6,6 +6,7 @@
 
 -- A 3D Vector Library.
 -- By Gordon MacPherson with the assistance of google and sir divran! :L
+-- Licence: CC-SA 3.0
 
 -- changes by: Michal Mojzík
 --   - adapted to be compatible BtUtils by

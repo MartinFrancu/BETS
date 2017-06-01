@@ -3,8 +3,8 @@ function widget:GetInfo()
     name    = "BtCheat",
     desc    = "Widget to help user set up game situations for debugging behaviours.",
     author  = "BETS team",
-    date    = "today",
-    license = "GNU GPL v2",
+    date    = "2017-06-02",
+    license = "MIT",
     layer   = 0,
     enabled = true
   }

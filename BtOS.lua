@@ -1,10 +1,10 @@
 function widget:GetInfo()
 	return {
 		name    = "BtOS",
-		desc    = "TODO",
+		desc    = "Widget maintaining other BETS widgets and for customizable logging and reporting of events and errors of other widgets",
 		author  = "BETS Team",
-		date    = "2016-09-01",
-		license = "GNU GPL v2",
+		date    = "2017-06-02",
+		license = "MIT",
 		layer   = 0,
 		handler = true,
 		enabled = true

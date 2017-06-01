@@ -1,10 +1,10 @@
 function widget:GetInfo()
 	return {
 		name      = "BtEvaluator",
-		desc      = "BtEvaluator loader and message test to this AI.",
+		desc      = "BtEvaluator proxy for native AI and Lua script evaluator.",
 		author    = "BETS Team",
-		date      = "Sep 20, 2016",
-		license   = "BY-NC-SA",
+		date      = "2017-06-02",
+		license   = "MIT",
 		layer     = 0,
 		enabled   = true, --  loaded by default?
 		version   = version,

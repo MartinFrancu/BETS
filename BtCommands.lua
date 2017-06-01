@@ -1,10 +1,10 @@
 function widget:GetInfo()
   return {
     name    = "BtCommands",
-    desc    = "Custom unit commands definitions. ",
+    desc    = "Custom unit orders definitions.",
     author  = "BETS team",
-    date    = "02-19-2017",
-    license = "GNU GPL v2",
+    date    = "2017-06-02",
+    license = "MIT",
     layer   = 0,
     enabled = true
   }
