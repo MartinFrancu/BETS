@@ -1,3 +1,9 @@
+--[[README:
+BtCheat is widget for empowering user during debugging BETS behaviours. 
+Important functions:
+widget:GameFrame
+	To speed up game to desired speed spSendCommand(CONSTANTS.speedUpCMD) is called repeatedly, that has to happen in different frames. 
+--]]
 local BtCheat = {}
 
 local sanitizer = Utils.Sanitizer.forCurrentWidget()

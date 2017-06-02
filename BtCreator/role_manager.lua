@@ -1,3 +1,18 @@
+--[[READ ME:
+Role manager is used in BtCreator for displaying window for attaching categories to roles
+and possibly definition of new categories. System is that function showing window is called 
+with a parameter of return function which is then called once user did his thing. 
+Function of particular importance:
+roleManager.showRolesManagement or showRoleManagementWindow
+	Entry point. 
+doneRoleManagerWindow
+	Leaving point, callas the returnFunction. 
+roleManager.showCategoryDefinitionWindow
+	This function will hide roles window and sets up new category definition window. 
+roleManager.createNewCategoryCallback
+	Called when user specified new category and gived it new name. 
+
+--]]
 local sanitizer = Utils.Sanitizer.forCurrentWidget()
 local Chili = Utils.Chili
 

@@ -1,3 +1,14 @@
+--[[README: BtCommands provides functionality of custom orders to BETS family of widgets. 
+ Functions of special importance:
+ BtCommands.tryRegisterCommandForTree: 
+	Used to register behaviour orders, if required: Only behaviours equipped with icon should have orders.
+CustomCommandRegistered
+	Callback when new custom command is registered. 
+ BtCommands.getInput
+	Function providing BtController and BtCheat with functionality of user specifying in-game object.
+widget.CommandNotify
+	Used to catch commands with specified parameters. In particular our dummy commands. 
+--]]
 local ProjectManager = Utils.ProjectManager
 local BehaviourTree = Utils.BehaviourTree
 local Debug = Utils.Debug;
