@@ -46,9 +46,8 @@
 		}
 	},
 	"roles": [ {
-		"categories": [],
-		"name": "Default role",
-		"types": []
+		"categories": [ "Common.groundUnits" ],
+		"name": "Default role"
 	} ],
 	"root": {
 		"children": [ {

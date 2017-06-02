@@ -1,10 +1,10 @@
 function widget:GetInfo()
 	return {
 		name    = "BtOS",
-		desc    = "TODO",
+		desc    = "Widget maintaining other BETS widgets and for customizable logging and reporting of events and errors of other widgets",
 		author  = "BETS Team",
-		date    = "2016-09-01",
-		license = "GNU GPL v2",
+		date    = "2017-06-02",
+		license = "MIT",
 		layer   = 0,
 		handler = true,
 		enabled = true
@@ -13,6 +13,7 @@ end
 
 local _G = loadstring("return _G")()
 local KEYSYMS = _G.KEYSYMS
+local RELOAD_KEY = KEYSYMS.F8
 local SHOW_KEY = KEYSYMS.F10
 
 local Chili, ChiliRoot
@@ -128,6 +129,14 @@ local function updateVisualiser()
 		visualiser.window:Dispose()
 		visualiser = nil
 	end
+	
+	if(visualiser and visualiser.window)then
+		local draggable = not state.BtController
+		if(draggable ~= visualiser.window.draggable)then
+			visualiser.window.draggable = draggable
+			visualiser.window:Invalidate()
+		end
+	end
 end
 
 function initializeDependencyHooks()
@@ -164,9 +173,8 @@ function injectErrorReporter()
 		parent = errorPanel,
 		x = padding,
 		y = padding,
-		valign = "top",
-		width = errorPanel.width - 2 * padding,
-		autosize = false,
+		maxWidth = errorPanel.width - 2 * padding,
+		autosize = true,
 	}
 	local additionalErrorsLabel = Chili.Label:New{
 		parent = errorPanel,
@@ -232,13 +240,9 @@ function injectErrorReporter()
 			local screenWidth, screenHeight = gl.GetViewSizes()
 			local color = logType == Logger.LOGTYPE_WARNING and {0.75, 0.5, 0, 1} or { 0.75, 0, 0, 1 }
 			errorPanel.backgroundColor = color
-			messageLabel:SetPos(messageLabel.x, messageLabel.y, messageLabel.width, 1000000)
 			messageLabel:SetCaption(debug.traceback("[" .. logGroup .. "] " .. message .. "\n", 3))
-			local h, d = messageLabel.font:GetTextHeight(messageLabel._caption)
-			local height = h - d
 			local y = padding
-			messageLabel:SetPos(messageLabel.x, messageLabel.y, messageLabel.width, height + padding)
-			y = y + padding + height
+			y = y + padding + messageLabel.height
 			confirmButton:SetPos(padding * 3, y)
 			disableButton:SetPos(errorPanel.width - 3 * padding - disableButton.width, y)
 			y = y + padding + confirmButton.height + padding
@@ -348,6 +352,8 @@ function widget:KeyPress(key, modifiers, isRepeat)
 				widgetHandler:DisableWidget(widgetName)
 			end
 			]]
+		elseif (key == RELOAD_KEY) then
+			Spring.SendCommands("luaui reload")
 		end
 	end
 end

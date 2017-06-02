@@ -7,10 +7,10 @@ if (widget and not widget.GetInfo) then
 	function widget:GetInfo()
 		return {
 			name    = "Lua Console",
-			desc    = "Widget for executing arbitrary Lua commands and for customizable logging and reporting of events and errors of other widgets.",
+			desc    = "Widget for executing arbitrary Lua commands.",
 			author  = "Michal Mojzík",
 			date    = "2016-11-02",
-			license = "GNU GPL v2",
+			license = "MIT",
 			layer   = 0,
 			enabled = true
 		}
@@ -18,7 +18,6 @@ if (widget and not widget.GetInfo) then
 	 
 	local KEYSYMS = _G.KEYSYMS
 	 
-	local RELOAD_KEY = KEYSYMS.F8
 	local TOGGLE_VISIBILITY_KEY = KEYSYMS.F9;
 	
 	 
@@ -104,6 +103,7 @@ if (widget and not widget.GetInfo) then
 					autosize = true,
 					x = 0,
 					y = y,
+					maxWidth = consoleLog.width - consoleLog.padding[1] - consoleLog.padding[3],
 					font = { size = 16, color = {1,1,1,1} },
 					caption = indentation .. color .. text,
 					OnMouseOver = onClick and { function(self) self.font.color = {1,1,0,1} self:Invalidate() return self end } or nil,
@@ -261,6 +261,7 @@ if (widget and not widget.GetInfo) then
 	-- sets up the context that is used as the environment in the console
 	consoleContext = { }
 	consoleContext._G = consoleContext
+	consoleContext.WG = WG
 	consoleContext.history = history
 	consoleContext.Logger = Logger
 	consoleContext.widget = widget
@@ -301,6 +302,29 @@ if (widget and not widget.GetInfo) then
 	
 	consoleContext.Chili = Chili
 	consoleContext.ChiliRoot = ChiliRoot
+	
+	local whiteWindow
+	function consoleContext.showWhiteWindow()
+		if(whiteWindow)then
+			whiteWindow:SetLayer(10000)
+		else
+			whiteWindow = Chili.Window:New({
+				parent = ChiliRoot,
+				TileImage = LUAUI_DIRNAME .. "Widgets/BtUtils/whiteness.png",
+				x = 0,
+				y = 0,
+				width = 500,
+				height = 500,
+				backgroundColor = {1,1,1,1}
+			})
+		end
+	end
+	function consoleContext.hideWhiteWindow()
+		if(whiteWindow)then
+			whiteWindow:Dispose()
+			whiteWindow = nil
+		end
+	end
 	
 	setmetatable(consoleContext, { __index = function(t, key)
 			local value = WG[key]
@@ -415,8 +439,6 @@ if (widget and not widget.GetInfo) then
 					ChiliRoot:FocusControl(nil)
 				end
 				return true;
-			elseif (key == RELOAD_KEY) then
-				Spring.SendCommands("luaui reload")
 			end
 		end
 	end

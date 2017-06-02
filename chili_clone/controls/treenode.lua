@@ -173,6 +173,17 @@ function TreeNode:New(obj)
 		}
 		obj.nameEditBox:SetPos(obj.nameEditBox.x+20)
 	end
+	--[[
+	-- in order to enable this, an error with autogrowing nodes after zooming in and out has be resolved (most likely in the portion of BtCreator that zooms in again)
+	obj.logImage = Image:New{
+		parent = obj.nodeWindow,
+		x = obj.nodeWindow.width - 15 - 20,
+		y = 10,
+		width = 20,
+		height = 20,
+		file = LUAUI_DIRNAME .. "Widgets/BtTreenodeIcons/error.png",
+	}
+	]]--
 	if(obj.nodeType:lower() == "root") then
 		rootnode.addChildComponents(obj)
 	end
@@ -202,18 +213,26 @@ end
 
 function TreeNode:UpdateDimensions()
 	local nodeWindow = self.nodeWindow
-	-- connectionOut is on the boundary of the nodeWindow and messes up the GetChildrenMinimumExtends() call,
+	-- connectionOut and logImage are on the boundary of the nodeWindow and messes up the GetChildrenMinimumExtends() call,
 	-- so hide it 
 	if(self.connectionOut) then
 		self.connectionOut:Hide()
+	end
+	local restoreLogImage = nil
+	if(self.logImage and self.logImage.visible)then
+		self.logImage:Hide()
+		restoreLogImage = true
 	end
 	local max = math.max
 	local w,h = nodeWindow:GetChildrenMinimumExtents()
 	if(self.connectionOut) then
 		self.connectionOut:Show()
 	end
+	if(restoreLogImage)then
+		self.logImage:Show()
+	end
 	self.nameEditBox:UpdateLayout()
-	local nameWidth = self.nameEditBox.width + 35
+	local nameWidth = self.nameEditBox.width + 35 + 20
 	if(self.icon) then
 		nameWidth = nameWidth + 20
 	end
@@ -526,27 +545,21 @@ function connectionLineCanBeCreated(obj)
 	if (clickedConnection.treeNode.name == obj.treeNode.name) then
 		return false
 	end
+	
+	if not obj.parent then
+		Logger.log("treeNode", "Parent of obj is nil", debug.traceback())
+		return false
+	end
+	
+	if not clickedConnection.parent then
+		Logger.log("treeNode", "Parent of clickedConnection is nil", debug.traceback())
+		return false
+	end
+	
 	if(connectionLine.exists(obj, clickedConnection)) then
 		return false
 	end
-	-- Check that connectionIn has no other connectionLine before Adding new one
-	-- when obj is connectionIn panel
-	local connectionLines = connectionLine.getAll()
-	if (obj.treeNode.connectionIn and obj.treeNode.connectionIn.name == obj.name) then
-		for i=1,#connectionLines do
-			if (obj.name == connectionLines[i][6].name) then
-				return false
-			end
-		end
-	elseif (clickedConnection.treeNode.connectionIn and clickedConnection.treeNode.connectionIn.name == clickedConnection.name) then
-		for i=1,#connectionLines do
-			if (clickedConnection.name == connectionLines[i][6].name) then
-				return false
-			end
-		end
-	else
-		-- Spring.Echo("connectionLineCanBeCreated(): connectionIn not found!!! ")
-	end
+	
 	-- Check for cycles
 	local visitedTreeNodeNames = {}
 	local nodesToVisit = { obj.treeNode, clickedConnection.treeNode }
@@ -563,7 +576,9 @@ function connectionLineCanBeCreated(obj)
 		table.remove(nodesToVisit, #nodesToVisit)
 		local children = node:GetChildren()
 		for i=1,#children do
-			table.insert(nodesToVisit, children[i])
+			if(not children[i].connectionIn or (children[i].connectionIn.name ~= obj.name and children[i].connectionIn.name ~= clickedConnection.name))then
+				table.insert(nodesToVisit, children[i])
+			end
 		end
 	end
 
@@ -575,7 +590,30 @@ function connectionLineCanBeCreated(obj)
 		) ) then
 		return false
 	end
-	return true
+	return true, function()
+		-- Locate the connectionLines connected to connectionIn so that we can remove them
+		-- when obj is connectionIn panel
+		local connectionLines = connectionLine.getAll()
+		local linesToRemove = {}
+		if (obj.treeNode.connectionIn and obj.treeNode.connectionIn.name == obj.name) then
+			for i=#connectionLines,1,-1 do
+				if (obj.name == connectionLines[i][6].name) then
+					table.insert(linesToRemove, i)
+				end
+			end
+		elseif (clickedConnection.treeNode.connectionIn and clickedConnection.treeNode.connectionIn.name == clickedConnection.name) then
+			for i=#connectionLines,1,-1 do
+				if (clickedConnection.name == connectionLines[i][6].name) then
+					table.insert(linesToRemove, i)
+				end
+			end
+		end
+		
+		-- remove the lines, which are in reverse order and as such should not produce problems
+		for _, lineId in ipairs(linesToRemove) do
+			connectionLine.remove(lineId)
+		end
+	end
 end
 
 --//=============================================================================
@@ -613,16 +651,18 @@ function listenerClickOnConnectionPanel(self)
 		self:RequestUpdate()
 		return self
 	end
-	if( connectionLineCanBeCreated(self) ) then
-		clickedConnection.backgroundColor = connectionPanelBackgroundColor
-		self.backgroundColor = connectionPanelBackgroundColor
+	
+	clickedConnection.backgroundColor = connectionPanelBackgroundColor
+	self.backgroundColor = connectionPanelBackgroundColor
+	local canBeCreated, remover = connectionLineCanBeCreated(self)
+	if( canBeCreated ) then
+		remover()
 		connectionLine.add(clickedConnection, self)
-		clickedConnection:RequestUpdate()
-		clickedConnection = nil
-		self:RequestUpdate()
-		return self
 	end
-	return false
+	clickedConnection:RequestUpdate()
+	clickedConnection = nil
+	self:RequestUpdate()
+	return self
 end
 
 
@@ -651,6 +691,10 @@ function listenerNodeWindowOnResize(self)
 		self.treeNode.connectionOut:SetPos(self.width-18, self.height*0.35)
 		self.treeNode.connectionOut:Invalidate()
 	end
+	if(self.treeNode.logImage)then
+		self.treeNode.logImage:SetPos(self.treeNode.width - 15 - self.treeNode.logImage.width)
+	end
+	
 	self.treeNode.width = self.width
 	self.treeNode.height = self.height
 	self.treeNode:UpdateConnectionLines()
@@ -672,6 +716,7 @@ function listenerNodeWindowOnResize(self)
 		previousPosition.x = self.x
 		previousPosition.y = self.y
 	end
+	
 	self:Invalidate()
 end
 
@@ -777,8 +822,10 @@ end
 local function removeNodeFromSelection(nodeWindow)
 	nodeWindow.backgroundColor[4] = ALPHA_OF_NOT_SELECTED_NODES
 	WG.selectedNodes[nodeWindow.treeNode.id] = nil
-	nodeWindow.treeNode:UpdateParameterValues()
-	nodeWindow:Invalidate()
+	if(not nodeWindow.disposed)then
+		nodeWindow.treeNode:UpdateParameterValues()
+		nodeWindow:Invalidate()
+	end
 end
 
 local function addNodeToSelection(nodeWindow)
@@ -794,6 +841,7 @@ local function clearSelection()
 			removeNodeFromSelection(WG.nodeList[id].nodeWindow)
 		end
 	end
+	WG.selectedNodes = {}
 end
 
 WG.addNodeToSelection = addNodeToSelection

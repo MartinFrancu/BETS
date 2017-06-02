@@ -172,7 +172,7 @@ function Run(self, unitIds, parameter)
 	Logger.log("move-command", "Lua MOVE command run, unitIds: ", unitIds, ", pos: ", parameter.pos)
 	
 	local leader = EnsureLeader(self, unitIds)
-	if not leader then
+	if not leader or not parameter.pos then
 		return FAILURE
 	end
 	

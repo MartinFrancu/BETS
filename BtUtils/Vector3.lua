@@ -1,5 +1,12 @@
+--- Rudimentary 3D vector implementation with some 2D functionality.
+-- Altered (as in functional) version of a library @{Vector3}.
+-- @author Gordon MacPherson
+-- @classmod Vec3
+-- @alias vector_prototype
+
 -- A 3D Vector Library.
 -- By Gordon MacPherson with the assistance of google and sir divran! :L
+-- Licence: CC-SA 3.0
 
 -- changes by: Michal Mojzík
 --   - adapted to be compatible BtUtils by
@@ -10,6 +17,11 @@
 --   - disabled querying of the metatable from the outside
 
 local type = type
+local sin = math.sin
+local cos = math.cos
+local atan2 = math.atan2
+local deg = math.deg
+local rad = math.rad
 
 -- Meta table.
 local vector_prototype = {}
@@ -107,6 +119,8 @@ function vector_prototype:Sub( vector )
 	return self
 end
 
+--- Multiplies the vector by the given number in-place.
+-- @return `self`
 function vector_prototype:Mul( n )
 	self.x = self.x * n
 	self.y = self.y * n
@@ -114,6 +128,8 @@ function vector_prototype:Mul( n )
 	return self
 end
 
+--- Sets the current instance to zeros.
+-- @return `self`
 function vector_prototype:Zero()
 	self.x = 0
 	self.y = 0
@@ -121,40 +137,53 @@ function vector_prototype:Zero()
 	return self
 end
 
+--- Computes the square length of the vector.
 function vector_prototype:LengthSqr()
 	return ( ( self.x * self.x ) + ( self.y * self.y ) + ( self.z * self.z ) )
 end
 
+--- Computes the length of the vector.
 function vector_prototype:Length()
 	return self:LengthSqr() ^ 0.5
 end
 
 -- This should really be named get normalised copy.
+--- Returns normalized copy of the vector.
+-- @treturn Vec3
 function vector_prototype:GetNormal()
 	local length = self:Length()
 	return new( self.x / length, self.y / length, self.z / length )
 end
 
 -- Redirect for people doing it wrong.
+--- Alias to @{Vector:GetNormal}
 function vector_prototype:GetNormalized()
 	return self:GetNormal()
 end
 
+--- Normalizes the vector in-place.
+-- @return `self`
 function vector_prototype:Normalize()
 	local length = self:Length()
 	return self:Mul(1 / length)
 end
 
+--- Computes a dot product with another vector.
+-- @tparam Vec3 vector The other vector.
 function vector_prototype:DotProduct( vector )
 	return (self.x  * vector.x) + (self.y * vector.y) + (self.z * vector.z)
 end
 
 -- Redirect for people doing it wrong.
+--- Alias to @{Vector:DotProduct}
+-- @param See @{Vector:DotProduct}
 function vector_prototype:Dot( vector )
 	return self:DotProduct( vector )
 end
 
--- Cross Product.
+--- Computes the cross product with another vector.
+-- @tparam Vec3 vector The other vector.
+-- @treturn Vec3 The cross product.
 function vector_prototype:Cross( vector )
 	local vec = new(0,0,0)
 	vec.x = ( self.y * vector.z ) - ( vector.y * self.z )
@@ -163,42 +192,46 @@ function vector_prototype:Cross( vector )
 	return vec
 end
 
--- Returns the distance between two vectors.
+--- Computes the distance between two vectors.
+-- @tparam Vec3 vector The other vector.
 function vector_prototype:Distance( vector )
 	local vec = self - vector
 	return vec:Length()
 end
 
---[[
--- Returns a garry vector for his functions.
-function vector_mt:Garry()
-	return Vector( self.x, self.y, self.z )
+--- Convert vector in 2D heading in degrees between 0-360
+-- @treturn number Angle in X-Z plane.
+function vector_prototype:ToHeading() -- azimuth
+	local angleInRads = atan2(self.x, self.z)
+	-- angleInRads
+	-- N (north) = PI
+	-- E (east)  = 0.5PI
+	-- S (south) = 0
+	-- W (west)  = 1.5PI
+	return ((deg(-angleInRads) + 180) % 360) -- correction to azimuth values = so 0 degrees is on north and positive increment is clockwise
+	-- returned angle
+	-- N (north) = 0
+	-- E (east)  = 90
+	-- S (south) = 180
+	-- W (west)  = 270
 end
-]]
 
--- If by any chance my vector library doesn't have a specific function
--- you can simply uncomment this and use garrys!
---local garry = FindMetaTable( "Vector" )
---function vector_mt:__index( key ) 
---	if vector_prototype[key] ~= nil then 
---		return vector_prototype[key] 
---	else
---		return garry[key] 
---	end
---end
-
-
---[[
-	To be added if I want this as a direct replacement.
-	However I feel 2D vectors should be made as there own type.
-
-	Vector:Length2D -- Will be Vector2:Length2D()
-	Vector:Length2DSqr -- Not Added.
-	Vector:LengthSqr -- Not Added.
-	Vector:Rotate -- Should exist when angle and quaternions are done.
-]]
+--- Rotates vector around Y axis by given angle in degrees in-place.
+-- A mathematically correct variant = negative angle values implies clockwise rotation.
+-- @tparam number angle Angle in X-Z plane.
+-- @return `self`
+function vector_prototype:Rotate2D(angle)
+	local angleInRads = rad(angle)
+	local vec = new(0,0,0)
+	vec.x = self.x * cos(angleInRads) - self.z * sin(angleInRads)
+	vec.y = self.y
+	vec.z = self.x * sin(angleInRads) + self.z * cos(angleInRads)
+	return vec
+end
 
 
+--- Returns vector in the form that Spring expects.
+-- @treturn {number} List of X, Y, Z coordinates
 function vector_prototype:AsSpringVector()
 	return { self.x, self.y, self.z }
 end

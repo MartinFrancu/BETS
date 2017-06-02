@@ -32,7 +32,9 @@ local inherited = this.inherited
 
 function Label:New(obj)
   obj = inherited.New(self,obj)
-  obj:SetCaption(obj.caption)
+	local caption = obj.caption
+	obj.caption = nil
+  obj:SetCaption(caption)
   return obj
 end
 
@@ -47,14 +49,24 @@ function Label:SetCaption(newcaption)
   self:Invalidate()
 end
 
+function Label:SetMaxWidth(newMaxWidth)
+	if(self.maxWidth == newMaxWidth)then return end
+	self.maxWidth = newMaxWidth
+	self:UpdateLayout()
+	self:Invalidate()
+end
 
 function Label:UpdateLayout()
   local font = self.font
 
   if (self.autosize) then
-    self._caption  = self.caption
-    local w = font:GetTextWidth(self.caption);
-    local h, d, numLines = font:GetTextHeight(self.caption);
+		if(self.maxWidth)then
+			self._caption = font:WrapText(self.caption, self.maxWidth, 100000000)
+		else
+			self._caption = self.caption
+		end
+    local w = font:GetTextWidth(self._caption);
+    local h, d, numLines = font:GetTextHeight(self._caption);
 
     h = h + 1
     if (self.autoObeyLineHeight) then

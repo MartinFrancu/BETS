@@ -12,7 +12,7 @@ return Debug:Assign("Logger", function()
 	local Logger = {}
 	
 	local LOGGER_SETTINGS = LUAUI_DIRNAME .. "Config/debug_utils_logger.lua"
-	local LOG_PATH = LUAUI_DIRNAME .. "Logs/"
+	local LOG_PATH = LUAUI_DIRNAME .. "BETS/Logs/"
 	
 	Spring.CreateDir(LOG_PATH)
 	
@@ -122,6 +122,11 @@ If it is not an array, it is equivalent to an array with a single value.
 			message = message .. (type(v) == "string" and v or dump(v))
 		end
 		
+		local writeMessage = message
+		if(logType == Logger.LOGTYPE_ERROR)then
+			writeMessage = debug.traceback(message, 3)
+		end
+		
 		if(not Logger.settings[logGroup])then
 			Logger.settings[logGroup] = Logger.FUNNEL
 		end
@@ -137,7 +142,7 @@ If it is not an array, it is equivalent to an array with a single value.
 		for name in writerNames:gmatch("[^+]+") do
 			local writer = writers[name:match "^%s*(.-)%s*$"]
 			if(writer)then
-				writer(logGroup, logType, message)
+				writer(logGroup, logType, writeMessage)
 			end
 		end
 		
@@ -183,7 +188,9 @@ If it is not an array, it is equivalent to an array with a single value.
 			return internalLog(logGroup, Logger.LOGTYPE_ERROR, ...)
 		end
 	end
-	--- Calls given function in proctected mode and logs possible 
+	
+	-- @deprecated
+	-- Calls given function in proctected mode and logs possible 
 	-- Example of usage: Logger.loggedCall("errors", "BtTester", "tried problematic code", BtDummy.problematicCode, arg1, arg2 )
 	function Logger.loggedCall(logGroup,  source, comment,functionToCall, ...)
 		local status, result = pcall(functionToCall,... )

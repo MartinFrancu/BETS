@@ -12,11 +12,7 @@ local sanitizer = Utils.Sanitizer.forWidget(widget)
 
 local dialogWindow
 
--- Stores nodeWindow component corresponding to last clicked chooseTreeButton
-local nodeWindow
-local treeName
-
-local function disposePreviousInputOutputComponents()
+local function disposePreviousInputOutputComponents(nodeWindow)
 	if(not nodeWindow) then
 		return
 	end
@@ -27,28 +23,23 @@ local function disposePreviousInputOutputComponents()
 	if(treeNode.referenceOutputsLabel) then 
 		treeNode.referenceOutputsLabel:Dispose()
 	end
-	if(treeNode.referenceInputObjects) then
-		for i=1,#treeNode.referenceInputObjects do
-			if(treeNode.referenceInputObjects[i].button) then 
-				treeNode.referenceInputObjects[i].button:Dispose()
+	local function disposeObjects(objects)
+		if(objects) then
+			for i=#objects,1,-1 do
+				objects[i]:SaveData()
+				if(objects[i].button) then 
+					objects[i].button:Dispose()
+				end
+				objects[i].label:Dispose()
+				objects[i].editBox:Dispose()
 			end
-			treeNode.referenceInputObjects[i].label:Dispose()
-			treeNode.referenceInputObjects[i].editBox:Dispose()
 		end
 	end
-	if(treeNode.referenceOutputObjects) then
-		for i=1,#treeNode.referenceOutputObjects do
-			if(treeNode.referenceOutputObjects[i].button) then 
-				treeNode.referenceOutputObjects[i].button:Dispose()
-			end
-			treeNode.referenceOutputObjects[i].label:Dispose()
-			treeNode.referenceOutputObjects[i].editBox:Dispose()
-		end
-	end
+	disposeObjects(treeNode.referenceInputObjects)
+	disposeObjects(treeNode.referenceOutputObjects)
 end
 
-local function addLabelEditboxPair(nodeWindow_, components, y, label, text, invalid, serializedValues)
-	nodeWindow = nodeWindow_
+local function addLabelEditboxPair(nodeWindow, components, y, data, dataList, invalid)
 	local x = 25
 	if(invalid) then
 		components.button = Button:New{
@@ -64,16 +55,11 @@ local function addLabelEditboxPair(nodeWindow_, components, y, label, text, inva
 				function(self)
 					components.editBox:Dispose()
 					components.label:Dispose()
-					for i,pair in pairs(serializedValues) do
-						if(pair.name == label) then
-							serializedValues[i] = nil
-						end
-					end
-					Spring.Echo(dump(nodeWindow.referenceInputs,2))
 					self:Dispose()
+					data.value = nil
 					
-					disposePreviousInputOutputComponents()
-					referenceNode.addInputOutputComponents(nodeWindow,nodeWindow.treeNode.parameterObjects[1].label,treeName)
+					disposePreviousInputOutputComponents(nodeWindow)
+					referenceNode.addInputOutputComponents(nodeWindow,nodeWindow.treeNode.parameterObjects[1].label,nodeWindow.treeName)
 				end
 			},
 		}
@@ -83,15 +69,16 @@ local function addLabelEditboxPair(nodeWindow_, components, y, label, text, inva
 		parent = nodeWindow,
 		x = x,
 		y = y,
-		caption = label,
+		caption = data.name,
 	}
 	components.editBox = EditBox:New{
 		parent = nodeWindow,
-		x = x + nodeWindow.font:GetTextWidth(label) + 10,
+		x = x + components.label.width + 10,  --nodeWindow.font:GetTextWidth(data.label) + 10,
 		y = y - 3,
 		autosize = true,
 		minWidth = 70,
-		text = text or "",
+		text = data.value or "",
+		validatedValue = data.value or "",
 		OnKeyPress = {
 			function(element, key)
 				if(element.text ~= element.validatedValue)then
@@ -107,6 +94,27 @@ local function addLabelEditboxPair(nodeWindow_, components, y, label, text, inva
 			end
 		},
 	}
+	function components:SaveData()
+		if(components.editBox and not components.editBox.disposed)then
+			data.value = components.editBox.text
+		end
+
+		local position = nil
+		for i, d in ipairs(dataList) do
+			if(d.name == data.name)then
+				position = i
+				break
+			end
+		end
+		
+		if(data.value == nil or data.value == "")then
+			if(position)then
+				table.remove(dataList, position)
+			end
+		elseif(not position)then
+			table.insert(dataList, 1, data)
+		end
+	end
 	if(invalid) then
 		components.label.font.color = {1,0.1,0,1}
 		components.editBox.font.color = {1,0.1,0,1}
@@ -115,115 +123,109 @@ end
 
 --- Function which takes care of populationg referenceNode with selected trees inputs and outputs. 
 --- Is called both from treenode.lua - in treenode constructor - and on clicking 'Choose tree' button.
-function referenceNode.addInputOutputComponents(nodeWindow,treeNameLabel, treeName_)
-	treeName = treeName_
-	local bt = BehaviourTree.load(treeName) or {}
-	local inputs = bt.inputs or {}
-	local outputs = bt.outputs or {}
+function referenceNode.addInputOutputComponents(nodeWindow,treeNameLabel, treeName)
+	nodeWindow.treeName = treeName;
+	local bt, message = BehaviourTree.load(treeName)
+	local inputs = (bt or {}).inputs or {}
+	local outputs = (bt or {}).outputs or {}
 	local positiony = 50
 	local yoffset = 21
 	-- First update label with treeName, make it clickthrough
 	treeNameLabel:SetCaption(treeName)
-	treeNameLabel.OnMouseOver = {
-		sanitizer:AsHandler( 
-			function(self)
-				self.font.color = {1,0.5,0,1}
-			end
-		)
-	}
-	treeNameLabel.OnMouseOut = {
-		sanitizer:AsHandler( 
-			function(self)
-				self.font.color = {1,1,1,1}
-			end
-		)
-	}
-	treeNameLabel.OnMouseDown = { function(self) return self end }
-	treeNameLabel.OnMouseUp = {
-		sanitizer:AsHandler( 
-			function(self)
-				local referenceID = nodeWindow.treeNode.id
-				WG.BtCreator.Get().showReferencedTree(treeName, referenceID)
-			end
-		)
-	}
+	if(bt)then
+		treeNameLabel.OnMouseOver = {
+			sanitizer:AsHandler( 
+				function(self)
+					self.font.color = {1,0.5,0,1}
+				end
+			)
+		}
+		treeNameLabel.OnMouseOut = {
+			sanitizer:AsHandler( 
+				function(self)
+					self.font.color = {1,1,1,1}
+				end
+			)
+		}
+		treeNameLabel.OnMouseDown = { function(self) return self end }
+		treeNameLabel.OnMouseUp = {
+			sanitizer:AsHandler( 
+				function(self)
+					local referenceID = nodeWindow.treeNode.id
+					WG.BtCreator.Get().onTreeReferenceClick(treeName, referenceID)
+				end
+			)
+		}
+	else
+		treeNameLabel.font.color = {1,0,0,1}
+		treeNameLabel.OnMouseOver, treeNameLabel.OnMouseOut, treeNameLabel.OnMouseDown, treeNameLabel.OnMouseUp = {}, {}, {}, {}
+		treeNameLabel.tooltip = message
+	end
+	
 	local treeNode = nodeWindow.treeNode
+	local function createComponents(parameterDefinitions, parameterValues, objectsStorage)
+		storageI = #objectsStorage
+		local function makeObject()
+			local object = {}
+			storageI = storageI + 1
+			objectsStorage[storageI] = object
+			return object
+		end
+		
+		local unfilledMap = {}
+		for _,data in pairs(parameterValues) do
+			unfilledMap[data.name] = data
+		end
+		for i, def in ipairs(parameterDefinitions) do
+			local data = unfilledMap[def.name] or { name = def.name }
+			unfilledMap[def.name] = nil
+			addLabelEditboxPair(nodeWindow, makeObject(), positiony, data, parameterValues)
+			positiony = positiony + yoffset
+		end
+		for _, data in pairs(parameterValues) do
+			if(unfilledMap[data.name])then
+				addLabelEditboxPair(nodeWindow, makeObject(), positiony, data, parameterValues, true)
+				positiony = positiony + yoffset
+			end
+		end
+	end
+	
 	treeNode.referenceInputsLabel = Label:New{
 		parent = nodeWindow,
 			x = 18,
 			y = positiony,
 			caption = "Inputs: ",
 	}
+	positiony = positiony + yoffset
+	
 	treeNode.referenceInputs = treeNode.referenceInputs or {}
 	treeNode.referenceInputObjects = {}
-	local unfilledInputs = {}
-	for _,input in pairs(treeNode.referenceInputs) do
-		unfilledInputs[input.name] = input.value
-	end
-	for i=1,#inputs do
-		positiony = positiony + yoffset
-		local value = ''
-		if(treeNode.referenceInputs
-			and treeNode.referenceInputs[i] 
-			and treeNode.referenceInputs[i].value
-			) then
-				if(unfilledInputs[ inputs[i].name ]) then
-					value = treeNode.referenceInputs[i].value
-					unfilledInputs[ inputs[i].name ] = nil
-				end
-		end
-		treeNode.referenceInputObjects[i] = {}
-		addLabelEditboxPair(nodeWindow, treeNode.referenceInputObjects[i], positiony, inputs[i].name, value)
-	end
-	for name,value in pairs(unfilledInputs) do
-		positiony = positiony + yoffset
-		local i = #treeNode.referenceInputObjects + 1
-		treeNode.referenceInputObjects[i] = {}
-		addLabelEditboxPair(nodeWindow, treeNode.referenceInputObjects[i], positiony, name, value, true, treeNode.referenceInputs)
-	end
-	positiony = positiony + yoffset
+	createComponents(inputs, treeNode.referenceInputs, treeNode.referenceInputObjects)
+	
 	treeNode.referenceOutputsLabel = Label:New{
 		parent = nodeWindow,
 			x = 18,
 			y = positiony,
 			caption = "Outputs: "
 	}
-	treeNode.referenceOutputs = nodeWindow.treeNode.referenceOutputs or {}
-	treeNode.referenceOutputObjects = {}
-	local unfilledOutputs = {}
-	for _,output in pairs(treeNode.referenceOutputs) do
-		unfilledOutputs[output.name] = output.value
-	end
-	for i=1,#outputs do
-		positiony = positiony + yoffset
-		local value = ''
-		if(treeNode.referenceOutputs
-			and treeNode.referenceOutputs[i] 
-			and treeNode.referenceOutputs[i].value
-			) then
-				if(unfilledOutputs[ outputs[i].name ]) then
-					unfilledOutputs[ outputs[i].name ] = nil
-					value = treeNode.referenceOutputs[i].value
-				end
-		end
-		treeNode.referenceOutputObjects[i] = {}
-		addLabelEditboxPair(nodeWindow, treeNode.referenceOutputObjects[i], positiony, outputs[i].name, value)
-	end
-	for name,value in pairs(unfilledOutputs) do
-		positiony = positiony + yoffset
-		local i = #treeNode.referenceOutputObjects + 1
-		treeNode.referenceOutputObjects[i] = {}
-		addLabelEditboxPair(nodeWindow, treeNode.referenceOutputObjects[i], positiony, name, value, true, treeNode.referenceOutputs)
-	end
 	positiony = positiony + yoffset
+	
+	treeNode.referenceOutputs = treeNode.referenceOutputs or {}
+	treeNode.referenceOutputObjects = {}
+	createComponents(outputs, treeNode.referenceOutputs, treeNode.referenceOutputObjects)
+	
 	WG.BtCreator.Get().markTreeAsChanged()
 end
 
+-- Stores nodeWindow component corresponding to last clicked chooseTreeButton
+local nodeWindow
+local treeName
+
 local function setTreeCallback(projectName, behaviour)
 	if(projectName and behaviour) then
-		treeName = projectName.."."..behaviour		
+		treeName = projectName.."."..behaviour
 		-- remove older components if any
-		disposePreviousInputOutputComponents()
+		disposePreviousInputOutputComponents(nodeWindow)
 		referenceNode.addInputOutputComponents(nodeWindow,nodeWindow.treeNode.parameterObjects[1].label,treeName)
 	end
 	local label = nodeWindow.treeNode.parameterObjects[1].label
@@ -235,13 +237,26 @@ end
 
 
 function referenceNode.listenerChooseTree(button)
-	local treeContentType = Utils.ProjectManager.makeRegularContentType("Behaviours", "json")
+	local treeContentType = BehaviourTree.contentType
 	nodeWindow = button.parent
 
 	local screenX,screenY = button:LocalToScreen(0,0)
 	nodeWindow = button.parent
-	ProjectDialog.showDialogWindow(WG.BtCreator.Get().setDisableChildrenHitTest, BehaviourTree.contentType, ProjectDialog.LOAD_DIALOG_FLAG, 
-		setTreeCallback , "Select tree to be loaded:",screenX, screenY)
+	
+	local project, name = Utils.ProjectManager.fromQualifiedName(nodeWindow.treeName or "")
+	if(not project)then
+		project = Utils.ProjectManager.fromQualifiedName(WG.BtCreator.Get().getCurrentTreeName())
+	end
+	ProjectDialog.showDialog({
+		visibilityHandler = WG.BtCreator.Get().setDisableChildrenHitTest,
+		contentType = BehaviourTree.contentType,
+		dialogType = ProjectDialog.LOAD_DIALOG, 
+		title = "Select tree to be loaded:",
+		x = screenX,
+		y = screenY,
+		project = project,
+		name = name,
+	}, setTreeCallback)
 	return true
 end
 

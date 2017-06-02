@@ -187,12 +187,16 @@ function Screen:FocusControl(control)
       local focusedControl = UnlinkSafe(self.focusedControl)
       if focusedControl then
           focusedControl.state.focused = false
-          focusedControl:FocusUpdate() --rename FocusLost()
       end
       self.focusedControl = nil
       if control then
           self.focusedControl = MakeWeakLink(control, self.focusedControl)
           self.focusedControl.state.focused = true
+      end
+      if focusedControl then
+          focusedControl:FocusUpdate() --rename FocusLost()
+      end
+      if control then
           self.focusedControl:FocusUpdate() --rename FocusGain()
       end
   end

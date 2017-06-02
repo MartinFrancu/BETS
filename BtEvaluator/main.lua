@@ -152,7 +152,7 @@ end
 function BtEvaluator.executeOS(command)
 	BtEvaluator.sendMessage("EXECUTE", command)
 end
-Utils.ErrorBox.setExecuteFunction(BtEvaluator.executeOS)
+--Utils.ErrorBox.setExecuteFunction(BtEvaluator.executeOS)
 
 function BtEvaluator.requestNodeDefinitions()
 	return BtEvaluator.sendMessage("REQUEST_NODE_DEFINITIONS")
@@ -186,13 +186,17 @@ function BtEvaluator.assignUnits(units, instanceId, roleId)
 	roleId = roleId + 1
 	local instance = treeInstances[instanceId]
 	if(not instance)then
-		Logger.error("BtEvaluator", "Attempt to assign units to nonexistant tree")
+		Logger.error("assignUnits", "Attempt to assign units to nonexistant tree")
 		return
 	end
 	
 	local currentFrame = getGameFrame()
 	
 	local role = instance.roles[roleId]
+	if(not role)then
+		Logger.error("assignUnits", "Attempt to assign units to nonexistant role #", roleId)
+		return
+	end
 	local allRole = instance.roles[ALL_UNITS]
 	local treesToReset = { [instance] = true }
 	for i, id in ipairs(units) do
@@ -221,6 +225,7 @@ function BtEvaluator.assignUnits(units, instanceId, roleId)
 		end
 	end
 	role.lastModified = currentFrame
+	allRole.lastModified = currentFrame
 	for i = 1, role.length do
 		removeUnitFromRole(allRole, role[i])
 		unitToRoleMap[role[i]] = nil
@@ -252,7 +257,7 @@ function BtEvaluator.dereferenceTree(treeDefinition)
 			local referencedName = behaviourNameParameter.value
 			
 			local function makeError(text)
-				return true, "[node=" .. tostring(node.id) .. "] " .. text
+				return true, text --"[node=" .. tostring(node.id) .. "] " .. text
 			end
 			
 			if(not referencedName)then
@@ -332,7 +337,7 @@ function BtEvaluator.dereferenceTree(treeDefinition)
 	end)
 	
 	if(failure)then
-		Logger.error("dereference", message)
+		--Logger.error("dereference", message)
 		return false, message
 	else
 		local referencedList, count = {}, 0
@@ -346,6 +351,11 @@ end
 function BtEvaluator.createTree(instanceId, treeDefinition, inputs)
 	local instance = makeInstance(instanceId, treeDefinition.project, treeDefinition.roles)
 	local result, message = BtEvaluator.sendMessage("CREATE_TREE", { instanceId = instanceId, roleCount = #(treeDefinition.roles or {}), root = treeDefinition.root })
+	
+	if message then
+		-- there was a problem with creating tree
+		return false, message
+	end
 	
 	for k, v in pairs(inputs or {}) do
 		instance.inputs[k] = v
@@ -412,6 +422,7 @@ end
 
 -- ==== luaCommand handling ====
 
+local Results = require("results")
 
 BtEvaluator.scripts = {}
 
@@ -464,8 +475,8 @@ local function createExpression(expression)
 			return blackboard[key]
 		end,
 		__newindex = function(self, key, value)
-			if(customEnvironment[key])then
-				Logger.error("expression", "Attempt to overwrite an environment variable.")
+			if(customEnvironment[key] or customEnvironment.Sensors[key])then
+				Logger.error("expression", "Attempt to overwrite an environment variable ", key, ".")
 			end
 			blackboard[key] = value
 		end
@@ -617,12 +628,26 @@ local function handleCommand(params)
 		local result, output = command:BaseRun(units, parameters)
 		
 		if(output)then
+			for k in pairs(command.outputParameters) do
+				local expr = parameterExpressions[k]
+				if(expr)then
+					pcall(expr.set, output[k])
+					output[k] = nil
+				end
+			end
 			for k, v in pairs(output) do
 				local expr = parameterExpressions[k]
 				if(expr)then
 					pcall(expr.set, v)
 				else
 					Logger.warn("expression", "No parameter available for output '", k, "'");
+				end
+			end
+		else
+			for k in pairs(command.outputParameters) do
+				local expr = parameterExpressions[k]
+				if(expr)then
+					pcall(expr.set, nil)
 				end
 			end
 		end
@@ -764,7 +789,16 @@ local handlers = {
 		local instanceId = params.id
 		local instance = treeInstances[instanceId]
 		if(instance)then
-			params.blackboard = setmetatable({ bb = instance.instanceBlackboard, global = globalBlackboard }, { __index = instance.blackboard })
+			params.blackboards = setmetatable({}, {
+				__index = function(self, path)
+					local blackboard = path and instance.subblackboards[path] or instance.blackboard
+					if(blackboard)then
+						return setmetatable({ bb = instance.instanceBlackboard, global = globalBlackboard }, { __index = blackboard })
+					else
+						return nil;
+					end
+				end,
+			});
 		end
 		return BtEvaluator.OnUpdateStates:Invoke(params)
 	end,

@@ -9,12 +9,12 @@
 	"inputs": [],
 	"outputs": [],
 	"properties": {
-		"ATabOMetaI45nhmLU0VtqYXZR81L2PJl": {
-			"height": 54,
-			"title": "Debug.dummy",
-			"width": 134,
-			"x": 288,
-			"y": 9
+		"NPVNGiXROHbAjoGLfvEKlS3tKOdX0nmF": {
+			"height": 74,
+			"title": "echo",
+			"width": 206,
+			"x": 198,
+			"y": 1
 		}
 	},
 	"roles": [ {
@@ -23,12 +23,15 @@
 	} ],
 	"root": {
 		"children": [],
-		"id": "ATabOMetaI45nhmLU0VtqYXZR81L2PJl",
+		"id": "NPVNGiXROHbAjoGLfvEKlS3tKOdX0nmF",
 		"nodeType": "luaCommand",
 		"parameters": [ {
+			"name": "msg",
+			"value": "Common.teamInfo()"
+		}, {
 			"name": "scriptName",
-			"value": "Debug.dummy"
+			"value": "echo"
 		} ],
-		"scriptName": "Debug.dummy"
+		"scriptName": "echo"
 	}
 }

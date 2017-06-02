@@ -12,6 +12,7 @@ WG.BtConnectionLine = WG.BtConnectionLine or (function()
 		local Debug = Utils.Debug;
 		local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyTable, Debug.fileTable
 		
+		local PATH = PATH or ""
 		local arrowWhite        	= PATH .. "arrow_white.png"
 		local arrowWhiteFlipped		= PATH .. "arrow_white_flipped.png"
 		local arrowOrange        	= PATH .. "arrow_orange.png"

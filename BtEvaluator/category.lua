@@ -27,7 +27,8 @@ function CategoryManager.loadCategory(...)
 	
 	return setmetatable({}, {
 		__index = setmetatable(idToDataMap, { __index = nameToDataMap }),
-		__newindex = function() end -- disable modifications
+		__newindex = function() end, -- disable modifications
+		__pairs = function() return pairs(nameToDataMap) end,
 	})
 end
 

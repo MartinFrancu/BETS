@@ -1,5 +1,5 @@
---- Function to list the content of a directory.
--- Opossed to the VFS.DirList and VFS.SubDirs functions, this one returns the actual names/relative paths.
+--- Functions to list the content of a directory in @{VFS}.
+-- Opossed to the @{VFS.DirList} and @{VFS.SubDirs} functions, these ones return the actual names/relative paths.
 -- @module directoryListing
 
 --- Normalizes the path to use regular slashes only
@@ -46,6 +46,7 @@ local dirList
 --- Returns the files from the specified directory.
 -- @string path The directory to list.
 -- @string mask The mask of the files to be returned.
+-- @param mode Mode as expected by @{VFS.DirList}.
 -- @treturn [string] The names of the files within the directory
 function dirList(path, mask, mode)
 	return directoryListing(path, mask, mode, VFS.DirList)
@@ -55,6 +56,7 @@ local subDirs
 --- Returns the subdirectories from the specified directory.
 -- @string path The directory to list.
 -- @string mask The mask of the subdirectories to be returned.
+-- @param mode Mode as expected by @{VFS.SubDirs}.
 -- @treturn [string] The names of the subdirectories within the directory
 function subDirs(path, mask, mode)
 	return directoryListing(path, mask, mode, VFS.SubDirs)

@@ -34,39 +34,102 @@ local sanitizer = Utils.Sanitizer.forWidget(widget)
 local Debug = Utils.Debug;
 local ProjectManager = Utils.ProjectManager
 local ProjectDialog = Utils.ProjectDialog
+local Dialog = Utils.Dialog
 local Logger, dump, copyTable, fileTable = Debug.Logger, Debug.dump, Debug.copyTable, Debug.fileTable
+local async, Promise = Utils.async, Utils.Promise
 
 local nodeDefinitionInfo = {}
 local isScript = {}
+
+local UnitCategories = Utils.UnitCategories
+
+local BtCommands
 
 -- BtCreator interface definitions
 BtCreator = {} -- if we need events, change to Sentry:New()
 local BtCreator = BtCreator
 
 local roleManager = require("role_manager")
-local btCheat = require("cheat")
+--local btCheat = require("cheat")
 
 
 
 local treeNameLabel
-local treeInstanceNameLabel
+local treeInstanceNameLabel, treeInstancePanel
+local refPathPanel
+local treeRefList = {}
 
 local noNameString = "--NO NAME GIVEN--"
 local noInstanceString = "---"
+
 
 local currentTree = {
 	treeName = noNameString,
 	instanceId = nil,
 	instanceName = noInstanceString,
+	instanceTreeType = nil,
 	roles = {},
-	saveOncePossible = false,
 	changed = false,
+	canvasPosition = {0, 0}
 }
+local breakpoints = {}
+
+local function getCurrentTreeCopy()
+    return copyTable(currentTree)
+end
+
+local function isAnyTreeChanged()
+	if(currentTree.changed)then
+		return true
+	end
+	
+	for i = 1,#treeRefList do
+		if(treeRefList[i].currentTree.changed)then
+			return true
+		end
+	end
+	
+	return false
+end
+
+local function isDebuggerAttached()
+	return (((treeRefList[1] or {}).currentTree or currentTree).treeName == currentTree.instanceTreeType) and not isAnyTreeChanged()
+end
+
+local function updateTreeInstancePanelVisibility()
+	if(treeInstancePanel)then
+		local shouldBeVisible = isDebuggerAttached()
+		if(treeInstancePanel.visible)then
+			if(not shouldBeVisible)then
+				treeInstancePanel:Hide()
+			end
+		else
+			if(shouldBeVisible)then
+				treeInstancePanel:Show()
+			end
+		end
+	end
+end
+
+local function setNameCaption(caption)
+	if treeNameLabel then
+		treeNameLabel:SetCaption(caption)
+		local x = btCreatorWindow.width - treeNameLabel.width - 30
+		treeNameLabel:SetPos(x, treeNameLabel.y)
+	end
+end
+
+function currentTree.setChanged(changed)
+	currentTree.changed = changed
+	setNameCaption(currentTree.treeName .. (changed and "*" or ""))
+	updateTreeInstancePanelVisibility()
+end
+
 
 function currentTree.setName(newTreeName) 
 	currentTree.treeName = newTreeName
 	if(treeNameLabel) then
-		treeNameLabel:SetCaption(newTreeName)
+		setNameCaption(newTreeName)
 	end
 end
 
@@ -75,6 +138,13 @@ function currentTree.setInstanceName(instName)
 	if(treeInstanceNameLabel) then
 		treeInstanceNameLabel:SetCaption(instName)
 	end
+	
+	updateTreeInstancePanelVisibility()
+end
+
+function currentTree.setInstanceTreeType(treeType)
+	currentTree.instanceTreeType = treeType
+	updateTreeInstancePanelVisibility()
 end
 
 
@@ -102,7 +172,6 @@ local function separateProjectAndName(qualifiedName)
 	end
 end
 
-
 -- connection lines functions
 local connectionLine = require("connection_line")
 -- blackboard window
@@ -125,13 +194,13 @@ local moveCanvasImg
 local rootDefaultX = 5
 local rootDefaultY = 60
 
-local updateStatesMessage
-
+local detachInstance
+local updateStates
 function BtCreator.markTreeAsChanged()
 	if(not currentTree.changed)then
-		updateStatesMessage({ states = {}, blackboard = {} })
-		currentTree.setInstanceName("edited tree")
-		currentTree.changed = true
+		detachInstance()
+		--currentTree.setInstanceName(noInstanceString)
+		currentTree.setChanged(true)
 	end
 end
 
@@ -141,19 +210,136 @@ function BtCreator.show()
 	end
 end
 
-function BtCreator.showTree(tree, instanceName, instanceId)
-	BtCreator.show()
-	loadTree(tree)
-	currentTree.instanceId  = instanceId --treeInstanceId
-	currentTree.setInstanceName(instanceName)
+local refButtons = {}
+
+local formBehaviourTree, clearCanvas, loadBehaviourTree, loadBehaviourNode, createTreeToSave, reloadReferenceButtons, saveTree, saveTreeRefs
+
+local promptUserToSaveIfChanged = async(function(entireTree)
+	if entireTree and isAnyTreeChanged() or currentTree.changed then
+		local params = {
+			visibilityHandler = BtCreator.setDisableChildrenHitTest,
+			title = "Save tree", 
+			message = "You have unsaved changes in the current tree.\nDo you wish to save it first?",
+			dialogType = Dialog.YES_NO_CANCEL_TYPE,
+			buttonNames = {
+				YES = "Save",
+				NO = "Discard",
+			},
+			x = rootPanel.x + math.round((rootPanel.width - 400) / 2),
+			y = rootPanel.y + 50,
+		}
+		if(currentTree.changed)then
+			local confirmed = awaitFunction(Dialog.showDialog, params)
+			if confirmed then
+				await(listenerClickOnSaveTree(saveTreeButton))
+			end
+		else
+			local message = "You have unsaved changes in the following trees:\n"
+			local changedTreeRefs = {}
+			for i = #treeRefList,1,-1 do
+				if(treeRefList[i].currentTree.changed)then
+					message = message .. "\t" .. treeRefList[i].currentTree.treeName .. "\n"
+					table.insert(changedTreeRefs, treeRefList[i])
+				end
+			end
+			message = message .. "\nDo you wish to save them first?"
+			params.message = message
+			
+			local confirmed = awaitFunction(Dialog.showDialog, params)
+			if confirmed then
+				return saveTreeRefs(changedTreeRefs)
+			end
+		end
+	end
+	return true
+end)
+
+local function showParentTree(button)
+	local info = button.treeRefInfo
+	clearCanvas()
+	loadBehaviourTree(info.tree)
+	
+	currentTree.setName(info.currentTree.treeName)
+	currentTree.setInstanceName(info.currentTree.instanceName)
+	currentTree.setChanged(info.currentTree.changed)
+	currentTree.canvasPosition = info.currentTree.canvasPosition
+	referenceNodeID = info.refNodeID
+	currentTree.roles = info.tree.roles or {}
+	
+	local llen = #treeRefList
+	for j = button.listIndex,llen do
+		treeRefList[j] = nil
+	end
+	reloadReferenceButtons()
+	updateStates()
+	local pos = currentTree.canvasPosition
+	moveCanvas(pos[1], pos[2])
+	
 end
 
-function BtCreator.showReferencedTree(treeName, _referenceNodeID)
-	-- loadTree() nillates the referenceNodeID so set it after loadTree() call
-	local temp = currentTree.changed --isTreeChanged
+local parentButtonHandler = async(function(button) 
+	if(not await(promptUserToSaveIfChanged(false)))then
+		return false
+	end
+	showParentTree(button)
+end)
+
+function reloadReferenceButtons()
+	for _,but in ipairs(refButtons) do
+		but:Dispose()
+	end
+	refButtons = {}
+
+	local refsCount = #treeRefList
+	for i = 1,refsCount do
+	
+		treeRefInfo = treeRefList[i]
+		refButtons[#refButtons + 1] = Chili.Button:New{
+			parent = refPathPanel,
+			x = 0,
+			y = (refsCount - i) * 30,
+			width = '100%',
+			height = 30,
+			treeRefInfo = treeRefInfo,
+			caption = treeRefInfo.currentTree.treeName .. (treeRefInfo.currentTree.changed and "*" or ""),
+			skinName = "DarkGlass",
+			focusColor = {1.0,0.5,0.0,0.5},
+			listIndex = i,
+			OnClick ={ sanitizer:AsHandler(parentButtonHandler) }
+		}
+	end
+end
+
+BtCreator.showTree = async(function(treeName, instanceName, instanceId)
+	BtCreator.show()
+	if(not await(promptUserToSaveIfChanged(true)))then
+		return false
+	end
+	
+	treeRefList = {}
+	reloadReferenceButtons()
 	loadTree(treeName)
-	currentTree.changed = temp
-	referenceNodeID = _referenceNodeID
+	
+	if(instanceName and instanceId)then
+		BtCreator.focusTree(treeName, instanceName, instanceId)
+	end
+end)
+
+function BtCreator.showReferencedTree(treeName, _referenceNodeID)
+	local oldReferenceNodeID = referenceNodeID
+	-- loadTree() nillates the referenceNodeID so set it after loadTree() call
+	treeRefList[#treeRefList + 1] = {refNodeID = referenceNodeID, tree = createTreeToSave(), currentTree = getCurrentTreeCopy()}
+	Logger.log("save-and-load",dump(treeRefList[#treeRefList], 3))
+	--local temp = currentTree.changed --isTreeChanged
+	reloadReferenceButtons()
+	loadTree(treeName)
+	--currentTree.changed = temp
+	referenceNodeID = (oldReferenceNodeID and (oldReferenceNodeID .. "-") or "") .. _referenceNodeID
+	updateStates()
+end
+
+function BtCreator.onTreeReferenceClick(treeName, _referenceNodeID)
+	BtCreator.showReferencedTree(treeName, _referenceNodeID)
 end
 
 function BtCreator.showNewTree()
@@ -164,9 +350,21 @@ function BtCreator.showNewTree()
 end
 -- called when new tree tabItem in BtController is selected
 function BtCreator.focusTree( treeType, instanceName, instanceId)
-	currentTree.instanceId = instanceId
-	currentTree.setInstanceName(instanceName)
-	BtEvaluator.reportTree(instanceId)
+	-- remove all breakpoints set on the previous instance
+	for id in pairs(breakpoints) do
+		BtEvaluator.removeBreakpoint(currentTree.instanceId, id)
+	end
+
+    currentTree.instanceId = instanceId
+	currentTree.setInstanceTreeType(treeType)
+    currentTree.setInstanceName(instanceName)
+    detachInstance();
+    BtEvaluator.reportTree(instanceId)
+	
+	-- reintstate the breakpoint on the new instance
+	for id in pairs(breakpoints) do
+		BtEvaluator.setBreakpoint(currentTree.instanceId, id)
+	end
 end
 
 function BtCreator.setDisableChildrenHitTest(bool)
@@ -185,6 +383,13 @@ function BtCreator.hide()
 	end
 end
 
+function BtCreator.reloadSensorPool()
+	WG.sensorAutocompleteTable = nil
+	loadSensorAutocompleteTable()
+	listenerClickOnShowSensors(showSensorsButton)
+	listenerClickOnShowSensors(showSensorsButton)
+end
+
 function BtCreator.reloadNodePool()
 	-- for _,nodeItem in pairs(nodePoolList)
 	for _,node in pairs(nodePoolList) do
@@ -200,6 +405,10 @@ function BtCreator.reloadNodePool()
 	
 	nodePoolPanel:UpdateLayout()
 	nodePoolPanel:UpdateClientArea()
+end
+
+function BtCreator.getCurrentTreeName()
+	return currentTree.treeName
 end
 
 --- Adds Treenode to canvas, and also selects it.
@@ -242,7 +451,7 @@ function placeTreeNodeOnCanvas(nodeType, x, y)
 		end
 	end
 	if(not newNode) then
-		Logger.error("A kurva..")
+		Logger.error("Failed to find the correct node type in node pool.")
 	end
 	local halfwidth = 0.5*(nodePoolPanel.font:GetTextWidth(nodeType)+20+20)
 	local params = {
@@ -270,7 +479,6 @@ end
 -- Listeners
 -- //////////////////////////////////////////////////////////////////////
 
-local clearCanvas, loadBehaviourTree, formBehaviourTree
 local inputTypeMap = {
 	["Position"] = "BETS_POSITION",
 	["Area"]     = "BETS_AREA",
@@ -328,45 +536,7 @@ local afterRoleManagement
 -- does not check if tree makes sense
 -- does create new project and directory if necessary 
 -- does not create file if treeName is not qualifiedName and throws error.
-local function saveTree(treeName)
-	local zoomedOut = btCreatorWindow.zoomedOut
-	local w = btCreatorWindow.width
-	local h = btCreatorWindow.height
-	if zoomedOut then
-		zoomCanvasIn(btCreatorWindow, w/2, h/2)
-	end
-	local protoTree = formBehaviourTree()
-	
-	if(serializedTreeName and serializedTreeName ~= treeName) then
-		--regenerate all IDs from loaded Tree
-		for id,_ in pairs(serializedIDs) do
-			if(WG.nodeList[id]) then
-				reGenerateTreenodeID(id)
-			end
-		end
-		updateSerializedIDs()
-	end
-	protoTree.roles = currentTree.roles
-	protoTree.inputs = {}
-	protoTree.outputs = {}
-	local r = WG.nodeList[rootID]
-	protoTree.additionalParameters = { root = { width = r.width, height = r.height } }
-
-	local inputs = WG.nodeList[rootID].inputs
-	if(inputs ~= nil) then
-		for i=1,#inputs do
-			if (inputTypeMap[ inputs[i].comboBox.items[ inputs[i].comboBox.selected ] ] == nil) then
-				error("Uknown tree input type detected in BtCreator tree serialization. "..debug.traceback())
-			end
-			table.insert(protoTree.inputs, {["name"] = inputs[i].editBox.text, ["command"] = inputTypeMap[ inputs[i].comboBox.items[ inputs[i].comboBox.selected ] ],})
-		end
-	end
-	local outputs = WG.nodeList[rootID].outputs
-	if(outputs ~= nil) then
-		for i=1,#outputs do
-			table.insert(protoTree.outputs, {["name"] = outputs[i].editBox.text,})
-		end
-	end
+function saveTree(protoTree, treeName)
 	-- Here I should move all the project creations etc..
 	local project, tree = separateProjectAndName(treeName)
 	if(not project or not tree)then
@@ -376,80 +546,153 @@ local function saveTree(treeName)
 			 .. " treeName:" .. treeName)
 		return
 	end
+	
 	setUpDir(BehaviourTree.contentType, project)
 	
 	Logger.assert("save-and-load", protoTree:Save(treeName))
-	--currentTree.changed = false --isTreeChanged = false
-	WG.clearSelection()
 	
-	Logger.loggedCall("Errors", "BtCreator", 
-		"asking BtController to reload instances of saved tree type",
-		WG.BtControllerReloadTreeType,
-		treeName)
-		
-	Logger.loggedCall("Errors", "BtCreator",
-		"registering command for new tree",
-		WG.BtRegisterCommandForTree,
-		treeName)
-		
-	if zoomedOut then
-		zoomCanvasOut(btCreatorWindow, w/2, h/2)
-	end
+	
+	WG.clearSelection()
 end 
 
-function saveAsTreeDialogCallback(project, tree)
-	if project and tree then 
-		-- we have treetree name
-		-- now we need to check if roles are plausible:
-		local resultTree = formBehaviourTree()
-		-- are there enough roles?
-		local maxSplit = maxRoleSplit(resultTree)
-		local rolesCount = 0
-		for _,role in pairs(currentTree.roles ) do --rolesOfCurrentTree
-			rolesCount = rolesCount + 1
+function saveTreeRefs(treeRefs)
+	for i, treeRef in ipairs(treeRefs) do
+		local project, treeName = separateProjectAndName(treeRef.currentTree.treeName)
+		if(not project or not treeName)then
+			Dialog.showErrorDialog({
+				visibilityHandler = BtCreator.setDisableChildrenHitTest,
+				title = "Invalid name", 
+				message = "You must first specify a valid name for:\n\t" .. tostring(treeRef.currentTree.treeName),
+				x = rootPanel.x + 500,
+				y = rootPanel.y,
+			})
+			return false
 		end
+	end
+	for i, treeRef in ipairs(treeRefs) do
+		treeRef.currentTree.changed = false
+		saveTree(treeRef.tree, treeRef.currentTree.treeName)
+	end
+	if(WG.BtControllerReloadTreeType)then
+		for i, treeRef in ipairs(treeRefs) do
+			WG.BtControllerReloadTreeType(treeRef.currentTree.treeName)
+		end
+	end
+	reloadReferenceButtons()
+	return true
+end
+
+saveAsTreeDialogCallback = async(function(project, tree)
+	if project and tree then 
 		local qualifiedName = project .. "." .. tree
+		local doesFileChange = currentTree.treeName and currentTree.treeName ~= qualifiedName
+		currentTree.setName(qualifiedName)
+		--currentTree.setInstanceName("tree saved")
+
+		local message = "You also have unsaved changes in the following trees:\n"
+		local changedTreeRefs = {}
+		for i = #treeRefList,1,-1 do
+			if(treeRefList[i].currentTree.changed)then
+				message = message .. "\t" .. treeRefList[i].currentTree.treeName .. "\n"
+				table.insert(changedTreeRefs, treeRefList[i])
+			end
+		end
+		message = message .. "\nDo you wish to save them as well?"
 		
+		-- only show dialog if there actually are any
+		local confirmed = changedTreeRefs[1] and awaitFunction(Dialog.showDialog, {
+			visibilityHandler = BtCreator.setDisableChildrenHitTest,
+			title = "Save more trees", 
+			message = message,
+			dialogType = Dialog.YES_NO_CANCEL_TYPE,
+			buttonNames = {
+				YES = "Save",
+				NO = "Don't save",
+			},
+			x = rootPanel.x + 500,
+			y = rootPanel.y,
+		})
+
+		-- we have the ID regeneration id here, where we know, that saving will take place, because pressing Cancel on the previous line will completely cancel this function
+		if(doesFileChange) then
+			--regenerate all IDs from loaded Tree
+			for id,_ in pairs(serializedIDs) do
+				if(WG.nodeList[id]) then
+					reGenerateTreenodeID(id)
+				end
+			end
+		end
+		updateSerializedIDs()
+		local protoTree = createTreeToSave()
+
+		if(confirmed)then
+			table.insert(changedTreeRefs, { tree = protoTree, currentTree = currentTree })
+			saveTreeRefs(changedTreeRefs)
+		else
+			currentTree.setChanged(false)
+			saveTree(protoTree, qualifiedName)
+			if(WG.BtControllerReloadTreeType)then
+				WG.BtControllerReloadTreeType(qualifiedName)
+			end
+		end
+		currentTree.setChanged(false)
+		
+		updateStates()
+
+		--[[
 		if((maxSplit == rolesCount) and (rolesCount > 0) ) then --roles are plausible:
 			-- if new project I should create it  
 			saveTree(qualifiedName)	
 			currentTree.setName(qualifiedName)
 			currentTree.setInstanceName("tree saved")
 			currentTree.changed = false
+			updateStates()
 		else
 			-- we need to get user to define roles first:
-			currentTree.saveOncePossible = true
+			currentTree.saveOncePossible = true -- this has been removed
 			roleManager.showRolesManagement(Screen0, resultTree, currentTree.roles , self, afterRoleManagement) --rolesOfCurrentTree
 		end
+		]]
 	end
-end
+end)
 
-function listenerClickOnSaveTree(self)
+listenerClickOnSaveTree = async(function(self)
 	local qualifiedName = currentTree.treeName 
 	local project, treeName = separateProjectAndName(qualifiedName)
 	if(project and treeName )then 
-		saveAsTreeDialogCallback(project, treeName)
+		await(saveAsTreeDialogCallback(project, treeName))
 	else
-		listenerClickOnSaveAsTree(saveTreeButton)
+		await(listenerClickOnSaveAsTree(saveTreeButton))
 	end
-end
+end)
 
-
-function listenerClickOnSaveAsTree(self)
+listenerClickOnSaveAsTree = async(function(self)
 	local screenX,screenY = self:LocalToScreen(0,0)
 
-	ProjectDialog.showDialogWindow(BtCreator.setDisableChildrenHitTest, BehaviourTree.contentType, 
-		ProjectDialog.SAVE_DIALOG_FLAG, saveAsTreeDialogCallback, "Save tree as:", screenX,screenY)
-end
+	local qualifiedName = currentTree.treeName 
+	local currentProject, currentTreeName = separateProjectAndName(qualifiedName)
+	
+	local project, treeName = awaitFunction(ProjectDialog.showDialog, {
+		visibilityHandler = BtCreator.setDisableChildrenHitTest,
+		contentType = BehaviourTree.contentType, 
+		dialogType = ProjectDialog.SAVE_DIALOG,
+		title = "Save tree as:",
+		x = screenX,
+		y = screenY,
+		project = currentProject,
+		name = currentTreeName,
+	})
+	
+	await(saveAsTreeDialogCallback(project, treeName))
+end)
 
-afterRoleManagement = function (self, rolesData)
+listenerClickOnRoleManager = async(function(self)
+	local tree = formBehaviourTree()
+	self.hideFunction()
+	local _, rolesData = awaitFunction(roleManager.showRolesManagement, Screen0, tree, currentTree.roles , self)
 	BtCreator.show()
 	currentTree.roles = rolesData
-	if(currentTree.saveOncePossible) then
-		listenerClickOnSaveTree(saveTreeButton) 
-		currentTree.saveOncePossible = false 
-	end
-end
+end)
 
 
 local sensorsWindow
@@ -469,11 +712,12 @@ function listenerClickOnShowSensors()
 		sensorsWindow = nil
 		return
 	end
+	local buttonX, buttonY = showSensorsButton:LocalToScreen(0, 0)
 	sensorsWindow = Chili.Window:New{
 		parent = Screen0,
 		name = "SensorsWindow",
-		x = buttonPanel.x + showSensorsButton.x - 10,
-		y = rootPanel.y + buttonPanel.y + showSensorsButton.y - (#sensors*20 + 60) + 5,
+		x = buttonX + 10,
+		y = math.max(0, buttonY - (#sensors*20 + 60) + 5),
 		width = minWidth,
 		height = #sensors*20 + 60,
 		skinName='DarkGlass',
@@ -502,8 +746,23 @@ function listenerClickOnShowSensors()
 	end
 end
 
-function newTreeDialogCallback(projectName,treeName)
-	BtCreator.show()
+listenerClickOnNewTree = async(function(self)
+	local screenX,screenY = self:LocalToScreen(0,0)
+	
+	if(not await(promptUserToSaveIfChanged(true)))then
+		return false
+	end
+	
+	local projectName, treeName = awaitFunction(ProjectDialog.showDialog, {
+		visibilityHandler = BtCreator.setDisableChildrenHitTest,
+		contentType = BehaviourTree.contentType, 
+		dialogType = ProjectDialog.NEW_DIALOG,
+		title = "Name the new tree:",
+		x = screenX,
+		y = screenY,
+		project = separateProjectAndName(currentTree.treeName),
+	})
+	
 	if(projectName and treeName) then -- user selected
 		-- if new project I should create it 
 		qualifiedName = projectName .. "." .. treeName
@@ -511,17 +770,11 @@ function newTreeDialogCallback(projectName,treeName)
 		currentTree.roles = {}
 		clearCanvas()
 		BtCreator.markTreeAsChanged()
-		currentTree.setInstanceName("new tree")
+		--currentTree.setInstanceName("new tree")
+		treeRefList = {}
+		reloadReferenceButtons()
 	end
-end
-
-function listenerClickOnNewTree(self)
-	local screenX,screenY = self:LocalToScreen(0,0)
-	ProjectDialog.showDialogWindow(BtCreator.setDisableChildrenHitTest, BehaviourTree.contentType, 
-			ProjectDialog.NEW_DIALOG_FLAG, newTreeDialogCallback, "Name the new tree:", screenX, screenY)	
-end
-
-local serializedTreeName
+end)
 
 function getBehaviourTree(treeName)
 	local bt = BehaviourTree.load(treeName)
@@ -529,53 +782,85 @@ function getBehaviourTree(treeName)
 		clearCanvas()
 		loadBehaviourTree(bt)
 		currentTree.roles = bt.roles or {}
-		--rolesOfCurrentTree = bt.roles or {}
 	else
-		error("BehaviourTree " .. treeName .. " instance not found. " .. debug.traceback())
+		local x,y = loadTreeButton:LocalToScreen(0,0)
+		Dialog.showErrorDialog({
+			visibilityHandler = BtCreator.setDisableChildrenHitTest,
+			title = "Tree load error",
+			message = "The tree '" .. treeName .. "' couldn't be loaded.\nThe file may be corrupted.",
+			x = x,
+			y = y
+		})
 	end
 end 
 
 function loadTree(treeName)
+	-- clear all breakpoints
+	for id in pairs(breakpoints) do
+		BtEvaluator.removeBreakpoint(currentTree.instanceId, id)
+	end
+	breakpoints = {}
+	
 	referenceNodeID = nil
 	getBehaviourTree(treeName)
 	currentTree.setName(treeName)
-	currentTree.setInstanceName("loaded from disk")
-	currentTree.changed = false 
+	--currentTree.setInstanceName("loaded from disk")
+	currentTree.setChanged(false)
 end
 
-function loadTreeDialogCallback(project, tree)
-	BtCreator.show()
+function loadTreeDialogCallback()
+end
+
+listenerClickOnLoadTree = async(function(self)
+	local screenX,screenY = self:LocalToScreen(0,0)
+	
+	if(not await(promptUserToSaveIfChanged(true)))then
+		return false
+	end
+	
+	local qualifiedName = currentTree.treeName 
+	local currentProject, currentTreeName = separateProjectAndName(qualifiedName)
+	
+	local project, tree = awaitFunction(ProjectDialog.showDialog, {
+		visibilityHandler = BtCreator.setDisableChildrenHitTest,
+		contentType = BehaviourTree.contentType,
+		dialogType = ProjectDialog.LOAD_DIALOG, 
+		title = "Select tree to be loaded:",
+		x = screenX,
+		y = screenY,
+		project = currentProject,
+		name = currentTreeName,
+	})
+
 	if project and tree then -- tree was selected
 		local qualifiedName = project .. "." .. tree
+		treeRefList = {}
+		reloadReferenceButtons()
 		loadTree(qualifiedName)
 	end
+end)
+
+local function listenerClickOnCheat(self)
+	
+	-- widgetHandler:DisableWidget("BtCheat")
+	--widgetHandler:EnableWidget("BtCheat")
 end
 
-function listenerClickOnLoadTree(self)
-	local screenX,screenY = self:LocalToScreen(0,0)
-	ProjectDialog.showDialogWindow(BtCreator.setDisableChildrenHitTest, BehaviourTree.contentType, ProjectDialog.LOAD_DIALOG_FLAG, 
-		loadTreeDialogCallback, "Select tree to be loaded:",screenX, screenY)
-end
-
-function listenerClickOnRoleManager(self)
-	local currentTree = formBehaviourTree()
-	self.hideFunction()
-	roleManager.showRolesManagement(Screen0, currentTree, currentTree.roles , self, afterRoleManagement) --rolesOfCurrentTree
-end
-
-function listenerClickOnCheat(self)
-	if(self.showing)then
-		btCheat.hide()
-	else
-		btCheat.show()
+listenerClickOnMinimize = async(function()
+	Logger.log("tree-editing", "Closing BtCreator. ")
+	if(not await(promptUserToSaveIfChanged(true)))then
+		return false
 	end
-	self.showing = not self.showing
-end
+	
+	currentTree.setName(noNameString)
+	currentTree.roles = {}
+	clearCanvas()
+	currentTree.setChanged(false)
+	treeRefList = {}
+	reloadReferenceButtons()
 
-function listenerClickOnMinimize()
-	Logger.log("tree-editing", "Minimize BtCreator. ")
 	BtCreator.hide()
-end
+end)
 
 -- //////////////////////////////////////////////////////////////////////
 -- Messages from/to BtEvaluator
@@ -587,8 +872,6 @@ local SUCCESS_IMAGE    = LUAUI_DIRNAME.."Widgets/BtCreator/treenode_success_.png
 local FAILURE_IMAGE    = LUAUI_DIRNAME.."Widgets/BtCreator/treenode_failure_.png"
 local STOPPED_IMAGE    = LUAUI_DIRNAME.."Widgets/BtCreator/treenode_stopped_.png"
 local BREAKPOINT_IMAGE = LUAUI_DIRNAME.."Widgets/BtCreator/treenode_breakpt_.png"
-
-local breakpoints = {}
 
 local function setBackgroundColor(nodeWindow, color)
 	local alpha = nodeWindow.backgroundColor[4]
@@ -610,7 +893,7 @@ local function listenerClickOnBreakpoint()
 			img = BREAKPOINT_IMAGE
 		else
 			breakpoints[id] = nil
-			BtEvaluator.removeBreakpoint(currentTree.instanceId, nodeId) --treeInstanceId
+			BtEvaluator.removeBreakpoint(currentTree.instanceId, id) --treeInstanceId
 			img = DEFAULT_IMAGE
 		end
 		if(nodeId ~= rootID) then
@@ -629,12 +912,17 @@ local function listenerClickOnContinue()
 	end
 end
 
---- Called after every tick from BtEvaluator, it changes node background/border colors according to the
---- node states. When referenced tree is opened, it has ids in the form 
---- [referenceNodeID]-[internalNodeIDs].
-function updateStatesMessage(params)
-	if(currentTree.changed )then --isTreeChanged
+local lastUpdateStatesParams = nil
+function updateStates(params)
+	if(not isDebuggerAttached())then
 		return
+	end
+	
+	if(not params)then
+		params = lastUpdateStatesParams
+		if(not params)then
+			return detachInstance()
+		end
 	end
 
 	local states = params.states
@@ -670,7 +958,7 @@ function updateStatesMessage(params)
 		WG.nodeList[rootID].nodeWindow.TileImage = children[1].nodeWindow.TileImage
 		WG.nodeList[rootID].nodeWindow:Invalidate()
 	end
-	blackboard.showCurrentBlackboard(params.blackboard)
+	blackboard.showCurrentBlackboard(params.blackboards[referenceNodeID])
 	if(shouldPause) then
 		if(not pausedByBtCreator)then
 			Spring.SendCommands("pause")
@@ -680,6 +968,18 @@ function updateStatesMessage(params)
 		pausedByBtCreator = false
 	end
 end
+--- Called after every tick from BtEvaluator, it changes node background/border colors according to the
+--- node states. When referenced tree is opened, it has ids in the form 
+--- [referenceNodeID]-[internalNodeIDs].
+local function updateStatesMessage(params)
+	lastUpdateStatesParams = params
+	updateStates(params)
+end
+
+function detachInstance()
+	return updateStates({ states = {}, blackboards = {} });
+end
+
 
 -- Renames the field 'defaultValue' to 'value' if it present, for all the parameters,
 -- also saves parameters, hasConnectionIn, hasConnectionOut into 'nodeDefinitionInfo'.
@@ -825,6 +1125,7 @@ function listenerOnMouseDownCanvas(self, x, y, button)
 				node:UpdateParameterValues()
 			end
 		end
+		btCreatorWindow.lastHitPoint = { x = x, y = y }
 	end
 end
 
@@ -850,6 +1151,8 @@ function listenerOnMouseMoveCanvas(self, x, y)
 		local diffy = y - moveFrom[2]
 		moveCanvas(diffx, diffy)
 		moveFrom = {x, y}
+		local pos = currentTree.canvasPosition
+		currentTree.canvasPosition = {pos[1] + diffx, pos[2] + diffy}
 	end
 	return self
 end
@@ -867,6 +1170,10 @@ function listenerOnResizeBtCreator(self)
 	end
 	if btCreatorWindow then
 		rootPanel:Resize(btCreatorWindow.x + btCreatorWindow.width, btCreatorWindow.y + btCreatorWindow.height)
+	end
+	
+	if treeNameLabel then
+		setNameCaption(treeNameLabel.caption) -- updates label position
 	end
 end
 
@@ -996,13 +1303,12 @@ end
 function widget:GetTooltip(x, y)
 	local component = Screen0:HitTest(x, Screen0.height - y)
 	if (component and component.classname ~= 'TreeNode') then
-		--Spring.Echo("component: "..dump(component.name))
 		return component.tooltip
 	end
 end
 
 function widget:Initialize()
-	Logger.log("reloading", "BtCreator widget:Initialize start. ")
+	Logger.log("reloading", "BtCreator widget:Initialize start.")
 
 	if (not WG.ChiliClone) then
 		-- don't run if we can't find Chili
@@ -1028,6 +1334,15 @@ function widget:Initialize()
 	BtEvaluator.OnInstanceCreated = function(instanceId)
 		if(currentTree.instanceId == instanceId)then
 			BtEvaluator.reportTree(instanceId)
+
+			for id in pairs(breakpoints) do
+				BtEvaluator.setBreakpoint(currentTree.instanceId, id) --treeInstanceId
+			end
+		end
+	end
+	BtEvaluator.OnInstanceRemoved = function(instanceId)
+		if(currentTree.instanceId == instanceId)then
+			detachInstance();
 		end
 	end
 
@@ -1169,11 +1484,13 @@ function widget:Initialize()
 		skinName = "DarkGlass",
 		focusColor = {1.0,0.5,0.0,0.5},
 		OnClick = { sanitizer:AsHandler(
-			function()
+			function(self)
 				blackboard.setWindowPosition(
 					buttonPanel.x + showSensorsButton.x + showSensorsButton.width - 5 - 130,
 					rootPanel.y - (60+10*20) + 5
 				)
+				self.backgroundColor , bgrColor = bgrColor, self.backgroundColor
+				self.focusColor, focusColor = focusColor, self.focusColor
 				blackboard.listenerClickOnShowBlackboard()
 			end )
 			},
@@ -1200,19 +1517,6 @@ function widget:Initialize()
 		focusColor = {1.0,0.5,0.0,0.5},
 		OnClick = { sanitizer:AsHandler(listenerClickOnContinue) },
 	}
-
-	showBtCheatButton = Chili.Button:New{
-		parent = buttonPanel,
-		x = continueButton.x + continueButton.width,
-		y = 0,
-		width = 110,
-		height = 30,
-		caption = "Cheat",
-		skinName = "DarkGlass",
-		focusColor = {1.0,0.5,0.0,0.5},
-		OnClick = { sanitizer:AsHandler(listenerClickOnCheat) },
-	}
-	showBtCheatButton.showing = false
 	
 	minimizeButton = Chili.Button:New{
 		parent = buttonPanel,
@@ -1220,7 +1524,7 @@ function widget:Initialize()
 		y = loadTreeButton.y,
 		width = 35,
 		height = 30,
-		caption = "_",
+		caption = "X",
 		skinName = "DarkGlass",
 		focusColor = {1.0,0.5,0.0,0.5},
 		OnClick = { sanitizer:AsHandler(listenerClickOnMinimize) },
@@ -1230,7 +1534,7 @@ function widget:Initialize()
 		parent = btCreatorWindow,
 		caption = currentTree.treeName,
 		width = 160,
-		x = '40%',
+		x = '85%',
 		y = 5,
 		align = 'left',
 		-- skinName = 'DarkGlass',
@@ -1238,19 +1542,40 @@ function widget:Initialize()
 		borderColor2 = {1,1,1,0.2},
 		borderThickness = 0,
 		backgroundColor = {0,0,0,0},
-		minWidth = 120,
 		autosize = true,
 		tooltip = "The name of current behavior tree. ",
 	}
 	treeNameLabel.font.size = 16
 	treeNameLabel:RequestUpdate()
 	
-	treeInstanceNameLabel = Chili.Label:New{
+	treeInstancePanel = Chili.Control:New{
 		parent = btCreatorWindow,
+		y = 0,
+		x = 70,
+		width  = 300,
+		height = 30,
+	}
+	
+	local instanceListeningLabel = Chili.Label:New{
+		parent = treeInstancePanel,
+		caption = "debugging:",
+		width = 85,
+		align = 'left',
+		-- skinName = 'DarkGlass',
+		borderColor = {1,1,1,0.2},
+		borderColor2 = {1,1,1,0.2},
+		borderThickness = 0,
+		backgroundColor = {0,0,0,0},
+		minWidth = 50,
+		autosize = true,
+	}
+	
+	treeInstanceNameLabel = Chili.Label:New{
+		parent = treeInstancePanel,
 		caption = currentTree.instanceName,
 		width = 70,
-		x = treeNameLabel.x + (treeNameLabel.width/2),
-		y = treeNameLabel.y + treeNameLabel.height  ,
+		x = instanceListeningLabel.width,
+		y = instanceListeningLabel.y,
 		align = 'left',
 		-- skinName = 'DarkGlass',
 		borderColor = {1,1,1,0.2},
@@ -1259,10 +1584,24 @@ function widget:Initialize()
 		backgroundColor = {0,0,0,0},
 		minWidth = 120,
 		autosize = true,
-		tooltip = "Instance name of currently shown tree (debugging).",
+		tooltip = "Name of instace which node states are currently coloured (debugging).",
 	}
 	treeInstanceNameLabel.font.size = 16
 	treeInstanceNameLabel:RequestUpdate()
+	
+	refPathPanel = Chili.Panel:New{
+		parent = btCreatorWindow,
+		width = '15%',
+		x = '85%',
+		y = 30,
+		align = 'left',
+		borderColor = {1,1,1,0.2},
+		borderColor2 = {1,1,1,0.2},
+		borderThickness = 0,
+		backgroundColor = {0,0,0,0},
+		minWidth = 120,
+		autosize = true
+	}
 	
 	moveCanvasImg = Chili.Image:New{
 		parent = btCreatorWindow,
@@ -1305,10 +1644,9 @@ function widget:Initialize()
 				end
 			end),
 		},
-	}	
-	
-	
-	listenerClickOnMinimize()
+	}
+
+	BtCreator.hide()
 	WG.BtCreator = sanitizer:Export(BtCreator)
 	
 	local newEntries = {}
@@ -1317,7 +1655,17 @@ function widget:Initialize()
 	newEntries["Utils"] = Utils
 	local environment = setmetatable(newEntries ,{__index = widget})
 	
-	btCheat.init()
+	currentTree.setChanged(false)
+	
+	
+	Dependency.defer(
+		function() 
+			BtCommands = sanitizer:Import(WG.BtCommands) 
+		end,
+		function() 
+			BtCommands = nil 
+		end, 
+		Dependency.BtCommands)
 	
 	Dependency.fill(Dependency.BtCreator)
 	Logger.log("reloading", "BtCreator widget:Initialize end. ")
@@ -1349,27 +1697,92 @@ function widget:Shutdown()
 	Logger.log("reloading", "BtCreator widget:shutdown end. ")
 end
 
-function widget:GameFrame()
-	btCheat.onFrame()
-end
-
+--[[
 function widget:GamePaused()
-	btCheat.gamePaused()
+	local userSpFac,spFac, paused = Spring.GetGameSpeed()
+	if(paused) then
+		if(not continueButton.visible) then
+			continueButton:Show()
+		end
+	else
+		if(continueButton.visible) then
+			continueButton:Hide()
+		end
+	end
 end
+--]]
 
-function widget:CommandNotify(cmdID, cmdParams, cmdOptions)
-	local result = btCheat.commandNotify(cmdID,cmdParams)
-	return result
-end
 
-function widget:KeyPress(key)
-	if(Spring.GetKeySymbol(key) == "delete") then -- Delete was pressed
+local clipboard = nil;
+
+function widget:KeyPress(key, mods)
+	local symbol = Spring.GetKeySymbol(key)
+	if(symbol == "delete") then -- Delete was pressed
 		for id,_ in pairs(WG.selectedNodes) do
 			if(id ~= rootID) then
 				removeNodeFromCanvas(id)
 			end
 		end
 		return true;
+	elseif(mods.ctrl and symbol == "c")then
+		local selectedList = {}
+		for id in pairs(WG.selectedNodes) do
+			if(id ~= rootID)then
+				table.insert(selectedList, WG.nodeList[id])
+			end
+		end
+		local zoomedOut = btCreatorWindow.zoomedOut
+		if zoomedOut then
+			zoomCanvasIn(self, 0, 0)
+		end
+		clipboard = formBehaviourTree(selectedList)
+		if zoomedOut then
+			zoomCanvasOut(self, 0, 0)
+		end
+		return true
+	elseif(mods.ctrl and symbol == "v")then
+		if(clipboard)then
+			WG.clearSelection();
+			local pasteRootPoint = btCreatorWindow.lastHitPoint or { x = 0, y = 0 }
+			local zoomedOut = btCreatorWindow.zoomedOut
+			if zoomedOut then
+				zoomCanvasIn(self, pasteRootPoint.x, pasteRootPoint.y)
+			end
+			local pastedNodes = {}
+			local minNode = nil
+			for _, n in ipairs(clipboard.additionalNodes) do
+				local node = loadBehaviourNode(clipboard, n, true)
+				table.insert(pastedNodes, node)
+				if(not minNode or node.x < minNode.x or (node.x == minNode.x and node.y < minNode.y))then
+					minNode = node
+				end
+			end
+			
+			local function addChildrenRecursive(node)
+				local children = node:GetChildren()
+				for i, child in ipairs(children) do
+					table.insert(pastedNodes, child)
+					addChildrenRecursive(child)
+				end
+			end
+			for i = #pastedNodes, 1, -1 do
+				addChildrenRecursive(pastedNodes[i])
+			end
+			
+			if(minNode)then
+				local diffx, diffy = pasteRootPoint.x - minNode.x, pasteRootPoint.y - minNode.y
+				for i, node in ipairs(pastedNodes) do
+					node.x = node.x + diffx
+					node.y = node.y + diffy
+					node.nodeWindow:SetPos(node.nodeWindow.x + diffx, node.nodeWindow.y + diffy)
+					WG.addNodeToSelection(node.nodeWindow);
+				end
+			end
+			if zoomedOut then
+				zoomCanvasOut(self, pasteRootPoint.x, pasteRootPoint.y)
+			end
+			return true
+		end
 	end
 
 end
@@ -1388,10 +1801,64 @@ local fieldsToSerialize = {
 	'referenceOutputs',
 }
 
-function formBehaviourTree()
+
+function createTreeToSave()
+	local zoomedOut = btCreatorWindow.zoomedOut
+	local w = btCreatorWindow.width
+	local h = btCreatorWindow.height
+	if zoomedOut then
+		zoomCanvasIn(btCreatorWindow, w/2, h/2)
+	end
+	local protoTree = formBehaviourTree()
+	
+	-- are there enough roles?
+	local maxSplit = maxRoleSplit(protoTree)
+	local rolesCount = 0
+	for _,role in pairs(currentTree.roles ) do --rolesOfCurrentTree
+		rolesCount = rolesCount + 1
+	end
+	Logger.log("roles", dump(currentTree.roles, 3 ) )
+	
+	for i = 1, maxSplit do
+		if(not currentTree.roles[i]) then
+			-- if there is no record for this role, fill it in by default
+			currentTree.roles[i] = { ["categories"] = { } ,["name"] = "Role " .. tostring(i - 1) ,}
+		end
+	end
+	
+	protoTree.roles = currentTree.roles
+	protoTree.inputs = {}
+	protoTree.outputs = {}
+	local r = WG.nodeList[rootID]
+	protoTree.additionalParameters = { root = { width = r.width, height = r.height } }
+
+	local inputs = WG.nodeList[rootID].inputs
+	if(inputs ~= nil) then
+		for i=1,#inputs do
+			if (inputTypeMap[ inputs[i].comboBox.items[ inputs[i].comboBox.selected ] ] == nil) then
+				error("Unknown tree input type detected in BtCreator tree serialization. "..debug.traceback())
+			end
+			table.insert(protoTree.inputs, {["name"] = inputs[i].editBox.text, ["command"] = inputTypeMap[ inputs[i].comboBox.items[ inputs[i].comboBox.selected ] ],})
+		end
+	end
+	local outputs = WG.nodeList[rootID].outputs
+	if(outputs ~= nil) then
+		for i=1,#outputs do
+			table.insert(protoTree.outputs, {["name"] = outputs[i].editBox.text,})
+		end
+	end
+		
+	if zoomedOut then
+		zoomCanvasOut(btCreatorWindow, w/2, h/2)
+	end
+	return protoTree
+end
+
+function formBehaviourTree(nodeList)
+	nodeList = nodeList or WG.nodeList
 	-- Validate every treenode - when editing editBox parameter and immediately serialize,
 	-- the last edited parameter doesnt have to be updated
-	for _,node in pairs(WG.nodeList) do
+	for _,node in pairs(nodeList) do
 		node:UpdateParameterValues()
 	end
 
@@ -1399,7 +1866,7 @@ function formBehaviourTree()
 	local nodeMap = {}
 	local root = WG.nodeList[rootID]
 	
-	for id,node in pairs(WG.nodeList) do
+	for id,node in pairs(nodeList) do
 		if(node.id ~= rootID)then
 			local params = {}
 			
@@ -1439,15 +1906,17 @@ function formBehaviourTree()
 		end
 	end
 
-	for id,node in pairs(WG.nodeList) do
+	for id,node in pairs(nodeList) do
 		local btNode = nodeMap[node]
 		local children = node:GetChildren()
 		for i, childNode in ipairs(children) do
 			local btChild = nodeMap[childNode]
-			if(btNode)then
-				btNode:Connect(btChild)
-			else
-				bt:SetRoot(btChild)
+			if(btChild)then -- we may be only serializing a portion of a tree
+				if(btNode)then
+					btNode:Connect(btChild)
+				else
+					bt:SetRoot(btChild)
+				end
 			end
 		end
 	end
@@ -1514,7 +1983,7 @@ function loadSensorAutocompleteTable()
 	end
 end
 
-local function loadBehaviourNode(bt, btNode)
+function loadBehaviourNode(bt, btNode, discardId)
 	if(not btNode or btNode.nodeType == "empty_tree")then return nil end
 	local params = {}
 	local info
@@ -1553,11 +2022,16 @@ local function loadBehaviourNode(bt, btNode)
 				for i=1,#v do
 					if (v[i].name ~= "scriptName") then
 						if(not params.parameters[i])then
-							Logger.error("save-and-load", "Parameter names do not match: N/A != ", v[i].name, " of node "..btNode.nodeType or btNode.scriptName)
+							Logger.warn("save-and-load", "Parameter names do not match: N/A != ", v[i].name, " of node "..(btNode.scriptName or btNode.nodeType))
+							params.parameters[i] = {
+								name = v[i].name,
+								variableType = "expression",
+								componentType = "editBox",
+							}
 						end
 					
 						if(params.parameters[i].name ~= v[i].name)then
-							Logger.error("save-and-load", "Parameter names do not match: ", params.parameters[i].name, " != ", v[i].name, " of node "..btNode.nodeType or btNode.scriptName)
+							Logger.warn("save-and-load", "Parameter names do not match: ", params.parameters[i].name, " != ", v[i].name, " of node "..(btNode.scriptName or btNode.nodeType))
 						end
 
 						Logger.log("save-and-load", "params.parameters[i]: ", params.parameters[i], ", v[i]: ", v[i])
@@ -1590,6 +2064,9 @@ local function loadBehaviourNode(bt, btNode)
 	params.parent = btCreatorWindow
 	params.connectable = true
 	params.draggable = true
+	if(discardId)then
+		params.id = nil
+	end
 	
 	if (info and btNode.scriptName ~= nil) then
 		params.nodeType = btNode.scriptName
@@ -1598,15 +2075,14 @@ local function loadBehaviourNode(bt, btNode)
 	local node = Chili.TreeNode:New(params)
 	addNodeToCanvas(node)
 	for _, btChild in ipairs(btNode.children) do
-		local child = loadBehaviourNode(bt, btChild)
+		local child = loadBehaviourNode(bt, btChild, discardId)
 		connectionLine.add(node.connectionOut, child.connectionIn)
 	end
 	return node
 end
 
 function loadBehaviourTree(bt)
-	serializedTreeName = currentTree.treeName 
-	--treeNameLabel.caption -- to be able to regenerate ids of deserialized nodes, when saved with different name
+  -- to be able to regenerate ids of deserialized nodes, when saved with different name
 	local root = loadBehaviourNode(bt, bt.root)
 	if(root)then
 		connectionLine.add(WG.nodeList[rootID].connectionOut, root.connectionIn)
@@ -1622,6 +2098,7 @@ function loadBehaviourTree(bt)
 		-- Add inputs and sets them to saved values
 		addInputButton:CallListeners( addInputButton.OnClick )
 		WG.nodeList[rootID].inputs[i].editBox:SetText(bt.inputs[i].name)
+		WG.nodeList[rootID].inputs[i].editBox.validatedValue = bt.inputs[i].name
 		local inputType = inputTypeMap[ bt.inputs[i]["command"] ]
 		local inputComboBox = WG.nodeList[rootID].inputs[i].comboBox
 		for k=1,#inputComboBox.items do

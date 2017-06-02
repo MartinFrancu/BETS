@@ -7,11 +7,7 @@ local CustomEnvironment = Utils.CustomEnvironment
 local currentlyExecutingCommand = nil
 local unitToOrderIssueingCommandMap = {}
 
-Results = {
-	SUCCESS = "S",
-	FAILURE = "F",
-	RUNNING = "R",
-}
+local Results = require("results")
 local commandEnvironment = CustomEnvironment:New({
 	SUCCESS = Results.SUCCESS,
 	FAILURE = Results.FAILURE,
@@ -163,6 +159,15 @@ function Command:Extend(scriptName)
 		
 		local info = self.getInfo()
 		newinst.onNoUnits = info.onNoUnits or Results.SUCCESS
+		local outputParameters = {}
+		if(info.parameterDefs)then
+			for _, def in ipairs(info.parameterDefs) do
+				if(def.output)then
+					outputParameters[def.name] = true
+				end
+			end
+		end
+		newinst.outputParameters = outputParameters
 
 		success,res = pcall(newinst.New, newinst)
 		if not success then
@@ -193,10 +198,14 @@ function Command:BaseRun(unitIDs, parameters)
 	if success then
 		if (res == Results.SUCCESS or res == Results.FAILURE) then
 			self:BaseReset()
+		elseif(res ~= Results.RUNNING)then
+			Logger.error("command", "Invalid result of a command. Expected SUCCESS, FAILURE or RUNNING, got: ", dump(res))
+			return Results.FAILURE
 		end
 		return res, retVal
 	else
 		Logger.error("command", "Error in script ", self.scriptName, ", method ", methodSignatures.Run, ": ", res)
+		return Results.FAILURE
 	end
 end
 

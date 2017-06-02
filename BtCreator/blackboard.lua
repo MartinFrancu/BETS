@@ -106,6 +106,7 @@ do
 							row.panel:SetPos(nil, nil, nil, height)
 							row.height = TEXT_HEIGHT + height
 							row.control:SetPos(nil, nil, nil, row.height)
+							self:Realign()
 						end)
 						row.subrows:SetTable(row.currentValue)
 					end,
@@ -165,10 +166,16 @@ local function showCurrentBlackboard(blackboardState)
 		return
 	end
 
-	blackboardWindowState.rows:SetTable(blackboardState)
+	blackboardWindowState.rows:SetTable(blackboardState or {})
 end
 local function listenerClickOnShowBlackboard()
 	if(blackboardWindowState)then
+		if(blackboard.moved)then
+			blackboard.x = blackboard.window.x
+			blackboard.y = blackboard.window.y
+			blackboard.width = blackboard.window.width
+			blackboard.height = blackboard.window.height
+		end
 		blackboard.window:Dispose()
 		blackboardWindowState = nil
 		return
@@ -176,17 +183,18 @@ local function listenerClickOnShowBlackboard()
 
 	blackboardWindowState = {}
 
-	local height = 60+10*20
+	local height = blackboard.height or 60+10*20
 	local window = Chili.Window:New{
 		parent = Screen0,
 		name = "BlackboardWindow",
-		x = blackboard.x,
-		y = blackboard.y,
-		width = 400,
-		height = height,
 		skinName = 'DarkGlass',
 		caption = "Blackboard:",
+		OnResize = { sanitizer:AsHandler(function()
+			blackboard.moved = true
+		end) }
 	}
+	window:SetPos(blackboard.x, blackboard.y, blackboard.width or 400, height)
+	blackboard.moved = false
 	blackboard.window = window
 
 	blackboardWindowState.contentWrapper = Chili.ScrollPanel:New{
@@ -205,8 +213,10 @@ local function listenerClickOnShowBlackboard()
 end
 
 local function setWindowPosition(x, y)
-	blackboard.x = x
-	blackboard.y = y
+	if(not blackboard.moved)then
+		blackboard.x = math.max(0, x)
+		blackboard.y = math.max(0, y)
+	end
 end
 
 blackboard.setWindowPosition = setWindowPosition

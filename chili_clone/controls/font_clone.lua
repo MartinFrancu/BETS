@@ -174,7 +174,7 @@ end
 
 --//=============================================================================
 
-function Font:AdjustPosToAlignment(x, y, width, height, align, valign)
+function Font:AdjustPosToAlignment(x, y, width, height, textHeight, align, valign)
   local extra = ''
 
   if self.shadow then
@@ -195,7 +195,7 @@ function Font:AdjustPosToAlignment(x, y, width, height, align, valign)
     y     = y + height
     extra = 'b'
   elseif valign == "linecenter" then
-    y     = y + (height / 2) + (1 + self._font.descender) * self.size / 2
+    y     = y + ((height - textHeight + self._font.size) / 2) + (1 + self._font.descender) * self.size / 2
     extra = 'x'
   else
     --// ascender
@@ -287,7 +287,8 @@ function Font:DrawInBox(text, x, y, w, h, align, valign)
     return
   end
 
-  local x,y,extra = self:AdjustPosToAlignment(x, y, w, h, align, valign)
+	local textHeight, d, numlines = self:GetTextHeight(text)
+  local x,y,extra = self:AdjustPosToAlignment(x, y, w, h, numlines * self._font.lineheight * self._font.size, align, valign)
 
   if self.outline then
 	extra = extra .. 'o'

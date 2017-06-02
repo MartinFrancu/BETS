@@ -1,7 +1,7 @@
 function widget:GetInfo()
   return {
-    name    = "BtCommands",
-    desc    = "Custom unit orders definitions.",
+    name    = "BtCheat",
+    desc    = "Widget to help user set up game situations for debugging behaviours.",
     author  = "BETS team",
     date    = "2017-06-02",
     license = "MIT",
@@ -14,6 +14,6 @@ local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.
 local Sanitizer = Utils.Sanitizer
 local program = Utils.program
 
-program("BtCommands/")
+program("BtCheat/")
 
 Sanitizer.sanitizeWidget(widget)

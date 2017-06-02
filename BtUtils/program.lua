@@ -1,4 +1,5 @@
---- .
+--- Runs a file in an environment, in which a polyfill for the standard @{require} function exists.
+-- Essentially allows writing widgets over multiple files.
 -- @module program
 
 
@@ -23,6 +24,15 @@ return Utils:Assign("program", function()
 
 	local rootPath = LUAUI_DIRNAME .. "Widgets/"
 	
+	--- Runs the specified file inside a new clean environment with access to `require`.
+	-- 
+	-- The `require` can be given a string corresponding to a relative path to the location of the file that uses it, without extension, and the specified file gets evaluated as well. If the same file would be evaluated two times, it is evaluated only the first time and the same result is returned the next time.
+	-- 
+	-- It is also capable of resolving cyclic references by utilizing @{Surrogate}s.
+	-- @string name Relative path from `LuaUI/Widgets` to the file that is the root of the "program"
+	-- @tab[opt] context Optional parameter; the environment, that should be available within the files, it uses @{widget} otherwise
+	-- @treturn tab @{rawTable} view of the environment in which the files ran
+	-- @remark Even when an environment is given, the files run in a clean environment, that just allows them to access the given one. Names given as `name` parameter to `program` and `require` can point to a directory, ending in "`/`", which is equivalent to point to the `main.lua` file inside that directory.
 	function program(name, context)
 		if(not context)then
 			context = getWidgetCaller()

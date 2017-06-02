@@ -1,4 +1,5 @@
--- This part of BtUtils is supposed to take care of unit categories definitions. 
+--- This part of BtUtils is supposed to take care of unit categories definitions. 
+-- @module UnitCategories
 
 
 if(not BtUtils)then VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST) end;
@@ -24,33 +25,38 @@ return Utils:Assign("UnitCategories", function()
 	local contentType =  ProjectManager.makeRegularContentType("UnitCategories", "json")
 	UnitCategories.contentType = contentType
 		
-	-- Returns entry corresponding to given category:
+	--- Returns entry corresponding to a given category.
+	-- @string qualifiedName Qualified name of the category.
+	-- @treturn tab Table containing a list of tables in `types` that describe the `name` of units in the category.
 	function UnitCategories.loadCategory(qualifiedName)
-		Logger.log("categories", "ct:", dump(contentType), " qN: ", dump(qualifiedName) )
 		local path = ProjectManager.findFile(contentType, qualifiedName)
 		if(not path)then
 			Logger.log("categories", "Could not localize cateogry file: ", qualifiedName )
+			return false,  "Could not localize cateogry file: " .. qualifiedName 
 		end
 		local file = io.open(path, "r")
 		if(not file)then
 			Logger.log("categories", "Unable to read category definition file: ", path )
-			return nil
+			return false, "Unable to read category definition file: " .. path
 		end
 		local text = file:read("*all")
 		file:close()
 		local data = JSON:decode(text)
 		return data
 	end
-	-- Get types in given category:
+	--- Get types in given category.
+	-- @string qualifiedName Qualified name of the category.
+	-- @treturn {tab} List of tables with `name` of units in the category.
 	function UnitCategories.getCategoryTypes(qualifiedName)
-		local data = UnitCategories.loadCategory(qualifiedName)
-		if(data.types == nil) then
+		local data, message = UnitCategories.loadCategory(qualifiedName)
+		if(not data) then
 			Logger.log("categories", "UnitCategories: Incorrect file.")
-			return nil
+			return false, message
 		end
 		return data.types
 	end
-	-- returns array of names of availible categories.
+	--- Returns array of names of available categories.
+	-- @treturn {string}
 	function UnitCategories.getAllCategoryNames() 
 		local result = {}
 		local categories = ProjectManager.listAll(contentType)
@@ -61,6 +67,8 @@ return Utils:Assign("UnitCategories", function()
 		return result
 	end
 	
+	--- Saves a category.
+	-- @tab catDefinition Category definition containing `project` name, category `name` and `types` containing list of `name`s of the units.
 	function UnitCategories.saveCategory(catDefinition)
 		if(not ProjectManager.isProject(catDefinition.project))then
 			-- if new project I should create it 
@@ -71,16 +79,16 @@ return Utils:Assign("UnitCategories", function()
 		local path,params = ProjectManager.findFile(contentType, catDefinition.project, catDefinition.name)
 		
 		if(params.readonly)then
-			return nil, "Category file " .. 
+			return false, "Category file " .. 
 				tostring(catDefinition.project).. "."..tostring(catDefinition.name) .. " is read-only."
 		end
 		
 		Spring.CreateDir(path:match("^(.+)/"))
-		local text = JSON:encode(catDefinition, nil, { pretty = true, indent = "\t"})
+		local text = JSON:encode( {types = catDefinition.types}, nil, { pretty = true, indent = "\t"})
 		local file = io.open(path, "w")
 		if(not file)then
 			Logger.log("categories", "saveCategories: unable to write in file: ", path)
-			return nil
+			return false, "saveCategories: unable to write in file: " .. path
 		end
 		file:write(text)
 		file:close()

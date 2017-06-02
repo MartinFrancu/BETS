@@ -1,5 +1,4 @@
---- Module in charge of loading/saving GUI dialogs. 
-
+--- Module in charge of new/load/save GUI dialogs.
 -- @module ProjectDialog
 
 if(not BtUtils)then VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST) end
@@ -24,9 +23,9 @@ return Utils:Assign("ProjectDialog", function()
 	local NEW_PROJECT_STRING = "--NEW PROJECT--"
 	
 	
-	ProjectDialog.LOAD_DIALOG_FLAG = "LOAD"
-	ProjectDialog.SAVE_DIALOG_FLAG = "SAVE"
-	ProjectDialog.NEW_DIALOG_FLAG = "NEW"
+	ProjectDialog.LOAD_DIALOG = "LOAD"
+	ProjectDialog.SAVE_DIALOG = "SAVE"
+	ProjectDialog.NEW_DIALOG = "NEW"
 	
 	
 	local PATH = LUAUI_DIRNAME.."Widgets/BtUtils/"
@@ -34,6 +33,10 @@ return Utils:Assign("ProjectDialog", function()
 
 	
 	local dialogWindow
+	
+	local function sortItems(items)
+		table.sort(items, function(x,y) return x.name:lower() < y.name:lower() end)
+	end
 	
 	local function onSelectItem(self)
 		if(self.items[self.selected] == self.newItemString) then
@@ -49,6 +52,7 @@ return Utils:Assign("ProjectDialog", function()
 	
 	local function onSelectProject(self)
 		local selected = self.items[self.selected]
+		self.itemComboBox:Show()
 		if( selected == self.newProjectString) then
 			if(not self.newProjectEditBox.visible ) then
 				self.newProjectEditBox:Show()
@@ -63,6 +67,7 @@ return Utils:Assign("ProjectDialog", function()
 			-- i should update item combo box:
 			-- new items:
 			local listProject = self.projectManager.listProject(selected, self.contentType)
+			sortItems(listProject)
 			local newItems = {}
 			for i,data in ipairs(listProject)do
 				newItems[i] = data.name
@@ -73,9 +78,11 @@ return Utils:Assign("ProjectDialog", function()
 			end
 			self.itemComboBox.items = newItems
 			self.itemComboBox:Select(1)
+			if(#newItems == 0)then
+				self.itemComboBox:Hide()
+			end
 		end	
 	end
-	
 	
 	local function doneButtonListener(self)
 		local selectedProject = self.projectSelection.items[self.projectSelection.selected]
@@ -83,13 +90,23 @@ return Utils:Assign("ProjectDialog", function()
 			selectedProject = self.newProjectEditBox.text
 		end
 		
-		local selectedItem  = self.itemSelection.items[self.itemSelection.selected]
-		if(selectedItem == self.newItemString) then
+		local selectedItem
+		if(self.itemSelection) then
+			-- the new button
+			selectedItem = self.itemSelection.items[self.itemSelection.selected]
+			if(selectedItem == self.newItemString) then
+				selectedItem = self.newItemEditBox.text
+			end
+		else
 			selectedItem = self.newItemEditBox.text
 		end
 		
-		self.callback(self.callbackObject, selectedProject, selectedItem)
-		self.showDialogHandler(false)
+		if(selectedProject and string.len(selectedProject ) > 0 and selectedItem and string.len(selectedItem)> 0 ) then
+			-- selected project and item are not empty strings
+			self.callback(self.callbackObject, selectedProject, selectedItem)
+			self.showDialogHandler(false)
+		end
+		-- else do nothing
 	end
 	
 	local function cancelButtonListener(self)
@@ -105,17 +122,33 @@ return Utils:Assign("ProjectDialog", function()
 		window:Dispose()
 	end
 	
-	--- This will attach corresponding chili components of save/load dialog to given parent.
-	function ProjectDialog.setUpDialog(parent, contentType, creatingEnabled, callbackObject, callbackFunction, showDialogHandler)
+	-- This will attach corresponding chili components of save/load dialog to a given parent.
+	function ProjectDialog.setUpDialog(parent, contentType, creatingEnabled, callbackObject, callbackFunction, showDialogHandler, defaultProject, defaultName)
 		callbackFunction = Sanitizer.sanitize(callbackFunction)
 		
-		-- get project manager
-		local pM =  Utils.ProjectManager
 		local sanitizer = Utils.Sanitizer.forCurrentWidget()
+
+		local selectedProject = nil
+		local projects = ProjectManager.getProjects()
+		sortItems(projects)
+		local projectNames = {}
+		for i,data in ipairs(projects) do
+			projectNames[i] = data.name
+			if(data.name == defaultProject)then
+				selectedProject = i
+				defaultProject = nil
+			end
+		end
+		if creatingEnabled then
+			if(not selectedProject and defaultProject)then
+				selectedProject = #projectNames+1
+			end
+			projectNames[#projectNames+1] = NEW_PROJECT_STRING
+		end
 		
 		local newProjectEditBox = Chili.EditBox:New{
 			parent = parent,
-			text = "--PLEASE FILL IN--",
+			text = defaultProject or "Unknown",
 			x = 15,
 			y = 60,
 			width = 120,
@@ -125,7 +158,7 @@ return Utils:Assign("ProjectDialog", function()
 		
 		local newItemEditBox = Chili.EditBox:New{
 			parent = parent,
-			text = "--PLEASE FILL IN--",
+			text = defaultName or "untitled",
 			x = 150,
 			y = 60,
 			width = 140,
@@ -146,17 +179,6 @@ return Utils:Assign("ProjectDialog", function()
 			newItemLabel = newLabel,
 		}
 
-		
-		local projects = pM.getProjects()
-		
-		local projectNames = {}
-		for i,data in ipairs(projects) do
-			projectNames[i] = data.name
-		end
-		if creatingEnabled then
-			projectNames[#projectNames+1] = NEW_PROJECT_STRING
-		end
-		
 		local projectSelection = Chili.ComboBox:New{
 			parent = parent,
 			x = 15,
@@ -164,16 +186,24 @@ return Utils:Assign("ProjectDialog", function()
 			width = 120,
 			height = 35,
 			items = projectNames,
+			selected = selectedProject,
 			OnSelect = {sanitizer:AsHandler(onSelectProject)},
 			newProjectEditBox = newProjectEditBox,
 			newProjectString = NEW_PROJECT_STRING,
 			newItemString = NEW_ITEM_STRING,
 			itemComboBox = itemSelection,
-			projectManager = pM,
+			projectManager = ProjectManager,
 			contentType = contentType,
 			creatingEnabled = creatingEnabled
 		}
 		
+		for i, name in ipairs(itemSelection.items) do
+			if(name == defaultName)then
+				itemSelection:Select(i)
+				newItemEditBox:SetText("untitled")
+				break
+			end
+		end
 		
 		local doneButton = Chili.Button:New{
 			parent = parent,
@@ -226,23 +256,10 @@ return Utils:Assign("ProjectDialog", function()
 			end
 		end	
 	end
-	
-	
-	local function doneButtonListenerNew(self)
-		local selectedProject = self.projectSelection.items[self.projectSelection.selected]
-		if(selectedProject == self.newProjectString) then
-			selectedProject = self.newProjectEditBox.text
-		end
-		
-		local selectedItem = self.newItemEditBox.text
-		
-		self.callback(self.callbackObject, selectedProject, selectedItem)
-		self.showDialogHandler(false)
-	end
 		
 	
-	--- This will attach corresponding chili components of new item dialog to given parent.
-	function ProjectDialog.setUpDialogNewItem(parent, contentType, callbackObject, callbackFunction, showDialogHandler)
+	-- This will attach corresponding chili components of new item dialog to a given parent.
+	function ProjectDialog.setUpDialogNewItem(parent, contentType, callbackObject, callbackFunction, showDialogHandler, defaultProject, defaultName)
 		callbackFunction = Sanitizer.sanitize(callbackFunction)
 		
 		local sanitizer = Utils.Sanitizer.forCurrentWidget()
@@ -250,9 +267,25 @@ return Utils:Assign("ProjectDialog", function()
 		local secondLineY = 60
 		local thirdLineY = 80
 		
+		local selectedProject = nil
+		local projects = ProjectManager.getProjects()
+		sortItems(projects)
+		local projectNames = {}
+		for i,data in ipairs(projects) do
+			projectNames[i] = data.name
+			if(data.name == defaultProject)then
+				selectedProject = i
+				defaultProject = nil
+			end
+		end
+		if(not selectedProject)then
+			selectedProject = #projectNames+1
+		end
+		projectNames[#projectNames+1] = NEW_PROJECT_STRING
+		
 		local newProjectEditBox = Chili.EditBox:New{
 			parent = parent,
-			text = "--PLEASE FILL IN--",
+			text = defaultProject or "Untitled",
 			x = 15,
 			y = secondLineY,
 			width = 120,
@@ -262,23 +295,13 @@ return Utils:Assign("ProjectDialog", function()
 		
 		local newItemEditBox = Chili.EditBox:New{
 			parent = parent,
-			text = "--PLEASE FILL IN--",
+			text = defaultName or "unknown",
 			x = 150,
 			y = firstLineY,
 			width = 140,
 			height = 20,
 			
 		}
-
-		
-		local projects = ProjectManager.getProjects()
-		
-		local projectNames = {}
-		for i,data in ipairs(projects) do
-			projectNames[i] = data.name
-		end
-		projectNames[#projectNames+1] = NEW_PROJECT_STRING
-		
 		
 		local projectSelection = Chili.ComboBox:New{
 			parent = parent,
@@ -287,6 +310,7 @@ return Utils:Assign("ProjectDialog", function()
 			width = 120,
 			height = 35,
 			items = projectNames,
+			selected = selectedProject,
 			OnSelect = {sanitizer:AsHandler(onSelectProjectNew)},
 			newProjectEditBox = newProjectEditBox,
 			newProjectString = NEW_PROJECT_STRING,
@@ -302,7 +326,7 @@ return Utils:Assign("ProjectDialog", function()
 			width = 100,
 			height = 30,
 			caption = "DONE",
-			OnClick = {sanitizer:AsHandler(doneButtonListenerNew)},
+			OnClick = {sanitizer:AsHandler(doneButtonListener)},
 			skinName = 'DarkGlass',
 		}
 		doneButton.callback = callbackFunction
@@ -328,9 +352,9 @@ return Utils:Assign("ProjectDialog", function()
 		cancelButton.showDialogHandler = showDialogHandler
 	end
 	
-	function ProjectDialog.showDialogWindow(parentHandler, contentType, dialogFlag , callbackFunction, title, xIn, yIn)
-		parentHandler = Sanitizer.sanitize(parentHandler)
-		callbackFunction = Sanitizer.sanitize(callbackFunction)
+	local function showDialogWindow(visibilityHandler, contentType, dialogFlag, callbackFunction, title, xIn, yIn, defaultProject, defaultName)
+		visibilityHandler = visibilityHandler and Sanitizer.sanitize(visibilityHandler) or function() end
+		callbackFunction = callbackFunction and Sanitizer.sanitize(callbackFunction) or function() end 
 		local sanitizer = Utils.Sanitizer.forCurrentWidget()
 		
 		local winWidth = 400
@@ -374,17 +398,34 @@ return Utils:Assign("ProjectDialog", function()
 		
 		local sanitizedHideWindowAndCall = sanitizer:Sanitize(hideWindowAndCall)
 		
-		if(dialogFlag == ProjectDialog.LOAD_DIALOG_FLAG) then
-			ProjectDialog.setUpDialog(panel, contentType, false, dialogWindow, sanitizedHideWindowAndCall, parentHandler)
+		if(dialogFlag == ProjectDialog.LOAD_DIALOG) then
+			ProjectDialog.setUpDialog(panel, contentType, false, dialogWindow, sanitizedHideWindowAndCall, visibilityHandler, defaultProject, defaultName)
 		end
-		if(dialogFlag == ProjectDialog.SAVE_DIALOG_FLAG) then
-			ProjectDialog.setUpDialog(panel, contentType, true, dialogWindow, sanitizedHideWindowAndCall, parentHandler)
+		if(dialogFlag == ProjectDialog.SAVE_DIALOG) then
+			ProjectDialog.setUpDialog(panel, contentType, true, dialogWindow, sanitizedHideWindowAndCall, visibilityHandler, defaultProject, defaultName)
 		end
-		if(dialogFlag == ProjectDialog.NEW_DIALOG_FLAG) then
-			ProjectDialog.setUpDialogNewItem(panel, contentType, dialogWindow, sanitizedHideWindowAndCall, parentHandler)
+		if(dialogFlag == ProjectDialog.NEW_DIALOG) then
+			ProjectDialog.setUpDialogNewItem(panel, contentType, dialogWindow, sanitizedHideWindowAndCall, visibilityHandler, defaultProject, defaultName)
 		end
 		
-		parentHandler(true)
+		visibilityHandler(true)
+	end
+	
+	--- Shows a dialog that allows the user to select a project and a name of a content.
+	-- @tab params Table of parameters tha can contain the following slots.
+	--
+	-- - `visibilityHandler` - function that is called with `true` when dialog is shown and with `false` when it is hidden, can be used to disable other components while the dialog is shown
+	-- - `contentType` - @{ProjectManager.ContentType} that the dialog handles
+	-- - `dialogType` - one of the following
+	--     - `ProjectDialog.LOAD_DIALOG`
+	--     - `ProjectDialog.SAVE_DIALOG`
+	--     - `ProjectDialog.NEW_DIALOG`
+	-- - `title` - title of the dialog
+	-- - `x`, `y` - position where to show the dialog
+	-- - `project`, `name` - initial selected items in the dialog
+	-- @func callbackFunction Function that gets called after the dialog concludes.
+	function ProjectDialog.showDialog(params, callbackFunction)
+		showDialogWindow(params.visibilityHandler, params.contentType, params.dialogType, callbackFunction, params.title, params.x, params.y, params.project, params.name)
 	end
 	
 	return ProjectDialog

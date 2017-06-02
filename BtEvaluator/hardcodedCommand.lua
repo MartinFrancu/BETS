@@ -1,5 +1,7 @@
 local dump = Utils.Debug.dump
 
+local Results = require("results")
+
 local hardcodedCommandPrototype = {
 	BaseRun = function(self, ...) return self.run(...) end,
 	BaseReset = function(self, ...) if(self.reset)then return self.reset(...) end end,
@@ -8,6 +10,7 @@ local hardcodedCommandPrototype = {
 	CommandDone = function() end,
 	SetUnitIdle = function() end,
 	UnitIdle = function() end,
+	outputParameters = {},
 }
 local hardcodedCommandMetatable = { __index = hardcodedCommandPrototype }
 local hardcodedScripts = {
@@ -27,6 +30,7 @@ local hardcodedScripts = {
 				defaultValue = "nil",
 			}
 		},
+		outputParameters = { var = true },
 		tooltip = "",
 	},
 	echo = {

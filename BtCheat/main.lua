@@ -1,12 +1,21 @@
+--[[README:
+BtCheat is widget for empowering user during debugging BETS behaviours. 
+Important functions:
+widget:GameFrame
+	To speed up game to desired speed spSendCommand(CONSTANTS.speedUpCMD) is called repeatedly, that has to happen in different frames. 
+--]]
 local BtCheat = {}
 
 local sanitizer = Utils.Sanitizer.forCurrentWidget()
 local Chili = Utils.Chili
 
+
+local JSON = Utils.JSON
 local Timer = Utils.Timer;
 local Debug = Utils.Debug;
 local Logger = Debug.Logger
 local dump = Debug.dump
+local Dependency = Utils.Dependency
 
 local cheatWindow
 local nameLabel
@@ -19,16 +28,20 @@ local ffState -- nill - nothing, not fastforwargin, acc = accelerrating, ff when
 local speed
 
 local giveButton
+local unitEditBox --unitCombobox
+local teamCombobox
+local godModeCheckbox
 
 local expectedCommand
 
-local inputCommandsTable
+
 
 local CONSTANTS = {
 	pauseCMD = "Pause",
 	speedUpCMD = "SpeedUp",
 	slowDownCMD = "SlowDown",
 	giveCMD = "give",
+	godmodeCMD = "godmode",
 	ffButton = {
 		whenSlow = ">>>>>",
 		whenFast = "Stop",
@@ -36,6 +49,7 @@ local CONSTANTS = {
 	defaultFFSpeed = 5,
 	normalSpeed = 1,
 	cheatInputCMDName = "BETS_CHEAT_POSITION",
+	giveHowMany = 5,
 }
 
 local spSendCommand = Spring.SendCommands
@@ -45,6 +59,7 @@ local spGetCmdDescIndex = Spring.GetCmdDescIndex
 local spSetActiveCommand = Spring.SetActiveCommand
 local spGetSelectedUnits = Spring.GetSelectedUnits
 local spSelectUnits = Spring.SelectUnitArray
+
 
 function pauseGameListener()
 	spSendCommand(CONSTANTS.pauseCMD)
@@ -75,44 +90,30 @@ function fastForwardButtonListener(self)
 	end
 end
 
+local function spawnUnits(unitName, howMany, team, position)
+	local positionStr = "@"..position[1]..","..position[2]..",".. position[3]
+	
+	local commandAll = CONSTANTS.giveCMD .. " "
+			.. tostring(howMany) ..  " " 
+			.. unitName .." "
+			.. tostring(team) .." "
+			..  positionStr
+	spSendCommand(commandAll)
+end 
+local function positionSpecifiedCallback(data) 
+	spawnUnits( 
+		unitEditBox.text,
+		CONSTANTS.giveHowMany, 
+		teamCombobox.items[teamCombobox.selected], 
+		data)
+end  
 
--- this returns one ally unit. 
-local function getDummyAllyUnit()
-	local allUnits = Spring.GetTeamUnits(Spring.GetMyTeamID())
-	return allUnits[1]
-end
 
 function giveListener(self)
-	if(not inputCommandsTable or not treeCommandsTable) then		
-		inputCommandsTable = WG.InputCommands
-	end
-	
-	local f = function()
-		local ret = spSetActiveCommand(  spGetCmdDescIndex(inputCommandsTable[ CONSTANTS.cheatInputCMDName ]) ) 
-		if(ret == false ) then 
-			Logger.log("commands", "BtCheats: Unable to set command active: " , CONSTANTS.cheatInputCMDNamee) 
-		end
-	end
-	
-	-- if there are no units selected, ...
-	if(not spGetSelectedUnits()[1])then
-		-- select one
-		spSelectUnits({ getDummyAllyUnit() })
-		-- wait until return to Spring to execute f
-		Timer.delay(f)
-	else
-		f() -- execute synchronously
-	end
---[[	
-	expectedCommand = {
-		unitName = "armpw",
-		countStr = "10",
-		teamStr = "0",
-	}
-	--]]
+	BtCommands.getInput(CONSTANTS.cheatInputCMDName,  positionSpecifiedCallback)
 end
 
-function BtCheat.onFrame()	
+function widget:GameFrame()
 	local userSpFac,spFac, paused = Spring.GetGameSpeed()
 	
 	if ffState ~= nil then -- something is happening
@@ -133,42 +134,15 @@ function BtCheat.onFrame()
 	end
 end
 
-function BtCheat.gamePaused()
+function widget:GamePaused()
 	local userSpFac,spFac, paused = Spring.GetGameSpeed()
-	Spring.Echo("paused: " .. tostring(userSpFac) .. ", " .. tostring(spFac) .. ", ".. tostring(paused) )
 end
 
-function BtCheat.show()
-	cheatWindow:Show()
-end
-function BtCheat.hide()
-	cheatWindow:Hide()
+local function godMode()	
+	spSendCommand(CONSTANTS.godmodeCMD)
 end
 
-function BtCheat.commandNotify(cmdID,cmdParams)
-	if(not inputCommandsTable or not treeCommandsTable) then		
-		inputCommandsTable = WG.InputCommands
-	end
-	Logger.log("commands", "getting there, cmdID: ", cmdID, " name: ", inputCommandsTable[cmdID] )
-	if(inputCommandsTable[cmdID] and inputCommandsTable[cmdID] == CONSTANTS.cheatInputCMDName) then
-		--- spawn units
-		local positionStr = "@"..cmdParams[1]..","..cmdParams[2]..","..cmdParams[3]
-		local unitNameStr =  "armpw"
-		local countStr = "10"
-		local teamStr = "0"
-		local commandAll = CONSTANTS.giveCMD .. " "
-			.. countStr ..  " " 
-			.. unitNameStr .." "
-			..teamStr.." "
-			..  positionStr
-		Logger.log("commands", "cheat: " , commandAll)
-		spSendCommand(commandAll)
-		return true
-	end
-	return false
-end
-
-function BtCheat.init()
+function widget:Initialize()
 	local Screen0 = Chili.Screen0	
 	speed = CONSTANTS.defaultFFSpeed
 	
@@ -177,13 +151,12 @@ function BtCheat.init()
 		x = Screen0.width - 150,
 		y = '30%',
 		width  = 150 ,
-		height = 150,	
+		height = 200,	
 			padding = {10,10,10,10},
 			draggable=true,
 			resizable=false,
 			skinName='DarkGlass',
 	}
-	cheatWindow:Hide()
 	
 	pauseButton =  Chili.Button:New{
 		parent = cheatWindow ,
@@ -251,24 +224,83 @@ function BtCheat.init()
 		x = 5,
 		y = 75,
 		width = 120,
+		height = 35,
 		skinName='DarkGlass',
 		focusColor = {1.0,0.5,0.0,0.5},
 		tooltip = "Give units (ARMPW) on specified position.",
 		OnClick = { sanitizer:AsHandler(giveListener)},
 	}
---[[	
-	giveEnemyButton  = Chili.Button:New{
-		parent = cheatWindow ,
-		caption = "Give enemy",
-		x = 5,
-		y = 75,
-		width = 120,
+	
+	local unitLabel = Chili.Label:New{
+		parent = cheatWindow,
+		x = giveButton.x + 5 ,
+		y = giveButton.y + giveButton.height + 3,
+		width = 60,
 		skinName='DarkGlass',
 		focusColor = {1.0,0.5,0.0,0.5},
-		tooltip = "Give enemy unit (ARMPW) on specified position.",
-		OnClick = { sanitizer:AsHandler(giveListener)},
+		caption = "Unit:",
 	}
-	--]]
+	
+	
+	unitEditBox = Chili.EditBox:New{	
+		parent = cheatWindow,
+		x = unitLabel.x + unitLabel.width,
+		y = unitLabel.y - 2,
+		width = 80,
+		skinName='DarkGlass',
+		focusColor = {1.0,0.5,0.0,0.5},
+		tooltip = "Select unit type to be given",
+		text = "armpw"
+	}
+	local teamLabel = Chili.Label:New{
+		parent = cheatWindow,
+		x = unitLabel.x,
+		y = unitLabel.y + unitLabel.height+ 15,
+		width = 60,
+		skinName='DarkGlass',
+		focusColor = {1.0,0.5,0.0,0.5},
+		caption = "Team:",
+	}
+	
+	local teams = Spring.GetTeamList()
+	local teamItems = {}
+	for _,teamId in ipairs(teams) do
+		table.insert(teamItems, tostring(teamId) )
+	end	
+	
+	teamCombobox = Chili.ComboBox:New{	
+		parent = cheatWindow,
+		x = teamLabel.x + teamLabel.width,
+		y = teamLabel.y-3,
+		width = 60,
+		skinName='DarkGlass',
+		focusColor = {1.0,0.5,0.0,0.5},
+		tooltip = "Select unit type to be given",
+		items = teamItems
+	}
+	
+	godModeCheckbox = Chili.Checkbox:New{
+		parent = cheatWindow,
+		x = teamLabel.x,
+		y = teamLabel.y + teamLabel.height + 5,
+		width = 100,
+		skinName='DarkGlass',
+		focusColor = {1.0,0.5,0.0,0.5},
+		tooltip = "Godmode allows you to command enemy units.",
+		checked = false,
+		caption = "Godmode",
+		OnChange = {sanitizer:AsHandler(godMode)}
+	}
+
+	
+	Dependency.defer(
+		function() 
+			BtCommands = sanitizer:Import(WG.BtCommands) 
+		end, 
+		function() 
+			BtCommands = nil 
+		end,
+		Dependency.BtCommands)
 	
 end
 

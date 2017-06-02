@@ -1,10 +1,10 @@
 function widget:GetInfo()
   return {
     name    = "BtController",
-    desc    = "Widget to intermediate players commands to Behaviour Tree Evaluator. ",
+    desc    = "Widget to intermediate players commands to Behaviour Tree Evaluator.",
     author  = "BETS team",
-    date    = "today",
-    license = "GNU GPL v2",
+    date    = "2017-06-02",
+    license = "MIT",
     layer   = 0,
     enabled = true
   }
