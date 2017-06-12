@@ -221,12 +221,17 @@ end
 -- @tparam number angle Angle in X-Z plane.
 -- @return `self`
 function vector_prototype:Rotate2D(angle)
-	local angleInRads = rad(angle)
+	local angleInRads = rad(-angle) -- inverted Z axis (it increases in "south" direction in Spring map notation
 	local vec = new(0,0,0)
 	vec.x = self.x * cos(angleInRads) - self.z * sin(angleInRads)
 	vec.y = self.y
 	vec.z = self.x * sin(angleInRads) + self.z * cos(angleInRads)
 	return vec
+end
+
+--- Rotates vector around Y axis by given azimuth
+function vector_prototype:RotateByHeading(angle)
+	return self:Rotate2D(-angle) -- just rotation in opoosite direction than mathematic Rotate2D
 end
 
 
