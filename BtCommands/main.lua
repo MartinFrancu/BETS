@@ -348,12 +348,24 @@ function BtCommands.getInput(commandName, callback)
 		end
 	end
 	
-	-- if there are no units selected, ...
-	if(not spGetSelectedUnits()[1])then
-		-- select one
-		spSelectUnits({ getDummyAllyUnit() })
-		-- wait until return to Spring to execute f
-		Timer.delay(f)
+	local localTeam = Spring.GetLocalTeamID()
+	local isFriendlyUnitSelected = false
+	for _, unitId in ipairs(spGetSelectedUnits()) do
+		if(Spring.GetUnitTeam(unitId) == localTeam)then
+			isFriendlyUnitSelected = true
+			break
+		end
+	end
+
+	if(not isFriendlyUnitSelected)then
+		local dummyUnit = getDummyAllyUnit()		
+
+		if(dummyUnit)then
+			-- select one
+			spSelectUnits({ dummyUnit })
+			-- wait until return to Spring to execute f
+			Timer.delay(f)
+		end
 	else
 		f() -- execute synchronously
 	end
@@ -377,9 +389,9 @@ function widget.CommandNotify(self, cmdID, cmdParams, cmdOptions)
 			
 			transformedData = BtCommands.transformCommandData(cmdParams, commandType)
 			
-			expectedInput.callback(transformedData)
-			
+			local oldInput = expectedInput
 			expectedInput = nil
+			oldInput.callback(transformedData)
 		else
 			Logger.log("commands", "BtCommands: Received input command while not expecting one!!!")
 		end

@@ -106,6 +106,10 @@ local function positionSpecifiedCallback(data)
 		CONSTANTS.giveHowMany, 
 		teamCombobox.items[teamCombobox.selected], 
 		data)
+
+	if(select(4, Spring.GetModKeyState()))then
+		giveListener(nil)
+	end
 end  
 
 
@@ -304,5 +308,6 @@ function widget:Initialize()
 	
 end
 
-
+sanitizer:SanitizeWidget()
+Dependency.deferWidget(widget, Dependency.BtCommands)
 return BtCheat

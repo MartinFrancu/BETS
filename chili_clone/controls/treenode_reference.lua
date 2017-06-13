@@ -88,7 +88,7 @@ local function addLabelEditboxPair(nodeWindow, components, y, data, dataList, in
 					WG.BtCreator.Get().markTreeAsChanged()
 				end
 				
-				if(key == KEYSYMS.RETURN and components)then
+				if((key == KEYSYMS.RETURN or key == KEYSYMS.KP_ENTER) and components)then
 					local nextObject = components.next
 					if(nextObject and nextObject.editBox and nextObject ~= components)then
 						local screen = element:FindParent("screen")

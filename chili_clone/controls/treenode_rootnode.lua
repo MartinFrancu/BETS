@@ -74,7 +74,7 @@ local function listenerAddInput(button)
 					WG.BtCreator.Get().markTreeAsChanged()
 				end
 				
-				if(key == KEYSYMS.RETURN and button and button.parent and button.parent.treeNode)then
+				if((key == KEYSYMS.RETURN or key == KEYSYMS.KP_ENTER) and button and button.parent and button.parent.treeNode)then
 					local nextObject = inputs[button.i + 1] or (button.parent.treeNode.outputs or {})[1] or inputs[1]
 					if(nextObject and nextObject.editBox and nextObject.button ~= button)then
 						local screen = element:FindParent("screen")
@@ -133,7 +133,7 @@ local function listenerAddOutput(button)
 					WG.BtCreator.Get().markTreeAsChanged()
 				end
 				
-				if(key == KEYSYMS.RETURN and button and button.parent and button.parent.treeNode)then
+				if((key == KEYSYMS.RETURN or key == KEYSYMS.KP_ENTER) and button and button.parent and button.parent.treeNode)then
 					local nextObject = outputs[button.i + 1] or (button.parent.treeNode.inputs or {})[1] or outputs[1]
 					if(nextObject and nextObject.editBox and nextObject.button ~= button)then
 						local screen = element:FindParent("screen")
