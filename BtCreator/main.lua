@@ -1185,7 +1185,7 @@ function zoomCanvasIn(self, x, y)
 		local nodeWindow = node.nodeWindow
 		local nodeName = node.nameEditBox
 		local icon = node.icon
-			node:ShowChildren()
+		node:ShowChildren()
 		nodeWindow.font.size = nodeWindow.font.size * scale
 		nodeName.font.size = nodeName.font.size * scale
 		local nameX = 15
@@ -1199,8 +1199,8 @@ function zoomCanvasIn(self, x, y)
 		local translatedX = x + (nodeWindow.x - x)*scale
 		local translatedY = y + (nodeWindow.y - y)*scale
 		nodeWindow:SetPos(translatedX, translatedY, nodeWindow.width*scale, nodeWindow.height*scale)
-		node.width = nodeWindow.width*scale
-		node.height = nodeWindow.height*scale
+		node.width = nodeWindow.width
+		node.height = nodeWindow.height
 		node.x = translatedX
 		node.y = translatedY
 		nodeWindow.resizable = true
@@ -1215,7 +1215,7 @@ function zoomCanvasOut(self, x, y)
 		local nodeWindow = node.nodeWindow
 		local nodeName = node.nameEditBox
 		local icon = node.icon
-			node:HideChildren()
+		node:HideChildren()
 		nodeWindow.font.size = nodeWindow.font.size / scale
 		nodeName.font.size = nodeName.font.size / scale
 		local nameX = 10
