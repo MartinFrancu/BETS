@@ -1,3 +1,6 @@
+local _G = loadstring("return _G")()
+local KEYSYMS = _G.KEYSYMS
+
 local rootNode = {}
 
 local addInputButton
@@ -71,6 +74,14 @@ local function listenerAddInput(button)
 					WG.BtCreator.Get().markTreeAsChanged()
 				end
 				
+				if(key == KEYSYMS.RETURN and button and button.parent and button.parent.treeNode)then
+					local nextObject = inputs[button.i + 1] or (button.parent.treeNode.outputs or {})[1] or inputs[1]
+					if(nextObject and nextObject.editBox and nextObject.button ~= button)then
+						local screen = element:FindParent("screen")
+						screen:FocusControl(nextObject.editBox)
+					end
+				end
+				
 				return true
 			end
 		},
@@ -122,6 +133,14 @@ local function listenerAddOutput(button)
 					WG.BtCreator.Get().markTreeAsChanged()
 				end
 				
+				if(key == KEYSYMS.RETURN and button and button.parent and button.parent.treeNode)then
+					local nextObject = outputs[button.i + 1] or (button.parent.treeNode.inputs or {})[1] or outputs[1]
+					if(nextObject and nextObject.editBox and nextObject.button ~= button)then
+						local screen = element:FindParent("screen")
+						screen:FocusControl(nextObject.editBox)
+					end
+				end
+					
 				return true
 			end
 		},

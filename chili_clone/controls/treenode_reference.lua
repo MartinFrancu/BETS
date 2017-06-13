@@ -1,3 +1,6 @@
+local _G = loadstring("return _G")()
+local KEYSYMS = _G.KEYSYMS
+
 local referenceNode = {}
 
 local Utils = VFS.Include(LUAUI_DIRNAME .. "Widgets/BtUtils/root.lua", nil, VFS.RAW_FIRST)
@@ -85,6 +88,14 @@ local function addLabelEditboxPair(nodeWindow, components, y, data, dataList, in
 					WG.BtCreator.Get().markTreeAsChanged()
 				end
 				
+				if(key == KEYSYMS.RETURN and components)then
+					local nextObject = components.next
+					if(nextObject and nextObject.editBox and nextObject ~= components)then
+						local screen = element:FindParent("screen")
+						screen:FocusControl(nextObject.editBox)
+					end
+				end
+				
 				return true
 			end
 		},
@@ -119,6 +130,8 @@ local function addLabelEditboxPair(nodeWindow, components, y, data, dataList, in
 		components.label.font.color = {1,0.1,0,1}
 		components.editBox.font.color = {1,0.1,0,1}
 	end
+	
+	return components
 end
 
 --- Function which takes care of populationg referenceNode with selected trees inputs and outputs. 
@@ -162,6 +175,20 @@ function referenceNode.addInputOutputComponents(nodeWindow,treeNameLabel, treeNa
 		treeNameLabel.tooltip = message
 	end
 	
+	local firstComponent = nil
+	local previousComponent = nil
+	
+	local function linkComponent(component)
+		if(not firstComponent)then
+			firstComponent = component
+		end
+		if(previousComponent)then
+			previousComponent.next = component
+		end
+		component.next = firstComponent
+		previousComponent = component
+	end
+	
 	local treeNode = nodeWindow.treeNode
 	local function createComponents(parameterDefinitions, parameterValues, objectsStorage)
 		storageI = #objectsStorage
@@ -179,12 +206,12 @@ function referenceNode.addInputOutputComponents(nodeWindow,treeNameLabel, treeNa
 		for i, def in ipairs(parameterDefinitions) do
 			local data = unfilledMap[def.name] or { name = def.name }
 			unfilledMap[def.name] = nil
-			addLabelEditboxPair(nodeWindow, makeObject(), positiony, data, parameterValues)
+			linkComponent(addLabelEditboxPair(nodeWindow, makeObject(), positiony, data, parameterValues))
 			positiony = positiony + yoffset
 		end
 		for _, data in pairs(parameterValues) do
 			if(unfilledMap[data.name])then
-				addLabelEditboxPair(nodeWindow, makeObject(), positiony, data, parameterValues, true)
+				linkComponent(addLabelEditboxPair(nodeWindow, makeObject(), positiony, data, parameterValues, true))
 				positiony = positiony + yoffset
 			end
 		end

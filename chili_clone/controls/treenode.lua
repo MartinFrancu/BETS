@@ -394,6 +394,14 @@ function createNextParameterObject(obj)
 						resetAutocomplete(element)
 					end
 					
+					if(key == KEYSYMS.RETURN and obj and obj.parameterObjects)then
+						local nextObject = obj.parameterObjects[element.index + 1] or obj.parameterObjects[1]
+						if(nextObject and nextObject.editBox and nextObject ~= result)then
+							local screen = element:FindParent("screen")
+							screen:FocusControl(nextObject.editBox)
+						end
+					end
+					
 					if(element.text ~= element.validatedValue)then
 						WG.BtCreator.Get().markTreeAsChanged()
 					end
