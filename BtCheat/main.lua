@@ -291,7 +291,7 @@ function widget:Initialize()
 		skinName='DarkGlass',
 		focusColor = {1.0,0.5,0.0,0.5},
 		tooltip = "Godmode allows you to command enemy units.",
-		checked = false,
+		checked = Spring.IsGodModeEnabled(),
 		caption = "Godmode",
 		OnChange = {sanitizer:AsHandler(godMode)}
 	}
