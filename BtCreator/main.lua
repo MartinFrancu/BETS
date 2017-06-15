@@ -1645,6 +1645,7 @@ function widget:Initialize()
 			end),
 		},
 	}
+	minimizeButton:BringToFront()
 
 	BtCreator.hide()
 	WG.BtCreator = sanitizer:Export(BtCreator)

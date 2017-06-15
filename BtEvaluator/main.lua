@@ -791,7 +791,7 @@ local handlers = {
 		if(instance)then
 			params.blackboards = setmetatable({}, {
 				__index = function(self, path)
-					local blackboard = path and instance.subblackboards[path] or instance.blackboard
+					local blackboard = path and (instance.subblackboards[path] or {}) or instance.blackboard
 					if(blackboard)then
 						return setmetatable({ bb = instance.instanceBlackboard, global = globalBlackboard }, { __index = blackboard })
 					else
