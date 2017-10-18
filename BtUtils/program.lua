@@ -19,7 +19,15 @@ return Utils:Assign("program", function()
 
 	--- Normalizes the path to use regular slashes only
 	local function normalizePath(path)
-		return path:gsub("\\", "/")
+		path = path:gsub("\\", "/")
+		repeat
+			local indexFrom, indexTo, name = path:find("([^/]-)/%.%.")
+			if(name == nil or name == '..')then
+				break
+			end
+			path = path:sub(1, indexFrom - 1) .. path:sub(indexTo + 2)
+		until(false)
+		return path
 	end
 
 	local rootPath = LUAUI_DIRNAME .. "Widgets/"
@@ -42,12 +50,20 @@ return Utils:Assign("program", function()
 			__index = context,
 		})
 
+		local function locatePath(currentPath, name)
+			local protofile = normalizePath(currentPath .. name)
+			local path = protofile:match("(.*/)")
+			local file = protofile .. ((name == "" or name:match("/$")) and "main" or "") .. ".lua"
+			return path, file
+		end
+		
 		local require;
 		local function makeFileEnvironment(path)
 			return setmetatable({
 				_G = programEnvironment,
 				PATH = path,
 				Utils = Utils,
+				exists = function(name) return VFS.FileExists(select(2, locatePath(path, name))) end,
 				require = function(name) return require(path, name) end,
 			}, {
 				__index = programEnvironment,
@@ -80,8 +96,7 @@ return Utils:Assign("program", function()
 			local environment = makeFileEnvironment(path)
 			local result 
 			if(type(name) == "string")then
-				local path = normalizePath(currentPath .. name):match("(.*/)")
-				local file = currentPath .. name .. ((name == "" or name:match("/$")) and "main" or "") .. ".lua"
+				local path, file = locatePath(currentPath, name)
 				if(not VFS.FileExists(file))then
 					error("require('" .. name .. "') at '" .. currentPath .. "' couldn't find '" .. file .. "'", 2)
 				end

@@ -727,13 +727,7 @@ end
 -- ======================================
 
 function widget:Initialize()	
-	local foundAI = false
-	for _, ai in ipairs(VFS.GetAvailableAIs()) do
-		if(ai.shortName == "BtEvaluator")then
-			foundAI = true
-			break
-		end
-	end
+	local foundAI = require("findAI")
 	if(not foundAI)then
 		Logger.error("BtEvaluator", "BtEvaluator C++ AI is not present")
 		widgetHandler:RemoveWidget()

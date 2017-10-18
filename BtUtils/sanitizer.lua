@@ -79,7 +79,7 @@ return Utils:Assign("Sanitizer", function()
 		
 		exported[originalKey] = t
 		exported[exportKey] = result
-		exported.Get = function() return result end -- for debug purposes
+		exported.Get = function() return t end -- for debug purposes
 		
 		return exported;
 	end
