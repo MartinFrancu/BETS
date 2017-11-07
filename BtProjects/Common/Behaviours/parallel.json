@@ -1,0 +1,192 @@
+{
+	"additionalNodes": [],
+	"additionalParameters": {
+		"root": {
+			"height": 88,
+			"width": 180
+		}
+	},
+	"inputs": [],
+	"outputs": [],
+	"properties": {
+		"5dgKirLMCd8LWTUMnsBs6L6p6OS4Romm": {
+			"height": 70,
+			"title": "roleSplit",
+			"width": 207,
+			"x": 267,
+			"y": 8
+		},
+		"8jvyzxBSc08QIT84IE2sqpvncbXCQjlO": {
+			"height": 72,
+			"title": "echo",
+			"width": 131,
+			"x": 833,
+			"y": -214
+		},
+		"9rUh4Gjqo9JiwgtVTNIGhfCvcH0ny0Gg": {
+			"height": 70,
+			"title": "parallel",
+			"width": 207,
+			"x": 555,
+			"y": -96
+		},
+		"Jog5TinB2ks5rhLAglkrsoVLMZz6NQDR": {
+			"height": 72,
+			"title": "echo",
+			"width": 131,
+			"x": 831,
+			"y": 261
+		},
+		"RSu0PidpEcf0BJk1YTB57bgoK8gDMHbr": {
+			"height": 72,
+			"title": "echo",
+			"width": 131,
+			"x": 829,
+			"y": 78
+		},
+		"j8L4rlo7xiQQkE316TZemypEMvBRqczI": {
+			"height": 72,
+			"title": "echo",
+			"width": 131,
+			"x": 823,
+			"y": 156
+		},
+		"tZHvt3lHGEbqlEelRLR7p1eo65z4bX1N": {
+			"height": 72,
+			"title": "echo",
+			"width": 131,
+			"x": 822,
+			"y": -11
+		},
+		"vBP4FfIhETQoLj5KHGKlfTTuhlOdR6WO": {
+			"height": 72,
+			"title": "echo",
+			"width": 131,
+			"x": 829,
+			"y": -118
+		},
+		"yzXVOSUfUAUgTFx4cL8vspDEkgzSblTF": {
+			"height": 70,
+			"title": "parallel",
+			"width": 207,
+			"x": 510,
+			"y": 148
+		}
+	},
+	"roles": [ {
+		"categories": [],
+		"name": "Role 0"
+	}, {
+		"categories": [],
+		"name": "Role 1"
+	}, {
+		"categories": [],
+		"name": "Role 2"
+	}, {
+		"categories": [],
+		"name": "Role 3"
+	}, {
+		"categories": [],
+		"name": "Role 4"
+	}, {
+		"categories": [],
+		"name": "Role 5"
+	} ],
+	"root": {
+		"children": [ {
+			"children": [ {
+				"children": [],
+				"id": "8jvyzxBSc08QIT84IE2sqpvncbXCQjlO",
+				"nodeType": "luaCommand",
+				"parameters": [ {
+					"name": "msg",
+					"value": "1"
+				}, {
+					"name": "scriptName",
+					"value": "echo"
+				} ],
+				"scriptName": "echo"
+			}, {
+				"children": [],
+				"id": "vBP4FfIhETQoLj5KHGKlfTTuhlOdR6WO",
+				"nodeType": "luaCommand",
+				"parameters": [ {
+					"name": "msg",
+					"value": "2"
+				}, {
+					"name": "scriptName",
+					"value": "echo"
+				} ],
+				"scriptName": "echo"
+			}, {
+				"children": [],
+				"id": "tZHvt3lHGEbqlEelRLR7p1eo65z4bX1N",
+				"nodeType": "luaCommand",
+				"parameters": [ {
+					"name": "msg",
+					"value": "3"
+				}, {
+					"name": "scriptName",
+					"value": "echo"
+				} ],
+				"scriptName": "echo"
+			} ],
+			"id": "9rUh4Gjqo9JiwgtVTNIGhfCvcH0ny0Gg",
+			"nodeType": "parallel",
+			"parameters": [ {
+				"name": "mode",
+				"value": "all-success"
+			} ]
+		}, {
+			"children": [ {
+				"children": [],
+				"id": "RSu0PidpEcf0BJk1YTB57bgoK8gDMHbr",
+				"nodeType": "luaCommand",
+				"parameters": [ {
+					"name": "msg",
+					"value": "4"
+				}, {
+					"name": "scriptName",
+					"value": "echo"
+				} ],
+				"scriptName": "echo"
+			}, {
+				"children": [],
+				"id": "j8L4rlo7xiQQkE316TZemypEMvBRqczI",
+				"nodeType": "luaCommand",
+				"parameters": [ {
+					"name": "msg",
+					"value": "5"
+				}, {
+					"name": "scriptName",
+					"value": "echo"
+				} ],
+				"scriptName": "echo"
+			}, {
+				"children": [],
+				"id": "Jog5TinB2ks5rhLAglkrsoVLMZz6NQDR",
+				"nodeType": "luaCommand",
+				"parameters": [ {
+					"name": "msg",
+					"value": "6"
+				}, {
+					"name": "scriptName",
+					"value": "echo"
+				} ],
+				"scriptName": "echo"
+			} ],
+			"id": "yzXVOSUfUAUgTFx4cL8vspDEkgzSblTF",
+			"nodeType": "parallel",
+			"parameters": [ {
+				"name": "mode",
+				"value": "all-success"
+			} ]
+		} ],
+		"id": "5dgKirLMCd8LWTUMnsBs6L6p6OS4Romm",
+		"nodeType": "roleSplit",
+		"parameters": [ {
+			"name": "mode",
+			"value": "all-success"
+		} ]
+	}
+}
