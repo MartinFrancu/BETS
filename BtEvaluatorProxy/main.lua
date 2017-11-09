@@ -239,6 +239,11 @@ function BtEvaluator.assignUnits(units, instanceId, roleId)
 		allRole.length = allRole.length + 1
 		allRole[allRole.length] = id
 	end
+	
+	-- UI gets info about units in given instance
+	if (Script.LuaUI('groupOrder_updateUnits')) then
+		Script.LuaUI.groupOrder_updateUnits(instanceId, instance.roles[ALL_UNITS])
+	end
 end
 
 local function locateItem(items, name)
@@ -363,7 +368,12 @@ function BtEvaluator.createTree(instanceId, treeDefinition, inputs)
 	
 	BtEvaluator.OnInstanceCreated(instanceId, instance)
 	
-	return instance;
+	-- UI gets info about inputs in given instance
+	if (Script.LuaUI('groupOrder_create')) then
+		Script.LuaUI.groupOrder_create(instanceId, inputs)
+	end
+	
+	return instance
 end
 function BtEvaluator.setInput(instanceId, inputName, data)
 	local instance = treeInstances[instanceId]
@@ -376,12 +386,24 @@ function BtEvaluator.setInput(instanceId, inputName, data)
 	
 	Logger.log("inputs", "Input ", inputName, " set to ", data)
 	instance.inputs[inputName] = data
+	
+	-- update
+	if (Script.LuaUI('groupOrder_updateInputs')) then
+		Script.LuaUI.groupOrder_updateInputs(instanceId, instance.inputs)
+	end
+	
 end
 function BtEvaluator.removeTree(instanceId)
 	BtEvaluator.resetTree(instanceId)
 	removeInstance(instanceId)
 	local result, message = BtEvaluator.sendMessage("REMOVE_TREE", { instanceId = instanceId })
 	BtEvaluator.OnInstanceRemoved(instanceId)
+	
+	-- UI is informed about instance removal
+	if (Script.LuaUI('groupOrder_remove')) then
+		Script.LuaUI.groupOrder_remove(instanceId)
+	end
+	
 	return result, message
 end
 function BtEvaluator.reportTree(instanceId)
