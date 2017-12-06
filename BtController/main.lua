@@ -318,6 +318,7 @@ function removeTreeBtController(treeHandle)
 	
 	if(treeHandle.Created) then
 		-- remove send message to BtEvaluator
+		RemoveExternalTreeInfo(treeHandle)
 		BtEvaluator.removeTree(treeHandle.instanceId)
 	end
 	
@@ -372,8 +373,21 @@ function reloadTree(tabs, treeHandle)
 	end
 	treeHandle:UpdateTreeStatus()
 	
+	UpdateExternalTreeInfo(treeHandle)
+	
 end
 
+function UpdateExternalTreeInfo(treeHandle)
+	if (Script.LuaUI('groupOrder_create')) then
+		Script.LuaUI.groupOrder_create(treeHandle.instanceId, treeHandle.Inputs, treeHandle.Tree.project, treeHandle.treeType)
+	end
+end
+
+function RemoveExternalTreeInfo(treeHandle)
+	if (Script.LuaUI('groupOrder_remove')) then
+		Script.LuaUI.groupOrder_remove(treeHandle.instanceId)
+	end
+end
 
 local referencesForTrees = {}
 
@@ -559,6 +573,7 @@ function createTreeInBtEvaluator(treeHandle)
 	local result, message
 	result, message = BtEvaluator.dereferenceTree(treeHandle.Tree)
 	referencesForTrees[treeHandle.treeType] = result or {}
+	UpdateExternalTreeInfo(treeHandle)
 	
 	if(not result) then
 		unmarkAllUnitsInTree(treeHandle)
@@ -583,13 +598,23 @@ function reportAssignedUnits(treeHandle)
 		-- nothing to report
 		return
 	end
+	
 	local originallySelectedUnits = spGetSelectedUnits()
+	local allUnits = {}
+	
 	for name,roleData in pairs(treeHandle.Roles) do
 		-- now I need to share information with the BtEvaluator
 		local unitsInThisRole = TreeHandle.unitsInTreeRole(treeHandle.instanceId, name)
+		for i=1, #unitsInThisRole do allUnits[#allUnits + 1] = unitsInThisRole[i] end
 		spSelectUnits(unitsInThisRole)
 		BtEvaluator.assignUnits(unitsInThisRole, treeHandle.instanceId, roleData.roleIndex)
 	end
+	
+	-- report to any external module
+	if (Script.LuaUI('groupOrder_updateUnits')) then
+		Script.LuaUI.groupOrder_updateUnits(treeHandle.instanceId, allUnits)
+	end
+	
 	spSelectUnits(originallySelectedUnits)
 end
 
@@ -597,7 +622,8 @@ end
 -- @tparam Treehandle treeHandle Corresponding tree handle.
 -- @tparam String inputName Name of corresponding input. 
 function reportInputToBtEval(treeHandle, inputName)
-	BtEvaluator.setInput(treeHandle.instanceId , inputName, treeHandle.Inputs[inputName]) 
+	BtEvaluator.setInput(treeHandle.instanceId , inputName, treeHandle.Inputs[inputName])
+	UpdateExternalTreeInfo(treeHandle)
 end 
 
 --- Remove tree instances in BtController tab panel which require 
@@ -618,8 +644,9 @@ function removeTreesWithoutUnitsRequiringUnits()
 	end
 	
 	-- remove all trees without units which require units
-	for _,treeHandle in ipairs(treesToRemove) do 
-		removeTreeBtController( treeHandle)
+	for _,treeHandle in ipairs(treesToRemove) do
+		RemoveExternalTreeInfo(treeHandle)
+		removeTreeBtController(treeHandle)
 	end
 end
 
@@ -701,7 +728,7 @@ function listenerBarItemClick(self, x, y, button, ...)
 	end
 	if button == 2 then
 		--middle click
-		removeTreeBtController( self.TreeHandle)
+		removeTreeBtController(self.TreeHandle)
 		
 		-- now new tree tab might be selected, in such case, btcreator should know about it:
 		-- I need to find selected tabBarItem: 
@@ -932,6 +959,8 @@ function instantiateTree(treeType, instanceName, requireUnits)
 		reportAssignedUnits(newTreeHandle)
 	end
 
+	UpdateExternalTreeInfo(newTreeHandle)
+	
 	return newTreeHandle
 end
 
