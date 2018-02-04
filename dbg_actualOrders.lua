@@ -14,7 +14,7 @@ end
 
 
 -- get madatory module operators
-VFS.Include("LuaRules/modules.lua") -- modules table
+VFS.Include("modules.lua") -- modules table
 VFS.Include(modules.attach.data.path .. modules.attach.data.head) -- attach lib module
 
 -- get other madatory dependencies
@@ -210,4 +210,5 @@ function widget:DrawWorld()
 			end			
 		end
 	end
+	glColor(1, 0, 0, 1)
 end

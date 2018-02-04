@@ -2,6 +2,8 @@
 -- The @{Locator} class, which @{BtUtils} is an instance of, is itself defined within this module, in order to not creator another dependency that needs to be handled through something other than a @{Locator}.
 -- @locator BtUtils
 
+local LUAUI_DIRNAME = "LuaUI/"
+
 WG = WG or {}
 WG.BtUtils = WG.BtUtils or (function()
 	local BtUtils
