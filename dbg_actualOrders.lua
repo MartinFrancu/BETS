@@ -195,7 +195,7 @@ function widget:DrawWorld()
 				
 				function DrawIcon(name, orderX, orderY, orderZ, sizeX, sizeZ)
 					gl.PushMatrix()
-					gl.Texture(":n:LuaUI/BETS/Projects/" .. name)
+					gl.Texture(name)
 					gl.Translate(orderX-sizeX/2, orderY+10, orderZ+sizeZ/2)
 					gl.Billboard()			
 					gl.TexRect(sizeX, sizeZ, 0, 0, true, true)
@@ -205,7 +205,10 @@ function widget:DrawWorld()
 				glColor(1, 0, 0, 0.6)	
 				
 				local orderX, orderY, orderZ = currentOrderPosition.x, currentOrderPosition.y, currentOrderPosition.z
-				DrawIcon(instanceData.project .. "/Behaviours/".. instanceData.tree ..".png", orderX, orderY, orderZ, 64, 64)
+				local iconPath = "LuaUI/BETS/Projects/" .. instanceData.project .. "/Behaviours/".. instanceData.tree ..".png"
+				if (VFS.FileExists(iconPath)) then
+					DrawIcon(":n:" .. iconPath, orderX, orderY, orderZ, 64, 64)
+				end
 				
 			end			
 		end

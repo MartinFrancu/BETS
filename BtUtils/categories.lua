@@ -34,14 +34,13 @@ return Utils:Assign("UnitCategories", function()
 			Logger.log("categories", "Could not localize cateogry file: ", qualifiedName )
 			return false,  "Could not localize cateogry file: " .. qualifiedName 
 		end
-		local file = io.open(path, "r")
+		
+		local file = VFS.LoadFile(path)
 		if(not file)then
 			Logger.log("categories", "Unable to read category definition file: ", path )
 			return false, "Unable to read category definition file: " .. path
 		end
-		local text = file:read("*all")
-		file:close()
-		local data = JSON:decode(text)
+		local data = JSON:decode(file)
 		return data
 	end
 	--- Get types in given category.
