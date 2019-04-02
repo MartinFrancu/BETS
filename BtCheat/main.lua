@@ -46,10 +46,10 @@ local CONSTANTS = {
 		whenSlow = ">>>>>",
 		whenFast = "Stop",
 	},
-	defaultFFSpeed = 5,
+	defaultFFSpeed = 2,
 	normalSpeed = 1,
 	cheatInputCMDName = "BETS_CHEAT_POSITION",
-	giveHowMany = 5,
+	giveHowMany = 1,
 }
 
 local spSendCommand = Spring.SendCommands
@@ -101,9 +101,13 @@ local function spawnUnits(unitName, howMany, team, position)
 	spSendCommand(commandAll)
 end 
 local function positionSpecifiedCallback(data) 
+	local unitName = unitEditBox.text
+	if unitName == "" then
+		unitName = unitComboBox.items[unitComboBox.selected]
+	end
 	spawnUnits( 
-		unitEditBox.text,
-		CONSTANTS.giveHowMany, 
+		unitName,
+		speed, 
 		teamCombobox.items[teamCombobox.selected], 
 		data)
 
@@ -154,8 +158,8 @@ function widget:Initialize()
 		parent = Screen0,
 		x = Screen0.width - 150,
 		y = '30%',
-		width  = 150 ,
-		height = 200,	
+		width  = 175 ,
+		height = 250,	
 			padding = {10,10,10,10},
 			draggable=true,
 			resizable=false,
@@ -239,7 +243,7 @@ function widget:Initialize()
 		parent = cheatWindow,
 		x = giveButton.x + 5 ,
 		y = giveButton.y + giveButton.height + 3,
-		width = 60,
+		width = 80,
 		skinName='DarkGlass',
 		focusColor = {1.0,0.5,0.0,0.5},
 		caption = "Unit:",
@@ -254,7 +258,7 @@ function widget:Initialize()
 		skinName='DarkGlass',
 		focusColor = {1.0,0.5,0.0,0.5},
 		tooltip = "Select unit type to be given",
-		text = "armpw"
+		text = ""
 	}
 	local teamLabel = Chili.Label:New{
 		parent = cheatWindow,
@@ -279,7 +283,7 @@ function widget:Initialize()
 		width = 60,
 		skinName='DarkGlass',
 		focusColor = {1.0,0.5,0.0,0.5},
-		tooltip = "Select unit type to be given",
+		tooltip = "Select team to be given",
 		items = teamItems
 	}
 	
@@ -294,6 +298,49 @@ function widget:Initialize()
 		checked = Spring.IsGodModeEnabled(),
 		caption = "Godmode",
 		OnChange = {sanitizer:AsHandler(godMode)}
+	}
+	
+	local unitComboBoxLabel = Chili.Label:New{
+		parent = cheatWindow,
+		x = teamLabel.x,
+		y = teamLabel.y + teamLabel.height + 25,
+		width = teamLabel.width,
+		skinName='DarkGlass',
+		focusColor = {1.0,0.5,0.0,0.5},
+		caption = "Unit:",
+	}
+	
+	local unitItems = {
+		-- "gertiger",
+		-- "ger_platoon_rifle",
+		-- "gerpontoonraft",
+		-- "gerpak40_truck",
+		-- "geropelblitz",
+		-- "ger_platoon_sniper",
+		-- "gerhqbunker",
+		-- "gertankobstacle",
+		-- "gerstoragebunker",
+		-- "rust3476",
+		-- "rust3485",
+		-- "rus_platoon_assault",
+		-- "rusengineer",
+		-- "gertigerii",
+		-- "gerjagdpanther",
+		-- "gbr_platoon_assault",
+		-- "gbrm5halftrack",
+		-- "gbrboatyardlarge",
+		"armpw"
+	}
+	
+	unitComboBox = Chili.ComboBox:New{	
+		parent = cheatWindow,
+		x = unitComboBoxLabel.x + unitComboBoxLabel.width,
+		y = unitComboBoxLabel.y,
+		width = 100,
+		skinName='DarkGlass',
+		focusColor = {1.0,0.5,0.0,0.5},
+		tooltip = "Select unit type to be given",
+		items = unitItems
 	}
 
 	
